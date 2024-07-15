@@ -22,7 +22,7 @@ public class Main {
         this.player = new SoundPlayer(new String[]{FILENAME});
 
         try {
-            Application app = new Application("org.gtk.example", ApplicationFlags.DEFAULT_FLAGS);
+            Application app = new Application("com.gitlab.subsound.player", ApplicationFlags.DEFAULT_FLAGS);
             app.onActivate(() -> onActivate(app));
             app.onShutdown(this.player::quit);
             app.run(args);
