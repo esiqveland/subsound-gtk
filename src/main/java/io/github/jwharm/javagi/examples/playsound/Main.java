@@ -1,6 +1,7 @@
 package io.github.jwharm.javagi.examples.playsound;
 
 import io.github.jwharm.javagi.base.Out;
+import io.github.jwharm.javagi.examples.playsound.sound.SoundPlayer;
 import org.freedesktop.gstreamer.gst.Gst;
 import org.gnome.adw.*;
 import org.gnome.adw.Application;
@@ -9,15 +10,25 @@ import org.gnome.adw.HeaderBar;
 import org.gnome.gio.ApplicationFlags;
 import org.gnome.gtk.*;
 
+import static io.github.jwharm.javagi.examples.playsound.sound.SoundPlayer.FILENAME;
+
 public class Main {
+    private final SoundPlayer player;
+
     public Main(String[] args) {
         // Initialisation Gst
         Gst.init(new Out<>(args));
 
-        Application app = new Application("org.gtk.example", ApplicationFlags.DEFAULT_FLAGS);
+        this.player = new SoundPlayer(new String[]{FILENAME});
 
-        app.onActivate(() -> onActivate(app));
-        app.run(args);
+        try {
+            Application app = new Application("org.gtk.example", ApplicationFlags.DEFAULT_FLAGS);
+            app.onActivate(() -> onActivate(app));
+            app.onShutdown(this.player::quit);
+            app.run(args);
+        } finally {
+            this.player.quit();
+        }
     }
 
     private void onActivate(Application app) {
@@ -58,6 +69,16 @@ public class Main {
         helloWorld.onClicked(() -> {
             System.out.println("helloWorld.onClicked");
         });
+        var playButton = Button.withLabel("Play");
+        playButton.onClicked(() -> {
+            System.out.println("playButton.onClicked");
+            player.play();
+        });
+        var pauseButton = Button.withLabel("Pause");
+        pauseButton.onClicked(() -> {
+            System.out.println("pauseButton.onClicked");
+            player.pause();
+        });
 
         var searchMe = Button.withLabel("Search me");
         searchMe.onClicked(() -> {
@@ -68,6 +89,8 @@ public class Main {
                 .build();
         frontpageContainer.append(searchBar);
         frontpageContainer.append(helloWorld);
+        frontpageContainer.append(playButton);
+        frontpageContainer.append(pauseButton);
 
         var searchContainer = BoxFullsize()
                 .build();
@@ -107,7 +130,7 @@ public class Main {
 
         viewStack.getPages().onSelectionChanged((position, nItems) -> {
             var visibleChild = viewStack.getVisibleChildName();
-            System.out.println("viewSwitcher.Pages.SelectionModel.onSelectionChanged.visibleChild: "+visibleChild);
+            System.out.println("viewSwitcher.Pages.SelectionModel.onSelectionChanged.visibleChild: " + visibleChild);
         });
         ViewSwitcher viewSwitcher = ViewSwitcher.builder()
                 .setPolicy(ViewSwitcherPolicy.WIDE)
@@ -116,11 +139,11 @@ public class Main {
 
         viewSwitcher.onShow(() -> {
             var visibleChild = viewStack.getVisibleChildName();
-            System.out.println("viewSwitcher.onShow.visibleChild: "+visibleChild);
+            System.out.println("viewSwitcher.onShow.visibleChild: " + visibleChild);
         });
         viewSwitcher.onRealize(() -> {
             var visibleChild = viewStack.getVisibleChildName();
-            System.out.println("viewSwitcher.onRealize.visibleChild: "+visibleChild);
+            System.out.println("viewSwitcher.onRealize.visibleChild: " + visibleChild);
         });
 
         ViewSwitcherBar viewSwitcherBar = ViewSwitcherBar.builder()
