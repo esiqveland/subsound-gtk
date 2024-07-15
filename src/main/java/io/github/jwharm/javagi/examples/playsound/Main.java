@@ -1,25 +1,43 @@
 package io.github.jwharm.javagi.examples.playsound;
 
 import io.github.jwharm.javagi.base.Out;
-import io.github.jwharm.javagi.examples.playsound.sound.SoundPlayer;
+import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import org.freedesktop.gstreamer.gst.Gst;
-import org.gnome.adw.*;
 import org.gnome.adw.Application;
 import org.gnome.adw.ApplicationWindow;
 import org.gnome.adw.HeaderBar;
+import org.gnome.adw.*;
 import org.gnome.gio.ApplicationFlags;
 import org.gnome.gtk.*;
+
+import java.io.File;
+import java.net.URI;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Stream;
 
 import static io.github.jwharm.javagi.examples.playsound.sound.SoundPlayer.FILENAME;
 
 public class Main {
-    private final SoundPlayer player;
+    //private final SoundPlayer player;
+    private final PlaybinPlayer player;
+    private final List<URI> knownSongs = loadSamples("src/main/resources/samples");
+
+    private List<URI> loadSamples(String dirPath) {
+        File dir = new File(dirPath);
+        if (!dir.isDirectory()) {
+            throw new IllegalStateException("must be a directory with music files: " + dirPath);
+        }
+        File[] files = dir.listFiles(File::isFile);
+        return Stream.of(files).map(File::getAbsoluteFile).map(File::toURI).toList();
+    }
 
     public Main(String[] args) {
         // Initialisation Gst
         Gst.init(new Out<>(args));
 
-        this.player = new SoundPlayer(new String[]{FILENAME});
+        //this.player = new SoundPlayer(new String[]{FILENAME});
+        this.player = new PlaybinPlayer(knownSongs.get(0));
 
         try {
             Application app = new Application("com.gitlab.subsound.player", ApplicationFlags.DEFAULT_FLAGS);
@@ -85,12 +103,44 @@ public class Main {
             System.out.println("SearchMe.onClicked");
         });
 
-        var frontpageContainer = BoxFullsize()
-                .build();
+        var volumeHalf = Button.withLabel("Volume 0.5");
+        volumeHalf.onClicked(() -> {
+            System.out.println("volumeHalf.onClicked");
+            player.setVolume(0.50);
+        });
+
+        var volumeQuarter = Button.withLabel("Volume 0.25");
+        volumeQuarter.onClicked(() -> {
+            System.out.println("volumeQuarter.onClicked");
+            player.setVolume(0.250);
+        });
+
+        var volumeFull = Button.withLabel("Volume 1.0");
+        volumeFull.onClicked(() -> {
+            System.out.println("volumeFull.onClicked");
+            player.setVolume(1.0);
+        });
+
+        List<Button> songButtons = knownSongs.stream().map(songUri -> {
+            var path = Path.of(songUri);
+            var btnName = path.getFileName().toString();
+            var btn = Button.withLabel(btnName);
+            btn.onClicked(() -> {
+                System.out.println("Btn: change source to=" + btnName);
+                this.player.setSource(songUri);
+            });
+            return btn;
+        }).toList();
+
+        var frontpageContainer = BoxFullsize().build();
         frontpageContainer.append(searchBar);
         frontpageContainer.append(helloWorld);
         frontpageContainer.append(playButton);
         frontpageContainer.append(pauseButton);
+        songButtons.forEach(frontpageContainer::append);
+        frontpageContainer.append(volumeFull);
+        frontpageContainer.append(volumeHalf);
+        frontpageContainer.append(volumeQuarter);
 
         var searchContainer = BoxFullsize()
                 .build();
