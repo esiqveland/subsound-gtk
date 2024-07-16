@@ -1,7 +1,16 @@
 package io.github.jwharm.javagi.examples.playsound.sound;
 
 import io.github.jwharm.javagi.base.Out;
-import org.freedesktop.gstreamer.gst.*;
+import org.freedesktop.gstreamer.gst.Bus;
+import org.freedesktop.gstreamer.gst.Element;
+import org.freedesktop.gstreamer.gst.ElementFactory;
+import org.freedesktop.gstreamer.gst.Format;
+import org.freedesktop.gstreamer.gst.Gst;
+import org.freedesktop.gstreamer.gst.Message;
+import org.freedesktop.gstreamer.gst.MessageType;
+import org.freedesktop.gstreamer.gst.Pipeline;
+import org.freedesktop.gstreamer.gst.SeekFlags;
+import org.freedesktop.gstreamer.gst.State;
 import org.gnome.glib.GError;
 import org.gnome.glib.GLib;
 import org.gnome.glib.MainContext;
@@ -9,10 +18,20 @@ import org.gnome.glib.MainLoop;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
+
+import static io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.PlayerStates.BUFFERING;
+import static io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.PlayerStates.END_OF_STREAM;
+import static io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.PlayerStates.INIT;
+import static io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.PlayerStates.PAUSED;
+import static io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.PlayerStates.PLAYING;
+import static io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.PlayerStates.READY;
 
 // TODO: Try to make it work closer to a audio-only playbin:
 //  https://gstreamer.freedesktop.org/documentation/playback/playbin.html?gi-language=c#playbin
@@ -22,8 +41,49 @@ import java.util.stream.Stream;
 public class PlaybinPlayer {
 
     private static final int GST_PLAY_FLAG_AUDIO = 2;
+    private static final List<OnStateChanged> listeners = new CopyOnWriteArrayList<>();
 
-    public enum PlayerState {
+    public interface OnStateChanged {
+        void onState(PlayerState next);
+    }
+
+    public void onStateChanged(OnStateChanged listener) {
+        listeners.add(listener);
+    }
+
+    public void removeOnStateChanged(OnStateChanged listener) {
+        listeners.remove(listener);
+    }
+
+    public PlayerState getState() {
+        var source = Optional.ofNullable(currentUri).map(uri -> new Source(
+                uri,
+                Optional.ofNullable(this.duration)
+        ));
+        return new PlayerState(
+                this.playerStates,
+                this.currentVolume,
+                this.muteState.get(),
+                source
+        );
+    }
+
+    // a public read-only view of the player state
+    public record PlayerState(
+            PlayerStates state,
+            double volume,
+            boolean muted,
+            Optional<Source> source
+    ) {
+    }
+
+    public record Source(
+            URI current,
+            Optional<Duration> duration
+    ) {
+    }
+
+    public enum PlayerStates {
         // The initial state of the player
         INIT,
         BUFFERING,
@@ -36,11 +96,13 @@ public class PlaybinPlayer {
     Thread mainLoopThread;
     MainContext playerContext;
     MainLoop loop;
-    Element playbin;
+//    Pipeline playbinEl;
+    Element playbinEl;
     Bus bus;
     int busWatchId;
     // PlayerState should be the public view of the state of the player/player Pipeline
-    PlayerState playerState = PlayerState.INIT;
+    PlayerStates playerStates = INIT;
+    private URI currentUri;
     private double currentVolume = 1.0;
     private Duration duration;
     private AtomicBoolean muteState = new AtomicBoolean(false);
@@ -56,34 +118,20 @@ public class PlaybinPlayer {
             return;
         }
         // https://github.com/GStreamer/gst-plugins-base/blob/master/gst/playback/gstplaybin2.c#L900
-        this.playbin.set("mute", muted, null);
+        this.playbinEl.set("mute", muted, null);
     }
 
     public boolean getMute() {
         return muteState.get();
     }
 
-    public double getVolume() {
-        return this.currentVolume;
-    }
-
-    // volume is a linear scale from [0.0, 1.0]
-    public void setVolume(double linearVolume) {
-        double vol = Math.max(0.0, linearVolume);
-        vol = Math.min(1.0, vol);
-
-        // https://github.com/GStreamer/gst-plugins-base/blob/master/gst-libs/gst/audio/streamvolume.c#L169
-        double cubicVolume = toVolumeCubic(vol);
-        System.out.printf("Playbin: set volume to %.2f cubic=%.2f\n", vol, cubicVolume);
-        // https://gstreamer.freedesktop.org/documentation/audio/gststreamvolume.html?gi-language=c#GstStreamVolume
-        this.playbin.set("volume", cubicVolume, null);
-    }
-
     public void setSource(URI uri) {
+        this.currentUri = uri;
         var fileUri = uri.toString();
         System.out.println("Player: Change source to src=" + fileUri);
-        this.playbin.setState(State.NULL);
-        this.playbin.set("uri", fileUri, null);
+        this.playbinEl.setState(State.NULL);
+        this.playbinEl.set("uri", fileUri, null);
+        this.notifyState();
     }
 
     private boolean busCall(Bus bus, Message msg) {
@@ -93,7 +141,8 @@ public class PlaybinPlayer {
             System.out.println("Player: Got Event Type: " + msgType.name());
             GLib.print("End of stream\n");
             this.pause();
-            this.setPlayerState(PlayerState.END_OF_STREAM);
+            this.setPlayerState(END_OF_STREAM);
+            this.notifyState();
         } else if (msgTypes.contains(MessageType.ERROR)) {
             System.out.println("Player: Got Event Type: " + msgType.name());
             Out<GError> error = new Out<>();
@@ -106,12 +155,13 @@ public class PlaybinPlayer {
         } else if (msgTypes.contains(MessageType.STATE_CHANGED)) {
             //System.out.println("Player: Got Event Type: " + msgType.name());
             var src = msg.readSrc();
-            if (src.equals(this.playbin)) {
+            if (src.equals(this.playbinEl)) {
                 System.out.println("Player: playbin: Got Event Type: " + msgType.name());
             } else {
                 return true;
             }
             this.onPipelineStateChanged();
+            // TODO: read the new states by parsing msg ?
             //this.onPipelineStateChanged(getStateChanged(msg));
         } else if (msgTypes.contains(MessageType.BUFFERING)) {
             System.out.println("Player: Got Event Type: " + msgType.name());
@@ -119,9 +169,9 @@ public class PlaybinPlayer {
             msg.parseBuffering(percentOut);
             int percent = percentOut.get();
             System.out.println("Player: Got Event Type: " + msgType.name() + ": percent=" + percent);
+            this.setPlayerState(BUFFERING);
             this.onPipelineStateChanged();
             this.onDurationChanged();
-            this.setPlayerState(PlayerState.BUFFERING);
         } else if (msgTypes.contains(MessageType.DURATION_CHANGED)) {
             System.out.println("Player: Got Event Type: " + msgType.name());
             // The duration of a pipeline changed. The application can get the new duration with a duration query
@@ -143,7 +193,7 @@ public class PlaybinPlayer {
     ) {
     }
 
-    private StateChanged getStateChanged(Message msg) {
+    private static StateChanged getStateChanged(Message msg) {
         var oldState = new Out<State>();
         var newState = new Out<State>();
         var pendingState = new Out<State>();
@@ -156,7 +206,7 @@ public class PlaybinPlayer {
 
     private void onDurationChanged() {
         var dur = new Out<Long>();
-        var success = playbin.queryDuration(Format.TIME, dur);
+        var success = playbinEl.queryDuration(Format.TIME, dur);
         if (success) {
             Long nanos = dur.get();
             if (nanos == null) {
@@ -174,11 +224,19 @@ public class PlaybinPlayer {
         this.duration = duration;
         if (prev.toMillis() != duration.toMillis()) {
             System.out.printf("Player.setDuration: %d\n", duration.getSeconds());
+            this.notifyState();
         }
     }
 
-    private void setPlayerState(PlayerState playerState) {
-        this.playerState = playerState;
+    private void notifyState() {
+        var nextState = getState();
+        for (OnStateChanged listener : listeners) {
+            listener.onState(nextState);
+        }
+    }
+
+    private void setPlayerState(PlayerStates playerStates) {
+        this.playerStates = playerStates;
     }
 
     public boolean isPlaying() {
@@ -193,28 +251,27 @@ public class PlaybinPlayer {
         if (pipelineState == State.PLAYING) {
             return;
         }
-        if (playerState == PlayerState.END_OF_STREAM) {
+        if (playerStates == END_OF_STREAM) {
             this.seekToStart();
         }
-        var player = playbin;
-        player.setState(State.PLAYING);
-    }
-
-    private void seekToStart() {
-        //playbin.seek(1.0, Format.TIME, SeekFlags.FLUSH, SeekType.SET, 0, SeekType.NONE, 0);
-        playbin.seekSimple(Format.TIME, SeekFlags.FLUSH, 0);
+        playbinEl.setState(State.PLAYING);
     }
 
     public void pause() {
         if (pipelineState == State.PAUSED) {
             return;
         }
-        var player = playbin;
-        player.setState(State.PAUSED);
+        playbinEl.setState(State.PAUSED);
+    }
+
+    private void seekToStart() {
+        //playbin.seek(1.0, Format.TIME, SeekFlags.FLUSH, SeekType.SET, 0, SeekType.NONE, 0);
+        playbinEl.seekSimple(Format.TIME, SeekFlags.FLUSH, 0);
+        this.notifyState();
     }
 
     private void onPipelineStateChanged() {
-        var player = playbin;
+        var player = playbinEl;
         if (player == null) {
             return;
         }
@@ -225,7 +282,7 @@ public class PlaybinPlayer {
     }
 
     private void onPipelineStateChanged(StateChanged stateChanged) {
-        var player = playbin;
+        var player = playbinEl;
         if (player == null) {
             return;
         }
@@ -242,19 +299,17 @@ public class PlaybinPlayer {
 
         record PlayState(
                 State pipelineState,
-                PlayerState playerState
+                PlayerStates playerState
         ) {
         }
-        var p = new PlayState(this.pipelineState, this.playerState);
-
-        switch (p.pipelineState) {
-            case VOID_PENDING -> {
-            }
-            case NULL -> this.playerState = PlayerState.INIT;
-            case READY -> this.playerState = PlayerState.READY;
-            case PAUSED -> this.playerState = PlayerState.PAUSED;
-            case PLAYING -> this.playerState = PlayerState.PLAYING;
-        }
+        var p = new PlayState(this.pipelineState, this.playerStates);
+        this.playerStates = switch (p.pipelineState) {
+            case NULL, VOID_PENDING -> INIT;
+            case READY -> READY;
+            case PAUSED -> PAUSED;
+            case PLAYING -> PLAYING;
+        };
+        this.notifyState();
     }
 
     public PlaybinPlayer(URI initialFile) {
@@ -266,35 +321,34 @@ public class PlaybinPlayer {
         loop = new MainLoop(playerContext, false);
 
         // Create gstreamer elements
-        playbin = ElementFactory.make("playbin", "playbin");
-
-        if (Stream.of(playbin).anyMatch(Objects::isNull)) {
+        playbinEl = ElementFactory.make("playbin", "playbin");
+        if (Stream.of(playbinEl).anyMatch(Objects::isNull)) {
             GLib.printerr("playbin element could not be created. Exiting.\n");
-            return;
+            throw new RuntimeException("playbin element could not be created. Exiting.");
         }
         // Set up the pipeline
+//        playbinEl = new Pipeline("audio-player-example");
+//        playbinEl.add(playbinEl);
 
         // We add a message handler
-        bus = playbin.getBus();
+        bus = playbinEl.getBus();
         busWatchId = bus.addWatch(0, this::busCall);
-        playbin.onNotify("volume", params -> this.onVolumeChanged());
-        this.playbin.onNotify("mute", paramSpec -> {
-            this.onMuteChanged();
-        });
+        // playbin: we only want to enable audio:
+        playbinEl.set("flags", GST_PLAY_FLAG_AUDIO, null);
+
+        playbinEl.onNotify("volume", params -> this.onVolumeChanged());
+        playbinEl.onNotify("mute", params -> this.onMuteChanged());
         // make sure we update the values on construction:
         this.onVolumeChanged();
         this.onMuteChanged();
 
-        var fileUri = initialFile.toString();
-
         // We set the input filename to the source element
-        playbin.set("uri", fileUri, null);
-        playbin.set("flags", GST_PLAY_FLAG_AUDIO, null);
-
-        // Set the pipeline
-        GLib.print("Now playing: %s\n", fileUri);
-
-        // Iterate
+        if (initialFile != null) {
+            var fileUri = initialFile.toString();
+            //playbin.set("uri", fileUri, null);
+            GLib.print("Now playing: %s\n", fileUri);
+            this.setSource(initialFile);
+        }
         GLib.print("Running...\n");
 
         mainLoopThread = new Thread(() -> {
@@ -310,16 +364,33 @@ public class PlaybinPlayer {
         mainLoopThread.start();
     }
 
+    public double getVolume() {
+        return this.currentVolume;
+    }
+
+    // volume is a linear scale from [0.0, 1.0]
+    public void setVolume(double linearVolume) {
+        double vol = Math.max(0.0, Math.min(1.0, linearVolume));
+        // https://github.com/GStreamer/gst-plugins-base/blob/master/gst-libs/gst/audio/streamvolume.c#L169
+        double cubicVolume = toVolumeCubic(vol);
+        System.out.printf("Playbin: set volume to %.2f cubic=%.2f\n", vol, cubicVolume);
+        // https://gstreamer.freedesktop.org/documentation/audio/gststreamvolume.html?gi-language=c#GstStreamVolume
+        this.playbinEl.set("volume", cubicVolume, null);
+    }
+
     private void onVolumeChanged() {
-        double volume = (Double) playbin.getProperty("volume");
+        double volume = (Double) playbinEl.getProperty("volume");
         System.out.printf("Playbin: onVolumeChanged: %.2f\n", volume);
-        this.currentVolume = volume;
+        var linearVolume = cubicToLinearVolume(volume);
+        this.currentVolume = linearVolume;
+        this.notifyState();
     }
 
     private void onMuteChanged() {
-        boolean isMuted = (Boolean) playbin.getProperty("mute");
+        boolean isMuted = (Boolean) playbinEl.getProperty("mute");
         System.out.printf("Playbin: onMuteChanged: muted=%b\n", isMuted);
         this.muteState.set(isMuted);
+        this.notifyState();
     }
 
     public void quit() {
@@ -327,7 +398,7 @@ public class PlaybinPlayer {
             // quit has already been called
             return;
         }
-        this.playbin.setState(State.NULL);
+        this.playbinEl.setState(State.NULL);
         if (loop.isRunning()) {
             loop.quit();
         }
@@ -341,6 +412,11 @@ public class PlaybinPlayer {
     // https://github.com/GStreamer/gst-plugins-base/blob/master/gst-libs/gst/audio/streamvolume.c#L169
     public static double toVolumeCubic(double linearVolume) {
         return Math.pow(linearVolume, 1.0 / 3.0);
+    }
+
+    // https://github.com/GStreamer/gst-plugins-base/blob/master/gst-libs/gst/audio/streamvolume.c#L169
+    public static double cubicToLinearVolume(double cubicVolume) {
+        return cubicVolume * cubicVolume * cubicVolume;
     }
 
 }

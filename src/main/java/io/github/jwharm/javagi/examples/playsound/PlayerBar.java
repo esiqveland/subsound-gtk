@@ -1,15 +1,22 @@
 package io.github.jwharm.javagi.examples.playsound;
 
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
-import org.gnome.gtk.*;
+import org.gnome.gtk.ActionBar;
+import org.gnome.gtk.Align;
+import org.gnome.gtk.Box;
+import org.gnome.gtk.Image;
+import org.gnome.gtk.Label;
+import org.gnome.gtk.Orientation;
+import org.gnome.gtk.VolumeButton;
 
-public class PlayerBar extends Box {
+public class PlayerBar extends Box implements PlaybinPlayer.OnStateChanged {
     private final PlaybinPlayer player;
     private final ActionBar mainBar;
     private final Image albumArt;
     private final Label songTitle;
     private final Label albumTitle;
     private final Label artistTitle;
+    private final VolumeButton volumeButton;
 
     public PlayerBar(PlaybinPlayer player) {
         super(Orientation.VERTICAL, 5);
@@ -31,10 +38,10 @@ public class PlayerBar extends Box {
         nowPlaying.append(albumArt);
         nowPlaying.append(songInfo);
 
-        var volumeButton = VolumeButton.builder().setValue(player.getVolume()).build();
+        volumeButton = VolumeButton.builder().setValue(player.getVolume()).build();
         volumeButton.onValueChanged(val -> {
             System.out.println("volumeButton.onValueChanged: " + val);
-            this.player.setVolume(val);
+//            this.player.setVolume(val);
         });
 
         var volumeBox = Box.builder()
@@ -48,5 +55,12 @@ public class PlayerBar extends Box {
         mainBar.packStart(nowPlaying);
         mainBar.packEnd(volumeBox);
         this.append(mainBar);
+
+        player.onStateChanged(this);
+    }
+
+    @Override
+    public void onState(PlaybinPlayer.PlayerState next) {
+//        volumeButton.setValue(next.volume());
     }
 }
