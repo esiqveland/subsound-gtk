@@ -16,10 +16,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static io.github.jwharm.javagi.examples.playsound.sound.SoundPlayer.FILENAME;
-
 public class Main {
-    //private final SoundPlayer player;
     private final PlaybinPlayer player;
     private final List<URI> knownSongs = loadSamples("src/main/resources/samples");
 
@@ -120,6 +117,16 @@ public class Main {
             System.out.println("volumeFull.onClicked");
             player.setVolume(1.0);
         });
+        var muteOnButton = Button.withLabel("Mute On");
+        muteOnButton.onClicked(() -> {
+            System.out.println("muteOnButton.onClicked");
+            player.setMute(true);
+        });
+        var muteOffButton = Button.withLabel("Mute Off");
+        muteOffButton.onClicked(() -> {
+            System.out.println("muteOffButton.onClicked");
+            player.setMute(false);
+        });
 
         List<Button> songButtons = knownSongs.stream().map(songUri -> {
             var path = Path.of(songUri);
@@ -132,15 +139,19 @@ public class Main {
             return btn;
         }).toList();
 
-        var frontpageContainer = BoxFullsize().build();
-        frontpageContainer.append(searchBar);
-        frontpageContainer.append(helloWorld);
-        frontpageContainer.append(playButton);
-        frontpageContainer.append(pauseButton);
-        songButtons.forEach(frontpageContainer::append);
-        frontpageContainer.append(volumeFull);
-        frontpageContainer.append(volumeHalf);
-        frontpageContainer.append(volumeQuarter);
+        var testPageBox = BoxFullsize().build();
+        testPageBox.append(searchBar);
+        testPageBox.append(helloWorld);
+        testPageBox.append(playButton);
+        testPageBox.append(pauseButton);
+        songButtons.forEach(testPageBox::append);
+        testPageBox.append(muteOnButton);
+        testPageBox.append(muteOffButton);
+        testPageBox.append(volumeFull);
+        testPageBox.append(volumeHalf);
+        testPageBox.append(volumeQuarter);
+
+        var frontPageBox = BoxFullsize().build();
 
         var searchContainer = BoxFullsize()
                 .build();
@@ -166,7 +177,10 @@ public class Main {
         playlistsContainer.append(playlistsMe);
 
         {
-            ViewStackPage frontPage = viewStack.addTitled(frontpageContainer, "frontPage", "Home");
+            ViewStackPage testPage = viewStack.addTitled(testPageBox, "testPage", "Testpage");
+        }
+        {
+            ViewStackPage frontPage = viewStack.addTitled(frontPageBox, "frontPage", "Home");
         }
         {
             ViewStackPage albumsPage = viewStack.addTitled(albumsContainer, "albumsPage", "Albums");
@@ -207,7 +221,7 @@ public class Main {
         headerBar.packStart(searchButton);
         headerBar.packEnd(settingsButton);
 
-        var playerBar = new PlayerBar();
+        var playerBar = new PlayerBar(player);
         var bottomBar = new Box(Orientation.VERTICAL, 10);
         bottomBar.append(viewSwitcherBar);
         bottomBar.append(playerBar);

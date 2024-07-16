@@ -6,7 +6,6 @@ import org.gnome.glib.GError;
 import org.gnome.glib.GLib;
 import org.gnome.glib.MainContext;
 import org.gnome.glib.MainLoop;
-import org.gnome.gobject.Value;
 
 import java.net.URI;
 import java.time.Duration;
@@ -44,10 +43,29 @@ public class PlaybinPlayer {
     PlayerState playerState = PlayerState.INIT;
     private double currentVolume = 1.0;
     private Duration duration;
+    private AtomicBoolean muteState = new AtomicBoolean(false);
     // pipeline state tracks the current state of the GstPipeline
     State pipelineState = State.NULL;
 
     private final AtomicBoolean quitState = new AtomicBoolean(false);
+
+    public void setMute(boolean muted) {
+        boolean isMuted = muteState.get();
+        System.out.printf("Playbin: set muted=%b isMuted=%b\n", muted, isMuted);
+        if (isMuted == muted) {
+            return;
+        }
+        // https://github.com/GStreamer/gst-plugins-base/blob/master/gst/playback/gstplaybin2.c#L900
+        this.playbin.set("mute", muted, null);
+    }
+
+    public boolean getMute() {
+        return muteState.get();
+    }
+
+    public double getVolume() {
+        return this.currentVolume;
+    }
 
     // volume is a linear scale from [0.0, 1.0]
     public void setVolume(double linearVolume) {
@@ -259,9 +277,13 @@ public class PlaybinPlayer {
         // We add a message handler
         bus = playbin.getBus();
         busWatchId = bus.addWatch(0, this::busCall);
-        playbin.onNotify("volume", (params) -> {
-            this.onVolumeChanged();
+        playbin.onNotify("volume", params -> this.onVolumeChanged());
+        this.playbin.onNotify("mute", paramSpec -> {
+            this.onMuteChanged();
         });
+        // make sure we update the values on construction:
+        this.onVolumeChanged();
+        this.onMuteChanged();
 
         var fileUri = initialFile.toString();
 
@@ -292,6 +314,12 @@ public class PlaybinPlayer {
         double volume = (Double) playbin.getProperty("volume");
         System.out.printf("Playbin: onVolumeChanged: %.2f\n", volume);
         this.currentVolume = volume;
+    }
+
+    private void onMuteChanged() {
+        boolean isMuted = (Boolean) playbin.getProperty("mute");
+        System.out.printf("Playbin: onMuteChanged: muted=%b\n", isMuted);
+        this.muteState.set(isMuted);
     }
 
     public void quit() {
