@@ -41,7 +41,7 @@ public class PlayerBar extends Box implements PlaybinPlayer.OnStateChanged {
         volumeButton = VolumeButton.builder().setValue(player.getVolume()).build();
         volumeButton.onValueChanged(val -> {
             System.out.println("volumeButton.onValueChanged: " + val);
-//            this.player.setVolume(val);
+            this.player.setVolume(val);
         });
 
         var volumeBox = Box.builder()
@@ -56,11 +56,11 @@ public class PlayerBar extends Box implements PlaybinPlayer.OnStateChanged {
         mainBar.packEnd(volumeBox);
         this.append(mainBar);
 
-        //player.onStateChanged(this);
+        player.onStateChanged(this);
     }
 
     @Override
     public void onState(PlaybinPlayer.PlayerState next) {
-//        volumeButton.setValue(next.volume());
+        volumeButton.setValue(next.volume());
     }
 }

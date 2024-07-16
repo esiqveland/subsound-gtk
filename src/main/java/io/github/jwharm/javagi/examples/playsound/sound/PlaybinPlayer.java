@@ -117,7 +117,6 @@ public class PlaybinPlayer {
             return;
         }
         // https://github.com/GStreamer/gst-plugins-base/blob/master/gst/playback/gstplaybin2.c#L900
-//        this.playbinEl.set("mute", muted, null);
         this.playbinEl.setProperty("mute", muted);
     }
 
@@ -314,6 +313,7 @@ public class PlaybinPlayer {
 
     public PlaybinPlayer(URI initialFile) {
         // Initialisation
+        // Init should be done from Main function
         //Gst.init(new Out<>(new String[]{}));
         //Gst.initCheck(new Out<>(args));
 
@@ -345,7 +345,6 @@ public class PlaybinPlayer {
         // We set the input filename to the source element
         if (initialFile != null) {
             var fileUri = initialFile.toString();
-            //playbin.set("uri", fileUri, null);
             GLib.print("Now playing: %s\n", fileUri);
             this.setSource(initialFile);
         }
