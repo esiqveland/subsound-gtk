@@ -32,9 +32,7 @@ public class Main {
     public Main(String[] args) {
         // Initialisation Gst
         Gst.init(new Out<>(args));
-
-        //this.player = new SoundPlayer(new String[]{FILENAME});
-        this.player = new PlaybinPlayer(knownSongs.get(0));
+        this.player = new PlaybinPlayer(knownSongs.getFirst());
 
         try {
             Application app = new Application("com.gitlab.subsound.player", ApplicationFlags.DEFAULT_FLAGS);
@@ -69,8 +67,6 @@ public class Main {
         settingsButton.onClicked(() -> {
             System.out.println("settingsButton.onClicked");
         });
-
-        ViewStack viewStack = ViewStack.builder().build();
 
         var searchEntry = SearchEntry.builder().build();
         searchEntry.onSearchChanged(() -> {
@@ -139,48 +135,43 @@ public class Main {
             return btn;
         }).toList();
 
-        var testPageBox = BoxFullsize().build();
-        testPageBox.append(searchBar);
-        testPageBox.append(helloWorld);
-        testPageBox.append(playButton);
-        testPageBox.append(pauseButton);
-        songButtons.forEach(testPageBox::append);
-        testPageBox.append(muteOnButton);
-        testPageBox.append(muteOffButton);
-        testPageBox.append(volumeFull);
-        testPageBox.append(volumeHalf);
-        testPageBox.append(volumeQuarter);
+        var testPageContainer = BoxFullsize().build();
+        testPageContainer.append(searchBar);
+        testPageContainer.append(helloWorld);
+        testPageContainer.append(playButton);
+        testPageContainer.append(pauseButton);
+        songButtons.forEach(testPageContainer::append);
+        testPageContainer.append(muteOnButton);
+        testPageContainer.append(muteOffButton);
+        testPageContainer.append(volumeFull);
+        testPageContainer.append(volumeHalf);
+        testPageContainer.append(volumeQuarter);
 
-        var frontPageBox = BoxFullsize().build();
+        var frontPageContainer = BoxFullsize().build();
 
-        var searchContainer = BoxFullsize()
-                .build();
-        searchContainer.append(searchBar);
+        var searchContainer = BoxFullsize().build();
         searchContainer.append(searchMe);
 
         var albumsMe = Button.withLabel("Albums");
         albumsMe.onClicked(() -> {
             System.out.println("albumsMe.onClicked");
         });
-        var albumsContainer = BoxFullsize()
-                .build();
-        albumsContainer.append(searchBar);
+        var albumsContainer = BoxFullsize().build();
         albumsContainer.append(albumsMe);
 
         var playlistsMe = Button.withLabel("Playlists");
         playlistsMe.onClicked(() -> {
             System.out.println("playlistsMe.onClicked");
         });
-        var playlistsContainer = BoxFullsize()
-                .build();
-        playlistsContainer.append(searchBar);
+        var playlistsContainer = BoxFullsize().build();
         playlistsContainer.append(playlistsMe);
 
+        ViewStack viewStack = ViewStack.builder().build();
         {
-            ViewStackPage testPage = viewStack.addTitled(testPageBox, "testPage", "Testpage");
+            ViewStackPage testPage = viewStack.addTitled(testPageContainer, "testPage", "Testpage");
         }
         {
-            ViewStackPage frontPage = viewStack.addTitled(frontPageBox, "frontPage", "Home");
+            ViewStackPage frontPage = viewStack.addTitled(frontPageContainer, "frontPage", "Home");
         }
         {
             ViewStackPage albumsPage = viewStack.addTitled(albumsContainer, "albumsPage", "Albums");

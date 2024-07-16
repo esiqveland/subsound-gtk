@@ -8,7 +8,6 @@ import org.freedesktop.gstreamer.gst.Format;
 import org.freedesktop.gstreamer.gst.Gst;
 import org.freedesktop.gstreamer.gst.Message;
 import org.freedesktop.gstreamer.gst.MessageType;
-import org.freedesktop.gstreamer.gst.Pipeline;
 import org.freedesktop.gstreamer.gst.SeekFlags;
 import org.freedesktop.gstreamer.gst.State;
 import org.gnome.glib.GError;
@@ -93,10 +92,10 @@ public class PlaybinPlayer {
         END_OF_STREAM,
     }
 
-    Thread mainLoopThread;
-    MainContext playerContext;
-    MainLoop loop;
-//    Pipeline playbinEl;
+    private final Thread mainLoopThread;
+    private final MainContext playerContext;
+    private final MainLoop loop;
+    //    Pipeline playbinEl;
     Element playbinEl;
     Bus bus;
     int busWatchId;
@@ -118,7 +117,8 @@ public class PlaybinPlayer {
             return;
         }
         // https://github.com/GStreamer/gst-plugins-base/blob/master/gst/playback/gstplaybin2.c#L900
-        this.playbinEl.set("mute", muted, null);
+//        this.playbinEl.set("mute", muted, null);
+        this.playbinEl.setProperty("mute", muted);
     }
 
     public boolean getMute() {
@@ -314,7 +314,7 @@ public class PlaybinPlayer {
 
     public PlaybinPlayer(URI initialFile) {
         // Initialisation
-        Gst.init(new Out<>(new String[]{}));
+        //Gst.init(new Out<>(new String[]{}));
         //Gst.initCheck(new Out<>(args));
 
         playerContext = new MainContext();
@@ -326,6 +326,8 @@ public class PlaybinPlayer {
             GLib.printerr("playbin element could not be created. Exiting.\n");
             throw new RuntimeException("playbin element could not be created. Exiting.");
         }
+        // playbin: we only want to enable audio:
+        playbinEl.set("flags", GST_PLAY_FLAG_AUDIO, null);
         // Set up the pipeline
 //        playbinEl = new Pipeline("audio-player-example");
 //        playbinEl.add(playbinEl);
@@ -333,8 +335,6 @@ public class PlaybinPlayer {
         // We add a message handler
         bus = playbinEl.getBus();
         busWatchId = bus.addWatch(0, this::busCall);
-        // playbin: we only want to enable audio:
-        playbinEl.set("flags", GST_PLAY_FLAG_AUDIO, null);
 
         playbinEl.onNotify("volume", params -> this.onVolumeChanged());
         playbinEl.onNotify("mute", params -> this.onMuteChanged());

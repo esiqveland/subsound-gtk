@@ -56,7 +56,7 @@ public class PlayerBar extends Box implements PlaybinPlayer.OnStateChanged {
         mainBar.packEnd(volumeBox);
         this.append(mainBar);
 
-        player.onStateChanged(this);
+        //player.onStateChanged(this);
     }
 
     @Override
