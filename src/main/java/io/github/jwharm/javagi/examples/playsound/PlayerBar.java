@@ -9,7 +9,9 @@ import org.gnome.gtk.Label;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.VolumeButton;
 
-public class PlayerBar extends Box implements PlaybinPlayer.OnStateChanged {
+import java.util.concurrent.atomic.AtomicBoolean;
+
+public class PlayerBar extends Box implements PlaybinPlayer.OnStateChanged, AutoCloseable {
     private final PlaybinPlayer player;
     private final ActionBar mainBar;
     private final Image albumArt;
@@ -17,6 +19,7 @@ public class PlayerBar extends Box implements PlaybinPlayer.OnStateChanged {
     private final Label albumTitle;
     private final Label artistTitle;
     private final VolumeButton volumeButton;
+    private final AtomicBoolean isStateChanging = new AtomicBoolean(false);
 
     public PlayerBar(PlaybinPlayer player) {
         super(Orientation.VERTICAL, 5);
@@ -61,6 +64,20 @@ public class PlayerBar extends Box implements PlaybinPlayer.OnStateChanged {
 
     @Override
     public void onState(PlaybinPlayer.PlayerState next) {
-        volumeButton.setValue(next.volume());
+        try {
+            isStateChanging.set(true);
+            double volume = next.volume();
+            // TODO: check value within epsilon 0.01
+            if (volume != volumeButton.getValue()) {
+                volumeButton.setValue(next.volume());
+            }
+        } finally {
+            isStateChanging.set(false);
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+        player.removeOnStateChanged(this);
     }
 }
