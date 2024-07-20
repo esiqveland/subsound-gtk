@@ -1,4 +1,4 @@
-package io.github.jwharm.javagi.examples.playsound;
+package io.github.jwharm.javagi.examples.playsound.components;
 
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import org.gnome.gtk.ActionBar;
@@ -43,6 +43,9 @@ public class PlayerBar extends Box implements PlaybinPlayer.OnStateChanged, Auto
 
         volumeButton = VolumeButton.builder().setValue(player.getVolume()).build();
         volumeButton.onValueChanged(val -> {
+            if (this.isStateChanging.get()) {
+                return;
+            }
             System.out.println("volumeButton.onValueChanged: " + val);
             this.player.setVolume(val);
         });
@@ -68,7 +71,8 @@ public class PlayerBar extends Box implements PlaybinPlayer.OnStateChanged, Auto
             isStateChanging.set(true);
             double volume = next.volume();
             // TODO: check value within epsilon 0.01
-            if (volume != volumeButton.getValue()) {
+
+            if (!withinEpsilon(volume, volumeButton.getValue(), 0.01)) {
                 volumeButton.setValue(next.volume());
             }
         } finally {
@@ -80,4 +84,10 @@ public class PlayerBar extends Box implements PlaybinPlayer.OnStateChanged, Auto
     public void close() throws Exception {
         player.removeOnStateChanged(this);
     }
+
+    public static boolean withinEpsilon(double value1, double value2, double epsilon) {
+        var diff = Math.abs(value1 - value2);
+        return diff < epsilon;
+    }
+
 }

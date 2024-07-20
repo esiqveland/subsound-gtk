@@ -1,6 +1,8 @@
 package io.github.jwharm.javagi.examples.playsound;
 
 import io.github.jwharm.javagi.base.Out;
+import io.github.jwharm.javagi.examples.playsound.components.ArtistListBox;
+import io.github.jwharm.javagi.examples.playsound.components.PlayerBar;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import org.freedesktop.gstreamer.gst.Gst;
 import org.gnome.adw.Application;
@@ -175,6 +177,12 @@ public class Main {
         }
         {
             ViewStackPage albumsPage = viewStack.addTitled(albumsContainer, "albumsPage", "Albums");
+        }
+        {
+            var artistsContainer = BoxFullsize().build();
+            var artistListBox = new ArtistListBox();
+            artistsContainer.append(artistListBox);
+            ViewStackPage artistsPage = viewStack.addTitled(artistsContainer, "artistsPage", "Artists");
         }
         {
             ViewStackPage searchPage = viewStack.addTitled(searchContainer, "searchPage", "Search");
