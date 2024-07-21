@@ -1,9 +1,13 @@
 package io.github.jwharm.javagi.examples.playsound;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import io.github.jwharm.javagi.base.Out;
 import io.github.jwharm.javagi.examples.playsound.components.ArtistListBox;
 import io.github.jwharm.javagi.examples.playsound.components.PlayerBar;
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
+import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
+import net.beardbot.subsonic.client.SubsonicPreferences;
 import org.freedesktop.gstreamer.gst.Gst;
 import org.gnome.adw.Application;
 import org.gnome.adw.ApplicationWindow;
@@ -19,7 +23,9 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class Main {
+    public static final Dotenv env = Dotenv.load();
     private final PlaybinPlayer player;
+    private final SubsonicClient client;
     private final List<URI> knownSongs = loadSamples("src/main/resources/samples");
 
     private List<URI> loadSamples(String dirPath) {
@@ -35,6 +41,7 @@ public class Main {
         // Initialisation Gst
         Gst.init(new Out<>(args));
         this.player = new PlaybinPlayer(knownSongs.getFirst());
+        this.client = SubsonicClient.create(getSubsonicSettings(env));
 
         try {
             Application app = new Application("com.gitlab.subsound.player", ApplicationFlags.DEFAULT_FLAGS);
@@ -44,6 +51,17 @@ public class Main {
         } finally {
             this.player.quit();
         }
+    }
+
+    private SubsonicPreferences getSubsonicSettings(Dotenv dotenv) {
+        SubsonicPreferences preferences = new SubsonicPreferences(
+                dotenv.get("SERVER_URL"),
+                dotenv.get("SERVER_USERNAME"),
+                dotenv.get("SERVER_PASSWORD")
+        );
+        preferences.setStreamBitRate(192);
+        preferences.setClientName("MySubsonicClient");
+        return preferences;
     }
 
     private void onActivate(Application app) {
@@ -179,8 +197,9 @@ public class Main {
             ViewStackPage albumsPage = viewStack.addTitled(albumsContainer, "albumsPage", "Albums");
         }
         {
-            var artistsContainer = BoxFullsize().build();
-            var artistListBox = new ArtistListBox();
+            var artists = this.client.getArtists();
+            var artistsContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
+            var artistListBox = new ArtistListBox(artists.list());
             artistsContainer.append(artistListBox);
             ViewStackPage artistsPage = viewStack.addTitled(artistsContainer, "artistsPage", "Artists");
         }
