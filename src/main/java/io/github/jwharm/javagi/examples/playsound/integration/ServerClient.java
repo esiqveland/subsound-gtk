@@ -20,6 +20,13 @@ public interface ServerClient {
             Optional<CoverArt> coverArt,
             List<ArtistAlbumInfo> albums
     ) {
+        public Duration totalPlayTime() {
+            return Duration.ofSeconds(this.albums.stream().mapToLong(a -> a.duration.toSeconds()).sum());
+        }
+
+        public int songCount() {
+            return this.albums.stream().mapToInt(a -> a.songCount).sum();
+        }
     }
 
     record ArtistAlbumInfo(

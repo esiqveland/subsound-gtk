@@ -22,6 +22,7 @@ public class AlbumArt extends Box {
     private final CoverArt artwork;
     private final AtomicBoolean hasLoaded = new AtomicBoolean(false);
     private final AtomicBoolean isLoading = new AtomicBoolean(false);
+    private final AtomicBoolean isUpdating = new AtomicBoolean(false);
     private final Image image;
 
 
@@ -31,8 +32,11 @@ public class AlbumArt extends Box {
     }
 
     public static Box placeholderImage(int size) {
-        var image = Image.builder().setPaintable(Paintable.newEmpty(size, size)).build();
-        var box = Box.builder().build();
+        Image image = Image.fromFile("src/main/resources/images/album-placeholder.png");
+        image.setSizeRequest(size, size);
+        var box = Box.builder().setHexpand(true).setVexpand(true).build();
+        box.append(image);
+        return box;
     }
 
     public AlbumArt(CoverArt artwork) {
@@ -40,15 +44,34 @@ public class AlbumArt extends Box {
     }
 
     public AlbumArt(CoverArt artwork, int size) {
-        super(Orientation.VERTICAL, 5);
+        super(Orientation.VERTICAL, 0);
         this.artwork = artwork;
         // See: https://docs.gtk.org/gdk-pixbuf/class.PixbufLoader.html
         var loader = PixbufLoader.builder().build();
         this.image = Image.fromPixbuf(loader.getPixbuf());
         this.image.setSizeRequest(size, size);
-        loader.onAreaPrepared(() -> {
-            // apparently we need to touch the image and make it redraw somehow:
-            this.image.setFromPixbuf(loader.getPixbuf());
+
+//        loader.onAreaPrepared(() -> {
+//            if (!isUpdating.compareAndSet(false, true)) {
+//                return;
+//            }
+//            try {
+//                // apparently we need to touch the image and make it redraw somehow:
+//                this.image.setFromPixbuf(loader.getPixbuf());
+//            } finally {
+//                isUpdating.set(false);
+//            }
+//        });
+        loader.onAreaUpdated((x, y, h, w) -> {
+            if (!isUpdating.compareAndSet(false, true)) {
+                return;
+            }
+            try {
+                // apparently we need to touch the image and make it redraw somehow:
+                this.image.setFromPixbuf(loader.getPixbuf());
+            } finally {
+                isUpdating.set(false);
+            }
         });
 
         this.onRealize(() -> {
@@ -76,6 +99,9 @@ public class AlbumArt extends Box {
             try {
                 THUMB_LOADER.loadThumb(this.artwork.coverArtLink(), buffer -> {
                     try {
+                        if (buffer == null || buffer.length == 0) {
+                            return;
+                        }
                         loader.write(buffer);
                     } catch (GErrorException e) {
                         throw new RuntimeException(e);
@@ -87,10 +113,17 @@ public class AlbumArt extends Box {
                 try {
                     loader.close();
                     hasLoaded.set(true);
+                    this.image.queueDraw();
                 } catch (GErrorException e) {
                     throw new RuntimeException(e);
                 }
             }
-        }, EXECUTOR);
+        }, EXECUTOR)
+                .exceptionallyAsync(ex -> {
+                    System.out.printf("error loading img: %s", ex.getMessage());
+                    ex.printStackTrace();
+                    throw new RuntimeException(ex);
+                });
+
     }
 }

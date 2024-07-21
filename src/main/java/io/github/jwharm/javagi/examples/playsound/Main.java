@@ -2,10 +2,8 @@ package io.github.jwharm.javagi.examples.playsound;
 
 import io.github.cdimascio.dotenv.Dotenv;
 import io.github.jwharm.javagi.base.Out;
-import io.github.jwharm.javagi.examples.playsound.components.AlbumArt;
-import io.github.jwharm.javagi.examples.playsound.components.ArtistInfoBox;
-import io.github.jwharm.javagi.examples.playsound.components.ArtistListBox;
-import io.github.jwharm.javagi.examples.playsound.components.PlayerBar;
+import io.github.jwharm.javagi.examples.playsound.components.*;
+import io.github.jwharm.javagi.examples.playsound.components.AppNavigation.AppRoute;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
 import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
@@ -202,19 +200,18 @@ public class Main {
             albumsContainer.append(albumImg);
             ViewStackPage albumsPage = viewStack.addTitled(albumsContainer, "albumsPage", "Albums");
         }
+        var artists = this.client.getArtists();
+        var artistListBox = new ArtistListBox(artists.list());
         {
-            var artists = this.client.getArtists();
             var artistsContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
-            var artistListBox = new ArtistListBox(artists.list());
             artistsContainer.append(artistListBox);
             ViewStackPage artistsPage = viewStack.addTitled(artistsContainer, "artistsPage", "Artists");
         }
+
+        var artistContainer = new ArtistInfoLoader(client);
         {
             var artistId = "7bfaa1b4f3be9ef4f7275de2511da1aa";
-            var artists = this.client.getArtistInfo(artistId);
-            var artistContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
-            var artistListBox = new ArtistInfoBox(artists);
-            artistContainer.append(artistListBox);
+            artistContainer.setArtistId(artistId);
             ViewStackPage artistsPage = viewStack.addTitled(artistContainer, "artistInfoPage", "Artist");
         }
         {
@@ -223,6 +220,28 @@ public class Main {
         {
             ViewStackPage playlistPage = viewStack.addTitled(playlistsContainer, "playlistPage", "Playlists");
         }
+
+        var appNavigation = new AppNavigation((appRoute) -> switch (appRoute) {
+            case AppRoute.RouteAlbumsOverview routeAlbumsOverview -> {
+                viewStack.setVisibleChildName("albumsPage");
+                yield true;
+            }
+            case AppRoute.RouteArtistInfo routeArtistInfo -> {
+                artistContainer.setArtistId(routeArtistInfo.artistId());
+                viewStack.setVisibleChildName("artistInfoPage");
+                yield true;
+            }
+            case AppRoute.RouteArtistsOverview routeArtistsOverview -> {
+                viewStack.setVisibleChildName("artistsPage");
+                yield true;
+            }
+            case AppRoute.RouteHome routeHome -> {
+                viewStack.setVisibleChildName("testPage");
+                yield false;
+            }
+        });
+
+        artistListBox.onArtistSelected(entry -> appNavigation.navigateTo(new AppRoute.RouteArtistInfo(entry.id())));
 
         viewStack.getPages().onSelectionChanged((position, nItems) -> {
             var visibleChild = viewStack.getVisibleChildName();

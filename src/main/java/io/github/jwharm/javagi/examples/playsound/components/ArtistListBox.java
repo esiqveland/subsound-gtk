@@ -7,6 +7,7 @@ import org.gnome.gtk.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class ArtistListBox extends Box {
@@ -14,13 +15,7 @@ public class ArtistListBox extends Box {
     private final ListBox list;
     private final List<ArtistEntry> artists;
     private final Map<String, ArtistEntry> artistsMap;
-
-    public ArtistListBox() {
-        this(List.of(
-                new ArtistEntry("id1", "Coldplay", 1, Optional.empty()),
-                new ArtistEntry("id2", "Metallica", 5, Optional.empty())
-        ));
-    }
+    private Consumer<ArtistEntry> artistSelected = (a) -> {};
 
     public ArtistListBox(List<ArtistEntry> artists) {
         super(Orientation.VERTICAL, 5);
@@ -30,6 +25,10 @@ public class ArtistListBox extends Box {
         this.list.onRowActivated(row -> {
             var artist = this.artists.get(row.getIndex());
             System.out.println("Artists: goto " + artist.name());
+            var handler = artistSelected;
+            if (handler != null) {
+                handler.accept(artist);
+            }
         });
 
 //        var model = ListModel.ListModelImpl.builder().build();
@@ -53,5 +52,9 @@ public class ArtistListBox extends Box {
         this.setHexpand(true);
         this.setVexpand(true);
         this.append(scroll);
+    }
+
+    public void onArtistSelected(Consumer<ArtistEntry> artistEntryConsumer) {
+        this.artistSelected = artistEntryConsumer;
     }
 }
