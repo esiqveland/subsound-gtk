@@ -2,9 +2,11 @@ package io.github.jwharm.javagi.examples.playsound;
 
 import io.github.cdimascio.dotenv.Dotenv;
 import io.github.jwharm.javagi.base.Out;
+import io.github.jwharm.javagi.examples.playsound.components.AlbumArt;
+import io.github.jwharm.javagi.examples.playsound.components.ArtistInfoBox;
 import io.github.jwharm.javagi.examples.playsound.components.ArtistListBox;
 import io.github.jwharm.javagi.examples.playsound.components.PlayerBar;
-import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
 import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import net.beardbot.subsonic.client.SubsonicPreferences;
@@ -172,13 +174,6 @@ public class Main {
         var searchContainer = BoxFullsize().build();
         searchContainer.append(searchMe);
 
-        var albumsMe = Button.withLabel("Albums");
-        albumsMe.onClicked(() -> {
-            System.out.println("albumsMe.onClicked");
-        });
-        var albumsContainer = BoxFullsize().build();
-        albumsContainer.append(albumsMe);
-
         var playlistsMe = Button.withLabel("Playlists");
         playlistsMe.onClicked(() -> {
             System.out.println("playlistsMe.onClicked");
@@ -194,6 +189,17 @@ public class Main {
             ViewStackPage frontPage = viewStack.addTitled(frontPageContainer, "frontPage", "Home");
         }
         {
+            var albumsMe = Button.withLabel("Albums");
+            albumsMe.onClicked(() -> {
+                System.out.println("albumsMe.onClicked");
+            });
+            var albumImg = new AlbumArt(new CoverArt(
+                    "kbW_38ngyv4bR9IeBP23KpMp3yfo4Hi7yLZrFNckVGk",
+                    URI.create("https://play.logisk.org/share/img/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFyLTczMzJiMWFlMTNmZjhjYmUzYTNlOTFkOGQwNGMzODk1XzAiLCJpc3MiOiJORCJ9.kbW_38ngyv4bR9IeBP23KpMp3yfo4Hi7yLZrFNckVGk?size=600")
+            ));
+            var albumsContainer = BoxFullsize().build();
+            albumsContainer.append(albumsMe);
+            albumsContainer.append(albumImg);
             ViewStackPage albumsPage = viewStack.addTitled(albumsContainer, "albumsPage", "Albums");
         }
         {
@@ -202,6 +208,14 @@ public class Main {
             var artistListBox = new ArtistListBox(artists.list());
             artistsContainer.append(artistListBox);
             ViewStackPage artistsPage = viewStack.addTitled(artistsContainer, "artistsPage", "Artists");
+        }
+        {
+            var artistId = "7bfaa1b4f3be9ef4f7275de2511da1aa";
+            var artists = this.client.getArtistInfo(artistId);
+            var artistContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
+            var artistListBox = new ArtistInfoBox(artists);
+            artistContainer.append(artistListBox);
+            ViewStackPage artistsPage = viewStack.addTitled(artistContainer, "artistInfoPage", "Artist");
         }
         {
             ViewStackPage searchPage = viewStack.addTitled(searchContainer, "searchPage", "Search");

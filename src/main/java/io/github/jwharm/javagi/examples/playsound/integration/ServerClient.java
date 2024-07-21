@@ -1,15 +1,51 @@
 package io.github.jwharm.javagi.examples.playsound.integration;
 
+import java.net.URI;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 public interface ServerClient {
 
     ListArtists getArtists();
 
+    ArtistInfo getArtistInfo(String artistId);
+
+    record ArtistInfo(
+            String id,
+            String name,
+            int albumCount,
+            Optional<Instant> starredAt,
+            Optional<CoverArt> coverArt,
+            List<ArtistAlbumInfo> albums
+    ) {
+    }
+
+    record ArtistAlbumInfo(
+            String id,
+            String name,
+            int songCount,
+            String artistId,
+            String artistName,
+            Duration duration,
+            Optional<Instant> starredAt,
+            Optional<CoverArt> coverArt
+    ) {
+        public boolean isStarred() {
+            return starredAt.isPresent();
+        }
+    }
+
+    record CoverArt (
+            String coverArtId,
+            URI coverArtLink
+    ) {}
     record ArtistEntry(
             String id,
             String name,
-            int albumCount
+            int albumCount,
+            Optional<CoverArt> coverArt
     ) {
     }
 

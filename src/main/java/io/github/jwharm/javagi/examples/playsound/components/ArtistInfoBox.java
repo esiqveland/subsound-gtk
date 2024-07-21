@@ -1,6 +1,9 @@
 package io.github.jwharm.javagi.examples.playsound.components;
 
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistAlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistEntry;
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistInfo;
 import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
 
@@ -9,41 +12,39 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class ArtistListBox extends Box {
+public class ArtistInfoBox extends Box {
     private final ScrolledWindow scroll;
+    private final Box infoContainer;
     private final ListBox list;
-    private final List<ArtistEntry> artists;
-    private final Map<String, ArtistEntry> artistsMap;
+    private final Map<String, ArtistAlbumInfo> artistsMap;
+    private final ArtistInfo artist;
 
-    public ArtistListBox() {
-        this(List.of(
-                new ArtistEntry("id1", "Coldplay", 1, Optional.empty()),
-                new ArtistEntry("id2", "Metallica", 5, Optional.empty())
-        ));
-    }
-
-    public ArtistListBox(List<ArtistEntry> artists) {
+    public ArtistInfoBox(ArtistInfo artistInfo) {
         super(Orientation.VERTICAL, 5);
-        this.artists = artists;
-        this.artistsMap = artists.stream().collect(Collectors.toMap(ArtistEntry::id, a -> a));
+        this.artist = artistInfo;
+        this.infoContainer = Box.builder().setHexpand(true).setVexpand(true).build();
+        this.artistImage = new AlbumArt();
+
+        this.artistsMap = artistInfo.albums().stream().collect(Collectors.toMap(
+                ArtistAlbumInfo::id,
+                a -> a
+        ));
         this.list = ListBox.builder().setValign(Align.START).setCssClasses(new String[]{"boxed-list"}).build();
         this.list.onRowActivated(row -> {
-            var artist = this.artists.get(row.getIndex());
-            System.out.println("Artists: goto " + artist.name());
+            var albumInfo = this.artist.albums().get(row.getIndex());
+            System.out.println("ArtistAlbum: goto " + albumInfo.name());
         });
 
-//        var model = ListModel.ListModelImpl.builder().build();
-//        var listSTore = ListStore.builder().build();
         var stringList = StringList.builder().build();
-        this.artists.forEach(i -> stringList.append(i.id()));
+        this.artist.albums().forEach(i -> stringList.append(i.id()));
         this.list.bindModel(stringList, item -> {
             // StringObject is the item type for a StringList ListModel type. StringObject is a GObject.
             StringObject strObj = (StringObject) item;
             var id = strObj.getString();
-            var artist = this.artistsMap.get(id);
+            var albumInfo = this.artistsMap.get(id);
             return ActionRow.builder()
-                    .setTitle(artist.name())
-                    .setSubtitle(artist.albumCount() + " albums")
+                    .setTitle(albumInfo.name())
+                    .setSubtitle(albumInfo.songCount() + " tracks")
                     .setUseMarkup(false)
                     .setActivatable(true)
                     .build();
