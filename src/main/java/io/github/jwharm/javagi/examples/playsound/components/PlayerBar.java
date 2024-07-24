@@ -70,8 +70,6 @@ public class PlayerBar extends Box implements PlaybinPlayer.OnStateChanged, Auto
         try {
             isStateChanging.set(true);
             double volume = next.volume();
-            // TODO: check value within epsilon 0.01
-
             if (!withinEpsilon(volume, volumeButton.getValue(), 0.01)) {
                 volumeButton.setValue(next.volume());
             }

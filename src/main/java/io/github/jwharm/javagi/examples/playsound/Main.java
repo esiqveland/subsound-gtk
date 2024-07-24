@@ -1,9 +1,9 @@
 package io.github.jwharm.javagi.examples.playsound;
 
-import io.github.cdimascio.dotenv.Dotenv;
 import io.github.jwharm.javagi.base.Out;
 import io.github.jwharm.javagi.examples.playsound.components.*;
 import io.github.jwharm.javagi.examples.playsound.components.AppNavigation.AppRoute;
+import io.github.jwharm.javagi.examples.playsound.configuration.Config;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
 import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
@@ -18,30 +18,44 @@ import org.gnome.gtk.*;
 
 import java.io.File;
 import java.net.URI;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static io.github.jwharm.javagi.examples.playsound.utils.Utils.sha256;
+
 public class Main {
-    public static final Dotenv env = Dotenv.load();
+    private final Config config;
     private final PlaybinPlayer player;
     private final SubsonicClient client;
-    private final List<URI> knownSongs = loadSamples("src/main/resources/samples");
 
-    private List<URI> loadSamples(String dirPath) {
+    private final List<Sample> knownSongs = loadSamples("src/main/resources/samples");
+
+    public record Sample(
+            String id,
+            String name,
+            URI uri
+    ){}
+
+    private static List<Sample> loadSamples(String dirPath) {
         File dir = new File(dirPath);
         if (!dir.isDirectory()) {
             throw new IllegalStateException("must be a directory with music files: " + dirPath);
         }
         File[] files = dir.listFiles(File::isFile);
-        return Stream.of(files).map(File::getAbsoluteFile).map(File::toURI).toList();
+        return Stream.of(files).map(File::getAbsoluteFile).map(file -> {
+            var id = sha256(file.getAbsolutePath());
+            var uri = file.toURI();
+            var name = file.getName();
+            return new Sample(id, name, uri);
+        }).toList();
     }
 
     public Main(String[] args) {
         // Initialisation Gst
         Gst.init(new Out<>(args));
-        this.player = new PlaybinPlayer(knownSongs.getFirst());
-        this.client = SubsonicClient.create(getSubsonicSettings(env));
+        this.config = Config.createDefault();
+        this.player = new PlaybinPlayer(knownSongs.getFirst().uri());
+        this.client = SubsonicClient.create(getSubsonicSettings(config));
 
         try {
             Application app = new Application("com.gitlab.subsound.player", ApplicationFlags.DEFAULT_FLAGS);
@@ -53,14 +67,14 @@ public class Main {
         }
     }
 
-    private SubsonicPreferences getSubsonicSettings(Dotenv dotenv) {
+    private SubsonicPreferences getSubsonicSettings(Config config) {
         SubsonicPreferences preferences = new SubsonicPreferences(
-                dotenv.get("SERVER_URL"),
-                dotenv.get("SERVER_USERNAME"),
-                dotenv.get("SERVER_PASSWORD")
+                config.serverConfig.url(),
+                config.serverConfig.username(),
+                config.serverConfig.password()
         );
         preferences.setStreamBitRate(192);
-        preferences.setClientName("MySubsonicClient");
+        preferences.setClientName("Subsound");
         return preferences;
     }
 
@@ -144,13 +158,13 @@ public class Main {
             player.setMute(false);
         });
 
-        List<Button> songButtons = knownSongs.stream().map(songUri -> {
-            var path = Path.of(songUri);
-            var btnName = path.getFileName().toString();
+        List<Button> songButtons = knownSongs.stream().map(sample -> {
+            var btnName = sample.name();
             var btn = Button.withLabel(btnName);
+            var uri = sample.uri();
             btn.onClicked(() -> {
                 System.out.println("Btn: change source to=" + btnName);
-                this.player.setSource(songUri);
+                this.player.setSource(uri);
             });
             return btn;
         }).toList();

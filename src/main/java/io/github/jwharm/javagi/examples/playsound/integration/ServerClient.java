@@ -10,6 +10,7 @@ public interface ServerClient {
     ListArtists getArtists();
     ArtistInfo getArtistInfo(String artistId);
     AlbumInfo getAlbumInfo(String albumId);
+    ServerType getServerType();
 
     record SongInfo(
             String id,
@@ -99,5 +100,9 @@ public interface ServerClient {
     record ListArtists(
             List<ArtistEntry> list
     ) {
+    }
+
+    enum ServerType {
+        SUBSONIC,
     }
 }
