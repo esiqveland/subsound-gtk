@@ -99,9 +99,10 @@ public class SongCache {
             if (res.statusCode() != 200) {
                 throw new RuntimeException("error: statusCode=%d uri=%s".formatted(res.statusCode(), uri.toString()));
             }
-            String content = res.headers().firstValue("content-type").orElse("");
-            if (content.isEmpty() || content.contains("xml") || content.contains("html") || content.contains("json")) {
+            String contentType = res.headers().firstValue("content-type").orElse("");
+            if (contentType.isEmpty() || contentType.contains("xml") || contentType.contains("html") || contentType.contains("json")) {
                 // response does not look like binary music data...
+                throw new RuntimeException("error: statusCode=%d uri=%s contentType=%s".formatted(res.statusCode(), uri.toString(), contentType));
             }
             return Utils.copyLarge(res.body(), out);
         } catch (IOException | InterruptedException e) {
