@@ -1,6 +1,7 @@
 package io.github.jwharm.javagi.examples.playsound;
 
 import io.github.jwharm.javagi.base.Out;
+import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.components.*;
 import io.github.jwharm.javagi.examples.playsound.components.AppNavigation.AppRoute;
 import io.github.jwharm.javagi.examples.playsound.configuration.Config;
@@ -28,14 +29,15 @@ public class Main {
     private final Config config;
     private final PlaybinPlayer player;
     private final SubsonicClient client;
-    private final SongCache songCache;
+    private final AppManager appManager;
 
     public Main(String[] args) {
         // Initialisation Gst
         Gst.init(new Out<>(args));
         this.config = Config.createDefault();
-        this.songCache = new SongCache(this.config.cacheDir);
+        var songCache = new SongCache(this.config.cacheDir);
         this.player = new PlaybinPlayer();
+        this.appManager = new AppManager(player, songCache);
         this.client = SubsonicClient.create(getSubsonicSettings(config));
 
         try {
@@ -152,7 +154,12 @@ public class Main {
             ViewStackPage playlistPage = viewStack.addTitled(playlistsContainer, "playlistPage", "Playlists");
         }
 
-        var albumInfoContainer = new AlbumInfoLoader(client);
+        var albumInfoContainer = new AlbumInfoLoader(
+                client,
+                songInfo -> {
+
+                }
+                );
         {
             ViewStackPage albumInfoPage = viewStack.addTitled(albumInfoContainer, "albumInfoPage", "AlbumInfo");
         }

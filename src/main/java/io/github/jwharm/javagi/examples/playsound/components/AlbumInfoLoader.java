@@ -9,15 +9,18 @@ import org.gnome.gtk.Orientation;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 public class AlbumInfoLoader extends Box {
     private final ServerClient client;
     private final String albumId = "";
     private final AtomicReference<AlbumInfoBox> viewHolder = new AtomicReference<>();
+    private final Consumer<ServerClient.SongInfo> onSongSelected;
 
-    public AlbumInfoLoader(ServerClient client) {
+    public AlbumInfoLoader(ServerClient client, Consumer<ServerClient.SongInfo> onSongSelected) {
         super(Orientation.VERTICAL, 0);
         this.client = client;
+        this.onSongSelected = onSongSelected;
         this.setHexpand(true);
         this.setVexpand(true);
         this.setHalign(Align.FILL);
@@ -39,7 +42,7 @@ public class AlbumInfoLoader extends Box {
             if (current != null) {
                 this.remove(current);
             }
-            var next = new AlbumInfoBox(info);
+            var next = new AlbumInfoBox(info, this.onSongSelected);
             this.viewHolder.set(next);
             this.append(next);
         });
