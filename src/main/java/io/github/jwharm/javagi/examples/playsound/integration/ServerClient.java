@@ -31,6 +31,7 @@ public interface ServerClient {
             Optional<Instant> instant,
             Optional<CoverArt> coverArt,
             String suffix,
+            String streamSuffix,
             URI downloadUri,
             URI streamUri
     ) {}

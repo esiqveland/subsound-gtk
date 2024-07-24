@@ -112,7 +112,7 @@ public class Main {
 
         ViewStack viewStack = ViewStack.builder().build();
         {
-            var testPlayerPage = new TestPlayerPage(this.player);
+            var testPlayerPage = new TestPlayerPage(this.appManager);
             this.player.setSource(testPlayerPage.knownSongs.getFirst().uri());
             ViewStackPage testPage = viewStack.addTitled(testPlayerPage, "testPage", "Testpage");
         }

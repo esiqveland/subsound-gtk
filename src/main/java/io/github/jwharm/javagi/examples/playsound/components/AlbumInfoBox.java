@@ -5,10 +5,11 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongI
 import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
 
-import java.time.Duration;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import static io.github.jwharm.javagi.examples.playsound.utils.Utils.formatDurationLong;
 
 public class AlbumInfoBox extends Box {
     private final ScrolledWindow scroll;
@@ -32,7 +33,7 @@ public class AlbumInfoBox extends Box {
         this.infoContainer.append(this.artistImage);
         this.infoContainer.append(new Label(this.albumInfo.name()));
         this.infoContainer.append(new Label("%d songs".formatted(this.albumInfo.songCount())));
-        this.infoContainer.append(new Label("%s playtime".formatted(formatDuration(this.albumInfo.totalPlayTime()))));
+        this.infoContainer.append(new Label("%s playtime".formatted(formatDurationLong(this.albumInfo.totalPlayTime()))));
 
         this.songIdMap = this.albumInfo.songs().stream().collect(Collectors.toMap(
                 SongInfo::id,
@@ -53,6 +54,13 @@ public class AlbumInfoBox extends Box {
             var id = strObj.getString();
             var songInfo = this.songIdMap.get(id);
             var subtitle = songInfo.trackNumber().map(num -> "" + num).orElse("");
+
+//            return ListBoxRow.builder()
+//                    .setActivatable(true)
+//                    //.setSelectable(true)
+//                    .setChild()
+//                    .build();
+
             return ActionRow.builder()
                     .setTitle(songInfo.title())
                     .setSubtitle(subtitle)
@@ -66,19 +74,5 @@ public class AlbumInfoBox extends Box {
         this.setHexpand(true);
         this.setVexpand(true);
         this.append(scroll);
-    }
-
-    public static String formatDuration(Duration d) {
-        long days = d.toDays();
-        d = d.minusDays(days);
-        long hours = d.toHours();
-        d = d.minusHours(hours);
-        long minutes = d.toMinutes();
-        d = d.minusMinutes(minutes);
-        long seconds = d.getSeconds();
-        return  (days == 0 ? "" : days + " days, ") +
-                (hours == 0 ? "" : hours + " hours, ") +
-                (minutes == 0 ? "" : minutes + " minutes, ") +
-                (seconds == 0 ? "" : seconds + " seconds");
     }
 }

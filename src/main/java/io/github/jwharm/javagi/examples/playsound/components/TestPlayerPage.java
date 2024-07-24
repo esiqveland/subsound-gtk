@@ -1,6 +1,7 @@
 package io.github.jwharm.javagi.examples.playsound.components;
 
-import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
+import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
@@ -8,7 +9,9 @@ import org.gnome.gtk.Orientation;
 
 import java.io.File;
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.sha256;
@@ -16,9 +19,9 @@ import static io.github.jwharm.javagi.examples.playsound.utils.Utils.sha256;
 public class TestPlayerPage extends Box {
     // TODO: move the test player page here
     public final List<Sample> knownSongs ;
-    private final PlaybinPlayer player;
+    private final AppManager player;
 
-    public TestPlayerPage(PlaybinPlayer player) {
+    public TestPlayerPage(AppManager player) {
         super(Orientation.VERTICAL, 4);
         this.player = player;
         this.setValign(Align.CENTER);
@@ -64,21 +67,21 @@ public class TestPlayerPage extends Box {
         var muteOnButton = Button.withLabel("Mute On");
         muteOnButton.onClicked(() -> {
             System.out.println("muteOnButton.onClicked");
-            player.setMute(true);
+            player.mute();
         });
         var muteOffButton = Button.withLabel("Mute Off");
         muteOffButton.onClicked(() -> {
             System.out.println("muteOffButton.onClicked");
-            player.setMute(false);
+            player.unMute();
         });
 
         List<Button> songButtons = knownSongs.stream().map(sample -> {
-            var btnName = sample.name();
+            var btnName = sample.title();
             var btn = Button.withLabel(btnName);
             var uri = sample.uri();
             btn.onClicked(() -> {
                 System.out.println("Btn: change source to=" + btnName);
-                this.player.setSource(uri);
+                this.player.setSource(sample.toSongInfo());
             });
             return btn;
         }).toList();
@@ -96,9 +99,37 @@ public class TestPlayerPage extends Box {
 
     public record Sample(
             String id,
-            String name,
-            URI uri
-    ){}
+            String title,
+            URI uri,
+            long size,
+            String suffix
+    ){
+        public SongInfo toSongInfo() {
+            return new SongInfo(
+                    id,
+                    title,
+                    Optional.of(1),
+                    Optional.of(1),
+                    Optional.of(192),
+                    size,
+                    Optional.empty(),
+                    "",
+                    1L,
+                    Optional.empty(),
+                    "",
+                    "Test artist",
+                    "",
+                    "Test album",
+                    Duration.ofSeconds(121),
+                    Optional.empty(),
+                    Optional.empty(),
+                    suffix,
+                    suffix,
+                    uri,
+                    uri
+            );
+        }
+    }
 
     private static List<Sample> loadSamples(String dirPath) {
         File dir = new File(dirPath);
@@ -108,9 +139,12 @@ public class TestPlayerPage extends Box {
         File[] files = dir.listFiles(File::isFile);
         return Stream.of(files).map(File::getAbsoluteFile).map(file -> {
             var id = sha256(file.getAbsolutePath());
+            var nameParts = file.getName().split("\\.");
+            var suffix = nameParts[nameParts.length - 1];
             var uri = file.toURI();
             var name = file.getName();
-            return new Sample(id, name, uri);
+            var size = file.length();
+            return new Sample(id, name, uri, size, suffix);
         }).toList();
     }
 

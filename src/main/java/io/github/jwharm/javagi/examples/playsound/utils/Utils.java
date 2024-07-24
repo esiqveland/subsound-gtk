@@ -9,7 +9,11 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
+import java.time.Duration;
 import java.util.HexFormat;
+import java.util.Locale;
 
 public class Utils {
     private static final HexFormat HEX = HexFormat.of().withLowerCase();
@@ -44,6 +48,81 @@ public class Utils {
         }
 
         return count;
+    }
+
+    public static String formatDurationLong(Duration d) {
+        long days = d.toDays();
+        d = d.minusDays(days);
+        long hours = d.toHours();
+        d = d.minusHours(hours);
+        long minutes = d.toMinutes();
+        d = d.minusMinutes(minutes);
+        long seconds = d.getSeconds();
+        return  (days == 0 ? "" : days + " days, ") +
+                (hours == 0 ? "" : hours + " hours, ") +
+                (minutes == 0 ? "" : minutes + " minutes, ") +
+                (seconds == 0 ? "" : seconds + " seconds");
+    }
+
+    public static String formatDurationShort(Duration d) {
+        long days = d.toDays();
+        d = d.minusDays(days);
+        long hours = d.toHours();
+        d = d.minusHours(hours);
+        long minutes = d.toMinutes();
+        d = d.minusMinutes(minutes);
+        long seconds = d.getSeconds();
+
+        return  (days == 0 ? "" : days + ":") +
+                (hours == 0 ? "" : "%02d:".formatted(hours)) +
+                ("%02d:".formatted(minutes)) +
+                ("%02d".formatted(seconds));
+    }
+
+    // formatBytes is 1024-base
+    public static String formatBytes(long bytes) {
+        long absB = bytes == Long.MIN_VALUE ? Long.MAX_VALUE : Math.abs(bytes);
+        if (absB < 1024) {
+            return bytes + " B";
+        }
+        long value = absB;
+        CharacterIterator ci = new StringCharacterIterator("KMGTPE");
+        for (int i = 40; i >= 0 && absB > 0xfffccccccccccccL >> i; i -= 10) {
+            value >>= 10;
+            ci.next();
+        }
+        value *= Long.signum(bytes);
+        return String.format("%.1f %ciB", value / 1024.0, ci.current());
+    }
+
+    private static final String[] SI_UNITS = { "B", "kB", "MB", "GB", "TB", "PB", "EB" };
+    private static final String[] BINARY_UNITS = { "B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB" };
+    public static String humanReadableByteCount(final long bytes, final boolean useSIUnits, final Locale locale)
+    {
+        final String[] units = useSIUnits ? SI_UNITS : BINARY_UNITS;
+        final int base = useSIUnits ? 1000 : 1024;
+
+        // When using the smallest unit no decimal point is needed, because it's the exact number.
+        if (bytes < base) {
+            return bytes + " " + units[0];
+        }
+
+        final int exponent = (int) (Math.log(bytes) / Math.log(base));
+        final String unit = units[exponent];
+        return String.format(locale, "%.1f %s", bytes / Math.pow(base, exponent), unit);
+    }
+
+    // formatBytes SI is 1000-base
+    public static String formatBytesSI(long bytes) {
+        if (-1000 < bytes && bytes < 1000) {
+            return bytes + " B";
+        }
+        CharacterIterator ci = new StringCharacterIterator("kMGTPE");
+        while (bytes <= -999_950 || bytes >= 999_950) {
+            bytes /= 1000;
+            ci.next();
+        }
+        return String.format("%.1f %cB", bytes / 1000.0, ci.current());
     }
 
 }

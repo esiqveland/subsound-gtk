@@ -110,6 +110,7 @@ public class SubsonicClient implements ServerClient {
     private SongInfo toSongInfo(Child song) {
         try {
             URI downloadUri = toDownloadUri(client, song);
+            String streamSuffix = this.client.getPreferences().getStreamFormat();
             URI streamUri = this.client.media().streamUrl(song.getId()).toURI();
 
             return new SongInfo(
@@ -130,7 +131,8 @@ public class SubsonicClient implements ServerClient {
                     Duration.ofSeconds(song.getDuration()),
                     ofNullable(song.getStarred()).map(d -> d.toInstant(ZoneOffset.UTC)),
                     toCoverArt(song.getCoverArtId()),
-                    song.getSuffix(),
+                    song.getTranscodedSuffix(),
+                    streamSuffix,
                     downloadUri,
                     streamUri
             );

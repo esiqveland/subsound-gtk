@@ -37,9 +37,13 @@ public class SongCache {
     public record CacheSong(
             String serverId,
             String songId,
-            URI uri,
-            String suffix,
-            long expectedSize
+            URI streamUri,
+            // originalFileSuffix is the original file format originalFileSuffix
+            String originalFileSuffix,
+            // the stream originalFileSuffix is the format we will receive when loading streamUri
+            String streamSuffix,
+            // original size
+            long originalSize
     ) {
     }
 
@@ -54,6 +58,14 @@ public class SongCache {
     }
 
     public GetSongResult getSong(CacheSong songData) {
+        var streamUri = songData.streamUri();
+        switch (streamUri.getScheme()) {
+            case "http", "https":
+                break;
+            case "file":
+                return new GetSongResult(CacheResult.HIT, streamUri);
+        }
+
         var cachePath = this.cachePath(songData);
         var cacheFile = cachePath.cachePath.toAbsolutePath().toFile();
         if (cacheFile.isDirectory()) {
@@ -67,7 +79,6 @@ public class SongCache {
             return new GetSongResult(CacheResult.HIT, cacheFile.toURI());
         }
 
-
         cachePath.tmpFilePath.getParent().toFile().mkdirs();
         var cacheTmpFile = cachePath.tmpFilePath.toAbsolutePath().toFile();
         if (cacheTmpFile.exists()) {
@@ -80,9 +91,9 @@ public class SongCache {
         }
 
         try {
-            long downloadSize = downloadTo(songData.uri, new FileOutputStream(cacheTmpFile));
-            if (downloadSize != songData.expectedSize) {
-                log.info("download size={} does not equal expectedSize={}", downloadSize, songData.expectedSize);
+            long downloadSize = downloadTo(songData.streamUri(), new FileOutputStream(cacheTmpFile));
+            if (downloadSize != songData.originalSize) {
+                log.info("download size={} does not equal originalSize={}", downloadSize, songData.originalSize);
             }
             // rename tmp file to target file.
             cacheTmpFile.renameTo(cacheFile);
@@ -114,6 +125,9 @@ public class SongCache {
     }
 
     static CacheKey toCacheKey(String songId) {
+        // I mean, ideally we would use the checksum of the data, but we dont have this until after we download,
+        // and this is even more weird for live transcoded streams.
+        // So instead we take a hash of the songId as this will probably also give a uniform distribution into our buckets:
         String shasum = sha256(songId);
         var cacheKey = new CacheKey(
                 shasum.substring(0, 2),
@@ -131,8 +145,8 @@ public class SongCache {
 
     private CachehPath cachePath(CacheSong songData) {
         var songId = songData.songId;
-        CacheKey key = toCacheKey(songId);
-        var fileName = "%s.%s".formatted(songId, songData.suffix);
+        var key = toCacheKey(songId);
+        var fileName = "%s.%s".formatted(songId, songData.streamSuffix);
         var cachePath = joinPath(root, songData.serverId, "songs", key.part1, key.part2, key.part3, fileName);
         var cachePathTmp = joinPath(cachePath.getParent(), fileName + ".tmp");
         return new CachehPath(cachePath, cachePathTmp);

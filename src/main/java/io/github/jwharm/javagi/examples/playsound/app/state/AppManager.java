@@ -2,6 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.app.state;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache;
+import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.CacheSong;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.GetSongResult;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import org.slf4j.Logger;
@@ -17,11 +18,14 @@ public class AppManager {
     public record NowPlaying(
             SongInfo song,
             GetSongResult cacheResult
-    ){}
+    ) {
+    }
+
     public record AppState(
             Optional<NowPlaying> nowPlaying,
             PlaybinPlayer.PlayerState player
-    ) {}
+    ) {
+    }
 
     private final PlaybinPlayer player;
     private final SongCache songCache;
@@ -40,24 +44,13 @@ public class AppManager {
         return new AppState(Optional.empty(), this.player.getState());
     }
 
-    public void play() {
-        this.player.play();
-    }
-    public void pause() {
-        this.player.pause();
-    }
-    public void mute() {
-        this.player.setMute(true);
-    }
-    public void unMute() {
-        this.player.setMute(false);
-    }
     public void setSource(SongInfo songInfo) {
-        GetSongResult song = songCache.getSong(new SongCache.CacheSong(
+        GetSongResult song = songCache.getSong(new CacheSong(
                 "123",
                 songInfo.id(),
                 songInfo.streamUri(),
                 songInfo.suffix(),
+                songInfo.streamSuffix(),
                 songInfo.size()
         ));
         log.info("cached: result={} id={} title={}", song.result().name(), songInfo.id(), songInfo.title());
@@ -66,6 +59,26 @@ public class AppManager {
                 old.player
         ));
         this.player.setSource(song.uri());
+    }
+
+    public void play() {
+        this.player.play();
+    }
+
+    public void pause() {
+        this.player.pause();
+    }
+
+    public void mute() {
+        this.player.setMute(true);
+    }
+
+    public void unMute() {
+        this.player.setMute(false);
+    }
+
+    public void setVolume(double linearVolume) {
+        this.player.setVolume(linearVolume);
     }
 
     private void setState(Function<AppState, AppState> modifier) {
