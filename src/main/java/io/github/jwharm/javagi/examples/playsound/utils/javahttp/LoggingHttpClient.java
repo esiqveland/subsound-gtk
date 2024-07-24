@@ -1,5 +1,8 @@
 package io.github.jwharm.javagi.examples.playsound.utils.javahttp;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import java.io.IOException;
@@ -13,11 +16,10 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.logging.Logger;
 
 public class LoggingHttpClient extends HttpClient {
     private final HttpClient delegate;
-    private static final Logger logger = Logger.getLogger(LoggingHttpClient.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(LoggingHttpClient.class);
 
     public LoggingHttpClient(HttpClient delegate) {
         this.delegate = delegate;
@@ -82,16 +84,16 @@ public class LoggingHttpClient extends HttpClient {
     }
 
     private void logError(HttpRequest request, Exception e) {
-        logger.warning("[%s %s] --> ERROR: %s".formatted(request.uri().toString(), request.method(), e.getMessage()));
+        log.error("[%s %s] --> ERROR: %s".formatted(request.uri().toString(), request.method(), e.getMessage()));
     }
 
     private <T> HttpResponse<T> logResponse(HttpResponse<T> res) {
-        logger.info("[%s %s] <-- %d ".formatted(res.request().uri().toString(), res.request().method(), res.statusCode()));
+        log.info("[%s %s] <-- %d ".formatted(res.request().uri().toString(), res.request().method(), res.statusCode()));
         return res;
     }
 
     private void logRequest(HttpRequest request) {
-        logger.info("[%s %s] --> ".formatted(request.uri().toString(), request.method()));
+        log.info("[%s %s] --> ".formatted(request.uri().toString(), request.method()));
     }
 
     @Override

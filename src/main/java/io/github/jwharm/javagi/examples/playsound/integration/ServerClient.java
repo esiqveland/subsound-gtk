@@ -30,10 +30,10 @@ public interface ServerClient {
             Duration duration,
             Optional<Instant> instant,
             Optional<CoverArt> coverArt,
+            String suffix,
             URI downloadUri,
             URI streamUri
-    ) {
-    }
+    ) {}
 
     record AlbumInfo(
             String id,

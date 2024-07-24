@@ -6,6 +6,7 @@ import io.github.jwharm.javagi.examples.playsound.components.AppNavigation.AppRo
 import io.github.jwharm.javagi.examples.playsound.configuration.Config;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
 import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
+import io.github.jwharm.javagi.examples.playsound.persistence.SongCache;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import net.beardbot.subsonic.client.SubsonicPreferences;
 import org.freedesktop.gstreamer.gst.Gst;
@@ -27,11 +28,13 @@ public class Main {
     private final Config config;
     private final PlaybinPlayer player;
     private final SubsonicClient client;
+    private final SongCache songCache;
 
     public Main(String[] args) {
         // Initialisation Gst
         Gst.init(new Out<>(args));
         this.config = Config.createDefault();
+        this.songCache = new SongCache(this.config.cacheDir);
         this.player = new PlaybinPlayer();
         this.client = SubsonicClient.create(getSubsonicSettings(config));
 
