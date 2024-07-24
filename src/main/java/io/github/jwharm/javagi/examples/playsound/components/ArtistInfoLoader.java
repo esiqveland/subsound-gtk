@@ -1,6 +1,7 @@
 package io.github.jwharm.javagi.examples.playsound.components;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistAlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistInfo;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.Align;
@@ -9,11 +10,13 @@ import org.gnome.gtk.Orientation;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 public class ArtistInfoLoader extends Box {
     private final ServerClient client;
     private final String artistId = "";
     private final AtomicReference<ArtistInfoBox> viewHolder = new AtomicReference<>();
+    private Consumer<ArtistAlbumInfo> onAlbumSelected;
 
     public ArtistInfoLoader(ServerClient client) {
         super(Orientation.VERTICAL, 0);
@@ -39,7 +42,9 @@ public class ArtistInfoLoader extends Box {
             if (current != null) {
                 this.remove(current);
             }
-            var next = new ArtistInfoBox(info);
+            var next = new ArtistInfoBox(
+                    info,
+                    albumInfo -> this.onAlbumSelected(albumInfo));
             this.viewHolder.set(next);
             this.append(next);
         });
@@ -55,5 +60,17 @@ public class ArtistInfoLoader extends Box {
             }
             return info;
         });
+    }
+
+    public void setOnAlbumSelected(Consumer<ArtistAlbumInfo> onAlbumSelected) {
+        this.onAlbumSelected = onAlbumSelected;
+    }
+
+    public void onAlbumSelected(ArtistAlbumInfo selected) {
+        var handler = onAlbumSelected;
+        if (handler == null) {
+            return;
+        }
+        handler.accept(selected);
     }
 }

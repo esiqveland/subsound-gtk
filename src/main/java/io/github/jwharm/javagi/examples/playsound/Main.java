@@ -180,6 +180,7 @@ public class Main {
         });
 
         artistListBox.onArtistSelected(entry -> appNavigation.navigateTo(new AppRoute.RouteArtistInfo(entry.id())));
+        artistContainer.setOnAlbumSelected(entry -> appNavigation.navigateTo(new AppRoute.RouteAlbumInfo(entry.id())));
 
         viewStack.getPages().onSelectionChanged((position, nItems) -> {
             var visibleChild = viewStack.getVisibleChildName();

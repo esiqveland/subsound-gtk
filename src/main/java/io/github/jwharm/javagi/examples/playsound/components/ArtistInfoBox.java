@@ -7,9 +7,11 @@ import org.gnome.gtk.*;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class ArtistInfoBox extends Box {
+    private final Consumer<ArtistAlbumInfo> onAlbumSelected;
     private final ScrolledWindow scroll;
     private final Box infoContainer;
     private final ListBox list;
@@ -17,9 +19,10 @@ public class ArtistInfoBox extends Box {
     private final ArtistInfo artist;
     private final Box artistImage;
 
-    public ArtistInfoBox(ArtistInfo artistInfo) {
+    public ArtistInfoBox(ArtistInfo artistInfo, Consumer<ArtistAlbumInfo> onAlbumSelected) {
         super(Orientation.VERTICAL, 0);
         this.artist = artistInfo;
+        this.onAlbumSelected = onAlbumSelected;
         this.artistImage = this.artist.coverArt()
                 .map(AlbumArt::new)
                 .map(artwork -> (Box) artwork)
@@ -39,6 +42,11 @@ public class ArtistInfoBox extends Box {
         this.list.onRowActivated(row -> {
             var albumInfo = this.artist.albums().get(row.getIndex());
             System.out.println("ArtistAlbum: goto " + albumInfo.name() + " (%s)".formatted(albumInfo.id()));
+            var handler = this.onAlbumSelected;
+            if (handler == null) {
+                return;
+            }
+            handler.accept(albumInfo);
         });
 
         var stringList = StringList.builder().build();
