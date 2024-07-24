@@ -98,5 +98,15 @@ public class AppManager {
 
     private void setState(Function<AppState, AppState> modifier) {
         this.currentState.set(modifier.apply(this.currentState.get()));
+        this.notifyListeners();
+    }
+
+    private void notifyListeners() {
+        var state = this.currentState.get();
+        Thread.startVirtualThread(() -> {
+            for (StateListener stateListener : listeners) {
+                stateListener.onStateChanged(state);
+            }    
+        });
     }
 }

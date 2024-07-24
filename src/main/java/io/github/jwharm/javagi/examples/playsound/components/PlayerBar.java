@@ -2,24 +2,28 @@ package io.github.jwharm.javagi.examples.playsound.components;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager.AppState;
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.*;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PlayerBar extends Box implements AppManager.StateListener, AutoCloseable {
     private final AppManager player;
     private final ActionBar mainBar;
-    private final Image albumArt;
+    private final Box albumArtBox;
     private final Label songTitle;
     private final Label albumTitle;
     private final Label artistTitle;
     private final VolumeButton volumeButton;
     private final AtomicBoolean isStateChanging = new AtomicBoolean(false);
+    private Optional<ServerClient.CoverArt> coverArt = Optional.empty();
 
     public PlayerBar(AppManager player) {
-        super(Orientation.VERTICAL, 5);
+        super(Orientation.VERTICAL, 4);
         this.player = player;
+        this.player.addOnStateChanged(this);
 
         Box songInfo = new Box(Orientation.VERTICAL, 2);
         songTitle = Label.builder().setLabel("Song title").build();
@@ -29,12 +33,18 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         artistTitle = Label.builder().setLabel("Artist title").build();
         songInfo.append(artistTitle);
 
-        albumArt = Image.fromIconName("playlist-symbolic");
+        this.albumArtBox = Box.builder()
+            .setOrientation(Orientation.VERTICAL)
+            .setHexpand(true)
+            .setVexpand(true)
+            .build();
+        var albumArt = AlbumArt.placeholderImage();
+        albumArtBox.append(albumArt);
 
         Box nowPlaying = Box.builder()
                 .setOrientation(Orientation.HORIZONTAL)
                 .build();
-        nowPlaying.append(albumArt);
+        nowPlaying.append(albumArtBox);
         nowPlaying.append(songInfo);
 
         AppState state = player.getState();
@@ -58,13 +68,11 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         mainBar.packStart(nowPlaying);
         mainBar.packEnd(volumeBox);
         this.append(mainBar);
-
-        player.addOnStateChanged(this);
     }
 
     @Override
     public void close() throws Exception {
-        player.removeOnStateChanged(this);
+        this.player.removeOnStateChanged(this);
     }
 
     public static boolean withinEpsilon(double value1, double value2, double epsilon) {
@@ -79,6 +87,9 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         try {
             isStateChanging.set(true);
 
+            if (coverArt.isPresent()) {
+                fdsfdsafdas
+            }
             double volume = state.player().volume();
             Utils.runOnMainThread(() -> {
                 if (!withinEpsilon(volume, volumeButton.getValue(), 0.01)) {
