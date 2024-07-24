@@ -2,6 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.components;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistInfo;
+import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Orientation;
@@ -32,14 +33,16 @@ public class ArtistInfoLoader extends Box {
         return this;
     }
 
-    private synchronized void replaceArtistInfo(ArtistInfo info) {
+    private void replaceArtistInfo(ArtistInfo info) {
         var current = viewHolder.get();
-        if (current != null) {
-            //this.remove(current);
-        }
-        var next = new ArtistInfoBox(info);
-        //this.viewHolder.set(next);
-        //this.append(next);
+        Utils.runOnMainThread(() -> {
+            if (current != null) {
+                this.remove(current);
+            }
+            var next = new ArtistInfoBox(info);
+            this.viewHolder.set(next);
+            this.append(next);
+        });
     }
 
     private CompletableFuture<ArtistInfo> doLoad(String artistId) {

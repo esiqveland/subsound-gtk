@@ -1,5 +1,8 @@
 package io.github.jwharm.javagi.examples.playsound.utils;
 
+import org.gnome.glib.GLib;
+import org.gnome.glib.SourceOnceFunc;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -10,6 +13,10 @@ import java.util.HexFormat;
 
 public class Utils {
     private static final HexFormat HEX = HexFormat.of().withLowerCase();
+
+    public static void runOnMainThread(SourceOnceFunc fn) {
+        GLib.idleAddOnce(fn);
+    }
 
     public static String sha256(String value) {
         try {

@@ -5,6 +5,7 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.Cover
 import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
 import org.gnome.gdk.Paintable;
 import org.gnome.gdkpixbuf.PixbufLoader;
+import org.gnome.glib.GLib;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Image;
 import org.gnome.gtk.Orientation;
@@ -90,35 +91,39 @@ public class AlbumArt extends Box {
 
     public void startLoad(PixbufLoader loader) {
         CompletableFuture<Void> loadingFuture = CompletableFuture.runAsync(() -> {
-            if (hasLoaded.get()) {
-                return;
-            }
-            if (isLoading.get()) {
-                return;
-            }
-            try {
-                THUMB_LOADER.loadThumb(this.artwork.coverArtLink(), buffer -> {
-                    try {
-                        if (buffer == null || buffer.length == 0) {
-                            return;
-                        }
-                        loader.write(buffer);
-                    } catch (GErrorException e) {
-                        throw new RuntimeException(e);
+                    if (hasLoaded.get()) {
+                        return;
                     }
-                });
-                System.out.println("%s: id=%s: LOADED OK".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
-            } finally {
-                isLoading.set(false);
-                try {
-                    loader.close();
-                    hasLoaded.set(true);
-                    this.image.queueDraw();
-                } catch (GErrorException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }, EXECUTOR)
+                    if (isLoading.get()) {
+                        return;
+                    }
+                    try {
+                        THUMB_LOADER.loadThumb(this.artwork.coverArtLink(), buffer -> {
+                            if (buffer == null || buffer.length == 0) {
+                                return;
+                            }
+                            GLib.idleAddOnce(() -> {
+                                try {
+                                    loader.write(buffer);
+                                } catch (GErrorException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            });
+                        });
+                        System.out.println("%s: id=%s: LOADED OK".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
+                    } finally {
+                        isLoading.set(false);
+                        GLib.idleAddOnce(() -> {
+                            try {
+                                loader.close();
+                            } catch (GErrorException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
+                        hasLoaded.set(true);
+                        this.image.queueDraw();
+                    }
+                }, EXECUTOR)
                 .exceptionallyAsync(ex -> {
                     System.out.printf("error loading img: %s", ex.getMessage());
                     ex.printStackTrace();
