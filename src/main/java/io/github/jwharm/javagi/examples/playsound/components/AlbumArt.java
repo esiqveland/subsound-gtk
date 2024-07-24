@@ -17,13 +17,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class AlbumArt extends Box {
     private static final int DEFAULT_SIZE = 400;
     private static final ExecutorService EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
-    private static final ThumbLoader THUMB_LOADER = new ThumbLoader();
 
     private final CoverArt artwork;
     private final AtomicBoolean hasLoaded = new AtomicBoolean(false);
     private final AtomicBoolean isLoading = new AtomicBoolean(false);
     private final AtomicBoolean isUpdating = new AtomicBoolean(false);
     private final Image image;
+    private final ThumbLoader thumbLoader;
 
 
     // not present artwork returns a placeholder image
@@ -39,13 +39,14 @@ public class AlbumArt extends Box {
         return box;
     }
 
-    public AlbumArt(CoverArt artwork) {
-        this(artwork, 400);
+    public AlbumArt(CoverArt artwork, ThumbLoader thumbLoader) {
+        this(artwork, thumbLoader, 400);
     }
 
-    public AlbumArt(CoverArt artwork, int size) {
+    public AlbumArt(CoverArt artwork, ThumbLoader thumbLoader, int size) {
         super(Orientation.VERTICAL, 0);
         this.artwork = artwork;
+        this.thumbLoader = thumbLoader;
         // See: https://docs.gtk.org/gdk-pixbuf/class.PixbufLoader.html
         var loader = PixbufLoader.builder().build();
         this.image = Image.fromPixbuf(loader.getPixbuf());
@@ -97,7 +98,7 @@ public class AlbumArt extends Box {
                         return;
                     }
                     try {
-                        THUMB_LOADER.loadThumb(this.artwork.coverArtLink(), buffer -> {
+                        thumbLoader.load(this.artwork, buffer -> {
                             if (buffer == null || buffer.length == 0) {
                                 return;
                             }

@@ -9,27 +9,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 public class AppManager {
     private static final Logger log = LoggerFactory.getLogger(AppManager.class);
-
-    public record NowPlaying(
-            SongInfo song,
-            GetSongResult cacheResult
-    ) {
-    }
-
-    public record AppState(
-            Optional<NowPlaying> nowPlaying,
-            PlaybinPlayer.PlayerState player
-    ) {
-    }
-
     private final PlaybinPlayer player;
     private final SongCache songCache;
     private final AtomicReference<AppState> currentState = new AtomicReference<>();
+    private final CopyOnWriteArrayList<StateListener> listeners = new CopyOnWriteArrayList<>();
 
     public AppManager(PlaybinPlayer player, SongCache songCache) {
         this.player = player;
@@ -42,6 +31,32 @@ public class AppManager {
 
     private AppState buildState() {
         return new AppState(Optional.empty(), this.player.getState());
+    }
+
+    public AppState getState() {
+        return this.currentState.get();
+    }
+
+    public interface StateListener {
+        void onStateChanged(AppState state);
+    }
+    public void addOnStateChanged(StateListener lis) {
+        listeners.add(lis);
+    }
+    public void removeOnStateChanged(StateListener lis) {
+        listeners.remove(lis);
+    }
+
+    public record NowPlaying(
+            SongInfo song,
+            GetSongResult cacheResult
+    ) {
+    }
+
+    public record AppState(
+            Optional<NowPlaying> nowPlaying,
+            PlaybinPlayer.PlayerState player
+    ) {
     }
 
     public void setSource(SongInfo songInfo) {

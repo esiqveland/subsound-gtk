@@ -6,6 +6,7 @@ import io.github.jwharm.javagi.examples.playsound.components.*;
 import io.github.jwharm.javagi.examples.playsound.components.AppNavigation.AppRoute;
 import io.github.jwharm.javagi.examples.playsound.configuration.Config;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
+import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
 import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
@@ -22,6 +23,8 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 import java.net.URI;
 
 public class Main {
+    public static final String SERVER_ID = "123";
+
     static {
         // Bridge/route all JUL log records to the SLF4J API.
         SLF4JBridgeHandler.install();
@@ -30,12 +33,14 @@ public class Main {
     private final PlaybinPlayer player;
     private final SubsonicClient client;
     private final AppManager appManager;
+    private final ThumbLoader thumbLoader;
 
     public Main(String[] args) {
         // Initialisation Gst
         Gst.init(new Out<>(args));
         this.config = Config.createDefault();
         var songCache = new SongCache(this.config.cacheDir);
+        this.thumbLoader = new ThumbLoader(config.cacheDir);
         this.player = new PlaybinPlayer();
         this.appManager = new AppManager(player, songCache);
         this.client = SubsonicClient.create(getSubsonicSettings(config));
@@ -125,9 +130,10 @@ public class Main {
                 System.out.println("albumsMe.onClicked");
             });
             var albumImg = new AlbumArt(new CoverArt(
+                    SERVER_ID,
                     "kbW_38ngyv4bR9IeBP23KpMp3yfo4Hi7yLZrFNckVGk",
                     URI.create("https://play.logisk.org/share/img/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFyLTczMzJiMWFlMTNmZjhjYmUzYTNlOTFkOGQwNGMzODk1XzAiLCJpc3MiOiJORCJ9.kbW_38ngyv4bR9IeBP23KpMp3yfo4Hi7yLZrFNckVGk?size=600")
-            ));
+            ), thumbLoader);
             var albumsContainer = BoxFullsize().build();
             albumsContainer.append(albumsMe);
             albumsContainer.append(albumImg);
@@ -141,7 +147,7 @@ public class Main {
             ViewStackPage artistsPage = viewStack.addTitled(artistsContainer, "artistsPage", "Artists");
         }
 
-        var artistContainer = new ArtistInfoLoader(client);
+        var artistContainer = new ArtistInfoLoader(thumbLoader, client);
         {
             var artistId = "7bfaa1b4f3be9ef4f7275de2511da1aa";
             artistContainer.setArtistId(artistId);
@@ -155,6 +161,7 @@ public class Main {
         }
 
         var albumInfoContainer = new AlbumInfoLoader(
+                thumbLoader,
                 client,
                 appManager::setSource
         );
@@ -219,7 +226,7 @@ public class Main {
         headerBar.packStart(searchButton);
         headerBar.packEnd(settingsButton);
 
-        var playerBar = new PlayerBar(player);
+        var playerBar = new PlayerBar(appManager);
         var bottomBar = new Box(Orientation.VERTICAL, 10);
         bottomBar.append(viewSwitcherBar);
         bottomBar.append(playerBar);

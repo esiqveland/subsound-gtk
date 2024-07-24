@@ -2,6 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.components;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistAlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistInfo;
+import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
 import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
 
@@ -18,13 +19,22 @@ public class ArtistInfoBox extends Box {
     private final Map<String, ArtistAlbumInfo> artistsMap;
     private final ArtistInfo artist;
     private final Box artistImage;
+    private final ThumbLoader thumbLoader;
 
-    public ArtistInfoBox(ArtistInfo artistInfo, Consumer<ArtistAlbumInfo> onAlbumSelected) {
+    public ArtistInfoBox(
+            ThumbLoader thumbLoader,
+            ArtistInfo artistInfo,
+            Consumer<ArtistAlbumInfo> onAlbumSelected
+    ) {
         super(Orientation.VERTICAL, 0);
+        this.thumbLoader = thumbLoader;
         this.artist = artistInfo;
         this.onAlbumSelected = onAlbumSelected;
         this.artistImage = this.artist.coverArt()
-                .map(AlbumArt::new)
+                .map(coverArt -> new AlbumArt(
+                        coverArt,
+                        thumbLoader
+                ))
                 .map(artwork -> (Box) artwork)
                 .orElseGet(AlbumArt::placeholderImage);
         this.infoContainer = Box.builder().setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).build();
@@ -79,7 +89,7 @@ public class ArtistInfoBox extends Box {
         long minutes = d.toMinutes();
         d = d.minusMinutes(minutes);
         long seconds = d.getSeconds();
-        return  (days == 0 ? "" : days + " days, ") +
+        return (days == 0 ? "" : days + " days, ") +
                 (hours == 0 ? "" : hours + " hours, ") +
                 (minutes == 0 ? "" : minutes + " minutes, ") +
                 (seconds == 0 ? "" : seconds + " seconds");

@@ -2,6 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.components;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.AlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
+import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
 import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
 
@@ -20,13 +21,22 @@ public class AlbumInfoBox extends Box {
     private final AlbumInfo albumInfo;
     private final Box artistImage;
     private final Consumer<SongInfo> onSongSelected;
+    private final ThumbLoader thumbLoader;
 
-    public AlbumInfoBox(AlbumInfo albumInfo, Consumer<SongInfo> onSongSelected) {
+    public AlbumInfoBox(
+            ThumbLoader thumbLoader,
+            AlbumInfo albumInfo,
+            Consumer<SongInfo> onSongSelected
+    ) {
         super(Orientation.VERTICAL, 0);
+        this.thumbLoader = thumbLoader;
         this.albumInfo = albumInfo;
         this.onSongSelected = onSongSelected;
         this.artistImage = this.albumInfo.coverArt()
-                .map(AlbumArt::new)
+                .map(coverArt -> new AlbumArt(
+                        coverArt,
+                        thumbLoader
+                ))
                 .map(artwork -> (Box) artwork)
                 .orElseGet(AlbumArt::placeholderImage);
         this.infoContainer = Box.builder().setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).build();

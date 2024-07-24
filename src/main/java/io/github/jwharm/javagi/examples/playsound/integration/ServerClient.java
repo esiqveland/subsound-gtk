@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ServerClient {
+    // serverId is a client generated or server generated globally unique id for this specific server integration
+    //String serverId();
+
     ListArtists getArtists();
     ArtistInfo getArtistInfo(String artistId);
     AlbumInfo getAlbumInfo(String albumId);
@@ -89,6 +92,7 @@ public interface ServerClient {
     }
 
     record CoverArt(
+            String serverId,
             String coverArtId,
             URI coverArtLink
     ) {

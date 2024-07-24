@@ -1,18 +1,14 @@
 package io.github.jwharm.javagi.examples.playsound.components;
 
-import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
-import org.gnome.gtk.ActionBar;
-import org.gnome.gtk.Align;
-import org.gnome.gtk.Box;
-import org.gnome.gtk.Image;
-import org.gnome.gtk.Label;
-import org.gnome.gtk.Orientation;
-import org.gnome.gtk.VolumeButton;
+import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
+import io.github.jwharm.javagi.examples.playsound.app.state.AppManager.AppState;
+import io.github.jwharm.javagi.examples.playsound.utils.Utils;
+import org.gnome.gtk.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class PlayerBar extends Box implements PlaybinPlayer.OnStateChanged, AutoCloseable {
-    private final PlaybinPlayer player;
+public class PlayerBar extends Box implements AppManager.StateListener, AutoCloseable {
+    private final AppManager player;
     private final ActionBar mainBar;
     private final Image albumArt;
     private final Label songTitle;
@@ -21,7 +17,7 @@ public class PlayerBar extends Box implements PlaybinPlayer.OnStateChanged, Auto
     private final VolumeButton volumeButton;
     private final AtomicBoolean isStateChanging = new AtomicBoolean(false);
 
-    public PlayerBar(PlaybinPlayer player) {
+    public PlayerBar(AppManager player) {
         super(Orientation.VERTICAL, 5);
         this.player = player;
 
@@ -41,7 +37,8 @@ public class PlayerBar extends Box implements PlaybinPlayer.OnStateChanged, Auto
         nowPlaying.append(albumArt);
         nowPlaying.append(songInfo);
 
-        volumeButton = VolumeButton.builder().setValue(player.getVolume()).build();
+        AppState state = player.getState();
+        volumeButton = VolumeButton.builder().setValue(state.player().volume()).build();
         volumeButton.onValueChanged(val -> {
             if (this.isStateChanging.get()) {
                 return;
@@ -62,20 +59,7 @@ public class PlayerBar extends Box implements PlaybinPlayer.OnStateChanged, Auto
         mainBar.packEnd(volumeBox);
         this.append(mainBar);
 
-        player.onStateChanged(this);
-    }
-
-    @Override
-    public void onState(PlaybinPlayer.PlayerState next) {
-        try {
-            isStateChanging.set(true);
-            double volume = next.volume();
-            if (!withinEpsilon(volume, volumeButton.getValue(), 0.01)) {
-                volumeButton.setValue(next.volume());
-            }
-        } finally {
-            isStateChanging.set(false);
-        }
+        player.addOnStateChanged(this);
     }
 
     @Override
@@ -88,4 +72,35 @@ public class PlayerBar extends Box implements PlaybinPlayer.OnStateChanged, Auto
         return diff < epsilon;
     }
 
+    @Override
+    public void onStateChanged(AppState state) {
+        var player = state.player();
+        var playing = state.nowPlaying();
+        try {
+            isStateChanging.set(true);
+
+            double volume = state.player().volume();
+            Utils.runOnMainThread(() -> {
+                if (!withinEpsilon(volume, volumeButton.getValue(), 0.01)) {
+                    volumeButton.setValue(volume);
+                }
+                playing.ifPresent(nowPlaying -> {
+                    var song = nowPlaying.song();
+
+                    if (!song.title().equals(songTitle.getLabel())) {
+                        songTitle.setLabel(song.title());
+                    }
+                    if (!song.album().equals(albumTitle.getLabel())) {
+                        albumTitle.setLabel(song.album());
+                    }
+                    if (!song.artist().equals(artistTitle.getLabel())) {
+                        artistTitle.setLabel(song.artist());
+                    }
+                });
+            });
+        } finally {
+            isStateChanging.set(false);
+        }
+
+    }
 }

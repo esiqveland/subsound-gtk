@@ -2,6 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.components;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.AlbumInfo;
+import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
@@ -16,9 +17,15 @@ public class AlbumInfoLoader extends Box {
     private final String albumId = "";
     private final AtomicReference<AlbumInfoBox> viewHolder = new AtomicReference<>();
     private final Consumer<ServerClient.SongInfo> onSongSelected;
+    private final ThumbLoader thumbLoader;
 
-    public AlbumInfoLoader(ServerClient client, Consumer<ServerClient.SongInfo> onSongSelected) {
+    public AlbumInfoLoader(
+            ThumbLoader thumbLoader,
+            ServerClient client,
+            Consumer<ServerClient.SongInfo> onSongSelected
+    ) {
         super(Orientation.VERTICAL, 0);
+        this.thumbLoader = thumbLoader;
         this.client = client;
         this.onSongSelected = onSongSelected;
         this.setHexpand(true);
@@ -42,7 +49,7 @@ public class AlbumInfoLoader extends Box {
             if (current != null) {
                 this.remove(current);
             }
-            var next = new AlbumInfoBox(info, this.onSongSelected);
+            var next = new AlbumInfoBox(thumbLoader, info, this.onSongSelected);
             this.viewHolder.set(next);
             this.append(next);
         });
