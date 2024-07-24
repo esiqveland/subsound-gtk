@@ -92,7 +92,7 @@ public class PlaybinPlayer {
         END_OF_STREAM,
     }
 
-    private final Thread mainLoopThread;
+    private final Thread playerLoopThread;
     private final MainContext playerContext;
     private final MainLoop loop;
     //    Pipeline playbinEl;
@@ -354,9 +354,9 @@ public class PlaybinPlayer {
         }
         GLib.print("Running...\n");
 
-        mainLoopThread = new Thread(() -> {
+        playerLoopThread = new Thread(() -> {
             loop.run();
-            System.out.println("mainLoopThread: run finished??");
+            System.out.println("playerLoopThread: run finished??");
             // Out of the main loop, clean up nicely
 //            GLib.print("Returned, stopping playback\n");
 //            pipeline.setState(State.NULL);
@@ -364,7 +364,7 @@ public class PlaybinPlayer {
 //            GLib.print("Deleting pipeline\n");
 //            Source.remove(busWatchId);
         }, "player-main-loop");
-        mainLoopThread.start();
+        playerLoopThread.start();
     }
 
     public double getVolume() {
@@ -406,7 +406,7 @@ public class PlaybinPlayer {
             loop.quit();
         }
         try {
-            mainLoopThread.join(10_000L);
+            playerLoopThread.join(10_000L);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

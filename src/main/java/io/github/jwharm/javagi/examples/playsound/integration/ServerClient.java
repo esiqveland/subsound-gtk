@@ -49,6 +49,10 @@ public interface ServerClient {
         public boolean isStarred() {
             return starredAt.isPresent();
         }
+
+        public Duration totalPlayTime() {
+            return Duration.ofSeconds(this.songs.stream().mapToLong(a -> a.duration.toSeconds()).sum());
+        }
     }
 
     record ArtistInfo(

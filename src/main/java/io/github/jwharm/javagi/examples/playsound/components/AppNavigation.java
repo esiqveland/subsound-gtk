@@ -19,9 +19,8 @@ public class AppNavigation {
         record RouteHome() implements AppRoute {}
         record RouteArtistsOverview() implements AppRoute {}
         record RouteAlbumsOverview() implements AppRoute {}
-        record RouteArtistInfo(
-                String artistId
-        ) implements AppRoute {}
+        record RouteArtistInfo(String artistId) implements AppRoute {}
+        record RouteAlbumInfo(String albumId) implements AppRoute {}
     }
 
     public void navigateTo(AppRoute route) {

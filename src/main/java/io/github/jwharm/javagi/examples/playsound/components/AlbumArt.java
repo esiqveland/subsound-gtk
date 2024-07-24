@@ -3,7 +3,6 @@ package io.github.jwharm.javagi.examples.playsound.components;
 import io.github.jwharm.javagi.base.GErrorException;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
 import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
-import org.gnome.gdk.Paintable;
 import org.gnome.gdkpixbuf.PixbufLoader;
 import org.gnome.glib.GLib;
 import org.gnome.gtk.Box;

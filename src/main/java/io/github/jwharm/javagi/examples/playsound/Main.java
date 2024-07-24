@@ -149,6 +149,11 @@ public class Main {
             ViewStackPage playlistPage = viewStack.addTitled(playlistsContainer, "playlistPage", "Playlists");
         }
 
+        var albumInfoContainer = new AlbumInfoLoader(client);
+        {
+            ViewStackPage albumInfoPage = viewStack.addTitled(albumInfoContainer, "albumInfoPage", "AlbumInfo");
+        }
+
         var appNavigation = new AppNavigation((appRoute) -> switch (appRoute) {
             case AppRoute.RouteAlbumsOverview routeAlbumsOverview -> {
                 viewStack.setVisibleChildName("albumsPage");
@@ -166,6 +171,11 @@ public class Main {
             case AppRoute.RouteHome routeHome -> {
                 viewStack.setVisibleChildName("testPage");
                 yield false;
+            }
+            case AppRoute.RouteAlbumInfo route -> {
+                albumInfoContainer.setAlbumId(route.albumId());
+                viewStack.setVisibleChildName("albumInfoPage");
+                yield true;
             }
         });
 
