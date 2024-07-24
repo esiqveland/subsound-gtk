@@ -156,10 +156,8 @@ public class Main {
 
         var albumInfoContainer = new AlbumInfoLoader(
                 client,
-                songInfo -> {
-
-                }
-                );
+                appManager::setSource
+        );
         {
             ViewStackPage albumInfoPage = viewStack.addTitled(albumInfoContainer, "albumInfoPage", "AlbumInfo");
         }
