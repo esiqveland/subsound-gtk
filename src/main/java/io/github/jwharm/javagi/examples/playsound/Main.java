@@ -15,50 +15,28 @@ import org.gnome.adw.HeaderBar;
 import org.gnome.adw.*;
 import org.gnome.gio.ApplicationFlags;
 import org.gnome.gtk.*;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
-import java.io.File;
 import java.net.URI;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static io.github.jwharm.javagi.examples.playsound.utils.Utils.sha256;
 
 public class Main {
+    static {
+        // Bridge/route all JUL log records to the SLF4J API.
+        SLF4JBridgeHandler.install();
+    }
     private final Config config;
     private final PlaybinPlayer player;
     private final SubsonicClient client;
-
-    private final List<Sample> knownSongs = loadSamples("src/main/resources/samples");
-
-    public record Sample(
-            String id,
-            String name,
-            URI uri
-    ){}
-
-    private static List<Sample> loadSamples(String dirPath) {
-        File dir = new File(dirPath);
-        if (!dir.isDirectory()) {
-            throw new IllegalStateException("must be a directory with music files: " + dirPath);
-        }
-        File[] files = dir.listFiles(File::isFile);
-        return Stream.of(files).map(File::getAbsoluteFile).map(file -> {
-            var id = sha256(file.getAbsolutePath());
-            var uri = file.toURI();
-            var name = file.getName();
-            return new Sample(id, name, uri);
-        }).toList();
-    }
 
     public Main(String[] args) {
         // Initialisation Gst
         Gst.init(new Out<>(args));
         this.config = Config.createDefault();
-        this.player = new PlaybinPlayer(knownSongs.getFirst().uri());
+        this.player = new PlaybinPlayer();
         this.client = SubsonicClient.create(getSubsonicSettings(config));
 
         try {
-            Application app = new Application("com.gitlab.subsound.player", ApplicationFlags.DEFAULT_FLAGS);
+            Application app = new Application("com.subsound.player", ApplicationFlags.DEFAULT_FLAGS);
             app.onActivate(() -> onActivate(app));
             app.onShutdown(this.player::quit);
             app.run(args);
@@ -110,79 +88,13 @@ public class Main {
         var searchBar = SearchBar.builder()
                 .setChild(searchEntry)
                 .build();
-        var helloWorld = Button.withLabel("Hello World");
-        helloWorld.onClicked(() -> {
-            System.out.println("helloWorld.onClicked");
-        });
-        var playButton = Button.withLabel("Play");
-        playButton.onClicked(() -> {
-            System.out.println("playButton.onClicked");
-            player.play();
-        });
-        var pauseButton = Button.withLabel("Pause");
-        pauseButton.onClicked(() -> {
-            System.out.println("pauseButton.onClicked");
-            player.pause();
-        });
+
+        var frontPageContainer = BoxFullsize().build();
 
         var searchMe = Button.withLabel("Search me");
         searchMe.onClicked(() -> {
             System.out.println("SearchMe.onClicked");
         });
-
-        var volumeHalf = Button.withLabel("Volume 0.5");
-        volumeHalf.onClicked(() -> {
-            System.out.println("volumeHalf.onClicked");
-            player.setVolume(0.50);
-        });
-
-        var volumeQuarter = Button.withLabel("Volume 0.25");
-        volumeQuarter.onClicked(() -> {
-            System.out.println("volumeQuarter.onClicked");
-            player.setVolume(0.250);
-        });
-
-        var volumeFull = Button.withLabel("Volume 1.0");
-        volumeFull.onClicked(() -> {
-            System.out.println("volumeFull.onClicked");
-            player.setVolume(1.0);
-        });
-        var muteOnButton = Button.withLabel("Mute On");
-        muteOnButton.onClicked(() -> {
-            System.out.println("muteOnButton.onClicked");
-            player.setMute(true);
-        });
-        var muteOffButton = Button.withLabel("Mute Off");
-        muteOffButton.onClicked(() -> {
-            System.out.println("muteOffButton.onClicked");
-            player.setMute(false);
-        });
-
-        List<Button> songButtons = knownSongs.stream().map(sample -> {
-            var btnName = sample.name();
-            var btn = Button.withLabel(btnName);
-            var uri = sample.uri();
-            btn.onClicked(() -> {
-                System.out.println("Btn: change source to=" + btnName);
-                this.player.setSource(uri);
-            });
-            return btn;
-        }).toList();
-
-        var testPageContainer = BoxFullsize().build();
-        testPageContainer.append(searchBar);
-        testPageContainer.append(helloWorld);
-        testPageContainer.append(playButton);
-        testPageContainer.append(pauseButton);
-        songButtons.forEach(testPageContainer::append);
-        testPageContainer.append(muteOnButton);
-        testPageContainer.append(muteOffButton);
-        testPageContainer.append(volumeFull);
-        testPageContainer.append(volumeHalf);
-        testPageContainer.append(volumeQuarter);
-
-        var frontPageContainer = BoxFullsize().build();
-
         var searchContainer = BoxFullsize().build();
         searchContainer.append(searchMe);
 
@@ -195,7 +107,9 @@ public class Main {
 
         ViewStack viewStack = ViewStack.builder().build();
         {
-            ViewStackPage testPage = viewStack.addTitled(testPageContainer, "testPage", "Testpage");
+            var testPlayerPage = new TestPlayerPage(this.player);
+            this.player.setSource(testPlayerPage.knownSongs.getFirst().uri());
+            ViewStackPage testPage = viewStack.addTitled(testPlayerPage, "testPage", "Testpage");
         }
         {
             ViewStackPage frontPage = viewStack.addTitled(frontPageContainer, "frontPage", "Home");

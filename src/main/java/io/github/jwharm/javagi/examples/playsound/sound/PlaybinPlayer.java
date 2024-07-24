@@ -311,6 +311,10 @@ public class PlaybinPlayer {
         this.notifyState();
     }
 
+    public PlaybinPlayer() {
+        this(null);
+    }
+
     public PlaybinPlayer(URI initialFile) {
         // Initialisation
         // Init should be done from Main function
