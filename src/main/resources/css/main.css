@@ -1,0 +1,9 @@
+
+.starred {
+    color: yellow;
+    font-size: 24px;
+}
+.starred:hover {
+    text-decoration: underline;
+    font-weight: bold;
+}

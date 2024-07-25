@@ -31,7 +31,7 @@ public interface ServerClient {
             String albumId,
             String album,
             Duration duration,
-            Optional<Instant> instant,
+            Optional<Instant> starred,
             Optional<CoverArt> coverArt,
             String suffix,
             String streamSuffix,

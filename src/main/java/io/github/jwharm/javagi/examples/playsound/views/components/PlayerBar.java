@@ -80,11 +80,28 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                 .setOrientation(Orientation.VERTICAL)
                 .setValign(Align.CENTER)
                 .build();
-        volumeBox.append(new Label("Volume"));
         volumeBox.append(volumeButton);
+
+        var playButton = Button
+                .withLabel("Play");
+        playButton.onClicked(player::play);
+        var pauseButton = Button
+                .withLabel("Pause");
+        playButton.onClicked(player::pause);
+
+        var playerControls = Box.builder()
+                .setSpacing(2)
+                .setOrientation(Orientation.HORIZONTAL)
+                .setValign(Align.CENTER)
+                .setHalign(Align.CENTER)
+                .setVexpand(true)
+                .build();
+        playerControls.append(playButton);
+        playerControls.append(pauseButton);
 
         mainBar = ActionBar.builder().setVexpand(true).setValign(Align.CENTER).build();
         mainBar.packStart(nowPlaying);
+        mainBar.setCenterWidget(playerControls);
         mainBar.packEnd(volumeBox);
         this.append(mainBar);
     }

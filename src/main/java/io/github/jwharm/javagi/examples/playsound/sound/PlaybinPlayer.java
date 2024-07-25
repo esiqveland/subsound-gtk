@@ -127,6 +127,9 @@ public class PlaybinPlayer {
     public void setSource(URI uri) {
         this.currentUri = uri;
         var fileUri = uri.toString();
+        if ("file".equals(uri.getScheme())) {
+            fileUri = fileUri.replace("file:/", "file:///");
+        }
         System.out.println("Player: Change source to src=" + fileUri);
         this.playbinEl.setState(State.READY);
         this.playbinEl.set("uri", fileUri, null);

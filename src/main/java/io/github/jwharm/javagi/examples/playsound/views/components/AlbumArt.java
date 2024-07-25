@@ -151,7 +151,8 @@ public class AlbumArt extends Box {
 
 //    public static class CoverPaintable implements Paintable {
 //        @Override
-//        public void snapshot(Snapshot snapshot, double width, double height) {
+//        public void snapshot(Snapshot snapshotOrig, double width, double height) {
+//            org.gnome.gtk.Snapshot snapshot = (org.gnome.gtk.Snapshot) snapshotOrig;
 //            float radius = 9.0f;
 //
 //            var w_s = width;
@@ -161,10 +162,14 @@ public class AlbumArt extends Box {
 //            float hh = (float) height;
 //
 //            var rect = new Rect().init(0, 0, ww, hh);
-//            var rr = new RoundedRect();
-//            rr.initFromRect(rect, radius);
+//            var roundedRect = new RoundedRect();
+//            roundedRect.initFromRect(rect, radius);
 //
-//            snapshot.
+//            var color = new RGBA();
+//            color.parse("");
+//            snapshot.pushRoundedClip(roundedRect);
+//            snapshot.appendScaledTexture();
+//            snapshot.pop();
 //        }
 //    }
 }

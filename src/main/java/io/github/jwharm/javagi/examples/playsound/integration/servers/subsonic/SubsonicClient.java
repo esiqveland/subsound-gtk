@@ -62,6 +62,8 @@ public class SubsonicClient implements ServerClient {
         return new ListArtists(list);
     }
 
+    //public ListArtists getAlbums() {}
+
     @Override
     public ArtistInfo getArtistInfo(String artistId) {
         ArtistWithAlbumsID3 artist = this.client.browsing().getArtist(artistId);

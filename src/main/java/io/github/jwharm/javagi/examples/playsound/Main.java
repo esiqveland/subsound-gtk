@@ -22,11 +22,16 @@ import org.gnome.adw.Application;
 import org.gnome.adw.ApplicationWindow;
 import org.gnome.adw.HeaderBar;
 import org.gnome.adw.*;
+import org.gnome.gdk.Display;
 import org.gnome.gio.ApplicationFlags;
 import org.gnome.gtk.*;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
+import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class Main {
     public static final String SERVER_ID = "123";
@@ -40,6 +45,8 @@ public class Main {
     private final SubsonicClient client;
     private final AppManager appManager;
     private final ThumbLoader thumbLoader;
+    private final Path cssFile = Path.of("src/main/resources/css/main.css");
+    private final String cssMain = mustRead(cssFile);
 
     public Main(String[] args) {
         // Initialisation Gst
@@ -73,6 +80,10 @@ public class Main {
     }
 
     private void onActivate(Application app) {
+        var provider = CssProvider.builder().build();
+        provider.loadFromString(cssMain);
+        StyleContext.addProviderForDisplay(Display.getDefault(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+
         var searchButton = Button.builder()
                 .setIconName("edit-find-symbolic")
                 .setActionName("app.open-search")
@@ -261,6 +272,15 @@ public class Main {
                 .setVexpand(true)
                 .setHexpand(true);
     }
+
+    private static String mustRead(Path cssFile) {
+        try {
+            return Files.readString(cssFile, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     public static void main(String[] args) {
         new Main(args);

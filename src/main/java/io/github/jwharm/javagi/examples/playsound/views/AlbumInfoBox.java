@@ -3,6 +3,7 @@ package io.github.jwharm.javagi.examples.playsound.views;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.AlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
+import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.github.jwharm.javagi.examples.playsound.views.components.AlbumArt;
 import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
@@ -64,20 +65,27 @@ public class AlbumInfoBox extends Box {
             StringObject strObj = (StringObject) item;
             var id = strObj.getString();
             var songInfo = this.songIdMap.get(id);
-            var subtitle = songInfo.trackNumber().map(num -> "" + num).orElse("");
+            var isStarred = songInfo.starred().map(s -> true).orElse(false);
+            var starredString = isStarred ? "★" : "☆";
+            var suffix = Label.builder().setLabel(starredString).setCssClasses(new String[]{"starred"}).build();
 
-//            return ListBoxRow.builder()
-//                    .setActivatable(true)
-//                    //.setSelectable(true)
-//                    .setChild()
-//                    .build();
+            var trackNumberTitle = songInfo.trackNumber().map(num -> "%d ⦁ ".formatted(num)).orElse("");
+            String durationString = Utils.formatDurationShort(songInfo.duration());
+            String subtitle = trackNumberTitle + durationString;
 
-            return ActionRow.builder()
+            var row = ActionRow.builder()
                     .setTitle(songInfo.title())
                     .setSubtitle(subtitle)
                     .setUseMarkup(false)
                     .setActivatable(true)
                     .build();
+            row.addPrefix(AlbumArt.resolveCoverArt(
+                    thumbLoader,
+                    albumInfo.coverArt(),
+                    48
+            ));
+            row.addSuffix(suffix);
+            return row;
         });
 
         infoContainer.append(list);
