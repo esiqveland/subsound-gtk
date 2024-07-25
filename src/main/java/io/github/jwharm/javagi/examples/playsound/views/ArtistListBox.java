@@ -1,4 +1,4 @@
-package io.github.jwharm.javagi.examples.playsound.components;
+package io.github.jwharm.javagi.examples.playsound.views;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistEntry;
 import org.gnome.adw.ActionRow;
@@ -6,7 +6,6 @@ import org.gnome.gtk.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 

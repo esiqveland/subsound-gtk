@@ -1,8 +1,9 @@
-package io.github.jwharm.javagi.examples.playsound.components;
+package io.github.jwharm.javagi.examples.playsound.views;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.AlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
+import io.github.jwharm.javagi.examples.playsound.views.components.AlbumArt;
 import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
 

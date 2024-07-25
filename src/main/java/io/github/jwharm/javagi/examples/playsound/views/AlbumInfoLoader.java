@@ -1,4 +1,4 @@
-package io.github.jwharm.javagi.examples.playsound.components;
+package io.github.jwharm.javagi.examples.playsound.views;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.AlbumInfo;

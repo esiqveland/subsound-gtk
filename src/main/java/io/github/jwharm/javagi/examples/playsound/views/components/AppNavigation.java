@@ -1,4 +1,4 @@
-package io.github.jwharm.javagi.examples.playsound.components;
+package io.github.jwharm.javagi.examples.playsound.views.components;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;

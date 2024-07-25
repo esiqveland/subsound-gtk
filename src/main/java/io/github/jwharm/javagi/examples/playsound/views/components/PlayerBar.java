@@ -1,4 +1,4 @@
-package io.github.jwharm.javagi.examples.playsound.components;
+package io.github.jwharm.javagi.examples.playsound.views.components;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager.AppState;
@@ -9,8 +9,8 @@ import org.gnome.gtk.*;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static io.github.jwharm.javagi.examples.playsound.components.PlayerBar.CoverArtDiff.CHANGED;
-import static io.github.jwharm.javagi.examples.playsound.components.PlayerBar.CoverArtDiff.SAME;
+import static io.github.jwharm.javagi.examples.playsound.views.components.PlayerBar.CoverArtDiff.CHANGED;
+import static io.github.jwharm.javagi.examples.playsound.views.components.PlayerBar.CoverArtDiff.SAME;
 import static io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
 
 public class PlayerBar extends Box implements AppManager.StateListener, AutoCloseable {
