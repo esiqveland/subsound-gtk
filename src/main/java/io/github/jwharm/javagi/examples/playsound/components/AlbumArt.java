@@ -3,11 +3,18 @@ package io.github.jwharm.javagi.examples.playsound.components;
 import io.github.jwharm.javagi.base.GErrorException;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
 import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
+import org.gnome.gdk.Paintable;
+import org.gnome.gdk.Snapshot;
+import org.gnome.gdk.Texture;
+import org.gnome.gdkpixbuf.InterpType;
+import org.gnome.gdkpixbuf.Pixbuf;
 import org.gnome.gdkpixbuf.PixbufLoader;
 import org.gnome.glib.GLib;
-import org.gnome.gtk.Box;
-import org.gnome.gtk.Image;
-import org.gnome.gtk.Orientation;
+import org.gnome.graphene.Rect;
+import org.gnome.gsk.RoundedRect;
+import org.gnome.gtk.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -15,6 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AlbumArt extends Box {
+    private static final Logger log = LoggerFactory.getLogger(AlbumArt.class);
     private static final int DEFAULT_SIZE = 400;
     private static final ExecutorService EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
 
@@ -22,7 +30,7 @@ public class AlbumArt extends Box {
     private final AtomicBoolean hasLoaded = new AtomicBoolean(false);
     private final AtomicBoolean isLoading = new AtomicBoolean(false);
     private final AtomicBoolean isUpdating = new AtomicBoolean(false);
-    private final Image image;
+    private final Picture image;
     private final ThumbLoader thumbLoader;
 
 
@@ -32,11 +40,21 @@ public class AlbumArt extends Box {
     }
 
     public static Box placeholderImage(int size) {
-        Image image = Image.fromFile("src/main/resources/images/album-placeholder.png");
-        image.setSizeRequest(size, size);
-        var box = Box.builder().setHexpand(true).setVexpand(true).build();
-        box.append(image);
-        return box;
+        try {
+            var pixbuf = Pixbuf.fromFileAtSize("src/main/resources/images/album-placeholder.png", size, size);
+            var image = Image.fromPixbuf(pixbuf);
+            image.setSizeRequest(size, size);
+            var box = Box.builder()
+                    .setHexpand(false)
+                    .setVexpand(true)
+                    .setHalign(Align.CENTER)
+                    .setValign(Align.CENTER)
+                    .build();
+            box.append(image);
+            return box;
+        } catch (GErrorException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public AlbumArt(CoverArt artwork, ThumbLoader thumbLoader) {
@@ -45,47 +63,45 @@ public class AlbumArt extends Box {
 
     public AlbumArt(CoverArt artwork, ThumbLoader thumbLoader, int size) {
         super(Orientation.VERTICAL, 0);
+        this.setSizeRequest(size, size);
+        this.setHexpand(false);
+        this.setVexpand(false);
+        this.setHalign(Align.CENTER);
+        this.setValign(Align.CENTER);
+
         this.artwork = artwork;
         this.thumbLoader = thumbLoader;
         // See: https://docs.gtk.org/gdk-pixbuf/class.PixbufLoader.html
         var loader = PixbufLoader.builder().build();
-        this.image = Image.fromPixbuf(loader.getPixbuf());
+        loader.setSize(size, size);
+        var pixbuf = loader.getPixbuf();
+        //pixbuf.scaleSimple(size, size, InterpType.BILINEAR);
+        // See: https://docs.gtk.org/gdk-pixbuf/class.Picture.html
+        this.image = Picture.forPixbuf(pixbuf);
         this.image.setSizeRequest(size, size);
+        this.image.setContentFit(ContentFit.COVER);
 
-//        loader.onAreaPrepared(() -> {
-//            if (!isUpdating.compareAndSet(false, true)) {
-//                return;
-//            }
-//            try {
-//                // apparently we need to touch the image and make it redraw somehow:
-//                this.image.setFromPixbuf(loader.getPixbuf());
-//            } finally {
-//                isUpdating.set(false);
-//            }
-//        });
         loader.onAreaUpdated((x, y, h, w) -> {
             if (!isUpdating.compareAndSet(false, true)) {
                 return;
             }
             try {
                 // apparently we need to touch the image and make it redraw somehow:
-                this.image.setFromPixbuf(loader.getPixbuf());
+                this.image.setPixbuf(loader.getPixbuf());
             } finally {
                 isUpdating.set(false);
             }
         });
 
         this.onRealize(() -> {
-            System.out.println("%s: onRealize: id=%s".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
+            log.info("%s: onRealize: id=%s".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
             this.startLoad(loader);
         });
         this.onShow(() -> {
-            System.out.println("%s: onShow: id=%s".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
+            log.info("%s: onShow: id=%s".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
             this.startLoad(loader);
         });
 
-        this.setHexpand(true);
-        this.setVexpand(true);
         this.append(image);
     }
 
@@ -110,7 +126,7 @@ public class AlbumArt extends Box {
                                 }
                             });
                         });
-                        System.out.println("%s: id=%s: LOADED OK".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
+                        log.info("%s: id=%s: LOADED OK".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
                     } finally {
                         isLoading.set(false);
                         GLib.idleAddOnce(() -> {
@@ -125,10 +141,27 @@ public class AlbumArt extends Box {
                     }
                 }, EXECUTOR)
                 .exceptionallyAsync(ex -> {
-                    System.out.printf("error loading img: %s", ex.getMessage());
-                    ex.printStackTrace();
+                    log.error("error loading img: {}", ex.getMessage(), ex);
                     throw new RuntimeException(ex);
                 });
-
     }
+
+//    public static class CoverPaintable implements Paintable {
+//        @Override
+//        public void snapshot(Snapshot snapshot, double width, double height) {
+//            float radius = 9.0f;
+//
+//            var w_s = width;
+//            var h_s = height;
+//
+//            float ww = (float) width;
+//            float hh = (float) height;
+//
+//            var rect = new Rect().init(0, 0, ww, hh);
+//            var rr = new RoundedRect();
+//            rr.initFromRect(rect, radius);
+//
+//            snapshot.
+//        }
+//    }
 }

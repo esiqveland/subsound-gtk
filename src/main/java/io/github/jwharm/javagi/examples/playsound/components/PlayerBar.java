@@ -14,6 +14,8 @@ import static io.github.jwharm.javagi.examples.playsound.components.PlayerBar.Co
 import static io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
 
 public class PlayerBar extends Box implements AppManager.StateListener, AutoCloseable {
+    private static final int ARTWORK_SIZE = 64;
+
     private final ThumbLoader thumbLoader;
     private final AppManager player;
     private final ActionBar mainBar;
@@ -27,25 +29,35 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
     private Optional<CoverArt> currentCoverArt = Optional.empty();
 
     public PlayerBar(ThumbLoader thumbLoader, AppManager player) {
-        super(Orientation.VERTICAL, 4);
+        super(Orientation.VERTICAL, 2);
         this.thumbLoader = thumbLoader;
         this.player = player;
         this.player.addOnStateChanged(this);
 
-        Box songInfo = new Box(Orientation.VERTICAL, 2);
-        songTitle = Label.builder().setLabel("Song title").build();
+        Box songInfo = Box.builder()
+                .setOrientation(Orientation.VERTICAL)
+                .setSpacing(2)
+                .setHalign(Align.START)
+                .setValign(Align.CENTER)
+                .setVexpand(true)
+                .setMarginStart(8)
+                .build();
+        songTitle = Label.builder().setLabel("Song title").setHalign(Align.START).build();
         songInfo.append(songTitle);
-        albumTitle = Label.builder().setLabel("Album title").build();
+        albumTitle = Label.builder().setLabel("Album title").setHalign(Align.START).build();
         songInfo.append(albumTitle);
-        artistTitle = Label.builder().setLabel("Artist title").build();
+        artistTitle = Label.builder().setLabel("Artist title").setHalign(Align.START).build();
         songInfo.append(artistTitle);
 
         this.albumArtBox = Box.builder()
             .setOrientation(Orientation.VERTICAL)
-            .setHexpand(true)
+            .setHexpand(false)
             .setVexpand(true)
+            .setMarginStart(4)
+            .setHalign(Align.START)
+            .setValign(Align.CENTER)
             .build();
-        placeholderAlbumArt = AlbumArt.placeholderImage();
+        placeholderAlbumArt = AlbumArt.placeholderImage(ARTWORK_SIZE);
         albumArtBox.append(placeholderAlbumArt);
 
         Box nowPlaying = Box.builder()
@@ -71,7 +83,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         volumeBox.append(new Label("Volume"));
         volumeBox.append(volumeButton);
 
-        mainBar = ActionBar.builder().build();
+        mainBar = ActionBar.builder().setVexpand(true).setValign(Align.CENTER).build();
         mainBar.packStart(nowPlaying);
         mainBar.packEnd(volumeBox);
         this.append(mainBar);
@@ -142,7 +154,8 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
             }
             albumArtBox.append(new AlbumArt(
                     coverArt,
-                    this.thumbLoader
+                    this.thumbLoader,
+                    ARTWORK_SIZE
             ));
         });
     }
