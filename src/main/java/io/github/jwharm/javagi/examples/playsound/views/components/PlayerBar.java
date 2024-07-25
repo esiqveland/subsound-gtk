@@ -3,6 +3,7 @@ package io.github.jwharm.javagi.examples.playsound.views.components;
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager.AppState;
 import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
+import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.*;
 
@@ -24,9 +25,19 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
     private final Label albumTitle;
     private final Label artistTitle;
     private final VolumeButton volumeButton;
+    private final Button playPauseButton;
     private final AtomicBoolean isStateChanging = new AtomicBoolean(false);
     private final Box placeholderAlbumArt;
+    // playing state helps control the play/pause button
+    private PlayingState playingState = PlayingState.IDLE;
     private Optional<CoverArt> currentCoverArt = Optional.empty();
+
+    enum PlayingState {
+        IDLE,
+        PLAYING,
+        PAUSED,
+        //BUFFERING,
+    }
 
     public PlayerBar(ThumbLoader thumbLoader, AppManager player) {
         super(Orientation.VERTICAL, 2);
@@ -88,6 +99,9 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         var pauseButton = Button
                 .withLabel("Pause");
         pauseButton.onClicked(player::pause);
+        playPauseButton = Button
+                .withLabel("Play");
+        playPauseButton.onClicked(this::playPause);
 
         var playerControls = Box.builder()
                 .setSpacing(2)
@@ -97,6 +111,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                 .setVexpand(true)
                 .build();
         playerControls.append(playButton);
+        playerControls.append(playPauseButton);
         playerControls.append(pauseButton);
 
         mainBar = ActionBar.builder().setVexpand(true).setValign(Align.CENTER).build();
@@ -104,6 +119,14 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         mainBar.setCenterWidget(playerControls);
         mainBar.packEnd(volumeBox);
         this.append(mainBar);
+    }
+
+    private void playPause() {
+        switch (playingState) {
+            case IDLE -> this.player.play();
+            case PAUSED -> this.player.play();
+            case PLAYING -> this.player.pause();
+        }
     }
 
     @Override
@@ -138,11 +161,17 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                 }
             }
 
+            PlayingState nextPlayingState = toPlayingState(player.state());
+
             double volume = state.player().volume();
             Utils.runOnMainThread(() -> {
                 if (!withinEpsilon(volume, volumeButton.getValue(), 0.01)) {
                     volumeButton.setValue(volume);
                 }
+                if (nextPlayingState != playingState) {
+                    this.updatePlayingState(nextPlayingState);
+                }
+
                 playing.ifPresent(nowPlaying -> {
                     var song = nowPlaying.song();
 
@@ -161,6 +190,25 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
             isStateChanging.set(false);
         }
 
+    }
+
+    private void updatePlayingState(PlayingState nextPlayingState) {
+        this.playingState = nextPlayingState;
+        switch (nextPlayingState) {
+            case IDLE, PAUSED -> this.playPauseButton.setLabel("Play");
+            case PLAYING -> this.playPauseButton.setLabel("Pause");
+        }
+    }
+
+    private static PlayingState toPlayingState(PlaybinPlayer.PlayerStates state) {
+        return switch (state) {
+            case INIT -> PlayingState.IDLE;
+            case BUFFERING -> PlayingState.PLAYING;
+            case READY -> PlayingState.PAUSED;
+            case PAUSED -> PlayingState.PAUSED;
+            case PLAYING -> PlayingState.PLAYING;
+            case END_OF_STREAM -> PlayingState.PLAYING;
+        };
     }
 
     private void replaceAlbumArt(CoverArt coverArt) {
