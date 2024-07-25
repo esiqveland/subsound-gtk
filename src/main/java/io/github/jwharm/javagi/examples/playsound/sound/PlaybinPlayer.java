@@ -125,14 +125,26 @@ public class PlaybinPlayer {
     }
 
     public void setSource(URI uri) {
+        setSource(uri, true);
+    }
+    public void setSource(URI uri, boolean startPlaying) {
         this.currentUri = uri;
         var fileUri = uri.toString();
         if ("file".equals(uri.getScheme())) {
             fileUri = fileUri.replace("file:/", "file:///");
         }
+        // https://gstreamer.freedesktop.org/documentation/additional/design/playback-gapless.html?gi-language=c
+        // https://gstreamer.freedesktop.org/documentation/playback/playbin3.html?gi-language=c
+        // the user wants to play a different track, playbin3 should be set back to READY or NULL state,
+        // then the uri property should be set to the new location and then playbin3 be set to PLAYING state again.
         System.out.println("Player: Change source to src=" + fileUri);
-        this.playbinEl.setState(State.READY);
+        var ready = this.playbinEl.setState(State.READY);
+        System.out.println("Player: Change source to src=" + fileUri + ": READY=" + ready.name());
         this.playbinEl.set("uri", fileUri, null);
+        if (startPlaying) {
+            var playing = this.playbinEl.setState(State.PLAYING);
+            System.out.println("Player: Change source to src=" + fileUri + ": PLAYING=" + playing.name());
+        }
         this.notifyState();
     }
 
@@ -353,7 +365,7 @@ public class PlaybinPlayer {
         if (initialFile != null) {
             var fileUri = initialFile.toString();
             GLib.print("Now playing: %s\n", fileUri);
-            this.setSource(initialFile);
+            this.setSource(initialFile, false);
         }
         GLib.print("Running...\n");
 

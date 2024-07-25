@@ -87,7 +87,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         playButton.onClicked(player::play);
         var pauseButton = Button
                 .withLabel("Pause");
-        playButton.onClicked(player::pause);
+        pauseButton.onClicked(player::pause);
 
         var playerControls = Box.builder()
                 .setSpacing(2)
