@@ -101,6 +101,7 @@ public class SubsonicClient implements ServerClient {
                 album.getArtistId(),
                 album.getArtist(),
                 Duration.ofSeconds(album.getDuration()),
+                // starred="2024-07-18T22:20:25.220976486Z"
                 ofNullable(album.getStarred()).map(d -> d.toInstant(ZoneOffset.UTC)),
                 toCoverArt(album.getCoverArtId()),
                 toSongInfo(album.getSongs())
