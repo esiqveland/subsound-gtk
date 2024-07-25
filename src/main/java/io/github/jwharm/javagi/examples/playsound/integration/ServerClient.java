@@ -83,6 +83,8 @@ public interface ServerClient {
             String artistId,
             String artistName,
             Duration duration,
+            Optional<String> genre,
+            Optional<Integer> year,
             Optional<Instant> starredAt,
             Optional<CoverArt> coverArt
     ) {

@@ -67,12 +67,19 @@ public class ArtistInfoBox extends Box {
             StringObject strObj = (StringObject) item;
             var id = strObj.getString();
             var albumInfo = this.artistsMap.get(id);
-            return ActionRow.builder()
+
+            String yearLine = albumInfo.year().map(year -> "%d ⦁ ".formatted(year)).orElse("");
+            String genreLine = albumInfo.genre().map(genre -> "%s ⦁ ".formatted(genre)).orElse("");
+            String subtitle = yearLine + genreLine + albumInfo.songCount() + " tracks";
+            var row = ActionRow.builder()
                     .setTitle(albumInfo.name())
-                    .setSubtitle(albumInfo.songCount() + " tracks")
+                    .setSubtitle(subtitle)
                     .setUseMarkup(false)
                     .setActivatable(true)
                     .build();
+
+            row.addPrefix(AlbumArt.resolveCoverArt(thumbLoader, albumInfo.coverArt(), 48));
+            return row;
         });
 
         infoContainer.append(list);

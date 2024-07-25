@@ -73,6 +73,8 @@ public class SubsonicClient implements ServerClient {
                 album.getArtistId(),
                 album.getArtist(),
                 Duration.ofSeconds(album.getDuration()),
+                ofNullable(album.getGenre()).filter(s -> !s.isBlank()),
+                ofNullable(album.getYear()),
                 ofNullable(album.getStarred()).map(ts -> ts.toInstant(ZoneOffset.UTC)),
                 toCoverArt(album.getCoverArtId())
         )).toList();

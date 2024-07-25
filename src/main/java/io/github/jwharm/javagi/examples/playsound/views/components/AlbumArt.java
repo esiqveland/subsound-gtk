@@ -3,19 +3,14 @@ package io.github.jwharm.javagi.examples.playsound.views.components;
 import io.github.jwharm.javagi.base.GErrorException;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
 import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
-import org.gnome.gdk.Paintable;
-import org.gnome.gdk.Snapshot;
-import org.gnome.gdk.Texture;
-import org.gnome.gdkpixbuf.InterpType;
 import org.gnome.gdkpixbuf.Pixbuf;
 import org.gnome.gdkpixbuf.PixbufLoader;
 import org.gnome.glib.GLib;
-import org.gnome.graphene.Rect;
-import org.gnome.gsk.RoundedRect;
 import org.gnome.gtk.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -54,6 +49,14 @@ public class AlbumArt extends Box {
             return box;
         } catch (GErrorException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static Widget resolveCoverArt(ThumbLoader thumbLoader, Optional<CoverArt> coverArt, int size) {
+        if (coverArt.isPresent()) {
+            return new AlbumArt(coverArt.get(), thumbLoader, size);
+        } else {
+            return placeholderImage(size);
         }
     }
 
