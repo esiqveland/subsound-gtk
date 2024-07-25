@@ -93,14 +93,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                 .build();
         volumeBox.append(volumeButton);
 
-        var playButton = Button
-                .withLabel("Play");
-        playButton.onClicked(player::play);
-        var pauseButton = Button
-                .withLabel("Pause");
-        pauseButton.onClicked(player::pause);
-        playPauseButton = Button
-                .withLabel("Play");
+        playPauseButton = Button.withLabel("Play");
         playPauseButton.onClicked(this::playPause);
 
         var playerControls = Box.builder()
@@ -110,9 +103,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                 .setHalign(Align.CENTER)
                 .setVexpand(true)
                 .build();
-        playerControls.append(playButton);
         playerControls.append(playPauseButton);
-        playerControls.append(pauseButton);
 
         mainBar = ActionBar.builder().setVexpand(true).setValign(Align.CENTER).build();
         mainBar.packStart(nowPlaying);
