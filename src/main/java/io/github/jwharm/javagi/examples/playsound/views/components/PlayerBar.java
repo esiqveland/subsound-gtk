@@ -68,7 +68,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
             .setHalign(Align.START)
             .setValign(Align.CENTER)
             .build();
-        placeholderAlbumArt = AlbumArt.placeholderImage(ARTWORK_SIZE);
+        placeholderAlbumArt = RoundedAlbumArt.placeholderImage(ARTWORK_SIZE);
         albumArtBox.append(placeholderAlbumArt);
 
         Box nowPlaying = Box.builder()
@@ -208,7 +208,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
             if (child != null) {
                 albumArtBox.remove(child);
             }
-            albumArtBox.append(new AlbumArt(
+            albumArtBox.append(new RoundedAlbumArt(
                     coverArt,
                     this.thumbLoader,
                     ARTWORK_SIZE

@@ -7,3 +7,7 @@
     text-decoration: underline;
     font-weight: bold;
 }
+
+.rounded {
+    border-radius: rem($window_radius / 2);
+}

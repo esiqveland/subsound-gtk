@@ -4,6 +4,7 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.Artis
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
 import io.github.jwharm.javagi.examples.playsound.views.components.AlbumArt;
+import io.github.jwharm.javagi.examples.playsound.views.components.RoundedAlbumArt;
 import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
 
@@ -78,7 +79,7 @@ public class ArtistInfoBox extends Box {
                     .setActivatable(true)
                     .build();
 
-            row.addPrefix(AlbumArt.resolveCoverArt(thumbLoader, albumInfo.coverArt(), 48));
+            row.addPrefix(RoundedAlbumArt.resolveCoverArt(thumbLoader, albumInfo.coverArt(), 48));
             return row;
         });
 
