@@ -2,14 +2,19 @@ package io.github.jwharm.javagi.examples.playsound.components;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager.AppState;
-import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
+import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.*;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static io.github.jwharm.javagi.examples.playsound.components.PlayerBar.CoverArtDiff.CHANGED;
+import static io.github.jwharm.javagi.examples.playsound.components.PlayerBar.CoverArtDiff.SAME;
+import static io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
+
 public class PlayerBar extends Box implements AppManager.StateListener, AutoCloseable {
+    private final ThumbLoader thumbLoader;
     private final AppManager player;
     private final ActionBar mainBar;
     private final Box albumArtBox;
@@ -18,10 +23,12 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
     private final Label artistTitle;
     private final VolumeButton volumeButton;
     private final AtomicBoolean isStateChanging = new AtomicBoolean(false);
-    private Optional<ServerClient.CoverArt> coverArt = Optional.empty();
+    private final Box placeholderAlbumArt;
+    private Optional<CoverArt> currentCoverArt = Optional.empty();
 
-    public PlayerBar(AppManager player) {
+    public PlayerBar(ThumbLoader thumbLoader, AppManager player) {
         super(Orientation.VERTICAL, 4);
+        this.thumbLoader = thumbLoader;
         this.player = player;
         this.player.addOnStateChanged(this);
 
@@ -38,8 +45,8 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
             .setHexpand(true)
             .setVexpand(true)
             .build();
-        var albumArt = AlbumArt.placeholderImage();
-        albumArtBox.append(albumArt);
+        placeholderAlbumArt = AlbumArt.placeholderImage();
+        albumArtBox.append(placeholderAlbumArt);
 
         Box nowPlaying = Box.builder()
                 .setOrientation(Orientation.HORIZONTAL)
@@ -84,12 +91,24 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
     public void onStateChanged(AppState state) {
         var player = state.player();
         var playing = state.nowPlaying();
+        Optional<CoverArt> nextCover = playing.flatMap(st -> st.song().coverArt());
         try {
             isStateChanging.set(true);
 
-            if (coverArt.isPresent()) {
-                fdsfdsafdas
+            var diffResult = diffCover(currentCoverArt, nextCover);
+            switch (diffResult) {
+                case SAME -> {
+                    // do nothing
+                }
+                case CHANGED -> {
+                    this.currentCoverArt = nextCover;
+                    nextCover.ifPresentOrElse(
+                            this::replaceAlbumArt,
+                            this::placeholderCover
+                    );
+                }
             }
+
             double volume = state.player().volume();
             Utils.runOnMainThread(() -> {
                 if (!withinEpsilon(volume, volumeButton.getValue(), 0.01)) {
@@ -113,5 +132,52 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
             isStateChanging.set(false);
         }
 
+    }
+
+    private void replaceAlbumArt(CoverArt coverArt) {
+        Utils.runOnMainThread(() -> {
+            var child = albumArtBox.getFirstChild();
+            if (child != null) {
+                albumArtBox.remove(child);
+            }
+            albumArtBox.append(new AlbumArt(
+                    coverArt,
+                    this.thumbLoader
+            ));
+        });
+    }
+
+    private void placeholderCover() {
+        Utils.runOnMainThread(() -> {
+            var child = albumArtBox.getFirstChild();
+            if (child != null) {
+                albumArtBox.remove(child);
+            }
+            albumArtBox.append(placeholderAlbumArt);
+        });
+    }
+
+    enum CoverArtDiff {
+        SAME,
+        CHANGED,
+    }
+    private CoverArtDiff diffCover(Optional<CoverArt> currentCoverArt, Optional<CoverArt> coverArt) {
+        if (currentCoverArt.isEmpty() && coverArt.isEmpty()) {
+            return SAME;
+        }
+        if (currentCoverArt.isEmpty() && coverArt.isPresent()) {
+            return CHANGED;
+        }
+        if (currentCoverArt.isPresent() && coverArt.isEmpty()) {
+            return CHANGED;
+        }
+        if (currentCoverArt.isPresent() && coverArt.isPresent()) {
+            if (currentCoverArt.get().coverArtId().equals(coverArt.get().coverArtId())) {
+                return SAME;
+            } else {
+                return CHANGED;
+            }
+        }
+        return SAME;
     }
 }

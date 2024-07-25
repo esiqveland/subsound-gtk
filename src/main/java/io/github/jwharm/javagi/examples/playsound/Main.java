@@ -226,7 +226,7 @@ public class Main {
         headerBar.packStart(searchButton);
         headerBar.packEnd(settingsButton);
 
-        var playerBar = new PlayerBar(appManager);
+        var playerBar = new PlayerBar(thumbLoader, appManager);
         var bottomBar = new Box(Orientation.VERTICAL, 10);
         bottomBar.append(viewSwitcherBar);
         bottomBar.append(playerBar);
