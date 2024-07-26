@@ -5,6 +5,7 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongI
 import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.github.jwharm.javagi.examples.playsound.views.components.AlbumArt;
+import io.github.jwharm.javagi.examples.playsound.views.components.RoundedAlbumArt;
 import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
 
@@ -21,7 +22,7 @@ public class AlbumInfoBox extends Box {
     private final Map<String, SongInfo> songIdMap;
     //private final ArtistInfo artistInfo;
     private final AlbumInfo albumInfo;
-    private final Box artistImage;
+    private final Widget artistImage;
     private final Consumer<SongInfo> onSongSelected;
     private final ThumbLoader thumbLoader;
 
@@ -35,15 +36,17 @@ public class AlbumInfoBox extends Box {
         this.albumInfo = albumInfo;
         this.onSongSelected = onSongSelected;
         this.artistImage = this.albumInfo.coverArt()
-                .map(coverArt -> new AlbumArt(
+                .map(coverArt -> new RoundedAlbumArt(
                         coverArt,
-                        thumbLoader
+                        thumbLoader,
+                        300
                 ))
-                .map(artwork -> (Box) artwork)
-                .orElseGet(AlbumArt::placeholderImage);
+                .map(artwork -> (Widget) artwork)
+                .orElseGet(() -> RoundedAlbumArt.placeholderImage(300));
         this.infoContainer = Box.builder().setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).build();
         this.infoContainer.append(this.artistImage);
         this.infoContainer.append(new Label(this.albumInfo.name()));
+        this.infoContainer.append(new Label(this.albumInfo.artistName()));
         this.infoContainer.append(new Label("%d songs".formatted(this.albumInfo.songCount())));
         this.infoContainer.append(new Label("%s playtime".formatted(formatDurationLong(this.albumInfo.totalPlayTime()))));
 
@@ -79,7 +82,7 @@ public class AlbumInfoBox extends Box {
                     .setUseMarkup(false)
                     .setActivatable(true)
                     .build();
-            row.addPrefix(AlbumArt.resolveCoverArt(
+            row.addPrefix(RoundedAlbumArt.resolveCoverArt(
                     thumbLoader,
                     albumInfo.coverArt(),
                     48

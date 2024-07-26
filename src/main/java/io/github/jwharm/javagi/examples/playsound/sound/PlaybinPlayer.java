@@ -14,6 +14,8 @@ import org.gnome.glib.GError;
 import org.gnome.glib.GLib;
 import org.gnome.glib.MainContext;
 import org.gnome.glib.MainLoop;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.time.Duration;
@@ -38,6 +40,7 @@ import static io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.Pla
 // GstSink:
 // gconfaudiosink vs autoaudiosink
 public class PlaybinPlayer {
+    private static final Logger log = LoggerFactory.getLogger(PlaybinPlayer.class);
 
     private static final int GST_PLAY_FLAG_AUDIO = 2;
     private static final List<OnStateChanged> listeners = new CopyOnWriteArrayList<>();
@@ -57,6 +60,7 @@ public class PlaybinPlayer {
     public PlayerState getState() {
         var source = Optional.ofNullable(currentUri).map(uri -> new Source(
                 uri,
+                Optional.ofNullable(this.position),
                 Optional.ofNullable(this.duration)
         ));
         return new PlayerState(
@@ -78,6 +82,7 @@ public class PlaybinPlayer {
 
     public record Source(
             URI current,
+            Optional<Duration> position,
             Optional<Duration> duration
     ) {
     }
@@ -101,9 +106,12 @@ public class PlaybinPlayer {
     int busWatchId;
     // PlayerState should be the public view of the state of the player/player Pipeline
     PlayerStates playerStates = INIT;
+    // positionPublisher updates the player position while state is PLAYING
+    private final Thread positionPublisher;
     private URI currentUri;
     private double currentVolume = 1.0;
     private Duration duration;
+    private Duration position;
     private AtomicBoolean muteState = new AtomicBoolean(false);
     // pipeline state tracks the current state of the GstPipeline
     State pipelineState = State.NULL;
@@ -166,14 +174,16 @@ public class PlaybinPlayer {
             GLib.printerr("Error: %s\n", error.get().readMessage());
 
             loop.quit();
+        } else if (msgTypes.contains(MessageType.STREAM_START)) {
+            this.onDurationChanged();
+            this.onPositionChanged();
         } else if (msgTypes.contains(MessageType.STATE_CHANGED)) {
             //System.out.println("Player: Got Event Type: " + msgType.name());
             var src = msg.readSrc();
-            if (src.equals(this.playbinEl)) {
-                System.out.println("Player: playbin: Got Event Type: " + msgType.name());
-            } else {
+            if (!src.equals(this.playbinEl)) {
                 return true;
             }
+            System.out.println("Player: playbin: Got Event Type: " + msgType.name());
             this.onPipelineStateChanged();
             // TODO: read the new states by parsing msg ?
             //this.onPipelineStateChanged(getStateChanged(msg));
@@ -192,10 +202,8 @@ public class PlaybinPlayer {
             this.onDurationChanged();
         } else if (msgTypes.contains(MessageType.TOC)) {
             System.out.println("Player: Got Event Type: " + msgType.name());
-            this.onDurationChanged();
         } else if (msgTypes.contains(MessageType.TAG)) {
             System.out.println("Player: Got Event Type: " + msgType.name());
-            this.onDurationChanged();
         }
 
         return true;
@@ -216,6 +224,32 @@ public class PlaybinPlayer {
                 oldState.get(),
                 newState.get()
         );
+    }
+
+    private void onPositionChanged() {
+        var dur = new Out<Long>();
+        var success = playbinEl.queryPosition(Format.TIME, dur);
+        if (success) {
+            Long nanos = dur.get();
+            if (nanos == null) {
+                return;
+            }
+            // normalize to millis:
+            var pos = Duration.ofMillis(Duration.ofNanos(nanos).toMillis());
+            this.setPosition(pos);
+        }
+    }
+
+    private void setPosition(Duration pos) {
+        var prev = this.position;
+        if (prev == null) {
+            prev = Duration.ZERO;
+        }
+        this.position = pos;
+        if (prev.toMillis() != position.toMillis()) {
+            //System.out.printf("Player.setPosition: %d\n", position.getSeconds());
+            this.notifyState();
+        }
     }
 
     private void onDurationChanged() {
@@ -241,6 +275,7 @@ public class PlaybinPlayer {
             this.notifyState();
         }
     }
+
 
     private void notifyState() {
         var nextState = getState();
@@ -361,14 +396,6 @@ public class PlaybinPlayer {
         this.onVolumeChanged();
         this.onMuteChanged();
 
-        // We set the input filename to the source element
-        if (initialFile != null) {
-            var fileUri = initialFile.toString();
-            GLib.print("Now playing: %s\n", fileUri);
-            this.setSource(initialFile, false);
-        }
-        GLib.print("Running...\n");
-
         playerLoopThread = new Thread(() -> {
             loop.run();
             System.out.println("playerLoopThread: run finished??");
@@ -380,6 +407,37 @@ public class PlaybinPlayer {
 //            Source.remove(busWatchId);
         }, "player-main-loop");
         playerLoopThread.start();
+
+        this.positionPublisher = Thread.startVirtualThread(() -> {
+            try {
+                while (true) {
+                    if (!playerLoopThread.isAlive()) {
+                        log.info("positionPublisher: playerLoopThread died, exiting");
+                        return;
+                    }
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    if (playerStates != PLAYING) {
+                        continue;
+                    }
+                    // update the position
+                    this.onPositionChanged();
+                }
+            } finally {
+                log.info("positionPublisher: exited");
+            }
+        });
+
+        // We set the input filename to the source element
+        if (initialFile != null) {
+            var fileUri = initialFile.toString();
+            GLib.print("Now playing: %s\n", fileUri);
+            this.setSource(initialFile, false);
+        }
+        GLib.print("Running...\n");
     }
 
     public double getVolume() {

@@ -25,11 +25,14 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
     private final Label songTitle;
     private final Label albumTitle;
     private final Label artistTitle;
-    private final VolumeButton volumeButton;
-    private final Button playPauseButton;
-    private final AtomicBoolean isStateChanging = new AtomicBoolean(false);
     private final Widget placeholderAlbumArt;
+    private final Button skipBackwardButton;
+    private final Button playPauseButton;
+    private final Button skipForwardButton;
     private final PlayerScrubber playerScrubber;
+    private final VolumeButton volumeButton;
+
+    private final AtomicBoolean isStateChanging = new AtomicBoolean(false);
 
     // playing state helps control the play/pause button
     private PlayingState playingState = PlayingState.IDLE;
@@ -96,8 +99,21 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                 .build();
         volumeBox.append(volumeButton);
 
-        playPauseButton = Button.withLabel("Play");
+        // media-playlist-repeat-song-symbolic
+        // media-playlist-repeat-symbolic
+        // media-skip-backward-symbolic
+        // media-skip-forward-symbolic
+        // TODO: mute icon??
+        skipBackwardButton = Button.builder().setIconName("media-skip-backward-symbolic").build();
+        skipBackwardButton.addCssClass("circular");
+        skipForwardButton = Button.builder().setIconName("media-skip-forward-symbolic").build();
+        skipForwardButton.addCssClass("circular");
+
+        playPauseButton = Button.builder().setIconName("media-playback-start-symbolic").build();
+        playPauseButton.addCssClass("circular");
+        playPauseButton.setSizeRequest(48, 48);
         playPauseButton.onClicked(this::playPause);
+        updatePlayingState(toPlayingState(player.getState().player().state()));
         playerScrubber = new PlayerScrubber();
 
         var playerControls = Box.builder()
@@ -107,7 +123,9 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                 .setHalign(Align.CENTER)
                 .setVexpand(true)
                 .build();
+        playerControls.append(skipBackwardButton);
         playerControls.append(playPauseButton);
+        playerControls.append(skipForwardButton);
 
         Box centerWidget = Box.builder().setOrientation(Orientation.VERTICAL).setSpacing(2).build();
         centerWidget.append(playerControls);
@@ -164,7 +182,9 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
             double volume = state.player().volume();
 
             Optional<Duration> duration = state.player().source().flatMap(s -> s.duration());
+            Optional<Duration> position = state.player().source().flatMap(s -> s.position());
             this.playerScrubber.updateDuration(duration.orElse(Duration.ZERO));
+            position.ifPresent(this.playerScrubber::updatePosition);
 
             Utils.runOnMainThread(() -> {
                 if (!withinEpsilon(volume, volumeButton.getValue(), 0.01)) {
@@ -197,8 +217,8 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
     private void updatePlayingState(PlayingState nextPlayingState) {
         this.playingState = nextPlayingState;
         switch (nextPlayingState) {
-            case IDLE, PAUSED -> this.playPauseButton.setLabel("Play");
-            case PLAYING -> this.playPauseButton.setLabel("Pause");
+            case IDLE, PAUSED -> this.playPauseButton.setIconName("media-playback-start-symbolic");
+            case PLAYING -> this.playPauseButton.setIconName("media-playback-pause-symbolic");
         }
     }
 

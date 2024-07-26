@@ -4,7 +4,7 @@
     font-size: 24px;
 }
 .starred:hover {
-    text-decoration: underline;
+    /*text-decoration: underline;*/
     font-weight: bold;
 }
 
