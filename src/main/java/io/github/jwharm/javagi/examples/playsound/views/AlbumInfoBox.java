@@ -90,13 +90,20 @@ public class AlbumInfoBox extends Box {
                     //.setLabel("Play")
                     .setIconName("media-playback-start-symbolic")
                     .setCssClasses(cssClasses("success", "circular", "raised"))
-                    .setVisible(false)
+                    .setVisible(true)
                     .build();
+
+            var revealer = Revealer.builder()
+                    .setChild(playButton)
+                    .setRevealChild(false)
+                    .setTransitionType(RevealerTransitionType.CROSSFADE)
+                    .build();
+
             playButton.onClicked(() -> {
                 System.out.println("AlbumInfoBox.playButton: play " + songInfo.title() + " (%s)".formatted(songInfo.id()));
                 this.onSongSelected.accept(songInfo);
             });
-            suffix.append(playButton);
+            suffix.append(revealer);
             suffix.append(starredBtn);
 
             var trackNumberTitle = songInfo.trackNumber().map(num -> "%d ⦁ ".formatted(num)).orElse("");
@@ -113,24 +120,27 @@ public class AlbumInfoBox extends Box {
                     .build();
 
             var isHoverActive = new AtomicBoolean(false);
-            row = addHover(
+            addHover(
                     row,
                     () -> {
                         isHoverActive.set(true);
-                        playButton.setVisible(true);
+                        //playButton.setVisible(true);
+                        revealer.setRevealChild(true);
                     },
                     () -> {
                         isHoverActive.set(false);
-                        var focused = playButton.hasFocus();
+                        var focused = row.hasFocus();
                         //System.out.println("onLeave: focused=" + focused);
-                        playButton.setVisible(focused);
+                        //playButton.setVisible(focused);
+                        revealer.setRevealChild(focused);
                     }
             );
             row.onStateFlagsChanged(flags -> {
                 var hasFocus = playButton.hasFocus() || flags.contains(StateFlags.FOCUSED) || flags.contains(StateFlags.FOCUS_WITHIN) || flags.contains(StateFlags.FOCUS_VISIBLE);
                 var hasHover = isHoverActive.get();
                 //System.out.println("onStateFlagsChanged: " + String.join(", ", flags.stream().map(s -> s.name()).toList()) + " hasHover=" + hasHover + " hasFocus=" + hasFocus);
-                playButton.setVisible(hasFocus || hasHover);
+                //playButton.setVisible(hasFocus || hasHover);
+                revealer.setRevealChild(hasFocus || hasHover);
             });
 
             row.addPrefix(RoundedAlbumArt.resolveCoverArt(
