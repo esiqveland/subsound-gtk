@@ -27,7 +27,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
     private final VolumeButton volumeButton;
     private final Button playPauseButton;
     private final AtomicBoolean isStateChanging = new AtomicBoolean(false);
-    private final Box placeholderAlbumArt;
+    private final Widget placeholderAlbumArt;
     // playing state helps control the play/pause button
     private PlayingState playingState = PlayingState.IDLE;
     private Optional<CoverArt> currentCoverArt = Optional.empty();

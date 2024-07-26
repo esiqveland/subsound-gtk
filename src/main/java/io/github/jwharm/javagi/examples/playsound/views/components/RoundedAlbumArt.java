@@ -28,24 +28,21 @@ public class RoundedAlbumArt extends Grid {
     private final Picture image;
     private final ThumbLoader thumbLoader;
 
-
-    // not present artwork returns a placeholder image
-    public static Box placeholderImage() {
-        return placeholderImage(DEFAULT_SIZE);
-    }
-
-    public static Box placeholderImage(int size) {
+    public static Grid placeholderImage(int size) {
         try {
-            var pixbuf = Pixbuf.fromFileAtSize("src/main/resources/images/album-placeholder.png", size, size);
+            Pixbuf pixbuf = Pixbuf.fromFileAtSize("src/main/resources/images/album-placeholder.png", size, size);
             var image = Image.fromPixbuf(pixbuf);
             image.setSizeRequest(size, size);
-            var box = Box.builder()
+            var box = Grid.builder()
                     .setHexpand(false)
                     .setVexpand(true)
                     .setHalign(Align.CENTER)
                     .setValign(Align.CENTER)
                     .build();
-            box.append(image);
+            box.setSizeRequest(size, size);
+            box.setOverflow(Overflow.HIDDEN);
+            box.addCssClass("rounded");
+            box.attach(image, 0, 0, 1, 1);
             return box;
         } catch (GErrorException e) {
             throw new RuntimeException(e);
@@ -71,6 +68,8 @@ public class RoundedAlbumArt extends Grid {
         this.setVexpand(false);
         this.setHalign(Align.CENTER);
         this.setValign(Align.CENTER);
+        this.setOverflow(Overflow.HIDDEN);
+        this.addCssClass("rounded");
 
         this.artwork = artwork;
         this.thumbLoader = thumbLoader;
@@ -107,8 +106,6 @@ public class RoundedAlbumArt extends Grid {
             this.startLoad(loader);
         });
 
-        this.setOverflow(Overflow.HIDDEN);
-        this.addCssClass("rounded");
         this.attach(image, 0, 0, 1, 1);
     }
 
