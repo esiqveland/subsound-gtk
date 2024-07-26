@@ -174,6 +174,10 @@ public class PlaybinPlayer {
             GLib.printerr("Error: %s\n", error.get().readMessage());
 
             loop.quit();
+        } else if (msgTypes.contains(MessageType.ASYNC_DONE)) {
+            // if the seek operation succeeded.
+            // Flushing seeks will trigger a preroll, which will emit MessageType.ASYNC_DONE
+            this.onPositionChanged();
         } else if (msgTypes.contains(MessageType.STREAM_START)) {
             this.onDurationChanged();
             this.onPositionChanged();
@@ -316,6 +320,12 @@ public class PlaybinPlayer {
     private void seekToStart() {
         //playbin.seek(1.0, Format.TIME, SeekFlags.FLUSH, SeekType.SET, 0, SeekType.NONE, 0);
         playbinEl.seekSimple(Format.TIME, SeekFlags.FLUSH, 0);
+        this.notifyState();
+    }
+
+    public void seekTo(Duration position) {
+        //playbin.seek(1.0, Format.TIME, SeekFlags.FLUSH, SeekType.SET, 0, SeekType.NONE, 0);
+        playbinEl.seekSimple(Format.TIME, Set.of(SeekFlags.ACCURATE, SeekFlags.FLUSH), position.toNanos());
         this.notifyState();
     }
 

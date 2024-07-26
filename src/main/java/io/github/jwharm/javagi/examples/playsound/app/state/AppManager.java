@@ -8,6 +8,7 @@ import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
@@ -90,6 +91,10 @@ public class AppManager {
 
     public void unMute() {
         this.player.setMute(false);
+    }
+
+    public void seekTo(Duration position) {
+        this.player.seekTo(position);
     }
 
     public void setVolume(double linearVolume) {
