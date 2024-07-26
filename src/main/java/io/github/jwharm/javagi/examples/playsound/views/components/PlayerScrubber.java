@@ -154,9 +154,7 @@ public class PlayerScrubber extends Box {
                 .setPropagationPhase(PropagationPhase.CAPTURE)
                 .setFlags(Set.of(EventControllerScrollFlags.BOTH_AXES))
                 .build();
-        ec.onScroll((double dx, double dy) -> {
-            return true;
-        });
+        ec.onScroll((double dx, double dy) -> true);
         scale.addController(ec);
         return scale;
     }
