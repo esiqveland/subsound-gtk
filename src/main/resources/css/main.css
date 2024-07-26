@@ -11,3 +11,8 @@
 .rounded {
     border-radius: 4px;
 }
+
+scale slider {
+    min-width: 20px;
+    min-height: 20px;
+}
