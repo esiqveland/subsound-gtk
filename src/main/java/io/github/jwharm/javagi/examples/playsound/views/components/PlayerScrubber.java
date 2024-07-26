@@ -76,6 +76,7 @@ public class PlayerScrubber extends Box {
     // This is a workaround for the bugged release event when using a GestureClick in:
     // Find the built-in GestureClick and modify that one.
     // https://gitlab.gnome.org/GNOME/gtk/-/issues/4939
+    // https://stackoverflow.com/questions/72303475/gtk4-gestureclick-no-released-signal-emitted
     private GestureClick findGestureClick(Scale scale) {
         var list = scale.observeControllers();
         int nItems = list.getNItems();

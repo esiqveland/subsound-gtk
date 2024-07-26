@@ -14,7 +14,11 @@ todo:
 - [X] PlayerBar: CoverArt
 - [X] PlayerBar: play/pause button
 - [X] PlayerBar: find icons for buttons
-  - [ ] PlayerBar: Playing ProgressBar
+  - [X] PlayerBar: Playing ProgressBar
+- [ ] Make ArtistInfo page coverart prettier with:
+  - [ ] a box shadow?
+  - [ ] a blurred paintable background ?
+    - Something like: https://github.com/neithern/g4music/blob/master/src/ui/paintables.vala#L357
 - [ ] implement a in-memory play queue
 - [ ] set up a sqlite database with migrations
   - perhaps there is a good android library for migrating sqlite ?
