@@ -20,7 +20,7 @@ public class ArtistInfoBox extends Box {
     private final ListBox list;
     private final Map<String, ArtistAlbumInfo> artistsMap;
     private final ArtistInfo artist;
-    private final Box artistImage;
+    private final Widget artistImage;
     private final ThumbLoader thumbLoader;
 
     public ArtistInfoBox(
@@ -32,13 +32,7 @@ public class ArtistInfoBox extends Box {
         this.thumbLoader = thumbLoader;
         this.artist = artistInfo;
         this.onAlbumSelected = onAlbumSelected;
-        this.artistImage = this.artist.coverArt()
-                .map(coverArt -> new AlbumArt(
-                        coverArt,
-                        thumbLoader
-                ))
-                .map(artwork -> (Box) artwork)
-                .orElseGet(AlbumArt::placeholderImage);
+        this.artistImage = RoundedAlbumArt.resolveCoverArt(this.thumbLoader, this.artist.coverArt(), 300);
         this.infoContainer = Box.builder().setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).build();
         this.infoContainer.append(this.artistImage);
         this.infoContainer.append(new Label(this.artist.name()));
