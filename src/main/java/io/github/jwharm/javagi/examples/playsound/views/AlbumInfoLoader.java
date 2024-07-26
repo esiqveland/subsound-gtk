@@ -2,7 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.views;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.AlbumInfo;
-import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
+import io.github.jwharm.javagi.examples.playsound.persistence.ThumbLoader;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;

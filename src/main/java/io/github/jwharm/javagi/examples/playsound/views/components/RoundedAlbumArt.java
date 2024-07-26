@@ -2,7 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.views.components;
 
 import io.github.jwharm.javagi.base.GErrorException;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
-import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
+import io.github.jwharm.javagi.examples.playsound.persistence.ThumbLoader;
 import org.gnome.gdkpixbuf.Pixbuf;
 import org.gnome.gdkpixbuf.PixbufLoader;
 import org.gnome.glib.GLib;

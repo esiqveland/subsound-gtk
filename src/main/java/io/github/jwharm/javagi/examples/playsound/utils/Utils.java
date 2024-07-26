@@ -125,4 +125,7 @@ public class Utils {
         return String.format("%.1f %cB", bytes / 1000.0, ci.current());
     }
 
+    public static String[] cssClasses(String... clazz) {
+        return clazz;
+    }
 }

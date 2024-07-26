@@ -26,10 +26,15 @@ public class PlayerScrubber extends Box {
         super(Orientation.HORIZONTAL, 5);
         this.onPositionChanged = onPositionChanged;
 
-        currentTimeLabel = Label.builder().setLabel(LABEL_ZERO).build();
-        endTimeLabel = Label.builder().setLabel(LABEL_ZERO).build();
+        currentTimeLabel = Label.builder()
+                .setLabel(LABEL_ZERO)
+                .setCssClasses(Utils.cssClasses("dim-label", "numeric"))
+                .build();
+        endTimeLabel = Label.builder()
+                .setLabel(LABEL_ZERO)
+                .setCssClasses(Utils.cssClasses("dim-label", "numeric"))
+                .build();
 
-        GestureDrag gestureDrag = new GestureDrag();
         scale = disableScroll(new Scale(Orientation.HORIZONTAL, Adjustment.builder().build()));
         scale.setSizeRequest(400, 24);
         scale.setHalign(Align.FILL);

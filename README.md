@@ -4,6 +4,7 @@ todo:
 - [X] songlist: duration, tracknumber, starred
 - [ ] songlist: bitrate, size, format
 - [ ] songlist: currently playing icon on the left
+- [ ] songlist: Hover-shows-play ?
 - [ ] Favorites page
 - [X] cache thumbnails on disk
   - [ ] load from file
@@ -30,5 +31,7 @@ todo:
   - 
 
 
+My notes:
 
+Adw CSS classes: https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/style-classes.html
 

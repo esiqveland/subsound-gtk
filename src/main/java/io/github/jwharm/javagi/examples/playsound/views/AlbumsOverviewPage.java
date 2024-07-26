@@ -1,7 +1,7 @@
 package io.github.jwharm.javagi.examples.playsound.views;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
-import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
+import io.github.jwharm.javagi.examples.playsound.persistence.ThumbLoader;
 import org.gnome.gtk.FlowBox;
 
 public class AlbumsOverviewPage extends FlowBox {

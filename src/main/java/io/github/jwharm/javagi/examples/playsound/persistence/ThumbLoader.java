@@ -1,4 +1,4 @@
-package io.github.jwharm.javagi.examples.playsound.integration;
+package io.github.jwharm.javagi.examples.playsound.persistence;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
 import io.github.jwharm.javagi.examples.playsound.utils.javahttp.LoggingHttpClient;

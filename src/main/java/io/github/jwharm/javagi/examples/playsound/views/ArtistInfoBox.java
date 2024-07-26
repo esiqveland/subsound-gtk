@@ -2,8 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.views;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistAlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistInfo;
-import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
-import io.github.jwharm.javagi.examples.playsound.views.components.AlbumArt;
+import io.github.jwharm.javagi.examples.playsound.persistence.ThumbLoader;
 import io.github.jwharm.javagi.examples.playsound.views.components.RoundedAlbumArt;
 import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;

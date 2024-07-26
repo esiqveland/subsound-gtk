@@ -2,7 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.views;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.AlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
-import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
+import io.github.jwharm.javagi.examples.playsound.persistence.ThumbLoader;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.github.jwharm.javagi.examples.playsound.views.components.RoundedAlbumArt;
 import org.gnome.adw.ActionRow;
@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.formatDurationLong;
 
 public class AlbumInfoBox extends Box {
@@ -44,10 +45,10 @@ public class AlbumInfoBox extends Box {
                 .orElseGet(() -> RoundedAlbumArt.placeholderImage(300));
         this.infoContainer = Box.builder().setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).build();
         this.infoContainer.append(this.artistImage);
-        this.infoContainer.append(new Label(this.albumInfo.name()));
-        this.infoContainer.append(new Label(this.albumInfo.artistName()));
-        this.infoContainer.append(new Label("%d songs".formatted(this.albumInfo.songCount())));
-        this.infoContainer.append(new Label("%s playtime".formatted(formatDurationLong(this.albumInfo.totalPlayTime()))));
+        this.infoContainer.append(infoLabel(this.albumInfo.name(), cssClasses("heading")));
+        this.infoContainer.append(infoLabel(this.albumInfo.artistName(), cssClasses("dim-label", "body")));
+        this.infoContainer.append(infoLabel("%d songs".formatted(this.albumInfo.songCount()), cssClasses("dim-label", "body")));
+        this.infoContainer.append(infoLabel("%s playtime".formatted(formatDurationLong(this.albumInfo.totalPlayTime())), cssClasses("dim-label", "body")));
 
         this.songIdMap = this.albumInfo.songs().stream().collect(Collectors.toMap(
                 SongInfo::id,
@@ -98,5 +99,9 @@ public class AlbumInfoBox extends Box {
         this.setHexpand(true);
         this.setVexpand(true);
         this.append(scroll);
+    }
+
+    private Label infoLabel(String label, String[] cssClazz) {
+        return Label.builder().setLabel(label).setCssClasses(cssClazz).build();
     }
 }

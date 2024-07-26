@@ -3,8 +3,7 @@ package io.github.jwharm.javagi.examples.playsound;
 import io.github.jwharm.javagi.base.Out;
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.configuration.Config;
-import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
-import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
+import io.github.jwharm.javagi.examples.playsound.persistence.ThumbLoader;
 import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
@@ -12,7 +11,6 @@ import io.github.jwharm.javagi.examples.playsound.views.AlbumInfoLoader;
 import io.github.jwharm.javagi.examples.playsound.views.ArtistInfoLoader;
 import io.github.jwharm.javagi.examples.playsound.views.ArtistListBox;
 import io.github.jwharm.javagi.examples.playsound.views.TestPlayerPage;
-import io.github.jwharm.javagi.examples.playsound.views.components.AlbumArt;
 import io.github.jwharm.javagi.examples.playsound.views.components.AppNavigation;
 import io.github.jwharm.javagi.examples.playsound.views.components.AppNavigation.AppRoute;
 import io.github.jwharm.javagi.examples.playsound.views.components.PlayerBar;
@@ -28,7 +26,6 @@ import org.gnome.gtk.*;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -146,14 +143,8 @@ public class Main {
             albumsMe.onClicked(() -> {
                 System.out.println("albumsMe.onClicked");
             });
-            var albumImg = new AlbumArt(new CoverArt(
-                    SERVER_ID,
-                    "kbW_38ngyv4bR9IeBP23KpMp3yfo4Hi7yLZrFNckVGk",
-                    URI.create("https://play.logisk.org/share/img/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFyLTczMzJiMWFlMTNmZjhjYmUzYTNlOTFkOGQwNGMzODk1XzAiLCJpc3MiOiJORCJ9.kbW_38ngyv4bR9IeBP23KpMp3yfo4Hi7yLZrFNckVGk?size=600")
-            ), thumbLoader);
             var albumsContainer = BoxFullsize().build();
             albumsContainer.append(albumsMe);
-            albumsContainer.append(albumImg);
             ViewStackPage albumsPage = viewStack.addTitled(albumsContainer, "albumsPage", "Albums");
         }
         var artists = this.client.getArtists();
