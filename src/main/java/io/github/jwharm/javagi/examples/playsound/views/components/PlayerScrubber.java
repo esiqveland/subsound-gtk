@@ -2,6 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.views.components;
 
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.github.jwharm.javagi.gobject.SignalConnection;
+import org.gnome.gobject.GObject;
 import org.gnome.gtk.*;
 
 import java.time.Duration;
@@ -28,7 +29,6 @@ public class PlayerScrubber extends Box {
         currentTimeLabel = Label.builder().setLabel(LABEL_ZERO).build();
         endTimeLabel = Label.builder().setLabel(LABEL_ZERO).build();
 
-        GestureClick gesture = new GestureClick();
         GestureDrag gestureDrag = new GestureDrag();
         scale = disableScroll(new Scale(Orientation.HORIZONTAL, Adjustment.builder().build()));
         scale.setSizeRequest(400, 24);
@@ -40,64 +40,52 @@ public class PlayerScrubber extends Box {
             Duration temporaryPosition = Duration.ofSeconds((long) scale.getValue());
             currentTimeLabel.setLabel(Utils.formatDurationShort(temporaryPosition));
         };
-        {
-            final var signalRef = new AtomicReference<SignalConnection<Range.ValueChangedCallback>>(null);
-            gesture.onPressed((nPress, x, y) -> {
-                isPressed.set(true);
-                System.out.println("onPressed");
-                SignalConnection<Range.ValueChangedCallback> connection = scale.onValueChanged(onPressedCallback);
-                signalRef.set(connection);
-            });
-            gesture.onReleased((a, b, c) -> {
-                System.out.println("onReleased");
-            });
-            gesture.onStopped(() -> {
-                try {
-                    System.out.println("onStopped");
-                    var signal = signalRef.get();
-                    if (signal != null) {
-                        signal.disconnect();
-                        signalRef.set(null);
-                    }
-                    Duration finalPosition = Duration.ofSeconds((long) scale.getValue());
-                    currentTimeLabel.setLabel(Utils.formatDurationShort(finalPosition));
-                    this.onPositionSeeked(finalPosition);
-                } finally {
-                    isPressed.set(false);
-                }
-            });
-        }
 
-        {
-            final var signalRef = new AtomicReference<SignalConnection<Range.ValueChangedCallback>>(null);
-            gestureDrag.onDragBegin((double offsetX, double offsetY) -> {
-                isPressed.set(true);
-                System.out.println("onDragBegin");
-                SignalConnection<Range.ValueChangedCallback> connection = scale.onValueChanged(onPressedCallback);
-                signalRef.set(connection);
-            });
-            gestureDrag.onDragEnd((double offsetX, double offsetY) -> {
-                try {
-                    System.out.println("onDragEnd");
-                    var signal = signalRef.get();
-                    if (signal != null) {
-                        signal.disconnect();
-                        signalRef.set(null);
-                    }
-                    Duration finalPosition = Duration.ofSeconds((long) scale.getValue());
-                    currentTimeLabel.setLabel(Utils.formatDurationShort(finalPosition));
-                    this.onPositionSeeked(finalPosition);
-                } finally {
-                    isPressed.set(false);
+        GestureClick gestureClick = findGestureClick(scale);
+        final var signalRef = new AtomicReference<SignalConnection<Range.ValueChangedCallback>>(null);
+        gestureClick.onPressed((nPress, x, y) -> {
+            isPressed.set(true);
+            //System.out.println("onPressed");
+            SignalConnection<Range.ValueChangedCallback> connection = scale.onValueChanged(onPressedCallback);
+            signalRef.set(connection);
+        });
+        gestureClick.onStopped(() -> {
+            //System.out.println("onStopped");
+        });
+        gestureClick.onReleased((a, b, c) -> {
+            //System.out.println("onReleased");
+            try {
+                var signal = signalRef.get();
+                if (signal != null) {
+                    signal.disconnect();
+                    signalRef.set(null);
                 }
-            });
-        }
-        scale.addController(gesture);
-        scale.addController(gestureDrag);
+                Duration finalPosition = Duration.ofSeconds((long) scale.getValue());
+                currentTimeLabel.setLabel(Utils.formatDurationShort(finalPosition));
+                this.onPositionSeeked(finalPosition);
+            } finally {
+                isPressed.set(false);
+            }
+        });
 
         this.append(currentTimeLabel);
         this.append(scale);
         this.append(endTimeLabel);
+    }
+
+    // This is a workaround for the bugged release event when using a GestureClick in:
+    // Find the built-in GestureClick and modify that one.
+    // https://gitlab.gnome.org/GNOME/gtk/-/issues/4939
+    private GestureClick findGestureClick(Scale scale) {
+        var list = scale.observeControllers();
+        int nItems = list.getNItems();
+        for (int i = 0; i < nItems; i++) {
+            GObject item = list.getItem(i);
+            if (item instanceof GestureClick) {
+                return (GestureClick) item;
+            }
+        }
+        throw new IllegalStateException("no native GestureClick found in Gtk.Scale");
     }
 
     private void onPositionSeeked(Duration finalPosition) {
