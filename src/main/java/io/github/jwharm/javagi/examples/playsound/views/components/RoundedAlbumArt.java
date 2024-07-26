@@ -108,8 +108,8 @@ public class RoundedAlbumArt extends Grid {
         });
 
         this.setOverflow(Overflow.HIDDEN);
-        this.attach(image, 0, 0, 0, 0);
         this.addCssClass("rounded");
+        this.attach(image, 0, 0, 1, 1);
     }
 
     public void startLoad(PixbufLoader loader) {

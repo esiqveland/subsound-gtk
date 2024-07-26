@@ -9,5 +9,5 @@
 }
 
 .rounded {
-    border-radius: rem($window_radius / 2);
+    border-radius: 4px;
 }
