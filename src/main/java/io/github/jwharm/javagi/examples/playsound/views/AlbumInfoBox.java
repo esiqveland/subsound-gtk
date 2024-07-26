@@ -4,7 +4,6 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.Album
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ThumbLoader;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
-import io.github.jwharm.javagi.examples.playsound.views.components.AlbumArt;
 import io.github.jwharm.javagi.examples.playsound.views.components.RoundedAlbumArt;
 import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
@@ -81,7 +80,10 @@ public class AlbumInfoBox extends Box {
                     .setSubtitle(subtitle)
                     .setUseMarkup(false)
                     .setActivatable(true)
+                    .setFocusable(true)
+                    .setFocusOnClick(true)
                     .build();
+
             row.addPrefix(RoundedAlbumArt.resolveCoverArt(
                     thumbLoader,
                     albumInfo.coverArt(),
