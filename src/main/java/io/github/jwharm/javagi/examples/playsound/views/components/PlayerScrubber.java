@@ -5,6 +5,7 @@ import io.github.jwharm.javagi.gobject.SignalConnection;
 import org.gnome.gtk.*;
 
 import java.time.Duration;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -27,35 +28,72 @@ public class PlayerScrubber extends Box {
         currentTimeLabel = Label.builder().setLabel(LABEL_ZERO).build();
         endTimeLabel = Label.builder().setLabel(LABEL_ZERO).build();
 
-        GestureClick gestureClick = new GestureClick();
+        GestureClick gesture = new GestureClick();
+        GestureDrag gestureDrag = new GestureDrag();
         scale = disableScroll(new Scale(Orientation.HORIZONTAL, Adjustment.builder().build()));
         scale.setSizeRequest(400, 24);
         scale.setHalign(Align.FILL);
         scale.setDrawValue(false);
         scale.setRestrictToFillLevel(false);
-        scale.addController(gestureClick);
 
         final Range.ValueChangedCallback onPressedCallback = () -> {
             Duration temporaryPosition = Duration.ofSeconds((long) scale.getValue());
             currentTimeLabel.setLabel(Utils.formatDurationShort(temporaryPosition));
         };
-        final var signalRef = new AtomicReference<SignalConnection<Range.ValueChangedCallback>>(null);
+        {
+            final var signalRef = new AtomicReference<SignalConnection<Range.ValueChangedCallback>>(null);
+            gesture.onPressed((nPress, x, y) -> {
+                isPressed.set(true);
+                System.out.println("onPressed");
+                SignalConnection<Range.ValueChangedCallback> connection = scale.onValueChanged(onPressedCallback);
+                signalRef.set(connection);
+            });
+            gesture.onReleased((a, b, c) -> {
+                System.out.println("onReleased");
+            });
+            gesture.onStopped(() -> {
+                try {
+                    System.out.println("onStopped");
+                    var signal = signalRef.get();
+                    if (signal != null) {
+                        signal.disconnect();
+                        signalRef.set(null);
+                    }
+                    Duration finalPosition = Duration.ofSeconds((long) scale.getValue());
+                    currentTimeLabel.setLabel(Utils.formatDurationShort(finalPosition));
+                    this.onPositionSeeked(finalPosition);
+                } finally {
+                    isPressed.set(false);
+                }
+            });
+        }
 
-        gestureClick.onPressed((nPress, x, y) -> {
-            isPressed.set(true);
-            SignalConnection<Range.ValueChangedCallback> connection = scale.onValueChanged(onPressedCallback);
-            signalRef.set(connection);
-        });
-        gestureClick.onStopped(() -> {
-            var signal = signalRef.get();
-            if (signal != null) {
-                signal.disconnect();
-            }
-            Duration finalPosition = Duration.ofSeconds((long) scale.getValue());
-            currentTimeLabel.setLabel(Utils.formatDurationShort(finalPosition));
-            this.onPositionSeeked(finalPosition);
-            isPressed.set(false);
-        });
+        {
+            final var signalRef = new AtomicReference<SignalConnection<Range.ValueChangedCallback>>(null);
+            gestureDrag.onDragBegin((double offsetX, double offsetY) -> {
+                isPressed.set(true);
+                System.out.println("onDragBegin");
+                SignalConnection<Range.ValueChangedCallback> connection = scale.onValueChanged(onPressedCallback);
+                signalRef.set(connection);
+            });
+            gestureDrag.onDragEnd((double offsetX, double offsetY) -> {
+                try {
+                    System.out.println("onDragEnd");
+                    var signal = signalRef.get();
+                    if (signal != null) {
+                        signal.disconnect();
+                        signalRef.set(null);
+                    }
+                    Duration finalPosition = Duration.ofSeconds((long) scale.getValue());
+                    currentTimeLabel.setLabel(Utils.formatDurationShort(finalPosition));
+                    this.onPositionSeeked(finalPosition);
+                } finally {
+                    isPressed.set(false);
+                }
+            });
+        }
+        scale.addController(gesture);
+        scale.addController(gestureDrag);
 
         this.append(currentTimeLabel);
         this.append(scale);
@@ -114,8 +152,12 @@ public class PlayerScrubber extends Box {
     private static Scale disableScroll(Scale scale) {
         EventControllerScroll ec = EventControllerScroll.builder()
                 .setPropagationPhase(PropagationPhase.CAPTURE)
+                .setFlags(Set.of(EventControllerScrollFlags.BOTH_AXES))
                 .build();
-        ec.onScroll((double dx, double dy) -> true);
+        ec.onScroll((double dx, double dy) -> {
+            System.out.println("onScroll");
+            return true;
+        });
         scale.addController(ec);
         return scale;
     }
