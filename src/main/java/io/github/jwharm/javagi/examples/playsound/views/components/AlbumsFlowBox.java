@@ -4,6 +4,7 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbLoader;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.FlowBox;
+import org.gnome.gtk.Orientation;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -19,10 +20,13 @@ public class AlbumsFlowBox extends FlowBox {
             Consumer<ServerClient.ArtistAlbumInfo> onSelected
     ) {
         super();
+        setOrientation(Orientation.HORIZONTAL);
+        setRowSpacing(8);
+        setColumnSpacing(16);
         setHexpand(true);
         setVexpand(true);
-        setHalign(Align.CENTER);
-        setValign(Align.START);
+//        setHalign(Align.CENTER);
+//        setValign(Align.START);
 
         this.thumbLoader = thumbLoader;
         this.albumInfo = albumInfo;

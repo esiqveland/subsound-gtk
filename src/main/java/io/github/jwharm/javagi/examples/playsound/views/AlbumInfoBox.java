@@ -9,6 +9,7 @@ import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -102,12 +103,16 @@ public class AlbumInfoBox extends Box {
                     .setVisible(true)
                     .build();
 
-            var fileFormatLabel = infoLabel(songInfo.suffix(), cssClasses("dim-label"));
+            var fileFormatLabel = Optional.ofNullable(songInfo.suffix())
+                    .filter(fileExt -> !fileExt.isBlank())
+                    //.map(fileExt -> infoLabel(fileExt, cssClasses("dim-label")));
+                    .map(fileExt -> Button.builder().setLabel(fileExt).setCssClasses(cssClasses("pill", "dim-label")).build());
+
             var fileSizeLabel = infoLabel(formatBytesSI(songInfo.size()), cssClasses("dim-label"));
             var bitRateLabel = songInfo.bitRate()
                     .map(bitRate -> infoLabel("%d kbps".formatted(bitRate), cssClasses("dim-label")));
-            hoverBox.append(fileFormatLabel);
             bitRateLabel.ifPresent(hoverBox::append);
+            fileFormatLabel.ifPresent(hoverBox::append);
             hoverBox.append(fileSizeLabel);
             hoverBox.append(playButton);
 

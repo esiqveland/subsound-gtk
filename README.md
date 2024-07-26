@@ -28,9 +28,12 @@ todo:
   - [ ] a box shadow?
   - [ ] a blurred paintable background ?
     - Something like: https://github.com/neithern/g4music/blob/master/src/ui/paintables.vala#L357
+- [ ] Make downloading song async
 - [ ] implement a in-memory play queue
   - [ ] Gapless playback of queue
-- [ ] 
+- [ ] Proper navigation
+  - AdwNavigationView ?
+  - AdwLeaflet + AdwClamp? see https://gitlab.gnome.org/GNOME/gnome-music/-/blob/master/data/ui/ArtistAlbumsWidget.ui
 - [ ] set up a sqlite database with migrations
   - perhaps there is a good android library for migrating sqlite ?
   - [ ] record what we have downloaded / want to keep offline
