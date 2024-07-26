@@ -7,6 +7,7 @@ import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.*;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -28,6 +29,8 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
     private final Button playPauseButton;
     private final AtomicBoolean isStateChanging = new AtomicBoolean(false);
     private final Widget placeholderAlbumArt;
+    private final PlayerScrubber playerScrubber;
+
     // playing state helps control the play/pause button
     private PlayingState playingState = PlayingState.IDLE;
     private Optional<CoverArt> currentCoverArt = Optional.empty();
@@ -95,6 +98,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
 
         playPauseButton = Button.withLabel("Play");
         playPauseButton.onClicked(this::playPause);
+        playerScrubber = new PlayerScrubber();
 
         var playerControls = Box.builder()
                 .setSpacing(2)
@@ -105,9 +109,13 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                 .build();
         playerControls.append(playPauseButton);
 
+        Box centerWidget = Box.builder().setOrientation(Orientation.VERTICAL).setSpacing(2).build();
+        centerWidget.append(playerControls);
+        centerWidget.append(playerScrubber);
+
         mainBar = ActionBar.builder().setVexpand(true).setValign(Align.CENTER).build();
         mainBar.packStart(nowPlaying);
-        mainBar.setCenterWidget(playerControls);
+        mainBar.setCenterWidget(centerWidget);
         mainBar.packEnd(volumeBox);
         this.append(mainBar);
     }
@@ -153,8 +161,11 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
             }
 
             PlayingState nextPlayingState = toPlayingState(player.state());
-
             double volume = state.player().volume();
+
+            Optional<Duration> duration = state.player().source().flatMap(s -> s.duration());
+            this.playerScrubber.updateDuration(duration.orElse(Duration.ZERO));
+
             Utils.runOnMainThread(() -> {
                 if (!withinEpsilon(volume, volumeButton.getValue(), 0.01)) {
                     volumeButton.setValue(volume);

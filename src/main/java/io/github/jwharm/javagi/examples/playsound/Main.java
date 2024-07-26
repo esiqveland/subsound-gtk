@@ -244,7 +244,7 @@ public class Main {
         headerBar.packEnd(settingsButton);
 
         var playerBar = new PlayerBar(thumbLoader, appManager);
-        var bottomBar = new Box(Orientation.VERTICAL, 10);
+        var bottomBar = new Box(Orientation.VERTICAL, 2);
         bottomBar.append(viewSwitcherBar);
         bottomBar.append(playerBar);
 
