@@ -4,7 +4,9 @@ todo:
 - [X] songlist: duration, tracknumber, starred
 - [ ] songlist: bitrate, size, format
 - [ ] songlist: currently playing icon on the left
-- [ ] songlist: Hover-shows-play ?
+- [X] songlist: Single click to select, double-click/enter to activate (start playback)
+- [X] songlist: Hover-shows-play ?
+  - [ ] songlist: hover play icon is not tab-able for focus when row is selected, only when hover...
 - [ ] Favorites page
 - [X] cache thumbnails on disk
   - [ ] load from file
@@ -20,11 +22,14 @@ todo:
 - [X] PlayerBar: play/pause button
 - [X] PlayerBar: find icons for buttons
   - [X] PlayerBar: Playing ProgressBar
+- [ ] Icons for top bar pages
 - [ ] Make ArtistInfo page coverart prettier with:
   - [ ] a box shadow?
   - [ ] a blurred paintable background ?
     - Something like: https://github.com/neithern/g4music/blob/master/src/ui/paintables.vala#L357
 - [ ] implement a in-memory play queue
+  - [ ] Gapless playback of queue
+- [ ] 
 - [ ] set up a sqlite database with migrations
   - perhaps there is a good android library for migrating sqlite ?
   - [ ] record what we have downloaded / want to keep offline
@@ -34,4 +39,7 @@ todo:
 My notes:
 
 Adw CSS classes: https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/style-classes.html
+https://docs.gtk.org/gtk4/css-properties.html
+https://docs.gtk.org/gtk4/css-overview.html
+
 

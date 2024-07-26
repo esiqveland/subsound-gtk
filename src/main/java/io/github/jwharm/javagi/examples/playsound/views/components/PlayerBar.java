@@ -11,6 +11,7 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
 import static io.github.jwharm.javagi.examples.playsound.views.components.PlayerBar.CoverArtDiff.CHANGED;
 import static io.github.jwharm.javagi.examples.playsound.views.components.PlayerBar.CoverArtDiff.SAME;
 import static io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
@@ -59,11 +60,11 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                 .setVexpand(true)
                 .setMarginStart(8)
                 .build();
-        songTitle = Label.builder().setLabel("Song title").setHalign(Align.START).build();
+        songTitle = Label.builder().setLabel("Song title").setHalign(Align.START).setCssClasses(cssClasses("heading")).build();
         songInfo.append(songTitle);
         albumTitle = Label.builder().setLabel("Album title").setHalign(Align.START).build();
-        songInfo.append(albumTitle);
-        artistTitle = Label.builder().setLabel("Artist title").setHalign(Align.START).build();
+        //songInfo.append(albumTitle);
+        artistTitle = Label.builder().setLabel("Artist title").setHalign(Align.START).setCssClasses(cssClasses("dim-label", "body")).build();
         songInfo.append(artistTitle);
 
         this.albumArtBox = Box.builder()

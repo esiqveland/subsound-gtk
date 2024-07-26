@@ -16,3 +16,10 @@ scale slider {
     min-width: 20px;
     min-height: 20px;
 }
+
+.hover-hide {
+    visibility: none;
+}
+.hover-hide:hover {
+    visibility: none;
+}

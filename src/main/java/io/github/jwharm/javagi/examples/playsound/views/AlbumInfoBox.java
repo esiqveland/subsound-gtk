@@ -9,6 +9,7 @@ import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -54,7 +55,12 @@ public class AlbumInfoBox extends Box {
                 SongInfo::id,
                 a -> a
         ));
-        this.list = ListBox.builder().setValign(Align.START).setCssClasses(new String[]{"boxed-list"}).build();
+        this.list = ListBox.builder()
+                .setValign(Align.START)
+                // require double click to activate:
+                .setActivateOnSingleClick(false)
+                .setCssClasses(new String[]{"boxed-list"})
+                .build();
         this.list.onRowActivated(row -> {
             var songInfo = this.albumInfo.songs().get(row.getIndex());
             System.out.println("AlbumInfoBox: play " + songInfo.title() + " (%s)".formatted(songInfo.id()));
@@ -70,7 +76,28 @@ public class AlbumInfoBox extends Box {
             var songInfo = this.songIdMap.get(id);
             var isStarred = songInfo.starred().map(s -> true).orElse(false);
             var starredString = isStarred ? "★" : "☆";
-            var suffix = Label.builder().setLabel(starredString).setCssClasses(new String[]{"starred"}).build();
+
+            var suffix = Box.builder()
+                    .setOrientation(Orientation.HORIZONTAL)
+                    .setHalign(Align.END)
+                    .setValign(Align.CENTER)
+                    .setVexpand(true)
+                    .setSpacing(8)
+                    .build();
+            var starredBtn = Label.builder().setLabel(starredString).setCssClasses(new String[]{"starred"}).build();
+//            var playButton = SplitButton.builder()
+            var playButton = Button.builder()
+                    //.setLabel("Play")
+                    .setIconName("media-playback-start-symbolic")
+                    .setCssClasses(cssClasses("success", "circular", "raised"))
+                    .setVisible(false)
+                    .build();
+            playButton.onClicked(() -> {
+                System.out.println("AlbumInfoBox.playButton: play " + songInfo.title() + " (%s)".formatted(songInfo.id()));
+                this.onSongSelected.accept(songInfo);
+            });
+            suffix.append(playButton);
+            suffix.append(starredBtn);
 
             var trackNumberTitle = songInfo.trackNumber().map(num -> "%d ⦁ ".formatted(num)).orElse("");
             String durationString = Utils.formatDurationShort(songInfo.duration());
@@ -84,6 +111,27 @@ public class AlbumInfoBox extends Box {
                     .setFocusable(true)
                     .setFocusOnClick(true)
                     .build();
+
+            var isHoverActive = new AtomicBoolean(false);
+            row = addHover(
+                    row,
+                    () -> {
+                        isHoverActive.set(true);
+                        playButton.setVisible(true);
+                    },
+                    () -> {
+                        isHoverActive.set(false);
+                        var focused = playButton.hasFocus();
+                        //System.out.println("onLeave: focused=" + focused);
+                        playButton.setVisible(focused);
+                    }
+            );
+            row.onStateFlagsChanged(flags -> {
+                var hasFocus = playButton.hasFocus() || flags.contains(StateFlags.FOCUSED) || flags.contains(StateFlags.FOCUS_WITHIN) || flags.contains(StateFlags.FOCUS_VISIBLE);
+                var hasHover = isHoverActive.get();
+                //System.out.println("onStateFlagsChanged: " + String.join(", ", flags.stream().map(s -> s.name()).toList()) + " hasHover=" + hasHover + " hasFocus=" + hasFocus);
+                playButton.setVisible(hasFocus || hasHover);
+            });
 
             row.addPrefix(RoundedAlbumArt.resolveCoverArt(
                     thumbLoader,
@@ -99,6 +147,18 @@ public class AlbumInfoBox extends Box {
         this.setHexpand(true);
         this.setVexpand(true);
         this.append(scroll);
+    }
+
+    private ActionRow addHover(ActionRow row, Runnable onEnter, Runnable onLeave) {
+        var ec = EventControllerMotion.builder().setPropagationPhase(PropagationPhase.CAPTURE).setPropagationLimit(PropagationLimit.NONE).build();
+        ec.onEnter((x, y) -> {
+            onEnter.run();
+        });
+        ec.onLeave(() -> {
+            onLeave.run();
+        });
+        row.addController(ec);
+        return row;
     }
 
     private Label infoLabel(String label, String[] cssClazz) {
