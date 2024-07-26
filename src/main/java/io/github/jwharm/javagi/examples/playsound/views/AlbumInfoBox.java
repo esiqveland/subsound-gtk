@@ -13,8 +13,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
-import static io.github.jwharm.javagi.examples.playsound.utils.Utils.formatDurationLong;
+import static io.github.jwharm.javagi.examples.playsound.utils.Utils.*;
+import static org.gnome.gtk.Orientation.HORIZONTAL;
 
 public class AlbumInfoBox extends Box {
     private final ScrolledWindow scroll;
@@ -78,14 +78,23 @@ public class AlbumInfoBox extends Box {
             var starredString = isStarred ? "★" : "☆";
 
             var suffix = Box.builder()
-                    .setOrientation(Orientation.HORIZONTAL)
+                    .setOrientation(HORIZONTAL)
                     .setHalign(Align.END)
                     .setValign(Align.CENTER)
                     .setVexpand(true)
                     .setSpacing(8)
                     .build();
             var starredBtn = Label.builder().setLabel(starredString).setCssClasses(new String[]{"starred"}).build();
-//            var playButton = SplitButton.builder()
+
+
+            var hoverBox = Box.builder()
+                    .setOrientation(HORIZONTAL)
+                    .setHalign(Align.END)
+                    .setValign(Align.CENTER)
+                    .setSpacing(8)
+                    .build();
+
+            // var playButton = SplitButton.builder()
             var playButton = Button.builder()
                     //.setLabel("Play")
                     .setIconName("media-playback-start-symbolic")
@@ -93,8 +102,17 @@ public class AlbumInfoBox extends Box {
                     .setVisible(true)
                     .build();
 
+            var fileFormatLabel = infoLabel(songInfo.suffix(), cssClasses("dim-label"));
+            var fileSizeLabel = infoLabel(formatBytesSI(songInfo.size()), cssClasses("dim-label"));
+            var bitRateLabel = songInfo.bitRate()
+                    .map(bitRate -> infoLabel("%d kbps".formatted(bitRate), cssClasses("dim-label")));
+            hoverBox.append(fileFormatLabel);
+            bitRateLabel.ifPresent(hoverBox::append);
+            hoverBox.append(fileSizeLabel);
+            hoverBox.append(playButton);
+
             var revealer = Revealer.builder()
-                    .setChild(playButton)
+                    .setChild(hoverBox)
                     .setRevealChild(false)
                     .setTransitionType(RevealerTransitionType.CROSSFADE)
                     .build();
@@ -128,7 +146,7 @@ public class AlbumInfoBox extends Box {
                     },
                     () -> {
                         isHoverActive.set(false);
-                        var focused = row.hasFocus();
+                        var focused = row.hasFocus() || playButton.hasFocus();
                         //System.out.println("onLeave: focused=" + focused);
                         revealer.setRevealChild(focused);
                     }
