@@ -124,14 +124,12 @@ public class AlbumInfoBox extends Box {
                     row,
                     () -> {
                         isHoverActive.set(true);
-                        //playButton.setVisible(true);
                         revealer.setRevealChild(true);
                     },
                     () -> {
                         isHoverActive.set(false);
                         var focused = row.hasFocus();
                         //System.out.println("onLeave: focused=" + focused);
-                        //playButton.setVisible(focused);
                         revealer.setRevealChild(focused);
                     }
             );

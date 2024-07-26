@@ -11,6 +11,7 @@ todo:
 - [X] cache thumbnails on disk
   - [ ] load from file
   - [ ] reuse pixbuf for albumart
+  - [ ] use a paintable instead ?
 - [X] cache mp3 variant on disk
   - [X] fix song cache storing with original suffix instead of transcode format suffix
     - This caused us to save mp3 transcoded flac data with .flac extension

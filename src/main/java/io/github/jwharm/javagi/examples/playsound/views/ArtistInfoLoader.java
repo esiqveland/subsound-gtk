@@ -17,7 +17,7 @@ public class ArtistInfoLoader extends Box {
     private final ThumbLoader thumbLoader;
     private final ServerClient client;
     private final String artistId = "";
-    private final AtomicReference<ArtistInfoBox> viewHolder = new AtomicReference<>();
+    private final AtomicReference<ArtistInfoFlowBox> viewHolder = new AtomicReference<>();
     private Consumer<ArtistAlbumInfo> onAlbumSelected;
 
     public ArtistInfoLoader(ThumbLoader thumbLoader, ServerClient client) {
@@ -45,7 +45,7 @@ public class ArtistInfoLoader extends Box {
             if (current != null) {
                 this.remove(current);
             }
-            var next = new ArtistInfoBox(
+            var next = new ArtistInfoFlowBox(
                     thumbLoader,
                     info,
                     albumInfo -> this.onAlbumSelected(albumInfo));

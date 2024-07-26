@@ -3,8 +3,8 @@ package io.github.jwharm.javagi.examples.playsound.views;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistAlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbLoader;
+import io.github.jwharm.javagi.examples.playsound.views.components.AlbumsFlowBox;
 import io.github.jwharm.javagi.examples.playsound.views.components.RoundedAlbumArt;
-import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
 
 import java.time.Duration;
@@ -12,17 +12,17 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class ArtistInfoBox extends Box {
+public class ArtistInfoFlowBox extends Box {
     private final Consumer<ArtistAlbumInfo> onAlbumSelected;
     private final ScrolledWindow scroll;
     private final Box infoContainer;
-    private final ListBox list;
     private final Map<String, ArtistAlbumInfo> artistsMap;
     private final ArtistInfo artist;
     private final Widget artistImage;
     private final ThumbLoader thumbLoader;
+    private final AlbumsFlowBox listView;
 
-    public ArtistInfoBox(
+    public ArtistInfoFlowBox(
             ThumbLoader thumbLoader,
             ArtistInfo artistInfo,
             Consumer<ArtistAlbumInfo> onAlbumSelected
@@ -44,9 +44,7 @@ public class ArtistInfoBox extends Box {
                 a -> a
         ));
 
-        this.list = ListBox.builder().setValign(Align.START).setCssClasses(new String[]{"boxed-list"}).build();
-        this.list.onRowActivated(row -> {
-            var albumInfo = this.artist.albums().get(row.getIndex());
+        listView = new AlbumsFlowBox(thumbLoader, this.artist.albums(), (albumInfo) -> {
             System.out.println("ArtistAlbum: goto " + albumInfo.name() + " (%s)".formatted(albumInfo.id()));
             var handler = this.onAlbumSelected;
             if (handler == null) {
@@ -54,30 +52,7 @@ public class ArtistInfoBox extends Box {
             }
             handler.accept(albumInfo);
         });
-
-        var stringList = StringList.builder().build();
-        this.artist.albums().forEach(i -> stringList.append(i.id()));
-        this.list.bindModel(stringList, item -> {
-            // StringObject is the item type for a StringList ListModel type. StringObject is a GObject.
-            StringObject strObj = (StringObject) item;
-            var id = strObj.getString();
-            var albumInfo = this.artistsMap.get(id);
-
-            String yearLine = albumInfo.year().map(year -> "%d ⦁ ".formatted(year)).orElse("");
-            String genreLine = albumInfo.genre().map(genre -> "%s ⦁ ".formatted(genre)).orElse("");
-            String subtitle = yearLine + genreLine + albumInfo.songCount() + " tracks";
-            var row = ActionRow.builder()
-                    .setTitle(albumInfo.name())
-                    .setSubtitle(subtitle)
-                    .setUseMarkup(false)
-                    .setActivatable(true)
-                    .build();
-
-            row.addPrefix(RoundedAlbumArt.resolveCoverArt(thumbLoader, albumInfo.coverArt(), 48));
-            return row;
-        });
-
-        infoContainer.append(list);
+        infoContainer.append(listView);
         this.scroll = ScrolledWindow.builder().setChild(infoContainer).setHexpand(true).setVexpand(true).build();
         this.setHexpand(true);
         this.setVexpand(true);

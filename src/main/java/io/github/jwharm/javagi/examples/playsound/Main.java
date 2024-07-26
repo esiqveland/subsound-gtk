@@ -3,9 +3,9 @@ package io.github.jwharm.javagi.examples.playsound;
 import io.github.jwharm.javagi.base.Out;
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.configuration.Config;
-import io.github.jwharm.javagi.examples.playsound.persistence.ThumbLoader;
 import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache;
+import io.github.jwharm.javagi.examples.playsound.persistence.ThumbLoader;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import io.github.jwharm.javagi.examples.playsound.views.AlbumInfoLoader;
 import io.github.jwharm.javagi.examples.playsound.views.ArtistInfoLoader;
@@ -37,6 +37,7 @@ public class Main {
         // Bridge/route all JUL log records to the SLF4J API.
         SLF4JBridgeHandler.install();
     }
+
     private final Config config;
     private final PlaybinPlayer player;
     private final SubsonicClient client;
@@ -47,7 +48,7 @@ public class Main {
 
     public Main(String[] args) {
         // Initialisation Gst
-        Gst.init(new Out<>(args));
+        Gst.init(new Out<>(new String[]{}));
         this.config = Config.createDefault();
         var songCache = new SongCache(this.config.cacheDir);
         this.thumbLoader = new ThumbLoader(config.cacheDir);
