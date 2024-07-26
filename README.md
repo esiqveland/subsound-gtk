@@ -1,7 +1,7 @@
 
 todo:
 
-- [ ] songlist: duration, tracknumber, starred
+- [X] songlist: duration, tracknumber, starred
 - [ ] songlist: bitrate, size, format
 - [ ] Favorites page
 - [X] cache thumbnails on disk
@@ -13,7 +13,7 @@ todo:
 - [X] PlayerBar: wire up now-playing to playerState
 - [X] PlayerBar: CoverArt
 - [X] PlayerBar: play/pause button
-- [ ] PlayerBar: find icons for buttons
+- [X] PlayerBar: find icons for buttons
   - [ ] PlayerBar: Playing ProgressBar
 - [ ] implement a in-memory play queue
 - [ ] set up a sqlite database with migrations

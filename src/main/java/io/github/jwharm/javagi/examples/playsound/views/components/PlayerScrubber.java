@@ -63,7 +63,7 @@ public class PlayerScrubber extends Box {
     }
 
     private void onPositionSeeked(Duration finalPosition) {
-
+        this.onPositionChanged.accept(finalPosition);
     }
 
     public void updatePosition(Duration currentTime) {
