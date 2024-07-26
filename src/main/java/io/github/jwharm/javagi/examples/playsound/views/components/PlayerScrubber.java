@@ -72,6 +72,10 @@ public class PlayerScrubber extends Box {
         if (currentPosition.equals(currentTime)) {
             return;
         }
+        // ignore position updates while we are scrubbing
+        if (isPressed.get()) {
+            return;
+        }
         currentPosition = currentTime;
         var text = Utils.formatDurationShort(currentTime);
         Utils.runOnMainThread(() -> {
