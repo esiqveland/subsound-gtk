@@ -12,7 +12,7 @@ dependencies {
     implementation 'io.github.jwharm.javagi:adw:0.10.2'
     implementation 'io.github.jwharm.javagi:gst:0.10.2'
 
-    implementation 'net.beardbot:subsonic-client:0.3.0'
+    implementation 'net.beardbot:subsonic-client:0.4.0'
     implementation 'io.github.cdimascio:dotenv-java:3.0.0'
 
     implementation 'org.slf4j:slf4j-api:2.0.12'
