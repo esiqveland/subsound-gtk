@@ -15,6 +15,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.*;
+import static org.gnome.gtk.Align.CENTER;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 
 public class AlbumInfoBox extends Box {
@@ -81,7 +82,7 @@ public class AlbumInfoBox extends Box {
             var suffix = Box.builder()
                     .setOrientation(HORIZONTAL)
                     .setHalign(Align.END)
-                    .setValign(Align.CENTER)
+                    .setValign(CENTER)
                     .setVexpand(true)
                     .setSpacing(8)
                     .build();
@@ -91,7 +92,7 @@ public class AlbumInfoBox extends Box {
             var hoverBox = Box.builder()
                     .setOrientation(HORIZONTAL)
                     .setHalign(Align.END)
-                    .setValign(Align.CENTER)
+                    .setValign(CENTER)
                     .setSpacing(8)
                     .build();
 
@@ -106,7 +107,14 @@ public class AlbumInfoBox extends Box {
             var fileFormatLabel = Optional.ofNullable(songInfo.suffix())
                     .filter(fileExt -> !fileExt.isBlank())
                     //.map(fileExt -> infoLabel(fileExt, cssClasses("dim-label")));
-                    .map(fileExt -> Button.builder().setLabel(fileExt).setCssClasses(cssClasses("pill", "dim-label")).build());
+                    .map(fileExt -> Button.builder()
+                            .setLabel(fileExt)
+                            .setSensitive(false)
+                            .setVexpand(false)
+                            .setValign(CENTER)
+                            .setCssClasses(cssClasses("pill", "dim-label"))
+                            .build()
+                    );
 
             var fileSizeLabel = infoLabel(formatBytesSI(songInfo.size()), cssClasses("dim-label"));
             var bitRateLabel = songInfo.bitRate()

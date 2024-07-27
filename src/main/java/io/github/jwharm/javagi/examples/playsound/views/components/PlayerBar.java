@@ -6,6 +6,7 @@ import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.*;
+import org.gnome.pango.EllipsizeMode;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -60,11 +61,11 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                 .setVexpand(true)
                 .setMarginStart(8)
                 .build();
-        songTitle = Label.builder().setLabel("Song title").setHalign(Align.START).setCssClasses(cssClasses("heading")).build();
+        songTitle = Label.builder().setLabel("Song title").setHalign(Align.START).setMaxWidthChars(22).setEllipsize(EllipsizeMode.END).setCssClasses(cssClasses("heading")).build();
         songInfo.append(songTitle);
-        albumTitle = Label.builder().setLabel("Album title").setHalign(Align.START).build();
+        albumTitle = Label.builder().setLabel("Album title").setHalign(Align.START).setMaxWidthChars(22).setEllipsize(EllipsizeMode.END).build();
         //songInfo.append(albumTitle);
-        artistTitle = Label.builder().setLabel("Artist title").setHalign(Align.START).setCssClasses(cssClasses("dim-label", "body")).build();
+        artistTitle = Label.builder().setLabel("Artist title").setHalign(Align.START).setMaxWidthChars(22).setEllipsize(EllipsizeMode.END).setCssClasses(cssClasses("dim-label", "body")).build();
         songInfo.append(artistTitle);
 
         this.albumArtBox = Box.builder()

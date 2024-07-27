@@ -2,7 +2,7 @@
 todo:
 
 - [X] songlist: duration, tracknumber, starred
-- [ ] songlist: bitrate, size, format
+- [X] songlist: bitrate, size, format
 - [ ] songlist: currently playing icon on the left
 - [X] songlist: Single click to select, double-click/enter to activate (start playback)
 - [X] songlist: Hover-shows-play ?
@@ -24,6 +24,9 @@ todo:
 - [X] PlayerBar: find icons for buttons
   - [X] PlayerBar: Playing ProgressBar
 - [ ] Icons for top bar pages
+- ArtistListing:
+  - [ ] add a circular artist thumbnail in the left prefix area
+  - [ ] convert to using a AdwLeaflet
 - [ ] Make ArtistInfo page coverart prettier with:
   - [ ] a box shadow?
   - [ ] a blurred paintable background ?
@@ -37,7 +40,14 @@ todo:
 - [ ] set up a sqlite database with migrations
   - perhaps there is a good android library for migrating sqlite ?
   - [ ] record what we have downloaded / want to keep offline
-  - 
+- [ ] Mpris support
+    - https://github.com/NGMusic/mpris-java/blob/master/src/main/org/mpris/MediaPlayer2/DBusPlayer.kt
+    - https://github.com/NGMusic/mpris-java/blob/master/extensions/src/xerus/mpris/AbstractMPRISPlayer.kt
+    - https://github.com/NGMusic/moodplayer/blob/master/src/desktop/java/xerus/mpris/MPRIS.kt
+    - https://github.com/NGMusic/mpris-java/blob/master/extensions/test/xerus/mpris/MPRISPlayer.kt
+    - [ ] thumbnail
+    - [ ] play/pause
+    - [ ] skip
 
 
 My notes:
@@ -46,4 +56,12 @@ Adw CSS classes: https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/style-
 https://docs.gtk.org/gtk4/css-properties.html
 https://docs.gtk.org/gtk4/css-overview.html
 
+AdwNavigationView:
+https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/class.NavigationView.html
+- push / pop AdwNavigationPage
 
+AdwLeaflet:
+https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/class.Leaflet.html
+
+AdwClamp:
+https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/class.Clamp.html
