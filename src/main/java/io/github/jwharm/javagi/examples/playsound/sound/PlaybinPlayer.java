@@ -31,7 +31,7 @@ import static io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.Pla
 public class PlaybinPlayer {
     private static final Logger log = LoggerFactory.getLogger(PlaybinPlayer.class);
 
-    private static final int GST_PLAY_FLAG_AUDIO = Integer.parseUnsignedInt("2");
+    private static final int GST_PLAY_FLAG_AUDIO = 2;
     private static final List<OnStateChanged> listeners = new CopyOnWriteArrayList<>();
 
     public interface OnStateChanged {
@@ -381,12 +381,7 @@ public class PlaybinPlayer {
         }
         // playbin: we only want to enable audio:
         // https://gstreamer.freedesktop.org/documentation/playback/playsink.html?gi-language=c#GstPlayFlags
-//        playbinEl.set("flags", Integer.toUnsignedLong(GST_PLAY_FLAG_AUDIO), null);
-        byte b = 0x02;
-        playbinEl.set("flags", Byte.toUnsignedInt(b));
-        // Set up the pipeline
-//        playbinEl = new Pipeline("audio-player-example");
-//        playbinEl.add(playbinEl);
+        playbinEl.set("flags", GST_PLAY_FLAG_AUDIO, null);
 
         // We add a message handler
         bus = playbinEl.getBus();

@@ -62,7 +62,7 @@ public class AlbumInfoBox extends Box {
                 .setValign(Align.START)
                 // require double click to activate:
                 .setActivateOnSingleClick(false)
-                .setCssClasses(new String[]{"boxed-songs"})
+                .setCssClasses(new String[]{"boxed-list"})
                 .build();
         this.list.onRowActivated(row -> {
             var songInfo = this.albumInfo.songs().get(row.getIndex());

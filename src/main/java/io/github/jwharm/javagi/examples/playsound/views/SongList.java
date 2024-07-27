@@ -42,7 +42,7 @@ public class SongList extends ListBox {
         this.setValign(Align.START);
         // require double click to activate:
         this.setActivateOnSingleClick(false);
-        this.setCssClasses(new String[]{"boxed-songs"});
+        this.setCssClasses(new String[]{"boxed-list"});
         this.onRowActivated(row -> {
             var songInfo = this.songs.get(row.getIndex());
             System.out.println("SongList: play " + songInfo.title() + " (%s)".formatted(songInfo.id()));

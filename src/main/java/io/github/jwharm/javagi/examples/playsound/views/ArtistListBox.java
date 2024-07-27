@@ -20,7 +20,7 @@ public class ArtistListBox extends Box {
         super(Orientation.VERTICAL, 5);
         this.artists = artists;
         this.artistsMap = artists.stream().collect(Collectors.toMap(ArtistEntry::id, a -> a));
-        this.list = ListBox.builder().setValign(Align.START).setCssClasses(new String[]{"boxed-songs"}).build();
+        this.list = ListBox.builder().setValign(Align.START).setCssClasses(new String[]{"boxed-list"}).build();
         this.list.onRowActivated(row -> {
             var artist = this.artists.get(row.getIndex());
             System.out.println("Artists: goto " + artist.name());
