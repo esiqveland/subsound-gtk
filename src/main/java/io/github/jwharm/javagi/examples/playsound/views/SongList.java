@@ -1,6 +1,5 @@
 package io.github.jwharm.javagi.examples.playsound.views;
 
-import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.AlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
@@ -8,71 +7,53 @@ import io.github.jwharm.javagi.examples.playsound.views.components.RoundedAlbumA
 import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static io.github.jwharm.javagi.examples.playsound.utils.Utils.*;
+import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
+import static io.github.jwharm.javagi.examples.playsound.utils.Utils.formatBytesSI;
+import static io.github.jwharm.javagi.examples.playsound.views.AlbumInfoBox.addHover;
+import static io.github.jwharm.javagi.examples.playsound.views.AlbumInfoBox.infoLabel;
 import static org.gnome.gtk.Align.CENTER;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 
-public class AlbumInfoBox extends Box {
-    private final ScrolledWindow scroll;
-    private final Box infoContainer;
-    private final ListBox list;
-    private final Map<String, SongInfo> songIdMap;
-    //private final ArtistInfo artistInfo;
-    private final AlbumInfo albumInfo;
-    private final Widget artistImage;
-    private final Consumer<SongInfo> onSongSelected;
+public class SongList extends ListBox {
+
     private final ThumbnailCache thumbLoader;
+    private final List<SongInfo> songs;
+    private final Consumer<SongInfo> onSongSelected;
+    private final Map<String, SongInfo> songIdMap;
 
-    public AlbumInfoBox(
-            ThumbnailCache thumbLoader,
-            AlbumInfo albumInfo,
-            Consumer<SongInfo> onSongSelected
-    ) {
-        super(Orientation.VERTICAL, 0);
+    public SongList(ThumbnailCache thumbLoader, List<SongInfo> songs, Consumer<SongInfo> onSongSelected) {
+        super();
         this.thumbLoader = thumbLoader;
-        this.albumInfo = albumInfo;
+        this.songs = songs;
         this.onSongSelected = onSongSelected;
-        this.artistImage = this.albumInfo.coverArt()
-                .map(coverArt -> new RoundedAlbumArt(
-                        coverArt,
-                        thumbLoader,
-                        300
-                ))
-                .map(artwork -> (Widget) artwork)
-                .orElseGet(() -> RoundedAlbumArt.placeholderImage(300));
-        this.infoContainer = Box.builder().setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).build();
-        this.infoContainer.append(this.artistImage);
-        this.infoContainer.append(infoLabel(this.albumInfo.name(), cssClasses("heading")));
-        this.infoContainer.append(infoLabel(this.albumInfo.artistName(), cssClasses("dim-label", "body")));
-        this.infoContainer.append(infoLabel("%d songs".formatted(this.albumInfo.songCount()), cssClasses("dim-label", "body")));
-        this.infoContainer.append(infoLabel("%s playtime".formatted(formatDurationLong(this.albumInfo.totalPlayTime())), cssClasses("dim-label", "body")));
-
-        this.songIdMap = this.albumInfo.songs().stream().collect(Collectors.toMap(
+        this.songIdMap = this.songs.stream().collect(Collectors.toMap(
                 SongInfo::id,
                 a -> a
         ));
-
-        this.list = ListBox.builder()
-                .setValign(Align.START)
-                // require double click to activate:
-                .setActivateOnSingleClick(false)
-                .setCssClasses(new String[]{"boxed-songs"})
-                .build();
-        this.list.onRowActivated(row -> {
-            var songInfo = this.albumInfo.songs().get(row.getIndex());
-            System.out.println("AlbumInfoBox: play " + songInfo.title() + " (%s)".formatted(songInfo.id()));
+        this.setHexpand(true);
+        //this.setVexpand(true);
+        this.setValign(Align.START);
+        // require double click to activate:
+        this.setActivateOnSingleClick(false);
+        this.setCssClasses(new String[]{"boxed-songs"});
+        this.onRowActivated(row -> {
+            var songInfo = this.songs.get(row.getIndex());
+            System.out.println("SongList: play " + songInfo.title() + " (%s)".formatted(songInfo.id()));
             this.onSongSelected.accept(songInfo);
         });
 
         var stringList = StringList.builder().build();
-        this.albumInfo.songs().forEach(i -> stringList.append(i.id()));
-        this.list.bindModel(stringList, item -> {
+
+        this.songs.forEach(i -> stringList.append(i.id()));
+
+        this.bindModel(stringList, item -> {
             // StringObject is the item type for a StringList ListModel type. StringObject is a GObject.
             StringObject strObj = (StringObject) item;
             var id = strObj.getString();
@@ -132,7 +113,7 @@ public class AlbumInfoBox extends Box {
                     .build();
 
             playButton.onClicked(() -> {
-                System.out.println("AlbumInfoBox.playButton: play " + songInfo.title() + " (%s)".formatted(songInfo.id()));
+                System.out.println("SongList.playButton: play " + songInfo.title() + " (%s)".formatted(songInfo.id()));
                 this.onSongSelected.accept(songInfo);
             });
             suffix.append(revealer);
@@ -175,33 +156,12 @@ public class AlbumInfoBox extends Box {
 
             row.addPrefix(RoundedAlbumArt.resolveCoverArt(
                     thumbLoader,
-                    albumInfo.coverArt(),
+                    songInfo.coverArt(),
                     48
             ));
             row.addSuffix(suffix);
             return row;
         });
 
-        infoContainer.append(list);
-        this.scroll = ScrolledWindow.builder().setChild(infoContainer).setHexpand(true).setVexpand(true).build();
-        this.setHexpand(true);
-        this.setVexpand(true);
-        this.append(scroll);
-    }
-
-    public static ActionRow addHover(ActionRow row, Runnable onEnter, Runnable onLeave) {
-        var ec = EventControllerMotion.builder().setPropagationPhase(PropagationPhase.CAPTURE).setPropagationLimit(PropagationLimit.NONE).build();
-        ec.onEnter((x, y) -> {
-            onEnter.run();
-        });
-        ec.onLeave(() -> {
-            onLeave.run();
-        });
-        row.addController(ec);
-        return row;
-    }
-
-    public static Label infoLabel(String label, String[] cssClazz) {
-        return Label.builder().setLabel(label).setCssClasses(cssClazz).build();
     }
 }

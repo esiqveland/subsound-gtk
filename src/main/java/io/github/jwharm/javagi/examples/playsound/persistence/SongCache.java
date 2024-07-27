@@ -51,19 +51,19 @@ public class SongCache {
         HIT, MISS,
     }
 
-    public record GetSongResult(
+    public record LoadSongResult(
             CacheResult result,
             URI uri
     ) {
     }
 
-    public GetSongResult getSong(CacheSong songData) {
+    public LoadSongResult getSong(CacheSong songData) {
         var streamUri = songData.streamUri();
         switch (streamUri.getScheme()) {
             case "http", "https":
                 break;
             case "file":
-                return new GetSongResult(CacheResult.HIT, streamUri);
+                return new LoadSongResult(CacheResult.HIT, streamUri);
         }
 
         var cachePath = this.cachePath(songData);
@@ -76,7 +76,7 @@ public class SongCache {
         }
         if (cacheFile.exists()) {
             // serve this !
-            return new GetSongResult(CacheResult.HIT, cacheFile.toURI());
+            return new LoadSongResult(CacheResult.HIT, cacheFile.toURI());
         }
 
         cachePath.tmpFilePath.getParent().toFile().mkdirs();
@@ -97,7 +97,7 @@ public class SongCache {
             }
             // rename tmp file to target file.
             cacheTmpFile.renameTo(cacheFile);
-            return new GetSongResult(CacheResult.MISS, cacheFile.toURI());
+            return new LoadSongResult(CacheResult.MISS, cacheFile.toURI());
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }

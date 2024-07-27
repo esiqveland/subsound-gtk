@@ -44,7 +44,7 @@ public class ArtistInfoBox extends Box {
                 a -> a
         ));
 
-        this.list = ListBox.builder().setValign(Align.START).setCssClasses(new String[]{"boxed-list"}).build();
+        this.list = ListBox.builder().setValign(Align.START).setCssClasses(new String[]{"boxed-songs"}).build();
         this.list.onRowActivated(row -> {
             var albumInfo = this.artist.albums().get(row.getIndex());
             System.out.println("ArtistAlbum: goto " + albumInfo.name() + " (%s)".formatted(albumInfo.id()));

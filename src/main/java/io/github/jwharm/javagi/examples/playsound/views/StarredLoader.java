@@ -1,9 +1,9 @@
 package io.github.jwharm.javagi.examples.playsound.views;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
-import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.AlbumInfo;
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ListStarred;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
-import io.github.jwharm.javagi.examples.playsound.persistence.SongCache;
+import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.LoadSongResult;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.Align;
@@ -14,17 +14,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
-public class AlbumInfoLoader extends Box {
+public class StarredLoader extends Box {
     private final ServerClient client;
-    private final String albumId = "";
-    private final AtomicReference<AlbumInfoBox> viewHolder = new AtomicReference<>();
-    private final Function<SongInfo, CompletableFuture<SongCache.LoadSongResult>> onSongSelected;
+    private final AtomicReference<SongList> viewHolder = new AtomicReference<>();
+    private final Function<SongInfo, CompletableFuture<LoadSongResult>> onSongSelected;
     private final ThumbnailCache thumbLoader;
 
-    public AlbumInfoLoader(
+    public StarredLoader(
             ThumbnailCache thumbLoader,
             ServerClient client,
-            Function<SongInfo, CompletableFuture<SongCache.LoadSongResult>> onSongSelected
+            Function<SongInfo, CompletableFuture<LoadSongResult>> onSongSelected
     ) {
         super(Orientation.VERTICAL, 0);
         this.thumbLoader = thumbLoader;
@@ -36,35 +35,27 @@ public class AlbumInfoLoader extends Box {
         this.setValign(Align.FILL);
     }
 
-    public synchronized AlbumInfoLoader setAlbumId(String albumId) {
-        if (albumId.equals(this.albumId)) {
-            return this;
-        }
-
-        doLoad(albumId);
+    public synchronized StarredLoader refresh() {
+        doLoad();
         return this;
     }
 
-    private void replaceArtistInfo(AlbumInfo info) {
+    private void replaceInfo(ListStarred info) {
         var current = viewHolder.get();
         Utils.runOnMainThread(() -> {
             if (current != null) {
                 this.remove(current);
             }
-            var next = new AlbumInfoBox(thumbLoader, info, this.onSongSelected::apply);
+            var next = new SongList(thumbLoader, info.songs(), this.onSongSelected::apply);
             this.viewHolder.set(next);
             this.append(next);
         });
     }
 
-    private CompletableFuture<AlbumInfo> doLoad(String albumId) {
+    private CompletableFuture<ListStarred> doLoad() {
         return CompletableFuture.supplyAsync(() -> {
-            var info = this.client.getAlbumInfo(albumId);
-
-            // just make sure we didnt change artist in the meantime we were loading data:
-            if (info.id().equals(albumId)) {
-                this.replaceArtistInfo(info);
-            }
+            var info = this.client.getStarred();
+            this.replaceInfo(info);
             return info;
         });
     }

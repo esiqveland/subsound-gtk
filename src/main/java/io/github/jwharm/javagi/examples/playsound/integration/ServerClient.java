@@ -13,6 +13,9 @@ public interface ServerClient {
     ListArtists getArtists();
     ArtistInfo getArtistInfo(String artistId);
     AlbumInfo getAlbumInfo(String albumId);
+    ListStarred getStarred();
+    void starId(String id);
+    void unStarId(String id);
     ServerType getServerType();
 
     record SongInfo(
@@ -110,6 +113,11 @@ public interface ServerClient {
 
     record ListArtists(
             List<ArtistEntry> list
+    ) {
+    }
+
+    record ListStarred(
+            List<SongInfo> songs
     ) {
     }
 

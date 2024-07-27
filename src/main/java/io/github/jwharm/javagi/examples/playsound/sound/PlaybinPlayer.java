@@ -1,15 +1,8 @@
 package io.github.jwharm.javagi.examples.playsound.sound;
 
 import io.github.jwharm.javagi.base.Out;
-import org.freedesktop.gstreamer.gst.Bus;
-import org.freedesktop.gstreamer.gst.Element;
-import org.freedesktop.gstreamer.gst.ElementFactory;
-import org.freedesktop.gstreamer.gst.Format;
-import org.freedesktop.gstreamer.gst.Gst;
-import org.freedesktop.gstreamer.gst.Message;
-import org.freedesktop.gstreamer.gst.MessageType;
-import org.freedesktop.gstreamer.gst.SeekFlags;
-import org.freedesktop.gstreamer.gst.State;
+import io.github.jwharm.javagi.interop.Interop;
+import org.freedesktop.gstreamer.gst.*;
 import org.gnome.glib.GError;
 import org.gnome.glib.GLib;
 import org.gnome.glib.MainContext;
@@ -17,6 +10,7 @@ import org.gnome.glib.MainLoop;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.foreign.Arena;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
@@ -27,12 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
-import static io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.PlayerStates.BUFFERING;
-import static io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.PlayerStates.END_OF_STREAM;
-import static io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.PlayerStates.INIT;
-import static io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.PlayerStates.PAUSED;
-import static io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.PlayerStates.PLAYING;
-import static io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.PlayerStates.READY;
+import static io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.PlayerStates.*;
 
 // TODO: Try to make it work closer to a audio-only playbin:
 //  https://gstreamer.freedesktop.org/documentation/playback/playbin.html?gi-language=c#playbin
@@ -42,7 +31,7 @@ import static io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.Pla
 public class PlaybinPlayer {
     private static final Logger log = LoggerFactory.getLogger(PlaybinPlayer.class);
 
-    private static final int GST_PLAY_FLAG_AUDIO = 2;
+    private static final int GST_PLAY_FLAG_AUDIO = Integer.parseUnsignedInt("2");
     private static final List<OnStateChanged> listeners = new CopyOnWriteArrayList<>();
 
     public interface OnStateChanged {
@@ -148,7 +137,7 @@ public class PlaybinPlayer {
         System.out.println("Player: Change source to src=" + fileUri);
         var ready = this.playbinEl.setState(State.READY);
         System.out.println("Player: Change source to src=" + fileUri + ": READY=" + ready.name());
-        this.playbinEl.set("uri", fileUri, null);
+        this.playbinEl.set("uri", Interop.allocateNativeString(fileUri, Arena.ofAuto()), null);
         if (startPlaying) {
             var playing = this.playbinEl.setState(State.PLAYING);
             System.out.println("Player: Change source to src=" + fileUri + ": PLAYING=" + playing.name());
@@ -391,7 +380,10 @@ public class PlaybinPlayer {
             throw new RuntimeException("playbin element could not be created. Exiting.");
         }
         // playbin: we only want to enable audio:
-        playbinEl.set("flags", GST_PLAY_FLAG_AUDIO, null);
+        // https://gstreamer.freedesktop.org/documentation/playback/playsink.html?gi-language=c#GstPlayFlags
+//        playbinEl.set("flags", Integer.toUnsignedLong(GST_PLAY_FLAG_AUDIO), null);
+        byte b = 0x02;
+        playbinEl.set("flags", Byte.toUnsignedInt(b));
         // Set up the pipeline
 //        playbinEl = new Pipeline("audio-player-example");
 //        playbinEl.add(playbinEl);

@@ -4,7 +4,7 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongI
 import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.CacheSong;
-import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.GetSongResult;
+import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.LoadSongResult;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import org.slf4j.Logger;
@@ -78,7 +78,7 @@ public class AppManager {
 
     public record NowPlaying(
             SongInfo song,
-            GetSongResult cacheResult
+            LoadSongResult cacheResult
     ) {
     }
 
@@ -88,15 +88,15 @@ public class AppManager {
     ) {
     }
 
-    public CompletableFuture<GetSongResult> loadSource(SongInfo songInfo) {
+    public CompletableFuture<LoadSongResult> loadSource(SongInfo songInfo) {
         return CompletableFuture.supplyAsync(
                 () -> this.loadSourceSync(songInfo),
                 ASYNC_EXECUTOR
         );
     }
 
-    private GetSongResult loadSourceSync(SongInfo songInfo) {
-        GetSongResult song = songCache.getSong(new CacheSong(
+    private LoadSongResult loadSourceSync(SongInfo songInfo) {
+        LoadSongResult song = songCache.getSong(new CacheSong(
                 SERVER_ID,
                 songInfo.id(),
                 songInfo.streamUri(),

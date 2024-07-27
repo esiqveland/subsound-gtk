@@ -8,6 +8,7 @@ import net.beardbot.subsonic.client.base.ApiParams;
 import org.subsonic.restapi.AlbumWithSongsID3;
 import org.subsonic.restapi.ArtistWithAlbumsID3;
 import org.subsonic.restapi.Child;
+import org.subsonic.restapi.Starred2;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -62,7 +63,22 @@ public class SubsonicClient implements ServerClient {
         return new ListArtists(list);
     }
 
-    //public ListArtists getAlbums() {}
+    @Override
+    public void starId(String id) {
+        this.client.annotation().star(id);
+    }
+
+    @Override
+    public void unStarId(String id) {
+        this.client.annotation().unstar(id);
+    }
+
+    @Override
+    public ListStarred getStarred() {
+        Starred2 starred2 = this.client.lists().getStarred2();
+        var songs = starred2.getSongs().stream().map(this::toSongInfo).toList();
+        return new ListStarred(songs);
+    }
 
     @Override
     public ArtistInfo getArtistInfo(String artistId) {
