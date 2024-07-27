@@ -30,13 +30,10 @@ java {
 }
 
 tasks.named('run') {
-    jvmArgs += "--enable-native-access=ALL-UNNAMED"
-    jvmArgs += "-Djava.library.path=/usr/lib64:/lib64:/lib:/usr/lib:/lib/x86_64-linux-gnu"
-    jvmArgs += "-Djava.library.path=/opt/homebrew/Cellar/glib/2.80.3/lib"
-    jvmArgs += "-Djava.library.path=/opt/homebrew/Cellar/gstreamer/1.24.5/lib"
-    jvmArgs += "-Djava.library.path=/opt/homebrew/Cellar/gtk4/4.14.4/lib"
-    jvmArgs += "-Djava.library.path=/opt/homebrew/Cellar/libadwaita/1.5.2/lib"
-    jvmArgs += "-Djava.library.path=/usr/lib64:/lib64:/lib:/usr/lib:/lib/x86_64-linux-gnu:/opt/homebrew/Cellar/glib/2.80.3/lib:/opt/homebrew/Cellar/gstreamer/1.24.5/lib:/opt/homebrew/Cellar/gtk4/4.14.4/lib:/opt/homebrew/Cellar/libadwaita/1.5.2/lib"
+    jvmArgs += " -XstartOnFirstThread "
+    jvmArgs += " --enable-native-access=ALL-UNNAMED "
+    jvmArgs += " -Djava.library.path=/usr/lib64:/lib64:/lib:/usr/lib:/lib/x86_64-linux-gnu "
+    jvmArgs += " -Djava.library.path=/usr/lib64:/lib64:/lib:/usr/lib:/lib/x86_64-linux-gnu:/opt/homebrew/lib "
 }
 
 application {
