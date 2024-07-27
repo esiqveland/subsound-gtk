@@ -81,7 +81,7 @@ public class TestPlayerPage extends Box {
             var uri = sample.uri();
             btn.onClicked(() -> {
                 System.out.println("Btn: change source to=" + btnName);
-                this.player.setSource(sample.toSongInfo());
+                this.player.loadSource(sample.toSongInfo());
             });
             return btn;
         }).toList();

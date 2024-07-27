@@ -12,14 +12,19 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 public class AppManager {
+    private static final Logger log = LoggerFactory.getLogger(AppManager.class);
+
+    public static final Executor ASYNC_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
     public static final String SERVER_ID = "123";
 
-    private static final Logger log = LoggerFactory.getLogger(AppManager.class);
     private final PlaybinPlayer player;
     private final SongCache songCache;
     private final ThumbnailCache thumbnailCache;
@@ -54,9 +59,11 @@ public class AppManager {
     public ThumbnailCache getThumbnailCache() {
         return thumbnailCache;
     }
+
     public SubsonicClient getClient() {
         return this.client;
     }
+
     public interface StateListener {
         void onStateChanged(AppState state);
     }
@@ -81,7 +88,14 @@ public class AppManager {
     ) {
     }
 
-    public void setSource(SongInfo songInfo) {
+    public CompletableFuture<GetSongResult> loadSource(SongInfo songInfo) {
+        return CompletableFuture.supplyAsync(
+                () -> this.loadSourceSync(songInfo),
+                ASYNC_EXECUTOR
+        );
+    }
+
+    private GetSongResult loadSourceSync(SongInfo songInfo) {
         GetSongResult song = songCache.getSong(new CacheSong(
                 SERVER_ID,
                 songInfo.id(),
@@ -96,6 +110,7 @@ public class AppManager {
                 old.player
         ));
         this.player.setSource(song.uri());
+        return song;
     }
 
     public void play() {

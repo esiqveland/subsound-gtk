@@ -90,7 +90,7 @@ public class MainApplication {
         ViewStack viewStack = ViewStack.builder().build();
         {
             var testPlayerPage = new TestPlayerPage(this.appManager);
-            this.appManager.setSource(testPlayerPage.knownSongs.getFirst().toSongInfo());
+            this.appManager.loadSource(testPlayerPage.knownSongs.getFirst().toSongInfo()).join();
             ViewStackPage testPage = viewStack.addTitled(testPlayerPage, "testPage", "Testpage");
         }
         {
@@ -129,7 +129,7 @@ public class MainApplication {
         var albumInfoContainer = new AlbumInfoLoader(
                 thumbLoader,
                 client,
-                appManager::setSource
+                appManager::loadSource
         );
         {
             ViewStackPage albumInfoPage = viewStack.addTitled(albumInfoContainer, "albumInfoPage", "AlbumInfo");

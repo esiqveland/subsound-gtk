@@ -2,6 +2,8 @@ package io.github.jwharm.javagi.examples.playsound.views;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.AlbumInfo;
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
+import io.github.jwharm.javagi.examples.playsound.persistence.SongCache;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.Align;
@@ -10,19 +12,19 @@ import org.gnome.gtk.Orientation;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class AlbumInfoLoader extends Box {
     private final ServerClient client;
     private final String albumId = "";
     private final AtomicReference<AlbumInfoBox> viewHolder = new AtomicReference<>();
-    private final Consumer<ServerClient.SongInfo> onSongSelected;
+    private final Function<SongInfo, CompletableFuture<SongCache.GetSongResult>> onSongSelected;
     private final ThumbnailCache thumbLoader;
 
     public AlbumInfoLoader(
             ThumbnailCache thumbLoader,
             ServerClient client,
-            Consumer<ServerClient.SongInfo> onSongSelected
+            Function<SongInfo, CompletableFuture<SongCache.GetSongResult>> onSongSelected
     ) {
         super(Orientation.VERTICAL, 0);
         this.thumbLoader = thumbLoader;
@@ -49,7 +51,7 @@ public class AlbumInfoLoader extends Box {
             if (current != null) {
                 this.remove(current);
             }
-            var next = new AlbumInfoBox(thumbLoader, info, this.onSongSelected);
+            var next = new AlbumInfoBox(thumbLoader, info, this.onSongSelected::apply);
             this.viewHolder.set(next);
             this.append(next);
         });
