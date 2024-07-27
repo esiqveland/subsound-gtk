@@ -2,7 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.views;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistAlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistInfo;
-import io.github.jwharm.javagi.examples.playsound.persistence.ThumbLoader;
+import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.views.components.AlbumsFlowBox;
 import io.github.jwharm.javagi.examples.playsound.views.components.RoundedAlbumArt;
 import org.gnome.gtk.*;
@@ -19,11 +19,11 @@ public class ArtistInfoFlowBox extends Box {
     private final Map<String, ArtistAlbumInfo> artistsMap;
     private final ArtistInfo artist;
     private final Widget artistImage;
-    private final ThumbLoader thumbLoader;
+    private final ThumbnailCache thumbLoader;
     private final AlbumsFlowBox listView;
 
     public ArtistInfoFlowBox(
-            ThumbLoader thumbLoader,
+            ThumbnailCache thumbLoader,
             ArtistInfo artistInfo,
             Consumer<ArtistAlbumInfo> onAlbumSelected
     ) {

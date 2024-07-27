@@ -2,7 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.views.components;
 
 import io.github.jwharm.javagi.base.GErrorException;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
-import io.github.jwharm.javagi.examples.playsound.persistence.ThumbLoader;
+import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import org.gnome.gdkpixbuf.Pixbuf;
 import org.gnome.gdkpixbuf.PixbufLoader;
 import org.gnome.glib.GLib;
@@ -26,7 +26,7 @@ public class RoundedAlbumArt extends Grid {
     private final AtomicBoolean isLoading = new AtomicBoolean(false);
     private final AtomicBoolean isUpdating = new AtomicBoolean(false);
     private final Picture image;
-    private final ThumbLoader thumbLoader;
+    private final ThumbnailCache thumbLoader;
 
     public static Grid placeholderImage(int size) {
         try {
@@ -49,7 +49,7 @@ public class RoundedAlbumArt extends Grid {
         }
     }
 
-    public static Widget resolveCoverArt(ThumbLoader thumbLoader, Optional<CoverArt> coverArt, int size) {
+    public static Widget resolveCoverArt(ThumbnailCache thumbLoader, Optional<CoverArt> coverArt, int size) {
         if (coverArt.isPresent()) {
             return new RoundedAlbumArt(coverArt.get(), thumbLoader, size);
         } else {
@@ -57,11 +57,11 @@ public class RoundedAlbumArt extends Grid {
         }
     }
 
-    public RoundedAlbumArt(CoverArt artwork, ThumbLoader thumbLoader) {
+    public RoundedAlbumArt(CoverArt artwork, ThumbnailCache thumbLoader) {
         this(artwork, thumbLoader, 400);
     }
 
-    public RoundedAlbumArt(CoverArt artwork, ThumbLoader thumbLoader, int size) {
+    public RoundedAlbumArt(CoverArt artwork, ThumbnailCache thumbLoader, int size) {
         super();
         this.setSizeRequest(size, size);
         this.setHexpand(false);

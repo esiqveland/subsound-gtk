@@ -17,11 +17,11 @@ import java.util.function.Consumer;
 import static io.github.jwharm.javagi.examples.playsound.persistence.SongCache.joinPath;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.sha256;
 
-public class ThumbLoader {
+public class ThumbnailCache {
     private final Path root;
     private final HttpClient client = new LoggingHttpClient(HttpClient.newBuilder().build());
 
-    public ThumbLoader(Path root) {
+    public ThumbnailCache(Path root) {
         this.root = root;
     }
 

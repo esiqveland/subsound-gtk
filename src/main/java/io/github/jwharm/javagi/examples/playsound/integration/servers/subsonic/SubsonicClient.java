@@ -1,6 +1,5 @@
 package io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic;
 
-import io.github.jwharm.javagi.examples.playsound.Main;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import net.beardbot.subsonic.client.Subsonic;
 import net.beardbot.subsonic.client.SubsonicPreferences;
@@ -17,6 +16,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
+import static io.github.jwharm.javagi.examples.playsound.app.state.AppManager.SERVER_ID;
 import static java.util.Optional.ofNullable;
 
 public class SubsonicClient implements ServerClient {
@@ -175,6 +175,6 @@ public class SubsonicClient implements ServerClient {
     }
 
     public Optional<CoverArt> toCoverArt(String coverArtId) {
-        return ofNullable(coverArtId).map(id -> new CoverArt(Main.SERVER_ID, id, coverArtLink(id)));
+        return ofNullable(coverArtId).map(id -> new CoverArt(SERVER_ID, id, coverArtLink(id)));
     }
 }

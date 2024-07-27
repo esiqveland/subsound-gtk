@@ -1,7 +1,7 @@
 package io.github.jwharm.javagi.examples.playsound.views.components;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistAlbumInfo;
-import io.github.jwharm.javagi.examples.playsound.persistence.ThumbLoader;
+import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import org.gnome.gtk.*;
 
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
@@ -9,12 +9,12 @@ import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
 public class AlbumFlowBoxChild extends FlowBoxChild {
     private final static int COVER_SIZE = 128;
 
-    private final ThumbLoader thumbLoader;
+    private final ThumbnailCache thumbLoader;
     private final ArtistAlbumInfo albumInfo;
     private final Widget albumCover;
 
     public AlbumFlowBoxChild(
-            ThumbLoader thumbLoader,
+            ThumbnailCache thumbLoader,
             ArtistAlbumInfo albumInfo
     ) {
         super();

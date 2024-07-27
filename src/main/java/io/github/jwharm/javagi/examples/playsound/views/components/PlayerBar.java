@@ -2,7 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.views.components;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager.AppState;
-import io.github.jwharm.javagi.examples.playsound.persistence.ThumbLoader;
+import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.*;
@@ -19,7 +19,7 @@ import static io.github.jwharm.javagi.examples.playsound.integration.ServerClien
 public class PlayerBar extends Box implements AppManager.StateListener, AutoCloseable {
     private static final int ARTWORK_SIZE = 64;
 
-    private final ThumbLoader thumbLoader;
+    private final ThumbnailCache thumbLoader;
     private final AppManager player;
     private final ActionBar mainBar;
     private final Box albumArtBox;
@@ -46,7 +46,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         //BUFFERING,
     }
 
-    public PlayerBar(ThumbLoader thumbLoader, AppManager player) {
+    public PlayerBar(ThumbnailCache thumbLoader, AppManager player) {
         super(Orientation.VERTICAL, 2);
         this.thumbLoader = thumbLoader;
         this.player = player;

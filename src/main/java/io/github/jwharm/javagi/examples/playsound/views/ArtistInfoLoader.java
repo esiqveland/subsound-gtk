@@ -3,7 +3,7 @@ package io.github.jwharm.javagi.examples.playsound.views;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistAlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistInfo;
-import io.github.jwharm.javagi.examples.playsound.persistence.ThumbLoader;
+import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
@@ -14,13 +14,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public class ArtistInfoLoader extends Box {
-    private final ThumbLoader thumbLoader;
+    private final ThumbnailCache thumbLoader;
     private final ServerClient client;
     private final String artistId = "";
     private final AtomicReference<ArtistInfoFlowBox> viewHolder = new AtomicReference<>();
     private Consumer<ArtistAlbumInfo> onAlbumSelected;
 
-    public ArtistInfoLoader(ThumbLoader thumbLoader, ServerClient client) {
+    public ArtistInfoLoader(ThumbnailCache thumbLoader, ServerClient client) {
         super(Orientation.VERTICAL, 0);
         this.thumbLoader = thumbLoader;
         this.client = client;

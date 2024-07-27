@@ -2,7 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.views;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.AlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
-import io.github.jwharm.javagi.examples.playsound.persistence.ThumbLoader;
+import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.github.jwharm.javagi.examples.playsound.views.components.RoundedAlbumArt;
 import org.gnome.adw.ActionRow;
@@ -26,10 +26,10 @@ public class AlbumInfoBox extends Box {
     private final AlbumInfo albumInfo;
     private final Widget artistImage;
     private final Consumer<SongInfo> onSongSelected;
-    private final ThumbLoader thumbLoader;
+    private final ThumbnailCache thumbLoader;
 
     public AlbumInfoBox(
-            ThumbLoader thumbLoader,
+            ThumbnailCache thumbLoader,
             AlbumInfo albumInfo,
             Consumer<SongInfo> onSongSelected
     ) {

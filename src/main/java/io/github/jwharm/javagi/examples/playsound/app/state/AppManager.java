@@ -1,9 +1,11 @@
 package io.github.jwharm.javagi.examples.playsound.app.state;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
+import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.CacheSong;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.GetSongResult;
+import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,15 +17,26 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 public class AppManager {
+    public static final String SERVER_ID = "123";
+
     private static final Logger log = LoggerFactory.getLogger(AppManager.class);
     private final PlaybinPlayer player;
     private final SongCache songCache;
+    private final ThumbnailCache thumbnailCache;
+    private final SubsonicClient client;
     private final AtomicReference<AppState> currentState = new AtomicReference<>();
     private final CopyOnWriteArrayList<StateListener> listeners = new CopyOnWriteArrayList<>();
 
-    public AppManager(PlaybinPlayer player, SongCache songCache) {
+    public AppManager(
+            PlaybinPlayer player,
+            SongCache songCache,
+            ThumbnailCache thumbnailCache,
+            SubsonicClient client
+    ) {
         this.player = player;
         this.songCache = songCache;
+        this.thumbnailCache = thumbnailCache;
+        this.client = client;
         player.onStateChanged(next -> this.setState(old -> new AppState(
                 old.nowPlaying, next
         )));
@@ -38,12 +51,20 @@ public class AppManager {
         return this.currentState.get();
     }
 
+    public ThumbnailCache getThumbnailCache() {
+        return thumbnailCache;
+    }
+    public SubsonicClient getClient() {
+        return this.client;
+    }
     public interface StateListener {
         void onStateChanged(AppState state);
     }
+
     public void addOnStateChanged(StateListener lis) {
         listeners.add(lis);
     }
+
     public void removeOnStateChanged(StateListener lis) {
         listeners.remove(lis);
     }
@@ -62,7 +83,7 @@ public class AppManager {
 
     public void setSource(SongInfo songInfo) {
         GetSongResult song = songCache.getSong(new CacheSong(
-                "123",
+                SERVER_ID,
                 songInfo.id(),
                 songInfo.streamUri(),
                 songInfo.suffix(),
@@ -111,7 +132,7 @@ public class AppManager {
         Thread.startVirtualThread(() -> {
             for (StateListener stateListener : listeners) {
                 stateListener.onStateChanged(state);
-            }    
+            }
         });
     }
 }
