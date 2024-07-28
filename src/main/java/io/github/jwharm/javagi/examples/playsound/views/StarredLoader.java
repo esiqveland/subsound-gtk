@@ -9,14 +9,14 @@ import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Orientation;
+import org.gnome.gtk.ScrolledWindow;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 public class StarredLoader extends Box {
     private final ServerClient client;
-    private final AtomicReference<SongList> viewHolder = new AtomicReference<>();
+    private final ScrolledWindow window;
     private final Function<SongInfo, CompletableFuture<LoadSongResult>> onSongSelected;
     private final ThumbnailCache thumbLoader;
 
@@ -33,6 +33,15 @@ public class StarredLoader extends Box {
         this.setVexpand(true);
         this.setHalign(Align.FILL);
         this.setValign(Align.FILL);
+        this.onShow(this::refresh);
+        this.onRealize(this::refresh);
+        this.window = ScrolledWindow.builder()
+                .setVexpand(true)
+                .setHexpand(true)
+                .setHalign(Align.FILL)
+                .setValign(Align.FILL)
+                .build();
+        this.append(window);
     }
 
     public synchronized StarredLoader refresh() {
@@ -41,14 +50,13 @@ public class StarredLoader extends Box {
     }
 
     private void replaceInfo(ListStarred info) {
-        var current = viewHolder.get();
         Utils.runOnMainThread(() -> {
-            if (current != null) {
-                this.remove(current);
+            var old = this.window.getChild();
+            if (old != null) {
+                this.remove(old);
             }
             var next = new SongList(thumbLoader, info.songs(), this.onSongSelected::apply);
-            this.viewHolder.set(next);
-            this.append(next);
+            this.window.setChild(next);
         });
     }
 

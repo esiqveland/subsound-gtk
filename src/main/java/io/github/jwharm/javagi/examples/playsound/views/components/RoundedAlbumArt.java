@@ -126,7 +126,7 @@ public class RoundedAlbumArt extends Grid {
                                 try {
                                     loader.write(buffer);
                                 } catch (GErrorException e) {
-                                    throw new RuntimeException(e);
+                                    throw new RuntimeException("error writing: coverArtId=%s link=%s".formatted(artwork.coverArtId(), artwork.coverArtLink()), e);
                                 }
                             });
                         });
@@ -137,7 +137,7 @@ public class RoundedAlbumArt extends Grid {
                             try {
                                 loader.close();
                             } catch (GErrorException e) {
-                                throw new RuntimeException(e);
+                                throw new RuntimeException("error closing: coverArtId=%s link=%s".formatted(artwork.coverArtId(), artwork.coverArtLink()), e);
                             }
                         });
                         hasLoaded.set(true);

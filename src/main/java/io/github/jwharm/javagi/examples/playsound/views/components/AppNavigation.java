@@ -17,6 +17,7 @@ public class AppNavigation {
 
     public static sealed interface AppRoute {
         record RouteHome() implements AppRoute {}
+        record RouteStarred() implements AppRoute {}
         record RouteArtistsOverview() implements AppRoute {}
         record RouteAlbumsOverview() implements AppRoute {}
         record RouteArtistInfo(String artistId) implements AppRoute {}

@@ -38,8 +38,9 @@ public class SongList extends ListBox {
                 a -> a
         ));
         this.setHexpand(true);
-        //this.setVexpand(true);
+        this.setVexpand(true);
         this.setValign(Align.START);
+        this.setHalign(Align.FILL);
         // require double click to activate:
         this.setActivateOnSingleClick(false);
         this.setCssClasses(new String[]{"boxed-list"});

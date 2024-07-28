@@ -3,10 +3,7 @@ package io.github.jwharm.javagi.examples.playsound;
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
-import io.github.jwharm.javagi.examples.playsound.views.AlbumInfoLoader;
-import io.github.jwharm.javagi.examples.playsound.views.ArtistInfoLoader;
-import io.github.jwharm.javagi.examples.playsound.views.ArtistListBox;
-import io.github.jwharm.javagi.examples.playsound.views.TestPlayerPage;
+import io.github.jwharm.javagi.examples.playsound.views.*;
 import io.github.jwharm.javagi.examples.playsound.views.components.AppNavigation;
 import io.github.jwharm.javagi.examples.playsound.views.components.PlayerBar;
 import org.gnome.adw.Application;
@@ -97,16 +94,12 @@ public class MainApplication {
             ViewStackPage frontPage = viewStack.addTitled(frontPageContainer, "frontPage", "Home");
         }
         {
-            var albumsMe = Button.withLabel("Albums");
-            albumsMe.onClicked(() -> {
-                System.out.println("albumsMe.onClicked");
-            });
-            var albumsContainer = BoxFullsize().build();
-            albumsContainer.append(albumsMe);
-            ViewStackPage albumsPage = viewStack.addTitled(albumsContainer, "albumsPage", "Albums");
+            var starredPageContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
+            starredPageContainer.append(new StarredLoader(thumbLoader, client, appManager::loadSource));
+            ViewStackPage starredPage = viewStack.addTitled(starredPageContainer, "starredPage", "Starred");
         }
         var artists = this.client.getArtists();
-        var artistListBox = new ArtistListBox(artists.list());
+        var artistListBox = new ArtistsListBox(thumbLoader, artists.list(), artistEntry -> {});
         {
             var artistsContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
             artistsContainer.append(artistListBox);
@@ -151,6 +144,10 @@ public class MainApplication {
             }
             case AppNavigation.AppRoute.RouteHome routeHome -> {
                 viewStack.setVisibleChildName("testPage");
+                yield false;
+            }
+            case AppNavigation.AppRoute.RouteStarred starred -> {
+                viewStack.setVisibleChildName("starredPage");
                 yield false;
             }
             case AppNavigation.AppRoute.RouteAlbumInfo route -> {
