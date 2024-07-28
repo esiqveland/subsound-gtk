@@ -10,6 +10,8 @@ import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import net.beardbot.subsonic.client.SubsonicPreferences;
 import org.freedesktop.gstreamer.gst.Gst;
 import org.gnome.adw.Application;
+import org.gnome.gdk.Texture;
+import org.gnome.gdkpixbuf.Pixbuf;
 import org.gnome.gio.ApplicationFlags;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
@@ -18,12 +20,16 @@ public class Main {
         // Bridge/route all JUL log records to the SLF4J API.
         SLF4JBridgeHandler.install();
     }
+
     private final Config config;
     private final AppManager appManager;
 
     public Main(String[] args) {
         // Initialisation Gst
         Gst.init(new Out<>(new String[]{}));
+        Pixbuf.getFormats().forEach(pixbufFormat -> {
+            System.out.println("pixbufFormat: %s %s".formatted(pixbufFormat.getName(), pixbufFormat.getDescription()));
+        });
 
         this.config = Config.createDefault();
         var songCache = new SongCache(config.cacheDir);

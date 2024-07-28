@@ -3,15 +3,16 @@ package io.github.jwharm.javagi.examples.playsound.persistence;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
 import io.github.jwharm.javagi.examples.playsound.utils.javahttp.LoggingHttpClient;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
 
 import static io.github.jwharm.javagi.examples.playsound.persistence.SongCache.joinPath;
@@ -20,6 +21,8 @@ import static io.github.jwharm.javagi.examples.playsound.utils.Utils.sha256;
 public class ThumbnailCache {
     private final Path root;
     private final HttpClient client = new LoggingHttpClient(HttpClient.newBuilder().build());
+    // semaphore limits concurrency a little, we could send 1000s request concurrently on page load of a e.g. starred page:
+    private final Semaphore semaphore = new Semaphore(6);
 
     public ThumbnailCache(Path root) {
         this.root = root;
@@ -29,6 +32,9 @@ public class ThumbnailCache {
         var cachehPath = toCachePath(coverArt);
         var filePath = cachehPath.cachePath().toAbsolutePath();
         var file = filePath.toFile();
+        if (coverArt.coverArtId().contains("d45abff63c5a3c3c94ba0669d0627438")) {
+            System.out.println("contentType");
+        }
         if (file.exists() && file.length() > 0) {
             serveFile(file, target);
             return;
@@ -44,7 +50,7 @@ public class ThumbnailCache {
             tmpFile.createNewFile();
             tmpFile.deleteOnExit();
             var out = new FileOutputStream(tmpFile);
-            loadThumb(coverArt.coverArtLink(), bytes -> {
+            loadThumbSync(coverArt.coverArtLink(), bytes -> {
                 try {
                     out.write(bytes);
                 } catch (IOException e) {
@@ -69,21 +75,37 @@ public class ThumbnailCache {
         }
     }
 
-    public void loadThumb(URI link, Consumer<byte[]> target) {
+    private void loadThumbSync(URI link, Consumer<byte[]> target) {
         var req = HttpRequest.newBuilder().GET().uri(link).build();
-        var bodyHandler = HttpResponse.BodyHandlers.ofByteArrayConsumer(bytes -> {
-            bytes.ifPresent(target);
-        });
+        var bodyHandler = HttpResponse.BodyHandlers.ofByteArray();
         //CompletableFuture<HttpResponse<Void>> httpResponseCompletableFuture = this.client.sendAsync(req, bodyHandler);
         try {
-            HttpResponse<Void> res = this.client.send(req, bodyHandler);
+            semaphore.acquire(1);
+
+            HttpResponse<byte[]> res = this.client.send(req, bodyHandler);
             if (res.statusCode() != 200) {
                 throw new RuntimeException("error loading: status=" + res.statusCode() + " link=" + link.toString());
+            }
+            String contentType = res.headers().firstValue("content-type").orElse("");
+            if (contentType.isEmpty() || contentType.contains("xml") || contentType.contains("html") || contentType.contains("json")) {
+                // response does not look like binary music data...
+                throw new RuntimeException("error: statusCode=%d uri=%s contentType=%s".formatted(res.statusCode(), link.toString(), contentType));
+            }
+
+            byte[] body = res.body();
+            if (contentType.contains("vp9") || contentType.contains("webp")) {
+                // convert to jpeg, Pixbuf does not support vp9 / webp:
+                var jpegBytes = convertWebpToJpeg(body);
+                target.accept(jpegBytes);
+            } else {
+                target.accept(body);
             }
         } catch (IOException e) {
             throw new RuntimeException("error loading: " + link.toString(), e);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
+        } finally {
+            semaphore.release(1);
         }
     }
 
@@ -116,6 +138,21 @@ public class ThumbnailCache {
         var cachePath = joinPath(root, coverArt.serverId(), "thumbs", key.part1, key.part2, key.part3, fileName);
         var cachePathTmp = joinPath(cachePath.getParent(), fileName + ".tmp");
         return new CachehPath(cachePath, cachePathTmp);
+    }
+
+    // Vp9/webp is not supported by gdk Pixbuf. We must convert it to png/jpg first:
+    public static byte[] convertWebpToJpeg(byte[] blob) {
+        try {
+            var out = new ByteArrayOutputStream();
+            BufferedImage read = ImageIO.read(new ByteArrayInputStream(blob));
+            if (ImageIO.write(read, "jpg", out)) {
+                return out.toByteArray();
+            } else {
+                throw new IllegalStateException("no jpg writer?");
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
