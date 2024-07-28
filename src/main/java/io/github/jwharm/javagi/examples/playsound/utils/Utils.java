@@ -14,9 +14,19 @@ import java.text.StringCharacterIterator;
 import java.time.Duration;
 import java.util.HexFormat;
 import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Supplier;
+
 
 public class Utils {
+    private static final ExecutorService EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
     private static final HexFormat HEX = HexFormat.of().withLowerCase();
+
+    public static <T> CompletableFuture<T> doAsync(Supplier<T> supplier) {
+        return CompletableFuture.supplyAsync(supplier, EXECUTOR);
+    }
 
     public static void runOnMainThread(SourceOnceFunc fn) {
         GLib.idleAddOnce(fn);

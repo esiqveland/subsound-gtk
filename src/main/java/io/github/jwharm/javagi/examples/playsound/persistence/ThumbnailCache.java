@@ -32,9 +32,6 @@ public class ThumbnailCache {
         var cachehPath = toCachePath(coverArt);
         var filePath = cachehPath.cachePath().toAbsolutePath();
         var file = filePath.toFile();
-        if (coverArt.coverArtId().contains("d45abff63c5a3c3c94ba0669d0627438")) {
-            System.out.println("contentType");
-        }
         if (file.exists() && file.length() > 0) {
             serveFile(file, target);
             return;

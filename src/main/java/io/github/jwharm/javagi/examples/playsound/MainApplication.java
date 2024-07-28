@@ -99,7 +99,7 @@ public class MainApplication {
             ViewStackPage starredPage = viewStack.addTitled(starredPageContainer, "starredPage", "Starred");
         }
         var artists = this.client.getArtists();
-        var artistListBox = new ArtistsListBox(thumbLoader, artists.list(), artistEntry -> {});
+        var artistListBox = new ArtistsListBox(thumbLoader, client, artists.list(), artistEntry -> {});
         {
             var artistsContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
             artistsContainer.append(artistListBox);

@@ -3,6 +3,7 @@ package io.github.jwharm.javagi.examples.playsound.views.components;
 import io.github.jwharm.javagi.base.GErrorException;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
+import org.gnome.gdk.Texture;
 import org.gnome.gdkpixbuf.Pixbuf;
 import org.gnome.gdkpixbuf.PixbufLoader;
 import org.gnome.glib.GLib;
@@ -12,14 +13,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static io.github.jwharm.javagi.examples.playsound.utils.Utils.doAsync;
 
 public class RoundedAlbumArt extends Grid {
     private static final Logger log = LoggerFactory.getLogger(RoundedAlbumArt.class);
-    private static final int DEFAULT_SIZE = 400;
-    private static final ExecutorService EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
 
     private final CoverArt artwork;
     private final AtomicBoolean hasLoaded = new AtomicBoolean(false);
@@ -31,7 +30,8 @@ public class RoundedAlbumArt extends Grid {
     public static Grid placeholderImage(int size) {
         try {
             Pixbuf pixbuf = Pixbuf.fromFileAtSize("src/main/resources/images/album-placeholder.png", size, size);
-            var image = Image.fromPixbuf(pixbuf);
+            Texture texture = Texture.forPixbuf(pixbuf);
+            var image = Image.fromPaintable(texture);
             image.setSizeRequest(size, size);
             var box = Grid.builder()
                     .setHexpand(false)
@@ -110,12 +110,12 @@ public class RoundedAlbumArt extends Grid {
     }
 
     public void startLoad(PixbufLoader loader) {
-        CompletableFuture<Void> loadingFuture = CompletableFuture.runAsync(() -> {
+        CompletableFuture<Boolean> loadingFuture = doAsync(() -> {
                     if (hasLoaded.get()) {
-                        return;
+                        return false;
                     }
                     if (isLoading.get()) {
-                        return;
+                        return false;
                     }
                     try {
                         thumbLoader.load(this.artwork, buffer -> {
@@ -143,7 +143,8 @@ public class RoundedAlbumArt extends Grid {
                         hasLoaded.set(true);
                         this.image.queueDraw();
                     }
-                }, EXECUTOR)
+                    return true;
+                })
                 .exceptionallyAsync(ex -> {
                     log.error("error loading img: {}", ex.getMessage(), ex);
                     throw new RuntimeException(ex);
