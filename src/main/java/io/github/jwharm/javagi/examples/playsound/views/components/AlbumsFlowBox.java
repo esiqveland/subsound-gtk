@@ -2,6 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.views.components;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
+import org.gnome.gtk.Align;
 import org.gnome.gtk.FlowBox;
 import org.gnome.gtk.Orientation;
 
@@ -24,7 +25,8 @@ public class AlbumsFlowBox extends FlowBox {
         setColumnSpacing(16);
         setHexpand(true);
         setVexpand(true);
-//        setHalign(Align.CENTER);
+        setHomogeneous(true);
+        setHalign(Align.CENTER);
 //        setValign(Align.START);
 
         this.thumbLoader = thumbLoader;
