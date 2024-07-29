@@ -26,7 +26,7 @@ todo:
 - [ ] Icons for top bar pages
 - ArtistListing:
   - [ ] add a circular artist thumbnail in the left prefix area
-  - [ ] convert to using a AdwLeaflet
+  - [ ] convert to using a ~AdwLeaflet~ `AdwNavigationSplitView`
 - [ ] Make ArtistInfo page coverart prettier with:
   - [ ] a box shadow?
   - [ ] a blurred paintable background ?

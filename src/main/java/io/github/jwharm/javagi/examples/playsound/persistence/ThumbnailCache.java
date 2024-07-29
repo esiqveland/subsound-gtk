@@ -1,6 +1,8 @@
 package io.github.jwharm.javagi.examples.playsound.persistence;
 
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
+import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.github.jwharm.javagi.examples.playsound.utils.javahttp.LoggingHttpClient;
 
 import javax.imageio.ImageIO;
@@ -12,6 +14,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
 
@@ -22,7 +26,8 @@ public class ThumbnailCache {
     private final Path root;
     private final HttpClient client = new LoggingHttpClient(HttpClient.newBuilder().build());
     // semaphore limits concurrency a little, we could send 1000s request concurrently on page load of a e.g. starred page:
-    private final Semaphore semaphore = new Semaphore(6);
+    private final Semaphore semaphore = new Semaphore(2);
+    private final ConcurrentHashMap<String, CompletableFuture<ThumbLoaded>> inFlight = new ConcurrentHashMap<>();
 
     public ThumbnailCache(Path root) {
         this.root = root;
@@ -36,31 +41,37 @@ public class ThumbnailCache {
             serveFile(file, target);
             return;
         }
-        filePath.getParent().toFile().mkdirs();
 
-        var tmpFilePath = cachehPath.tmpFilePath().toAbsolutePath();
-        var tmpFile = tmpFilePath.toFile();
-        if (tmpFile.exists()) {
-            tmpFile.delete();
-        }
-        try {
-            tmpFile.createNewFile();
-            tmpFile.deleteOnExit();
-            var out = new FileOutputStream(tmpFile);
-            loadThumbSync(coverArt.coverArtLink(), bytes -> {
-                try {
-                    out.write(bytes);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-            out.close();
-            tmpFile.renameTo(file);
+        var job = inFlight.computeIfAbsent(
+                coverArt.coverArtId(),
+                key -> loadThumbAsync(coverArt, cachehPath)
+                        .thenApply(thumbsLoaded -> {
+                            try {
+                                filePath.getParent().toFile().mkdirs();
+                                file.delete();
 
-            serveFile(file, target);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+                                var tmpFilePath = cachehPath.tmpFilePath().toAbsolutePath();
+                                var tmpFile = tmpFilePath.toFile();
+                                if (tmpFile.exists()) {
+                                    tmpFile.delete();
+                                }
+                                tmpFile.createNewFile();
+                                tmpFile.deleteOnExit();
+                                var out = new FileOutputStream(tmpFile);
+                                out.write(thumbsLoaded.blob);
+                                out.close();
+
+                                tmpFile.renameTo(file);
+
+                                return thumbsLoaded;
+                            } catch (IOException ex) {
+                                throw new RuntimeException(ex);
+                            }
+                        })
+        );
+
+        var thumbLoaded = job.join();
+        serveFile(thumbLoaded.path().tmpFilePath().toFile(), target);
     }
 
     private void serveFile(File file, Consumer<byte[]> target) {
@@ -72,38 +83,52 @@ public class ThumbnailCache {
         }
     }
 
-    private void loadThumbSync(URI link, Consumer<byte[]> target) {
-        var req = HttpRequest.newBuilder().GET().uri(link).build();
-        var bodyHandler = HttpResponse.BodyHandlers.ofByteArray();
-        //CompletableFuture<HttpResponse<Void>> httpResponseCompletableFuture = this.client.sendAsync(req, bodyHandler);
-        try {
-            semaphore.acquire(1);
+    record ThumbLoaded(
+            CachehPath path,
+            byte[] blob
+    ) {
+    }
 
-            HttpResponse<byte[]> res = this.client.send(req, bodyHandler);
-            if (res.statusCode() != 200) {
-                throw new RuntimeException("error loading: status=" + res.statusCode() + " link=" + link.toString());
-            }
-            String contentType = res.headers().firstValue("content-type").orElse("");
-            if (contentType.isEmpty() || contentType.contains("xml") || contentType.contains("html") || contentType.contains("json")) {
-                // response does not look like binary music data...
-                throw new RuntimeException("error: statusCode=%d uri=%s contentType=%s".formatted(res.statusCode(), link.toString(), contentType));
-            }
+    private CompletableFuture<ThumbLoaded> loadThumbAsync(CoverArt coverArt, CachehPath cachehPath) {
+        return Utils.doAsync(() -> {
+            var link = coverArt.coverArtLink();
+            var req = HttpRequest.newBuilder().GET().uri(link).build();
+            var bodyHandler = HttpResponse.BodyHandlers.ofByteArray();
+            //CompletableFuture<HttpResponse<Void>> httpResponseCompletableFuture = this.client.sendAsync(req, bodyHandler);
+            try {
+                semaphore.acquire(1);
 
-            byte[] body = res.body();
-            if (contentType.contains("vp9") || contentType.contains("webp")) {
-                // convert to jpeg, Pixbuf does not support vp9 / webp:
-                var jpegBytes = convertWebpToJpeg(body);
-                target.accept(jpegBytes);
-            } else {
-                target.accept(body);
+                HttpResponse<byte[]> res = this.client.send(req, bodyHandler);
+                if (res.statusCode() != 200) {
+                    throw new RuntimeException("error loading: status=" + res.statusCode() + " link=" + link.toString());
+                }
+                String contentType = res.headers().firstValue("content-type").orElse("");
+                if (contentType.isEmpty() || contentType.contains("xml") || contentType.contains("html") || contentType.contains("json")) {
+                    // response does not look like binary music data...
+                    throw new RuntimeException("error: statusCode=%d uri=%s contentType=%s".formatted(res.statusCode(), link.toString(), contentType));
+                }
+
+                byte[] body = res.body();
+                if (contentType.contains("vp9") || contentType.contains("webp")) {
+                    // convert to jpeg, Pixbuf does not support vp9 / webp:
+                    return new ThumbLoaded(
+                            cachehPath,
+                            convertWebpToJpeg(body)
+                    );
+                } else {
+                    return new ThumbLoaded(
+                            cachehPath,
+                            body
+                    );
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("error loading: " + link.toString(), e);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } finally {
+                semaphore.release(1);
             }
-        } catch (IOException e) {
-            throw new RuntimeException("error loading: " + link.toString(), e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } finally {
-            semaphore.release(1);
-        }
+        });
     }
 
     record CacheKey(String part1, String part2, String part3) {
