@@ -70,8 +70,12 @@ public class ThumbnailCache {
                         })
         );
 
-        var thumbLoaded = job.join();
-        serveFile(thumbLoaded.path().tmpFilePath().toFile(), target);
+        try {
+            var thumbLoaded = job.join();
+            serveFile(thumbLoaded.path().cachePath().toFile(), target);
+        } finally {
+            inFlight.remove(coverArt.coverArtId());
+        }
     }
 
     private void serveFile(File file, Consumer<byte[]> target) {
