@@ -28,6 +28,10 @@ public class Utils {
         return CompletableFuture.supplyAsync(supplier, EXECUTOR);
     }
 
+    public static CompletableFuture<Void> doAsync(Runnable supplier) {
+        return CompletableFuture.runAsync(supplier, EXECUTOR);
+    }
+
     public static void runOnMainThread(SourceOnceFunc fn) {
         GLib.idleAddOnce(fn);
     }
@@ -86,6 +90,21 @@ public class Utils {
         return  (days == 0 ? "" : days + ":") +
                 (hours == 0 ? "" : "%02d:".formatted(hours)) +
                 ("%02d:".formatted(minutes)) +
+                ("%02d".formatted(seconds));
+    }
+
+    public static String formatDurationShortest(Duration d) {
+        long days = d.toDays();
+        d = d.minusDays(days);
+        long hours = d.toHours();
+        d = d.minusHours(hours);
+        long minutes = d.toMinutes();
+        d = d.minusMinutes(minutes);
+        long seconds = d.getSeconds();
+
+        return  (days == 0 ? "" : days + ":") +
+                (hours == 0 ? "" : "%d:".formatted(hours)) +
+                ((hours > 0 || days > 0) ? "%02d:".formatted(minutes) : "%d:".formatted(minutes)) +
                 ("%02d".formatted(seconds));
     }
 

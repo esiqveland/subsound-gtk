@@ -43,7 +43,7 @@ public class PlayerScrubber extends Box {
 
         final Range.ValueChangedCallback onPressedCallback = () -> {
             Duration temporaryPosition = Duration.ofSeconds((long) scale.getValue());
-            currentTimeLabel.setLabel(Utils.formatDurationShort(temporaryPosition));
+            currentTimeLabel.setLabel(Utils.formatDurationShortest(temporaryPosition));
         };
 
         GestureClick gestureClick = findGestureClick(scale);
@@ -66,7 +66,7 @@ public class PlayerScrubber extends Box {
                     signalRef.set(null);
                 }
                 Duration finalPosition = Duration.ofSeconds((long) scale.getValue());
-                currentTimeLabel.setLabel(Utils.formatDurationShort(finalPosition));
+                currentTimeLabel.setLabel(Utils.formatDurationShortest(finalPosition));
                 this.onPositionSeeked(finalPosition);
             } finally {
                 isPressed.set(false);
@@ -109,7 +109,7 @@ public class PlayerScrubber extends Box {
             return;
         }
         currentPosition = currentTime;
-        var text = Utils.formatDurationShort(currentTime);
+        var text = Utils.formatDurationShortest(currentTime);
         Utils.runOnMainThread(() -> {
             this.scale.setValue(currentPosition.toSeconds());
             this.currentTimeLabel.setLabel(text);
@@ -134,7 +134,7 @@ public class PlayerScrubber extends Box {
             return;
         }
         endTime = totalTime;
-        var endTimeText = Utils.formatDurationShort(totalTime);
+        var endTimeText = Utils.formatDurationShortest(totalTime);
         Utils.runOnMainThread(() -> {
             this.endTimeLabel.setLabel(endTimeText);
             this.scale.setRange(0, endTime.toSeconds());

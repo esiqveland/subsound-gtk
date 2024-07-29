@@ -98,4 +98,8 @@ public class ArtistsListBox extends Box {
     public void onArtistSelected(Consumer<ArtistEntry> artistEntryConsumer) {
         this.artistSelected = artistEntryConsumer;
     }
+
+    public void setSelectedArtist(String artistId) {
+
+    }
 }
