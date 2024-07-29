@@ -7,11 +7,14 @@ import org.gnome.gtk.Box;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Widget;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 public class FutureLoader<T, R extends Widget> extends Box {
+    private static final Logger log = LoggerFactory.getLogger(FutureLoader.class);
     private final CompletableFuture<T> future;
     private final Function<T, R> builder;
     private final StatusPage statusPage;
@@ -25,6 +28,7 @@ public class FutureLoader<T, R extends Widget> extends Box {
 
         future.whenCompleteAsync((value, exception) -> {
             if (exception != null) {
+                log.warn("error loading: {}", exception.getMessage(), exception);
                 Utils.runOnMainThread(() -> {
                     this.remove(statusPage);
                     this.append(StatusPage.builder().setChild(new Label("Error loading: %s".formatted(exception.getMessage()))).build());
