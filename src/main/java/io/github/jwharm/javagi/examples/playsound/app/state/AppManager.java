@@ -1,5 +1,7 @@
 package io.github.jwharm.javagi.examples.playsound.app.state;
 
+import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction.Enqueue;
+import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction.PlayPositionInQueue;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache;
@@ -26,6 +28,7 @@ public class AppManager {
     public static final String SERVER_ID = "123";
 
     private final PlaybinPlayer player;
+    private final PlayQueue playQueue;
     private final SongCache songCache;
     private final ThumbnailCache thumbnailCache;
     private final SubsonicClient client;
@@ -41,15 +44,24 @@ public class AppManager {
         this.player = player;
         this.songCache = songCache;
         this.thumbnailCache = thumbnailCache;
+        this.playQueue = new PlayQueue(
+                player,
+                nextState -> this.setState(old -> new AppState(
+                        old.nowPlaying,
+                        old.player,
+                        nextState
+                )),
+                this::loadSource
+        );
         this.client = client;
         player.onStateChanged(next -> this.setState(old -> new AppState(
-                old.nowPlaying, next
+                old.nowPlaying, next, old.queue
         )));
         this.currentState.set(buildState());
     }
 
     private AppState buildState() {
-        return new AppState(Optional.empty(), this.player.getState());
+        return new AppState(Optional.empty(), this.player.getState(), this.playQueue.getState());
     }
 
     public AppState getState() {
@@ -84,8 +96,13 @@ public class AppManager {
 
     public record AppState(
             Optional<NowPlaying> nowPlaying,
-            PlaybinPlayer.PlayerState player
+            PlaybinPlayer.PlayerState player,
+            PlayQueue.PlayQueueState queue
     ) {
+    }
+
+    public void enqueue(SongInfo songInfo) {
+        this.playQueue.enqueue(songInfo);
     }
 
     public CompletableFuture<LoadSongResult> loadSource(SongInfo songInfo) {
@@ -107,7 +124,8 @@ public class AppManager {
         log.info("cached: result={} id={} title={}", song.result().name(), songInfo.id(), songInfo.title());
         this.setState(old -> new AppState(
                 Optional.of(new NowPlaying(songInfo, song)),
-                old.player
+                old.player,
+                old.queue
         ));
         this.player.setSource(song.uri());
         return song;
@@ -135,6 +153,27 @@ public class AppManager {
 
     public void setVolume(double linearVolume) {
         this.player.setVolume(linearVolume);
+    }
+
+    public void next() {
+        this.playQueue.attemptPlayNext();
+    }
+    public void prev() {
+        this.playQueue.attemptPlayPrev();
+    }
+
+    public void handleAction(PlayerAction action) {
+        log.info("handleAction: payload={}", action);
+        switch (action) {
+            case Enqueue a -> this.playQueue.enqueue(a.song());
+            case PlayPositionInQueue a -> this.playQueue.playPosition(a.position());
+            case PlayerAction.PlayQueue a -> this.playQueue.replaceQueue(a.queue(), a.position());
+            case PlayerAction.Pause a -> this.pause();
+            case PlayerAction.Play a -> this.play();
+            case PlayerAction.PlayNext a -> this.playQueue.attemptPlayNext();
+            case PlayerAction.PlayPrev a -> this.playQueue.attemptPlayPrev();
+            case PlayerAction.SeekTo seekTo -> this.player.seekTo(seekTo.position());
+        }
     }
 
     private void setState(Function<AppState, AppState> modifier) {

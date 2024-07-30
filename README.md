@@ -7,7 +7,9 @@ todo:
 - [X] songlist: Single click to select, double-click/enter to activate (start playback)
 - [X] songlist: Hover-shows-play ?
   - [ ] songlist: hover play icon is not tab-able for focus when row is selected, only when hover...
-- [ ] Favorites page
+- [X] Favorites page
+  - [ ] display artist
+  - [ ] display album?
 - [X] cache thumbnails on disk
   - [ ] load from file
   - [ ] reuse pixbuf for albumart
@@ -31,7 +33,7 @@ todo:
   - [ ] a box shadow?
   - [ ] a blurred paintable background ?
     - Something like: https://github.com/neithern/g4music/blob/master/src/ui/paintables.vala#L357
-- [ ] Make downloading song async
+- [X] Make downloading song async
 - [ ] implement a in-memory play queue
   - [ ] Gapless playback of queue
 - [ ] Proper navigation

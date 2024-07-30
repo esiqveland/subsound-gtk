@@ -108,8 +108,10 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         // TODO: mute icon??
         skipBackwardButton = Button.builder().setIconName("media-skip-backward-symbolic").build();
         skipBackwardButton.addCssClass("circular");
+        skipBackwardButton.onClicked(this::onPrev);
         skipForwardButton = Button.builder().setIconName("media-skip-forward-symbolic").build();
         skipForwardButton.addCssClass("circular");
+        skipBackwardButton.onClicked(this::onNext);
 
         playPauseButton = Button.builder().setIconName("media-playback-start-symbolic").build();
         playPauseButton.addCssClass("circular");
@@ -138,6 +140,14 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         mainBar.setCenterWidget(centerWidget);
         mainBar.packEnd(volumeBox);
         this.append(mainBar);
+    }
+
+    private void onPrev() {
+        this.player.prev();
+    }
+
+    private void onNext() {
+        this.player.next();
     }
 
     private void playPause() {

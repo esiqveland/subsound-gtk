@@ -1,7 +1,6 @@
 package io.github.jwharm.javagi.examples.playsound.sound;
 
 import io.github.jwharm.javagi.base.Out;
-import io.github.jwharm.javagi.interop.Interop;
 import org.freedesktop.gstreamer.gst.*;
 import org.gnome.glib.GError;
 import org.gnome.glib.GLib;
@@ -10,7 +9,6 @@ import org.gnome.glib.MainLoop;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.foreign.Arena;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
@@ -89,7 +87,6 @@ public class PlaybinPlayer {
     private final Thread playerLoopThread;
     private final MainContext playerContext;
     private final MainLoop loop;
-    //    Pipeline playbinEl;
     Element playbinEl;
     Bus bus;
     int busWatchId;
@@ -137,7 +134,7 @@ public class PlaybinPlayer {
         System.out.println("Player: Change source to src=" + fileUri);
         var ready = this.playbinEl.setState(State.READY);
         System.out.println("Player: Change source to src=" + fileUri + ": READY=" + ready.name());
-        this.playbinEl.set("uri", Interop.allocateNativeString(fileUri, Arena.ofAuto()), null);
+        this.playbinEl.set("uri", fileUri, null);
         if (startPlaying) {
             var playing = this.playbinEl.setState(State.PLAYING);
             System.out.println("Player: Change source to src=" + fileUri + ": PLAYING=" + playing.name());
