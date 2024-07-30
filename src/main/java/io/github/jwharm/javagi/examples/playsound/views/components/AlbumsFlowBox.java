@@ -21,8 +21,8 @@ public class AlbumsFlowBox extends FlowBox {
     ) {
         super();
         setOrientation(Orientation.HORIZONTAL);
-        setRowSpacing(8);
-        setColumnSpacing(16);
+        setRowSpacing(24);
+        setColumnSpacing(24);
         setHexpand(true);
         setVexpand(true);
         setHomogeneous(true);

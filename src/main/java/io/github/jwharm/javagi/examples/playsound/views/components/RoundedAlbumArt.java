@@ -20,12 +20,12 @@ import static io.github.jwharm.javagi.examples.playsound.utils.Utils.doAsync;
 public class RoundedAlbumArt extends Grid {
     private static final Logger log = LoggerFactory.getLogger(RoundedAlbumArt.class);
 
+    private final ThumbnailCache thumbLoader;
     private final CoverArt artwork;
+    private final Picture image;
     private final AtomicBoolean hasLoaded = new AtomicBoolean(false);
     private final AtomicBoolean isLoading = new AtomicBoolean(false);
     private final AtomicBoolean isUpdating = new AtomicBoolean(false);
-    private final Picture image;
-    private final ThumbnailCache thumbLoader;
 
     public static Grid placeholderImage(int size) {
         try {
@@ -55,10 +55,6 @@ public class RoundedAlbumArt extends Grid {
         } else {
             return placeholderImage(size);
         }
-    }
-
-    public RoundedAlbumArt(CoverArt artwork, ThumbnailCache thumbLoader) {
-        this(artwork, thumbLoader, 400);
     }
 
     public RoundedAlbumArt(CoverArt artwork, ThumbnailCache thumbLoader, int size) {

@@ -19,24 +19,24 @@ public class AlbumFlowBoxChild extends FlowBoxChild {
             ArtistAlbumInfo albumInfo
     ) {
         super();
-        this.addCssClass("card");
+        //this.addCssClass("card");
         this.thumbLoader = thumbLoader;
         this.albumInfo = albumInfo;
         this.albumCover = RoundedAlbumArt.resolveCoverArt(this.thumbLoader, albumInfo.coverArt(), COVER_SIZE);
         var albumTitle = Label.builder()
                 .setLabel(albumInfo.name())
-                .setCssClasses(cssClasses("title-3"))
+                .setCssClasses(cssClasses("heading"))
                 .setEllipsize(EllipsizeMode.END)
                 .setMaxWidthChars(20)
                 .build();
         var albumArtist = Label.builder()
                 .setLabel(albumInfo.artistName())
-                .setCssClasses(cssClasses("title-4", "dim-label"))
+                .setCssClasses(cssClasses("dim-label"))
                 .build();
 
         var yearLabel = albumInfo.year().map(year -> Label.builder()
                 .setLabel("" + year)
-                .setCssClasses(cssClasses("title-4", "dim-label"))
+                .setCssClasses(cssClasses("dim-label"))
                 .build());
 
         var box = Box.builder()
