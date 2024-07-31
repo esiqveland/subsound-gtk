@@ -177,6 +177,8 @@ public class AppManager {
             case PlayerAction.PlayNext a -> this.playQueue.attemptPlayNext();
             case PlayerAction.PlayPrev a -> this.playQueue.attemptPlayPrev();
             case PlayerAction.SeekTo seekTo -> this.player.seekTo(seekTo.position());
+            case PlayerAction.Star a -> this.client.starId(a.song().id());
+            case PlayerAction.Unstar a -> this.client.unStarId(a.song().id());
         }
     }
 
