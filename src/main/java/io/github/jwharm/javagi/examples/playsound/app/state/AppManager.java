@@ -158,6 +158,7 @@ public class AppManager {
     public void next() {
         this.playQueue.attemptPlayNext();
     }
+
     public void prev() {
         this.playQueue.attemptPlayPrev();
     }
@@ -167,7 +168,10 @@ public class AppManager {
         switch (action) {
             case Enqueue a -> this.playQueue.enqueue(a.song());
             case PlayPositionInQueue a -> this.playQueue.playPosition(a.position());
-            case PlayerAction.PlayQueue a -> this.playQueue.replaceQueue(a.queue(), a.position());
+            case PlayerAction.PlayQueue a -> {
+                this.playQueue.replaceQueue(a.queue(), a.position());
+                this.playQueue.playPosition(a.position());
+            }
             case PlayerAction.Pause a -> this.pause();
             case PlayerAction.Play a -> this.play();
             case PlayerAction.PlayNext a -> this.playQueue.attemptPlayNext();

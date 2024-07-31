@@ -27,7 +27,7 @@ public class AlbumsFlowBox extends FlowBox {
         setVexpand(true);
         setHomogeneous(true);
         setHalign(Align.CENTER);
-//        setValign(Align.START);
+        setValign(Align.FILL);
 
         this.thumbLoader = thumbLoader;
         this.albumInfo = albumInfo;

@@ -42,6 +42,7 @@ public class AlbumFlowBoxChild extends FlowBoxChild {
         var box = Box.builder()
                 .setOrientation(Orientation.VERTICAL)
                 .setHalign(Align.CENTER)
+                .setSpacing(4)
                 .build();
         box.append(albumCover);
         box.append(albumTitle);
