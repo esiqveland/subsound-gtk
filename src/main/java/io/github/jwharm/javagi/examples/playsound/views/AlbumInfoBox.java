@@ -34,8 +34,7 @@ public class AlbumInfoBox extends Box {
     public AlbumInfoBox(
             ThumbnailCache thumbLoader,
             AlbumInfo albumInfo,
-            Consumer<PlayerAction> onAction,
-            Consumer<SongInfo> onSongSelected
+            Consumer<PlayerAction> onAction
     ) {
         super(Orientation.VERTICAL, 0);
         this.thumbLoader = thumbLoader;

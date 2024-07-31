@@ -185,7 +185,7 @@ public class PlaybinPlayer {
             System.out.println("Player: Got Event Type: " + msgType.name() + ": percent=" + percent);
             this.setPlayerState(BUFFERING);
             this.onPipelineStateChanged();
-            this.onDurationChanged();
+            //this.onDurationChanged();
         } else if (msgTypes.contains(MessageType.DURATION_CHANGED)) {
             System.out.println("Player: Got Event Type: " + msgType.name());
             // The duration of a pipeline changed. The application can get the new duration with a duration query

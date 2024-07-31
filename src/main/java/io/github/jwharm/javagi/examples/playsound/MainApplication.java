@@ -123,8 +123,7 @@ public class MainApplication {
         var albumInfoContainer = new AlbumInfoLoader(
                 thumbLoader,
                 client,
-                appManager::handleAction,
-                appManager::loadSource
+                appManager::handleAction
         );
         {
             ViewStackPage albumInfoPage = viewStack.addTitled(albumInfoContainer, "albumInfoPage", "AlbumInfo");
