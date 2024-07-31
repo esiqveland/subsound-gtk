@@ -111,7 +111,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         skipBackwardButton.onClicked(this::onPrev);
         skipForwardButton = Button.builder().setIconName("media-skip-forward-symbolic").build();
         skipForwardButton.addCssClass("circular");
-        skipBackwardButton.onClicked(this::onNext);
+        skipForwardButton.onClicked(this::onNext);
 
         playPauseButton = Button.builder().setIconName("media-playback-start-symbolic").build();
         playPauseButton.addCssClass("circular");
@@ -146,7 +146,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         this.player.prev();
     }
 
-    private void onNext() {
+    private void  onNext() {
         this.player.next();
     }
 
