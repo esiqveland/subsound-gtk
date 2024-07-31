@@ -2,6 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.app.state;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
+import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.Source;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,7 +93,16 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
         if (playQueue.isEmpty()) {
             return;
         }
-        int prevIdx = position.orElse(0) - 1;
+        var state = player.getState();
+        var currentPlayPosition = state.source().flatMap(Source::position).orElse(Duration.ZERO);
+        if (currentPlayPosition.getSeconds() >= 4) {
+            if (state.source().isPresent()) {
+                // its likely we can seek this source
+                player.seekTo(Duration.ZERO);
+                return;
+            }
+        }
+        int prevIdx = this.position.orElse(0) - 1;
         if (prevIdx < 0) {
             // we have reached before the start of the queue.
             // seek to zero
