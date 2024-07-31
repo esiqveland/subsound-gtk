@@ -1,5 +1,6 @@
 package io.github.jwharm.javagi.examples.playsound.views;
 
+import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.AlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
@@ -8,6 +9,7 @@ import io.github.jwharm.javagi.examples.playsound.views.components.RoundedAlbumA
 import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,22 +28,23 @@ public class AlbumInfoBox extends Box {
     //private final ArtistInfo artistInfo;
     private final AlbumInfo albumInfo;
     private final Widget artistImage;
-    private final Consumer<SongInfo> onSongSelected;
+    private final Consumer<PlayerAction> onAction;
     private final ThumbnailCache thumbLoader;
 
     public AlbumInfoBox(
             ThumbnailCache thumbLoader,
             AlbumInfo albumInfo,
+            Consumer<PlayerAction> onAction,
             Consumer<SongInfo> onSongSelected
     ) {
         super(Orientation.VERTICAL, 0);
         this.thumbLoader = thumbLoader;
         this.albumInfo = albumInfo;
-        this.onSongSelected = onSongSelected;
+        this.onAction = onAction;
         this.artistImage = this.albumInfo.coverArt()
                 .map(coverArt -> new RoundedAlbumArt(
                         coverArt,
-                        thumbLoader,
+                        this.thumbLoader,
                         300
                 ))
                 .map(artwork -> (Widget) artwork)
@@ -67,7 +70,10 @@ public class AlbumInfoBox extends Box {
         this.list.onRowActivated(row -> {
             var songInfo = this.albumInfo.songs().get(row.getIndex());
             System.out.println("AlbumInfoBox: play " + songInfo.title() + " (%s)".formatted(songInfo.id()));
-            this.onSongSelected.accept(songInfo);
+            this.onAction.accept(new PlayerAction.PlayQueue(
+                    this.albumInfo.songs(),
+                    row.getIndex()
+            ));
         });
 
         var stringList = StringList.builder().build();
@@ -133,7 +139,11 @@ public class AlbumInfoBox extends Box {
 
             playButton.onClicked(() -> {
                 System.out.println("AlbumInfoBox.playButton: play " + songInfo.title() + " (%s)".formatted(songInfo.id()));
-                this.onSongSelected.accept(songInfo);
+                var idx = getIdx(songInfo.id(), this.albumInfo.songs());
+                this.onAction.accept(new PlayerAction.PlayQueue(
+                        this.albumInfo.songs(),
+                        idx
+                ));
             });
             suffix.append(revealer);
             suffix.append(starredBtn);
@@ -174,7 +184,7 @@ public class AlbumInfoBox extends Box {
             });
 
             row.addPrefix(RoundedAlbumArt.resolveCoverArt(
-                    thumbLoader,
+                    this.thumbLoader,
                     albumInfo.coverArt(),
                     48
             ));
@@ -187,6 +197,15 @@ public class AlbumInfoBox extends Box {
         this.setHexpand(true);
         this.setVexpand(true);
         this.append(scroll);
+    }
+
+    private int getIdx(String id, List<SongInfo> songs) {
+        for (int i = 0; i < songs.size(); i++) {
+            if (id.equals(songs.get(i).id())) {
+                return i;
+            }
+        }
+        throw new IllegalStateException("songs does not contain id=%s".formatted(id));
     }
 
     public static ActionRow addHover(ActionRow row, Runnable onEnter, Runnable onLeave) {

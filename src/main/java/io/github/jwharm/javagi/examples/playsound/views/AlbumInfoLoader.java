@@ -1,5 +1,6 @@
 package io.github.jwharm.javagi.examples.playsound.views;
 
+import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.AlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
@@ -12,23 +13,27 @@ import org.gnome.gtk.Orientation;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class AlbumInfoLoader extends Box {
     private final ServerClient client;
     private final String albumId = "";
     private final AtomicReference<AlbumInfoBox> viewHolder = new AtomicReference<>();
+    private final Consumer<PlayerAction> onAction;
     private final Function<SongInfo, CompletableFuture<SongCache.LoadSongResult>> onSongSelected;
     private final ThumbnailCache thumbLoader;
 
     public AlbumInfoLoader(
             ThumbnailCache thumbLoader,
             ServerClient client,
+            Consumer<PlayerAction> onAction,
             Function<SongInfo, CompletableFuture<SongCache.LoadSongResult>> onSongSelected
     ) {
         super(Orientation.VERTICAL, 0);
         this.thumbLoader = thumbLoader;
         this.client = client;
+        this.onAction = onAction;
         this.onSongSelected = onSongSelected;
         this.setHexpand(true);
         this.setVexpand(true);
@@ -51,7 +56,7 @@ public class AlbumInfoLoader extends Box {
             if (current != null) {
                 this.remove(current);
             }
-            var next = new AlbumInfoBox(thumbLoader, info, this.onSongSelected::apply);
+            var next = new AlbumInfoBox(thumbLoader, info, onAction, this.onSongSelected::apply);
             this.viewHolder.set(next);
             this.append(next);
         });
