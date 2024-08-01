@@ -13,8 +13,9 @@ import org.gnome.gtk.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.*;
@@ -29,13 +30,13 @@ public class AlbumInfoBox extends Box {
     //private final ArtistInfo artistInfo;
     private final AlbumInfo albumInfo;
     private final Widget artistImage;
-    private final Consumer<PlayerAction> onAction;
+    private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private final ThumbnailCache thumbLoader;
 
     public AlbumInfoBox(
             ThumbnailCache thumbLoader,
             AlbumInfo albumInfo,
-            Consumer<PlayerAction> onAction
+            Function<PlayerAction, CompletableFuture<Void>> onAction
     ) {
         super(Orientation.VERTICAL, 0);
         this.thumbLoader = thumbLoader;
@@ -70,7 +71,7 @@ public class AlbumInfoBox extends Box {
         this.list.onRowActivated(row -> {
             var songInfo = this.albumInfo.songs().get(row.getIndex());
             System.out.println("AlbumInfoBox: play " + songInfo.title() + " (%s)".formatted(songInfo.id()));
-            this.onAction.accept(new PlayerAction.PlayQueue(
+            this.onAction.apply(new PlayerAction.PlayQueue(
                     this.albumInfo.songs(),
                     row.getIndex()
             ));
@@ -96,7 +97,7 @@ public class AlbumInfoBox extends Box {
                     songInfo.starred(),
                     newValue -> {
                         var action = newValue ? new PlayerAction.Star(songInfo) : new PlayerAction.Unstar(songInfo);
-                        this.onAction.accept(action);
+                        return this.onAction.apply(action);
                     }
             );
 
@@ -144,7 +145,7 @@ public class AlbumInfoBox extends Box {
             playButton.onClicked(() -> {
                 System.out.println("AlbumInfoBox.playButton: play " + songInfo.title() + " (%s)".formatted(songInfo.id()));
                 var idx = getIdx(songInfo.id(), this.albumInfo.songs());
-                this.onAction.accept(new PlayerAction.PlayQueue(
+                this.onAction.apply(new PlayerAction.PlayQueue(
                         this.albumInfo.songs(),
                         idx
                 ));

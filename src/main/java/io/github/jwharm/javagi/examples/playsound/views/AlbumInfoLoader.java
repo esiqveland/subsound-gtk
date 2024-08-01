@@ -11,19 +11,19 @@ import org.gnome.gtk.Orientation;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class AlbumInfoLoader extends Box {
     private final ServerClient client;
     private final String albumId = "";
     private final AtomicReference<AlbumInfoBox> viewHolder = new AtomicReference<>();
-    private final Consumer<PlayerAction> onAction;
+    private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private final ThumbnailCache thumbLoader;
 
     public AlbumInfoLoader(
             ThumbnailCache thumbLoader,
             ServerClient client,
-            Consumer<PlayerAction> onAction
+            Function<PlayerAction, CompletableFuture<Void>> onAction
     ) {
         super(Orientation.VERTICAL, 0);
         this.thumbLoader = thumbLoader;

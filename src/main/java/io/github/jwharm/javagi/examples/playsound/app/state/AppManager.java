@@ -9,6 +9,7 @@ import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.CacheSon
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.LoadSongResult;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
+import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -163,23 +164,25 @@ public class AppManager {
         this.playQueue.attemptPlayPrev();
     }
 
-    public void handleAction(PlayerAction action) {
-        log.info("handleAction: payload={}", action);
-        switch (action) {
-            case Enqueue a -> this.playQueue.enqueue(a.song());
-            case PlayPositionInQueue a -> this.playQueue.playPosition(a.position());
-            case PlayerAction.PlayQueue a -> {
-                this.playQueue.replaceQueue(a.queue(), a.position());
-                this.playQueue.playPosition(a.position());
+    public CompletableFuture<Void> handleAction(PlayerAction action) {
+        return Utils.doAsync(() -> {
+            log.info("handleAction: payload={}", action);
+            switch (action) {
+                case Enqueue a -> this.playQueue.enqueue(a.song());
+                case PlayPositionInQueue a -> this.playQueue.playPosition(a.position());
+                case PlayerAction.PlayQueue a -> {
+                    this.playQueue.replaceQueue(a.queue(), a.position());
+                    this.playQueue.playPosition(a.position());
+                }
+                case PlayerAction.Pause a -> this.pause();
+                case PlayerAction.Play a -> this.play();
+                case PlayerAction.PlayNext a -> this.playQueue.attemptPlayNext();
+                case PlayerAction.PlayPrev a -> this.playQueue.attemptPlayPrev();
+                case PlayerAction.SeekTo seekTo -> this.player.seekTo(seekTo.position());
+                case PlayerAction.Star a -> this.client.starId(a.song().id());
+                case PlayerAction.Unstar a -> this.client.unStarId(a.song().id());
             }
-            case PlayerAction.Pause a -> this.pause();
-            case PlayerAction.Play a -> this.play();
-            case PlayerAction.PlayNext a -> this.playQueue.attemptPlayNext();
-            case PlayerAction.PlayPrev a -> this.playQueue.attemptPlayPrev();
-            case PlayerAction.SeekTo seekTo -> this.player.seekTo(seekTo.position());
-            case PlayerAction.Star a -> this.client.starId(a.song().id());
-            case PlayerAction.Unstar a -> this.client.unStarId(a.song().id());
-        }
+        });
     }
 
     private void setState(Function<AppState, AppState> modifier) {

@@ -1,5 +1,6 @@
 package io.github.jwharm.javagi.examples.playsound.views;
 
+import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
@@ -11,8 +12,10 @@ import org.gnome.gtk.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.*;
@@ -24,13 +27,20 @@ public class SongList extends ListBox {
 
     private final ThumbnailCache thumbLoader;
     private final List<SongInfo> songs;
+    private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private final Consumer<SongInfo> onSongSelected;
     private final Map<String, SongInfo> songIdMap;
 
-    public SongList(ThumbnailCache thumbLoader, List<SongInfo> songs, Consumer<SongInfo> onSongSelected) {
+    public SongList(
+            ThumbnailCache thumbLoader,
+            List<SongInfo> songs,
+            Function<PlayerAction, CompletableFuture<Void>> onAction,
+            Consumer<SongInfo> onSongSelected
+    ) {
         super();
         this.thumbLoader = thumbLoader;
         this.songs = songs;
+        this.onAction = onAction;
         this.onSongSelected = onSongSelected;
         this.songIdMap = this.songs.stream().collect(Collectors.toMap(
                 SongInfo::id,
@@ -62,8 +72,8 @@ public class SongList extends ListBox {
             var starredButton = new StarredButton(
                     songInfo.starred(),
                     newValue -> {
-
-                        //this.onStarred();
+                        var action = newValue ? new PlayerAction.Star(songInfo) : new PlayerAction.Unstar(songInfo);
+                        return this.onAction.apply(action);
                     }
             );
 

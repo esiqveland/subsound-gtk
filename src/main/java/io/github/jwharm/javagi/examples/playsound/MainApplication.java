@@ -95,7 +95,7 @@ public class MainApplication {
         }
         {
             var starredPageContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
-            starredPageContainer.append(new StarredLoader(thumbLoader, client, appManager::loadSource));
+            starredPageContainer.append(new StarredLoader(thumbLoader, client, appManager::loadSource, appManager::handleAction));
             ViewStackPage starredPage = viewStack.addTitled(starredPageContainer, "starredPage", "Starred");
         }
         var artists = this.client.getArtists();

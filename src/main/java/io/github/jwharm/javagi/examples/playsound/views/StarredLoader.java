@@ -1,5 +1,6 @@
 package io.github.jwharm.javagi.examples.playsound.views;
 
+import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ListStarred;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
@@ -7,7 +8,6 @@ import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.LoadSong
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.github.jwharm.javagi.examples.playsound.views.components.FutureLoader;
-import io.github.jwharm.javagi.examples.playsound.views.components.LoadingSpinner;
 import org.gnome.gtk.*;
 
 import java.util.concurrent.CompletableFuture;
@@ -17,17 +17,21 @@ public class StarredLoader extends Box {
     private final ThumbnailCache thumbLoader;
     private final ServerClient client;
     private final Function<SongInfo, CompletableFuture<LoadSongResult>> onSongSelected;
+    private final Function<PlayerAction, CompletableFuture<Void>> onAction;
+
     private final ScrolledWindow window;
 
     public StarredLoader(
             ThumbnailCache thumbLoader,
             ServerClient client,
-            Function<SongInfo, CompletableFuture<LoadSongResult>> onSongSelected
+            Function<SongInfo, CompletableFuture<LoadSongResult>> onSongSelected,
+            Function<PlayerAction, CompletableFuture<Void>> onAction
     ) {
         super(Orientation.VERTICAL, 0);
         this.thumbLoader = thumbLoader;
         this.client = client;
         this.onSongSelected = onSongSelected;
+        this.onAction = onAction;
         this.setHexpand(true);
         this.setVexpand(true);
         this.setHalign(Align.FILL);
@@ -47,7 +51,7 @@ public class StarredLoader extends Box {
         CompletableFuture<ListStarred> adsf = doLoad();
         var loader = new FutureLoader<>(
                 adsf,
-                starred -> new SongList(thumbLoader, starred.songs(), this.onSongSelected::apply)
+                starred -> new SongList(thumbLoader, starred.songs(), this.onAction, this.onSongSelected::apply)
         );
         replaceWidget(loader);
         return this;
