@@ -4,6 +4,7 @@ import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
+import io.github.jwharm.javagi.examples.playsound.views.components.NowPlayingOverlayIcon;
 import io.github.jwharm.javagi.examples.playsound.views.components.RoundedAlbumArt;
 import io.github.jwharm.javagi.examples.playsound.views.components.StarredButton;
 import org.gnome.adw.ActionRow;
@@ -24,7 +25,6 @@ import static org.gnome.gtk.Align.CENTER;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 
 public class SongList extends ListBox {
-
     private final ThumbnailCache thumbLoader;
     private final List<SongInfo> songs;
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
@@ -168,11 +168,13 @@ public class SongList extends ListBox {
                 revealer.setRevealChild(hasFocus || hasHover);
             });
 
-            row.addPrefix(RoundedAlbumArt.resolveCoverArt(
-                    thumbLoader,
+            var albumIcon = RoundedAlbumArt.resolveCoverArt(
+                    this.thumbLoader,
                     songInfo.coverArt(),
                     48
-            ));
+            );
+            var icon = new NowPlayingOverlayIcon(48, albumIcon);
+            row.addPrefix(icon);
             row.addSuffix(suffix);
             return row;
         });

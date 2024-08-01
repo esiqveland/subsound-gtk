@@ -5,6 +5,7 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.Album
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
+import io.github.jwharm.javagi.examples.playsound.views.components.NowPlayingOverlayIcon;
 import io.github.jwharm.javagi.examples.playsound.views.components.RoundedAlbumArt;
 import io.github.jwharm.javagi.examples.playsound.views.components.StarredButton;
 import org.gnome.adw.ActionRow;
@@ -188,11 +189,13 @@ public class AlbumInfoBox extends Box {
                 revealer.setRevealChild(hasFocus || hasHover);
             });
 
-            row.addPrefix(RoundedAlbumArt.resolveCoverArt(
+            var albumIcon = RoundedAlbumArt.resolveCoverArt(
                     this.thumbLoader,
-                    albumInfo.coverArt(),
+                    songInfo.coverArt(),
                     48
-            ));
+            );
+            var icon = new NowPlayingOverlayIcon(48, albumIcon);
+            row.addPrefix(icon);
             row.addSuffix(suffix);
             return row;
         });
