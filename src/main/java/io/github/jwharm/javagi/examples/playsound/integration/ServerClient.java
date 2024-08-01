@@ -40,7 +40,11 @@ public interface ServerClient {
             String streamSuffix,
             URI downloadUri,
             URI streamUri
-    ) {}
+    ) {
+        public boolean isStarred() {
+            return starred.isPresent();
+        }
+    }
 
     record AlbumInfo(
             String id,

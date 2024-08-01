@@ -2,6 +2,10 @@ package io.github.jwharm.javagi.examples.playsound.utils;
 
 import org.gnome.glib.GLib;
 import org.gnome.glib.SourceOnceFunc;
+import org.gnome.gtk.EventControllerMotion;
+import org.gnome.gtk.PropagationLimit;
+import org.gnome.gtk.PropagationPhase;
+import org.gnome.gtk.Widget;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -157,4 +161,17 @@ public class Utils {
     public static String[] cssClasses(String... clazz) {
         return clazz;
     }
+
+    public static <T extends Widget> T addHover(T row, Runnable onEnter, Runnable onLeave) {
+        var ec = EventControllerMotion.builder().setPropagationPhase(PropagationPhase.CAPTURE).setPropagationLimit(PropagationLimit.NONE).build();
+        ec.onEnter((x, y) -> {
+            onEnter.run();
+        });
+        ec.onLeave(() -> {
+            onLeave.run();
+        });
+        row.addController(ec);
+        return row;
+    }
+
 }

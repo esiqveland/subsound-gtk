@@ -6,6 +6,7 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongI
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.github.jwharm.javagi.examples.playsound.views.components.RoundedAlbumArt;
+import io.github.jwharm.javagi.examples.playsound.views.components.StarredButton;
 import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
 
@@ -82,8 +83,6 @@ public class AlbumInfoBox extends Box {
             StringObject strObj = (StringObject) item;
             var id = strObj.getString();
             var songInfo = this.songIdMap.get(id);
-            var isStarred = songInfo.starred().map(s -> true).orElse(false);
-            var starredString = isStarred ? "★" : "☆";
 
             var suffix = Box.builder()
                     .setOrientation(HORIZONTAL)
@@ -92,8 +91,14 @@ public class AlbumInfoBox extends Box {
                     .setVexpand(true)
                     .setSpacing(8)
                     .build();
-            var starredBtn = Label.builder().setLabel(starredString).setCssClasses(new String[]{"starred"}).build();
 
+            var starredButton = new StarredButton(
+                    songInfo.starred(),
+                    newValue -> {
+                        var action = newValue ? new PlayerAction.Star(songInfo) : new PlayerAction.Unstar(songInfo);
+                        this.onAction.accept(action);
+                    }
+            );
 
             var hoverBox = Box.builder()
                     .setOrientation(HORIZONTAL)
@@ -145,7 +150,7 @@ public class AlbumInfoBox extends Box {
                 ));
             });
             suffix.append(revealer);
-            suffix.append(starredBtn);
+            suffix.append(starredButton);
 
             var trackNumberTitle = songInfo.trackNumber().map(num -> "%d ⦁ ".formatted(num)).orElse("");
             String durationString = Utils.formatDurationShort(songInfo.duration());
@@ -205,18 +210,6 @@ public class AlbumInfoBox extends Box {
             }
         }
         throw new IllegalStateException("songs does not contain id=%s".formatted(id));
-    }
-
-    public static ActionRow addHover(ActionRow row, Runnable onEnter, Runnable onLeave) {
-        var ec = EventControllerMotion.builder().setPropagationPhase(PropagationPhase.CAPTURE).setPropagationLimit(PropagationLimit.NONE).build();
-        ec.onEnter((x, y) -> {
-            onEnter.run();
-        });
-        ec.onLeave(() -> {
-            onLeave.run();
-        });
-        row.addController(ec);
-        return row;
     }
 
     public static Label infoLabel(String label, String[] cssClazz) {

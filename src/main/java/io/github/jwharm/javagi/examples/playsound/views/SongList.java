@@ -4,6 +4,7 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongI
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.github.jwharm.javagi.examples.playsound.views.components.RoundedAlbumArt;
+import io.github.jwharm.javagi.examples.playsound.views.components.StarredButton;
 import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
 
@@ -14,9 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
-import static io.github.jwharm.javagi.examples.playsound.utils.Utils.formatBytesSI;
-import static io.github.jwharm.javagi.examples.playsound.views.AlbumInfoBox.addHover;
+import static io.github.jwharm.javagi.examples.playsound.utils.Utils.*;
 import static io.github.jwharm.javagi.examples.playsound.views.AlbumInfoBox.infoLabel;
 import static org.gnome.gtk.Align.CENTER;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
@@ -59,8 +58,14 @@ public class SongList extends ListBox {
             StringObject strObj = (StringObject) item;
             var id = strObj.getString();
             var songInfo = this.songIdMap.get(id);
-            var isStarred = songInfo.starred().map(s -> true).orElse(false);
-            var starredString = isStarred ? "★" : "☆";
+
+            var starredButton = new StarredButton(
+                    songInfo.starred(),
+                    newValue -> {
+
+                        //this.onStarred();
+                    }
+            );
 
             var suffix = Box.builder()
                     .setOrientation(HORIZONTAL)
@@ -69,8 +74,6 @@ public class SongList extends ListBox {
                     .setVexpand(true)
                     .setSpacing(8)
                     .build();
-            var starredBtn = Label.builder().setLabel(starredString).setCssClasses(new String[]{"starred"}).build();
-
 
             var hoverBox = Box.builder()
                     .setOrientation(HORIZONTAL)
@@ -118,7 +121,7 @@ public class SongList extends ListBox {
                 this.onSongSelected.accept(songInfo);
             });
             suffix.append(revealer);
-            suffix.append(starredBtn);
+            suffix.append(starredButton);
 
             var trackNumberTitle = songInfo.trackNumber().map(num -> "%d ⦁ ".formatted(num)).orElse("");
             String durationString = Utils.formatDurationShort(songInfo.duration());
