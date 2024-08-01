@@ -15,6 +15,9 @@ public class NowPlayingOverlayIcon extends Overlay {
         this.icon = Image.fromIconName("media-playback-start-symbolic");
         this.child = child;
         icon.addCssClass("circular");
+        icon.addCssClass("now-playing-overlay");
+        //icon.addCssClass("accent");
+        icon.addCssClass("success");
         icon.setSizeRequest(48, 48);
         this.addOverlay(icon);
         this.setSizeRequest(size, size);

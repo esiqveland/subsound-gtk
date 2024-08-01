@@ -50,7 +50,7 @@ public class StarredButton extends Button {
         );
         this.addController(clicks);
         this.setLabel(getIcon(starredAt));
-        this.setCssClasses(cssClasses("starred", "flat"));
+        this.setCssClasses(cssClasses("starred", "flat", "circular"));
     }
 
     public void setStarredAt(Optional<Instant> starredAt) {
