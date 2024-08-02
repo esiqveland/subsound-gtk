@@ -1,5 +1,6 @@
 package io.github.jwharm.javagi.examples.playsound.views.components;
 
+import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,14 +12,19 @@ public class NowPlayingOverlayIcon extends Overlay {
     private final Widget child;
 
     public NowPlayingOverlayIcon(int size, Widget child) {
+        this(size, child, false);
+    }
+
+    public NowPlayingOverlayIcon(int size, Widget child, boolean isPlaying) {
         super();
         this.icon = Image.fromIconName("media-playback-start-symbolic");
         this.child = child;
-        icon.addCssClass("circular");
-        icon.addCssClass("now-playing-overlay");
-        //icon.addCssClass("accent");
-        icon.addCssClass("success");
-        icon.setSizeRequest(48, 48);
+        this.icon.addCssClass("circular");
+        this.icon.addCssClass("now-playing-overlay");
+        //this.icon.addCssClass("accent");
+        this.icon.addCssClass("success");
+        this.icon.setSizeRequest(48, 48);
+        this.icon.setVisible(isPlaying);
         this.addOverlay(icon);
         this.setSizeRequest(size, size);
 
@@ -29,5 +35,21 @@ public class NowPlayingOverlayIcon extends Overlay {
         this.setOverflow(Overflow.HIDDEN);
         this.addCssClass("rounded");
         this.setChild(this.child);
+    }
+
+    public NowPlayingOverlayIcon setIsPlaying(boolean isPlaying) {
+        if (isPlaying) {
+            this.showOverlay();
+        } else {
+            this.hideOverlay();
+        }
+        return this;
+    }
+
+    private void showOverlay() {
+        Utils.runOnMainThread(() -> this.icon.setVisible(true));
+    }
+    private void hideOverlay() {
+        Utils.runOnMainThread(() -> this.icon.setVisible(false));
     }
 }

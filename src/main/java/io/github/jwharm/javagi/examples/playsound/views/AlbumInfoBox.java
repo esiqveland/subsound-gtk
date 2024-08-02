@@ -195,6 +195,9 @@ public class AlbumInfoBox extends Box {
                     48
             );
             var icon = new NowPlayingOverlayIcon(48, albumIcon);
+            if ("166bcd70e38d8f0a202e0a907b8c0727".equals(songInfo.id())) {
+                icon.setIsPlaying(true);
+            }
             row.addPrefix(icon);
             row.addSuffix(suffix);
             return row;
