@@ -3,7 +3,8 @@ todo:
 
 - [X] songlist: duration, tracknumber, starred
 - [X] songlist: bitrate, size, format
-- [ ] songlist: currently playing icon on the left
+- [X] songlist: currently playing icon on the left
+- [ ] songlist: self-updating playing icon on the left
 - [X] songlist: Single click to select, double-click/enter to activate (start playback)
 - [X] songlist: Hover-shows-play ?
   - [ ] songlist: hover play icon is not tab-able for focus when row is selected, only when hover...

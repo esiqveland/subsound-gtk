@@ -154,9 +154,9 @@ public class AlbumInfoBox extends Box {
             suffix.append(revealer);
             suffix.append(starredButton);
 
-            var trackNumberTitle = songInfo.trackNumber().map(num -> "%d ⦁ ".formatted(num)).orElse("");
+            //var trackNumberTitle = songInfo.trackNumber().map(num -> "%d ⦁ ".formatted(num)).orElse("");
             String durationString = Utils.formatDurationShort(songInfo.duration());
-            String subtitle = trackNumberTitle + durationString;
+            String subtitle = "" + durationString;
 
             var row = ActionRow.builder()
                     .setTitle(songInfo.title())
@@ -167,18 +167,29 @@ public class AlbumInfoBox extends Box {
                     .setFocusOnClick(true)
                     .build();
 
+            Label songNumberLabel = Label.builder()
+                    .setLabel(songInfo.trackNumber().map(String::valueOf).orElse(""))
+                    .setCssClasses(cssClasses("dim-label", "numeric"))
+                    .build();
+            var icon = new NowPlayingOverlayIcon(16, songNumberLabel);
+            if ("166bcd70e38d8f0a202e0a907b8c0727".equals(songInfo.id())) {
+                icon.setIsPlaying(true);
+            }
+
             var isHoverActive = new AtomicBoolean(false);
             addHover(
                     row,
                     () -> {
                         isHoverActive.set(true);
                         revealer.setRevealChild(true);
+                        icon.setIsHover(true);
                     },
                     () -> {
                         isHoverActive.set(false);
                         var focused = row.hasFocus() || playButton.hasFocus();
                         //System.out.println("onLeave: focused=" + focused);
                         revealer.setRevealChild(focused);
+                        icon.setIsHover(false);
                     }
             );
             row.onStateFlagsChanged(flags -> {
@@ -187,17 +198,15 @@ public class AlbumInfoBox extends Box {
                 //System.out.println("onStateFlagsChanged: " + String.join(", ", flags.stream().map(s -> s.name()).toList()) + " hasHover=" + hasHover + " hasFocus=" + hasFocus);
                 //playButton.setVisible(hasFocus || hasHover);
                 revealer.setRevealChild(hasFocus || hasHover);
+                icon.setIsHover(hasFocus || hasHover);
             });
 
-            var albumIcon = RoundedAlbumArt.resolveCoverArt(
-                    this.thumbLoader,
-                    songInfo.coverArt(),
-                    48
-            );
-            var icon = new NowPlayingOverlayIcon(48, albumIcon);
-            if ("166bcd70e38d8f0a202e0a907b8c0727".equals(songInfo.id())) {
-                icon.setIsPlaying(true);
-            }
+//            var albumIcon = RoundedAlbumArt.resolveCoverArt(
+//                    this.thumbLoader,
+//                    songInfo.coverArt(),
+//                    48
+//            );
+
             row.addPrefix(icon);
             row.addSuffix(suffix);
             return row;

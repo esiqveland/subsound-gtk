@@ -1,4 +1,7 @@
 
+.now-playing-overlay:hover {
+    color: red;
+}
 .starred {
     color: yellow;
     font-size: 24px;
