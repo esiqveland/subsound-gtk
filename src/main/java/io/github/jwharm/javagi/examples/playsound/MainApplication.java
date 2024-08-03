@@ -122,7 +122,7 @@ public class MainApplication {
 
         var albumInfoContainer = new AlbumInfoLoader(
                 thumbLoader,
-                client,
+                appManager,
                 appManager::handleAction
         );
         {

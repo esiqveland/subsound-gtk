@@ -1,5 +1,5 @@
 
-todo:
+TODO:
 
 - [X] songlist: duration, tracknumber, starred
 - [X] songlist: bitrate, size, format
@@ -55,10 +55,10 @@ todo:
   - remove song from playlist
   - play as playqueue
 - [ ] Mpris support
-    - https://github.com/NGMusic/mpris-java/blob/master/src/main/org/mpris/MediaPlayer2/DBusPlayer.kt
     - https://github.com/NGMusic/mpris-java/blob/master/extensions/src/xerus/mpris/AbstractMPRISPlayer.kt
     - https://github.com/NGMusic/moodplayer/blob/master/src/desktop/java/xerus/mpris/MPRIS.kt
     - https://github.com/NGMusic/mpris-java/blob/master/extensions/test/xerus/mpris/MPRISPlayer.kt
+    - https://github.com/NGMusic/mpris-java/blob/master/src/main/org/mpris/MediaPlayer2/DBusPlayer.kt
     - [ ] thumbnail
     - [ ] play/pause
     - [ ] skip

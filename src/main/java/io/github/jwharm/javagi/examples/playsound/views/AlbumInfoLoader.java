@@ -1,7 +1,7 @@
 package io.github.jwharm.javagi.examples.playsound.views;
 
+import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
-import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.AlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
@@ -13,8 +13,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
-public class AlbumInfoLoader extends Box {
-    private final ServerClient client;
+public class AlbumInfoLoader extends Box implements AutoCloseable, AppManager.StateListener {
+    private final AppManager client;
     private final String albumId = "";
     private final AtomicReference<AlbumInfoBox> viewHolder = new AtomicReference<>();
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
@@ -22,13 +22,14 @@ public class AlbumInfoLoader extends Box {
 
     public AlbumInfoLoader(
             ThumbnailCache thumbLoader,
-            ServerClient client,
+            AppManager client,
             Function<PlayerAction, CompletableFuture<Void>> onAction
     ) {
         super(Orientation.VERTICAL, 0);
         this.thumbLoader = thumbLoader;
         this.client = client;
         this.onAction = onAction;
+        this.client.addOnStateChanged(this);
         this.setHexpand(true);
         this.setVexpand(true);
         this.setHalign(Align.FILL);
@@ -58,7 +59,7 @@ public class AlbumInfoLoader extends Box {
 
     private CompletableFuture<AlbumInfo> doLoad(String albumId) {
         return CompletableFuture.supplyAsync(() -> {
-            var info = this.client.getAlbumInfo(albumId);
+            var info = this.client.getClient().getAlbumInfo(albumId);
 
             // just make sure we didnt change artist in the meantime we were loading data:
             if (info.id().equals(albumId)) {
@@ -66,5 +67,18 @@ public class AlbumInfoLoader extends Box {
             }
             return info;
         });
+    }
+
+    @Override
+    public void close() throws Exception {
+        this.client.removeOnStateChanged(this);
+    }
+
+    @Override
+    public void onStateChanged(AppManager.AppState state) {
+        var box = this.viewHolder.get();
+        if (box != null) {
+            box.updateAppState(state);
+        }
     }
 }
