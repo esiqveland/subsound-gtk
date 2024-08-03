@@ -1,12 +1,14 @@
 package io.github.jwharm.javagi.examples.playsound.views;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager.AppState;
+import io.github.jwharm.javagi.examples.playsound.app.state.AppManager.NowPlaying;
 import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.AlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.github.jwharm.javagi.examples.playsound.views.components.NowPlayingOverlayIcon;
+import io.github.jwharm.javagi.examples.playsound.views.components.NowPlayingOverlayIcon.NowPlayingState;
 import io.github.jwharm.javagi.examples.playsound.views.components.RoundedAlbumArt;
 import io.github.jwharm.javagi.examples.playsound.views.components.StarredButton;
 import org.gnome.adw.ActionRow;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.*;
@@ -27,6 +30,7 @@ public class AlbumInfoBox extends Box {
 
     //private final ArtistInfo artistInfo;
     private final AlbumInfo albumInfo;
+    private final AtomicReference<AppState> prevState = new AtomicReference<>(null);
 
     private final ScrolledWindow scroll;
     private final Box infoContainer;
@@ -131,7 +135,7 @@ public class AlbumInfoBox extends Box {
                     .build();
             icon = new NowPlayingOverlayIcon(16, songNumberLabel);
             if ("166bcd70e38d8f0a202e0a907b8c0727".equals(songInfo.id())) {
-                icon.setIsPlaying(true);
+                icon.setIsPlaying(NowPlayingState.PAUSED);
             }
             var isHoverActive = new AtomicBoolean(false);
             addHover(
@@ -225,10 +229,43 @@ public class AlbumInfoBox extends Box {
     }
 
     public void updateAppState(AppState next) {
+        var prev = prevState.get();
+        prevState.set(next);
+        final boolean isOutdated = needsUpdate(prev, next);
+        if (!isOutdated) {
+            return;
+        }
         for (AlbumSongActionRow row : this.rows) {
             boolean isPlaying = next.nowPlaying().map(np -> np.song().id().equals(row.songInfo.id())).orElse(false);
-            row.icon.setIsPlaying(isPlaying);
+            if (isPlaying) {
+                switch (next.player().state()) {
+                    case PAUSED, INIT -> row.icon.setIsPlaying(NowPlayingState.PAUSED);
+                    case PLAYING, BUFFERING, READY, END_OF_STREAM -> row.icon.setIsPlaying(NowPlayingState.PLAYING);
+                }
+            } else {
+                row.icon.setIsPlaying(NowPlayingState.NONE);
+            }
         }
+    }
+
+    private boolean needsUpdate(AppState prev, AppState next) {
+        if (prev == null) {
+            return true;
+        }
+        if (prev.nowPlaying().isPresent() != next.nowPlaying().isPresent()) {
+            return true;
+        }
+        var prevSongId = prev.nowPlaying().map(NowPlaying::song).map(SongInfo::id).orElse("");
+        var nextSongId = next.nowPlaying().map(NowPlaying::song).map(SongInfo::id).orElse("");
+        if (!prevSongId.equals(nextSongId)) {
+            return true;
+        }
+        int oldPos = prev.queue().position().orElse(0);
+        int newPos = next.queue().position().orElse(0);
+        if (oldPos != newPos) {
+            return true;
+        }
+        return false;
     }
 
     private static int getIdx(String id, List<SongInfo> songs) {
