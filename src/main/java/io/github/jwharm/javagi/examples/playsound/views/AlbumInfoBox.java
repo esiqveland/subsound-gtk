@@ -120,7 +120,7 @@ public class AlbumInfoBox extends Box {
             suffix.append(starredButton);
 
             //var trackNumberTitle = songInfo.trackNumber().map(num -> "%d ⦁ ".formatted(num)).orElse("");
-            String durationString = Utils.formatDurationShort(songInfo.duration());
+            String durationString = Utils.formatDurationShortest(songInfo.duration());
             String subtitle = "" + durationString;
 
 //            var albumIcon = RoundedAlbumArt.resolveCoverArt(

@@ -34,10 +34,16 @@ public class NowPlayingOverlayIcon extends Overlay {
         this.icon.addCssClass("circular");
         //this.icon.addCssClass("accent");
         this.icon.setSizeRequest(size, size);
-        this.icon.setVisible(this.state.get() != NowPlayingState.NONE);
+        //this.icon.setVisible(this.state.get() != NowPlayingState.NONE);
         this.icon.addCssClass("success");
         this.addOverlay(icon);
         this.setSizeRequest(size, size);
+
+        this.setIsPlaying(isPlaying);
+        switch (this.state.get()) {
+            case PLAYING, PAUSED -> this.showOverlay();
+            case NONE -> this.hideOverlay();
+        }
 
         this.setHexpand(false);
         this.setVexpand(false);
@@ -54,11 +60,11 @@ public class NowPlayingOverlayIcon extends Overlay {
 
         Utils.runOnMainThread(() -> {
             if (this.isHover.get()) {
-                this.icon.setVisible(true);
+                this.showOverlay();
             } else {
                 switch (this.state.get()) {
-                    case PLAYING, PAUSED -> this.icon.setVisible(true);
-                    case NONE -> this.icon.setVisible(false);
+                    case PLAYING, PAUSED -> this.showOverlay();
+                    case NONE -> this.hideOverlay();
                 }
             }
 
@@ -95,10 +101,16 @@ public class NowPlayingOverlayIcon extends Overlay {
     }
 
     private void showOverlay() {
-        Utils.runOnMainThread(() -> this.icon.setVisible(true));
+        Utils.runOnMainThread(() -> {
+            this.icon.setVisible(true);
+            this.child.setVisible(false);
+        });
     }
 
     private void hideOverlay() {
-        Utils.runOnMainThread(() -> this.icon.setVisible(false));
+        Utils.runOnMainThread(() -> {
+            this.icon.setVisible(false);
+            this.child.setVisible(true);
+        });
     }
 }
