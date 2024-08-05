@@ -116,7 +116,8 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     }
 
     public void enqueue(SongInfo songInfo) {
-        playQueue.add(songInfo);
+        //playQueue.add(songInfo);
+        playQueue.add(position.orElse(-1) + 1, songInfo);
         this.notifyState();
     }
 
