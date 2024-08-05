@@ -5,6 +5,7 @@ import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.S
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.views.*;
 import io.github.jwharm.javagi.examples.playsound.views.components.AppNavigation;
+import io.github.jwharm.javagi.examples.playsound.views.components.Icons;
 import io.github.jwharm.javagi.examples.playsound.views.components.PlayerBar;
 import org.gnome.adw.Application;
 import org.gnome.adw.ApplicationWindow;
@@ -114,10 +115,10 @@ public class MainApplication {
             ViewStackPage artistsPage = viewStack.addTitled(artistContainer, "artistInfoPage", "Artist");
         }
         {
-            ViewStackPage searchPage = viewStack.addTitled(searchContainer, "searchPage", "Search");
+            ViewStackPage searchPage = viewStack.addTitledWithIcon(searchContainer, "searchPage", "Search", Icons.Search.getIconName());
         }
         {
-            ViewStackPage playlistPage = viewStack.addTitled(playlistsContainer, "playlistPage", "Playlists");
+            ViewStackPage playlistPage = viewStack.addTitledWithIcon(playlistsContainer, "playlistPage", "Playlists", Icons.PlaylistConsecutive.getIconName());
         }
 
         var albumInfoContainer = new AlbumInfoLoader(
