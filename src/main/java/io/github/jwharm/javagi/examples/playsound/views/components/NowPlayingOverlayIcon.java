@@ -39,7 +39,7 @@ public class NowPlayingOverlayIcon extends Overlay {
         this.addOverlay(icon);
         this.setSizeRequest(size, size);
 
-        this.setIsPlaying(isPlaying);
+        this.setPlayingState(isPlaying);
         switch (this.state.get()) {
             case PLAYING, PAUSED -> this.showOverlay();
             case NONE -> this.hideOverlay();
@@ -84,7 +84,7 @@ public class NowPlayingOverlayIcon extends Overlay {
         return this;
     }
 
-    public NowPlayingOverlayIcon setIsPlaying(NowPlayingState state) {
+    public NowPlayingOverlayIcon setPlayingState(NowPlayingState state) {
         this.state.set(state);
         switch (this.state.get()) {
             case PAUSED -> {

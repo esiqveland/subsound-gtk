@@ -135,7 +135,7 @@ public class AlbumInfoBox extends Box {
                     .build();
             icon = new NowPlayingOverlayIcon(16, songNumberLabel);
             if ("166bcd70e38d8f0a202e0a907b8c0727".equals(songInfo.id())) {
-                icon.setIsPlaying(NowPlayingState.PAUSED);
+                icon.setPlayingState(NowPlayingState.PAUSED);
             }
             var isHoverActive = new AtomicBoolean(false);
             addHover(
@@ -239,11 +239,11 @@ public class AlbumInfoBox extends Box {
             boolean isPlaying = next.nowPlaying().map(np -> np.song().id().equals(row.songInfo.id())).orElse(false);
             if (isPlaying) {
                 switch (next.player().state()) {
-                    case PAUSED, INIT -> row.icon.setIsPlaying(NowPlayingState.PAUSED);
-                    case PLAYING, BUFFERING, READY, END_OF_STREAM -> row.icon.setIsPlaying(NowPlayingState.PLAYING);
+                    case PAUSED, INIT -> row.icon.setPlayingState(NowPlayingState.PAUSED);
+                    case PLAYING, BUFFERING, READY, END_OF_STREAM -> row.icon.setPlayingState(NowPlayingState.PLAYING);
                 }
             } else {
-                row.icon.setIsPlaying(NowPlayingState.NONE);
+                row.icon.setPlayingState(NowPlayingState.NONE);
             }
         }
     }
