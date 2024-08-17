@@ -9,6 +9,7 @@ TODO:
 - [X] songlist: Hover-shows-play ?
   - [ ] songlist: hover play icon is not tab-able for focus when row is selected, only when hover...
 - [X] Favorites page
+  - [ ] remove the track number 
   - [ ] display artist
   - [ ] display album?
 - [X] cache thumbnails on disk
