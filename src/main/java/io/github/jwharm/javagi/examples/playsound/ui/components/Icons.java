@@ -1,4 +1,4 @@
-package io.github.jwharm.javagi.examples.playsound.views.components;
+package io.github.jwharm.javagi.examples.playsound.ui.components;
 
 // https://specifications.freedesktop.org/icon-naming-spec/latest/
 public enum Icons {

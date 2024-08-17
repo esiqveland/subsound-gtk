@@ -1,4 +1,4 @@
-package io.github.jwharm.javagi.examples.playsound.views.components;
+package io.github.jwharm.javagi.examples.playsound.ui.components;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager.AppState;
@@ -23,8 +23,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.withinEpsilon;
-import static io.github.jwharm.javagi.examples.playsound.views.components.PlayerBar.CoverArtDiff.CHANGED;
-import static io.github.jwharm.javagi.examples.playsound.views.components.PlayerBar.CoverArtDiff.SAME;
+import static io.github.jwharm.javagi.examples.playsound.ui.components.PlayerBar.CoverArtDiff.CHANGED;
+import static io.github.jwharm.javagi.examples.playsound.ui.components.PlayerBar.CoverArtDiff.SAME;
 import static io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
 
 public class PlayerBar extends Box implements AppManager.StateListener, AutoCloseable {

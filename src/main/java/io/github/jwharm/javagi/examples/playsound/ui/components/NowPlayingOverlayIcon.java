@@ -1,4 +1,4 @@
-package io.github.jwharm.javagi.examples.playsound.views.components;
+package io.github.jwharm.javagi.examples.playsound.ui.components;
 
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.*;

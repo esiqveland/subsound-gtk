@@ -1,4 +1,4 @@
-package io.github.jwharm.javagi.examples.playsound.views;
+package io.github.jwharm.javagi.examples.playsound.ui.views;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
@@ -7,7 +7,7 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongI
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.LoadSongResult;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
-import io.github.jwharm.javagi.examples.playsound.views.components.FutureLoader;
+import io.github.jwharm.javagi.examples.playsound.ui.components.FutureLoader;
 import org.gnome.gtk.*;
 
 import java.util.concurrent.CompletableFuture;

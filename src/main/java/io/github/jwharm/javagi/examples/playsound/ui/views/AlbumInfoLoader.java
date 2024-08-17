@@ -1,4 +1,4 @@
-package io.github.jwharm.javagi.examples.playsound.views;
+package io.github.jwharm.javagi.examples.playsound.ui.views;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;

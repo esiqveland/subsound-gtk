@@ -1,9 +1,9 @@
-package io.github.jwharm.javagi.examples.playsound.views;
+package io.github.jwharm.javagi.examples.playsound.ui.views;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistAlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
-import io.github.jwharm.javagi.examples.playsound.views.components.RoundedAlbumArt;
+import io.github.jwharm.javagi.examples.playsound.ui.components.RoundedAlbumArt;
 import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
 

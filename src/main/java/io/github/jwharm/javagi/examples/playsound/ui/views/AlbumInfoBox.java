@@ -1,4 +1,4 @@
-package io.github.jwharm.javagi.examples.playsound.views;
+package io.github.jwharm.javagi.examples.playsound.ui.views;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager.AppState;
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager.NowPlaying;
@@ -7,10 +7,10 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.Album
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
-import io.github.jwharm.javagi.examples.playsound.views.components.NowPlayingOverlayIcon;
-import io.github.jwharm.javagi.examples.playsound.views.components.NowPlayingOverlayIcon.NowPlayingState;
-import io.github.jwharm.javagi.examples.playsound.views.components.RoundedAlbumArt;
-import io.github.jwharm.javagi.examples.playsound.views.components.StarredButton;
+import io.github.jwharm.javagi.examples.playsound.ui.components.NowPlayingOverlayIcon;
+import io.github.jwharm.javagi.examples.playsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
+import io.github.jwharm.javagi.examples.playsound.ui.components.RoundedAlbumArt;
+import io.github.jwharm.javagi.examples.playsound.ui.components.StarredButton;
 import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
 
