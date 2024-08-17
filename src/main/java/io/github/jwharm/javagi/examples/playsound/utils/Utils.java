@@ -174,4 +174,8 @@ public class Utils {
         return row;
     }
 
+    public static boolean withinEpsilon(double value1, double value2, double epsilon) {
+        var diff = Math.abs(value1 - value2);
+        return diff < epsilon;
+    }
 }

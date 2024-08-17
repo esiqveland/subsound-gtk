@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.formatDurationShort;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.formatDurationShortest;
+import static io.github.jwharm.javagi.examples.playsound.utils.Utils.withinEpsilon;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class UtilsTest {
@@ -51,4 +52,11 @@ public class UtilsTest {
         assertThat(formatDurationShortest(Duration.ofSeconds(3600))).isEqualTo("1:00:00");
     }
 
+    @Test
+    public void testWithinEpsilon() {
+        assertThat(withinEpsilon(0.01, 0.01, 0.01)).isEqualTo(true);
+        assertThat(withinEpsilon(0.02, 0.01, 0.01)).isEqualTo(false);
+        assertThat(withinEpsilon(0.1, 1.0, 0.01)).isEqualTo(false);
+        assertThat(withinEpsilon(1.0, 0.1, 0.01)).isEqualTo(false);
+    }
 }

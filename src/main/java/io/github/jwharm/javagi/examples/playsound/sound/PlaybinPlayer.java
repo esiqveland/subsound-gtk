@@ -439,19 +439,21 @@ public class PlaybinPlayer {
     }
 
     // volume is a linear scale from [0.0, 1.0]
-    public void setVolume(double linearVolume) {
-        double vol = Math.max(0.0, Math.min(1.0, linearVolume));
+    public void setVolume(double cubicVolume) {
+        double vol = Math.max(0.0, Math.min(1.0, cubicVolume));
         // https://github.com/GStreamer/gst-plugins-base/blob/master/gst-libs/gst/audio/streamvolume.c#L169
-        double cubicVolume = toVolumeCubic(vol);
-        System.out.printf("Playbin: set volume to %.2f cubic=%.2f\n", vol, cubicVolume);
+        double linearVolume = cubicToLinearVolume(vol);
+        System.out.printf("Playbin: set volume to %.2f cubic=%.2f\n", linearVolume, cubicVolume);
         // https://gstreamer.freedesktop.org/documentation/audio/gststreamvolume.html?gi-language=c#GstStreamVolume
-        this.playbinEl.set("volume", cubicVolume, null);
+        this.playbinEl.set("volume", linearVolume, null);
     }
 
     private void onVolumeChanged() {
-        double volume = (Double) playbinEl.getProperty("volume");
+        // https://gstreamer.freedesktop.org/documentation/playback/playbin.html?gi-language=c#playbin:volume
+        // when casting to boxed Double, it sometimes comes out as 0.0 while changing the volume??
+        double volume = (double) playbinEl.getProperty("volume");
         System.out.printf("Playbin: onVolumeChanged: %.2f\n", volume);
-        var linearVolume = cubicToLinearVolume(volume);
+        var linearVolume = volume;
         this.currentVolume = linearVolume;
         this.notifyState();
     }

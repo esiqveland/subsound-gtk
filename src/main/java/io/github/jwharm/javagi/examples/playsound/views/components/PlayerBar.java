@@ -5,14 +5,24 @@ import io.github.jwharm.javagi.examples.playsound.app.state.AppManager.AppState;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
-import org.gnome.gtk.*;
+import org.gnome.glib.GLib;
+import org.gnome.gtk.ActionBar;
+import org.gnome.gtk.Align;
+import org.gnome.gtk.Box;
+import org.gnome.gtk.Button;
+import org.gnome.gtk.Label;
+import org.gnome.gtk.Orientation;
+import org.gnome.gtk.Scale;
+import org.gnome.gtk.Widget;
 import org.gnome.pango.EllipsizeMode;
 
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
+import static io.github.jwharm.javagi.examples.playsound.utils.Utils.withinEpsilon;
 import static io.github.jwharm.javagi.examples.playsound.views.components.PlayerBar.CoverArtDiff.CHANGED;
 import static io.github.jwharm.javagi.examples.playsound.views.components.PlayerBar.CoverArtDiff.SAME;
 import static io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
@@ -33,8 +43,65 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
     private final Button skipForwardButton;
     private final PlayerScrubber playerScrubber;
     private final VolumeButton volumeButton;
+    private final Scale volumeScale;
+
+    public static class VolumeButton extends Button {
+        private boolean isMuted;
+        private double currentVolume = -2.0;
+        private Icons currentIcon = Icons.VolumeHigh;
+
+        public VolumeButton(boolean isMuted, double volume) {
+            this.isMuted = isMuted;
+            this.setIconName(currentIcon.getIconName());
+            this.setVolume(volume);
+        }
+
+        public void setMute(boolean isMuted) {
+            this.isMuted = isMuted;
+            if (this.isMuted) {
+                updateIcon(Icons.VolumeMuted);
+            } else {
+                setVolume(currentVolume);
+            }
+        }
+
+        public void setVolume(double nextVolume) {
+            currentVolume = nextVolume;
+            if (isMuted) {
+                updateIcon(Icons.VolumeMuted);
+                return;
+            }
+            if (nextVolume < 0.01) {
+                updateIcon(Icons.VolumeMuted);
+                return;
+            }
+            if (nextVolume >= 0.70) {
+                updateIcon(Icons.VolumeHigh);
+                return;
+            }
+            if (nextVolume >= 0.50) {
+                updateIcon(Icons.VolumeMedium);
+                return;
+            }
+            if (nextVolume > 0.0) {
+                updateIcon(Icons.VolumeLow);
+                return;
+            }
+        }
+
+        private void updateIcon(Icons next) {
+            if (next != currentIcon) {
+                System.out.printf("VolumeIcon: old icon=%s next=%s%n", currentIcon.getIconName(), next.getIconName());
+                currentIcon = next;
+                GLib.idleAddOnce(() -> {
+                    this.setIconName(next.getIconName());
+                });
+            }
+        }
+    }
 
     private final AtomicBoolean isStateChanging = new AtomicBoolean(false);
+    private final AtomicReference<AppState> currentState;
 
     // playing state helps control the play/pause button
     private PlayingState playingState = PlayingState.IDLE;
@@ -52,6 +119,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         this.thumbLoader = thumbLoader;
         this.player = player;
         this.player.addOnStateChanged(this);
+        this.currentState = new AtomicReference<>(this.player.getState());
 
         Box songInfo = Box.builder()
                 .setOrientation(Orientation.VERTICAL)
@@ -69,13 +137,13 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         songInfo.append(artistTitle);
 
         this.albumArtBox = Box.builder()
-            .setOrientation(Orientation.VERTICAL)
-            .setHexpand(false)
-            .setVexpand(true)
-            .setMarginStart(4)
-            .setHalign(Align.START)
-            .setValign(Align.CENTER)
-            .build();
+                .setOrientation(Orientation.VERTICAL)
+                .setHexpand(false)
+                .setVexpand(true)
+                .setMarginStart(4)
+                .setHalign(Align.START)
+                .setValign(Align.CENTER)
+                .build();
         placeholderAlbumArt = RoundedAlbumArt.placeholderImage(ARTWORK_SIZE);
         albumArtBox.append(placeholderAlbumArt);
 
@@ -85,21 +153,42 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         nowPlaying.append(albumArtBox);
         nowPlaying.append(songInfo);
 
-        AppState state = player.getState();
-        volumeButton = VolumeButton.builder().setValue(state.player().volume()).build();
-        volumeButton.onValueChanged(val -> {
+        volumeButton = new VolumeButton(this.currentState.get().player().muted(), PlaybinPlayer.toVolumeCubic(this.currentState.get().player().volume()));
+        volumeButton.onClicked(() -> {
             if (this.isStateChanging.get()) {
                 return;
             }
-            System.out.println("volumeButton.onValueChanged: " + val);
-            this.player.setVolume(val);
+            if (this.currentState.get().player().muted()) {
+                this.player.unMute();
+            } else {
+                this.player.mute();
+            }
         });
 
+        volumeScale = Scale.builder()
+                .setOrientation(Orientation.HORIZONTAL)
+                .setWidthRequest(100)
+                .build();
+        volumeScale.setRange(0.0, 1.0);
+        volumeScale.setValue(PlaybinPlayer.toVolumeCubic(currentState.get().player().volume()));
+        volumeScale.setShowFillLevel(false);
+        volumeScale.onValueChanged(() -> {
+            if (this.isStateChanging.get()) {
+                return;
+            }
+            var cubicVolume = this.volumeScale.getValue();
+            System.out.println("volumeScale.onValueChanged: " + cubicVolume);
+            this.player.setVolume(cubicVolume);
+            this.volumeButton.setVolume(cubicVolume);
+        });
+        volumeScale.setIncrements(0.017, 0.23);
+
         var volumeBox = Box.builder()
-                .setOrientation(Orientation.VERTICAL)
+                .setOrientation(Orientation.HORIZONTAL)
                 .setValign(Align.CENTER)
                 .build();
         volumeBox.append(volumeButton);
+        volumeBox.append(volumeScale);
 
         skipBackwardButton = Button.builder().setIconName(Icons.SkipBackward.getIconName()).build();
         skipBackwardButton.addCssClass("circular");
@@ -141,7 +230,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         this.player.prev();
     }
 
-    private void  onNext() {
+    private void onNext() {
         this.player.next();
     }
 
@@ -156,11 +245,6 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
     @Override
     public void close() throws Exception {
         this.player.removeOnStateChanged(this);
-    }
-
-    public static boolean withinEpsilon(double value1, double value2, double epsilon) {
-        var diff = Math.abs(value1 - value2);
-        return diff < epsilon;
     }
 
     @Override
@@ -186,7 +270,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
             }
 
             PlayingState nextPlayingState = toPlayingState(player.state());
-            double volume = state.player().volume();
+            double linearVolume = state.player().volume();
 
             Optional<Duration> duration = state.player().source().flatMap(s -> s.duration());
             Optional<Duration> position = state.player().source().flatMap(s -> s.position());
@@ -194,8 +278,14 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
             position.ifPresent(this.playerScrubber::updatePosition);
 
             Utils.runOnMainThread(() -> {
-                if (!withinEpsilon(volume, volumeButton.getValue(), 0.01)) {
-                    volumeButton.setValue(volume);
+                this.volumeButton.setMute(player.muted());
+                var cubicVolume = PlaybinPlayer.toVolumeCubic(linearVolume);
+                if (!withinEpsilon(cubicVolume, volumeScale.getValue(), 0.01)) {
+                    System.out.printf("volume is outdated: %.2f%n", cubicVolume);
+                    this.volumeButton.setVolume(cubicVolume);
+                }
+                if (!withinEpsilon(cubicVolume, volumeScale.getValue(), 0.01)) {
+                    volumeScale.setValue(cubicVolume);
                 }
                 if (nextPlayingState != playingState) {
                     this.updatePlayingState(nextPlayingState);
@@ -217,6 +307,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
             });
         } finally {
             isStateChanging.set(false);
+            currentState.set(state);
         }
 
     }
@@ -268,6 +359,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         SAME,
         CHANGED,
     }
+
     private CoverArtDiff diffCover(Optional<CoverArt> currentCoverArt, Optional<CoverArt> coverArt) {
         if (currentCoverArt.isEmpty() && coverArt.isEmpty()) {
             return SAME;
