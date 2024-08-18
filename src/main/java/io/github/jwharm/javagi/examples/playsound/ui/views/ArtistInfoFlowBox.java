@@ -39,7 +39,7 @@ public class ArtistInfoFlowBox extends Box {
         this.viewBox = Box.builder().setSpacing(BIG_SPACING).setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).build();
         this.artistImage = RoundedAlbumArt.resolveCoverArt(this.thumbLoader, this.artist.coverArt(), 300);
         this.infoContainer = Box.builder().setMarginStart(BIG_SPACING).setMarginTop(BIG_SPACING).setMarginEnd(BIG_SPACING).setSpacing(BIG_SPACING).setOrientation(Orientation.HORIZONTAL).setHexpand(true).setVexpand(false).setCssClasses(cssClasses("card")).build();
-        this.artistInfoBox = Box.builder().setSpacing(10).setOrientation(Orientation.VERTICAL).setHexpand(true).setHalign(Align.START).setValign(Align.CENTER).build();
+        this.artistInfoBox = Box.builder().setSpacing(10).setMarginEnd(BIG_SPACING).setOrientation(Orientation.VERTICAL).setHexpand(true).setHalign(Align.START).setValign(Align.CENTER).build();
         this.infoContainer.append(this.artistImage);
         this.infoContainer.append(this.artistInfoBox);
         this.artistInfoBox.append(Label.builder().setLabel(this.artist.name()).setHalign(Align.START).setCssClasses(cssClasses("title-1")).build());

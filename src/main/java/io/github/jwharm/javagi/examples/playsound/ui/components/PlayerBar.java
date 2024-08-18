@@ -32,12 +32,19 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
 
     private final ThumbnailCache thumbLoader;
     private final AppManager player;
+
     private final ActionBar mainBar;
+
+    // box that holds the album cover photo
     private final Box albumArtBox;
+    // box that holds the song details
+    private final Box songInfoBox;
     private final Label songTitle;
     private final Label albumTitle;
     private final Label artistTitle;
     private final Widget placeholderAlbumArt;
+
+    // player controls
     private final Button skipBackwardButton;
     private final Button playPauseButton;
     private final Button skipForwardButton;
@@ -121,7 +128,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         this.player.addOnStateChanged(this);
         this.currentState = new AtomicReference<>(this.player.getState());
 
-        Box songInfo = Box.builder()
+        songInfoBox = Box.builder()
                 .setOrientation(Orientation.VERTICAL)
                 .setSpacing(2)
                 .setHalign(Align.START)
@@ -129,12 +136,12 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                 .setVexpand(true)
                 .setMarginStart(8)
                 .build();
-        songTitle = Label.builder().setLabel("Song title").setHalign(Align.START).setMaxWidthChars(22).setEllipsize(EllipsizeMode.END).setCssClasses(cssClasses("heading")).build();
-        songInfo.append(songTitle);
-        albumTitle = Label.builder().setLabel("Album title").setHalign(Align.START).setMaxWidthChars(22).setEllipsize(EllipsizeMode.END).build();
+        songTitle = Label.builder().setLabel("Song title").setHalign(Align.START).setMaxWidthChars(30).setEllipsize(EllipsizeMode.END).setCssClasses(cssClasses("heading")).build();
+        songInfoBox.append(songTitle);
+        albumTitle = Label.builder().setLabel("Album title").setHalign(Align.START).setMaxWidthChars(28).setEllipsize(EllipsizeMode.END).build();
         //songInfo.append(albumTitle);
-        artistTitle = Label.builder().setLabel("Artist title").setHalign(Align.START).setMaxWidthChars(22).setEllipsize(EllipsizeMode.END).setCssClasses(cssClasses("dim-label", "body")).build();
-        songInfo.append(artistTitle);
+        artistTitle = Label.builder().setLabel("Artist title").setHalign(Align.START).setMaxWidthChars(28).setEllipsize(EllipsizeMode.END).setCssClasses(cssClasses("dim-label", "body")).build();
+        songInfoBox.append(artistTitle);
 
         this.albumArtBox = Box.builder()
                 .setOrientation(Orientation.VERTICAL)
@@ -151,7 +158,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                 .setOrientation(Orientation.HORIZONTAL)
                 .build();
         nowPlaying.append(albumArtBox);
-        nowPlaying.append(songInfo);
+        nowPlaying.append(songInfoBox);
 
         volumeButton = new VolumeButton(this.currentState.get().player().muted(), PlaybinPlayer.toVolumeCubic(this.currentState.get().player().volume()));
         volumeButton.onClicked(() -> {
