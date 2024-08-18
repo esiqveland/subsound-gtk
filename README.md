@@ -27,15 +27,27 @@ TODO:
 - [X] PlayerBar: play/pause button
 - [X] PlayerBar: find icons for buttons
   - [X] PlayerBar: Playing ProgressBar
+  - [ ] make play/pause icon slightly bigger than the others
+  - [ ] add star button to star/unstar currently playing song
+  - [ ] model loading state
+    - [ ] show loading state in playerbar
+    - [ ] show loading state as a overlay icon and switch to paused?
+  - [ ] add rating button
+  - [ ] goto artist when clicking artist name
+  - [ ] goto album when clicking song name or album artwork
 - [ ] Icons for top bar pages
+    - [] icon for Home page
+    - [ ] icon for starred page
 - HomePage
-  - [ ] Recently added
-  - [ ] Most played
+  - [ ] icon
+  - [ ] Recently added: https://subsonic.org/pages/api.jsp#getAlbumList2 type=newest
+  - [ ] recently played: https://subsonic.org/pages/api.jsp#getAlbumList2 type=recent
+  - [ ] Most played: https://subsonic.org/pages/api.jsp#getAlbumList2 type=frequent
+  - [ ] https://subsonic.org/pages/api.jsp#getTopSongs
 - ArtistListing:
   - [ ] add a circular artist thumbnail in the left prefix area
   - [ ] convert to using a ~AdwLeaflet~ `AdwNavigationSplitView`
-- [ ] Make ArtistInfo page coverart prettier with:
-  - [ ] a box shadow?
+- [X] Make ArtistInfo page coverart prettier with:
   - [ ] a blurred paintable background ?
     - Something like: https://github.com/neithern/g4music/blob/master/src/ui/paintables.vala#L357
 - [X] Make downloading song async
