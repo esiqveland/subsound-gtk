@@ -28,6 +28,9 @@ TODO:
 - [X] PlayerBar: find icons for buttons
   - [X] PlayerBar: Playing ProgressBar
 - [ ] Icons for top bar pages
+- HomePage
+  - [ ] Recently added
+  - [ ] Most played
 - ArtistListing:
   - [ ] add a circular artist thumbnail in the left prefix area
   - [ ] convert to using a ~AdwLeaflet~ `AdwNavigationSplitView`
