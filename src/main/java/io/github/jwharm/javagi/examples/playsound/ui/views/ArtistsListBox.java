@@ -1,6 +1,7 @@
 package io.github.jwharm.javagi.examples.playsound.ui.views;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistAlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistEntry;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.ui.components.RoundedAlbumArt;
@@ -19,19 +20,19 @@ public class ArtistsListBox extends Box {
     private final ServerClient client;
     private final List<ArtistEntry> artists;
     private final Map<String, ArtistEntry> artistsMap;
-    private Consumer<ArtistEntry> artistSelected;
+    private Consumer<ArtistAlbumInfo> onAlbumSelected;
     private final NavigationSplitView view;
     private final NavigationPage initialPage;
     private final NavigationPage page1;
     //private final NavigationPage page2;
 
-    public ArtistsListBox(ThumbnailCache thumbLoader, ServerClient client, List<ArtistEntry> artists, Consumer<ArtistEntry> artistSelected) {
+    public ArtistsListBox(ThumbnailCache thumbLoader, ServerClient client, List<ArtistEntry> artists, Consumer<ArtistAlbumInfo> onAlbumSelected) {
         super(Orientation.VERTICAL, 0);
         this.thumbLoader = thumbLoader;
         this.client = client;
         this.artists = artists;
         this.artistsMap = artists.stream().collect(Collectors.toMap(ArtistEntry::id, a -> a));
-        this.artistSelected = artistSelected;
+        this.onAlbumSelected = onAlbumSelected;
         var b = Box.builder().setValign(Align.CENTER).setHalign(Align.CENTER).build();
         b.append(Label.builder().setLabel("Select an artist to view").setCssClasses(cssClasses("title-1")).build());
         var statusPage = StatusPage.builder().setChild(b).build();
@@ -43,11 +44,8 @@ public class ArtistsListBox extends Box {
         list.onRowActivated(row -> {
             var artist = this.artists.get(row.getIndex());
             System.out.println("Artists: goto " + artist.name());
-            var handler = this.artistSelected;
-            if (handler != null) {
-//                handler.accept(artist);
-            }
             var loader = new ArtistInfoLoader(thumbLoader, client);
+            loader.setOnAlbumSelected(this.onAlbumSelected);
             loader.setArtistId(artist.id());
             var page = NavigationPage.builder().setTag("page-2").setChild(loader).setTitle("ArtistView").build();
             this.view.setContent(page);
@@ -95,11 +93,10 @@ public class ArtistsListBox extends Box {
         this.append(view);
     }
 
-    public void onArtistSelected(Consumer<ArtistEntry> artistEntryConsumer) {
-        this.artistSelected = artistEntryConsumer;
+    public void setOnAlbumSelected(Consumer<ArtistAlbumInfo> onAlbumSelected) {
+        this.onAlbumSelected = onAlbumSelected;
     }
 
     public void setSelectedArtist(String artistId) {
-
     }
 }

@@ -104,8 +104,7 @@ public class MainApplication {
             ViewStackPage starredPage = viewStack.addTitled(starredPageContainer, "starredPage", "Starred");
         }
         var artists = this.client.getArtists();
-        var artistListBox = new ArtistsListBox(thumbLoader, client, artists.list(), artistEntry -> {
-        });
+        var artistListBox = new ArtistsListBox(thumbLoader, client, artists.list(), albumInfo -> {});
         {
             var artistsContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
             artistsContainer.append(artistListBox);
@@ -163,8 +162,8 @@ public class MainApplication {
             }
         });
 
-        artistListBox.onArtistSelected(entry -> appNavigation.navigateTo(new AppNavigation.AppRoute.RouteArtistInfo(entry.id())));
-        artistContainer.setOnAlbumSelected(entry -> appNavigation.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(entry.id())));
+        artistListBox.setOnAlbumSelected(albumInfo -> appNavigation.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(albumInfo.id())));
+        artistContainer.setOnAlbumSelected(albumInfo -> appNavigation.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(albumInfo.id())));
 
         viewStack.getPages().onSelectionChanged((position, nItems) -> {
             var visibleChild = viewStack.getVisibleChildName();

@@ -48,7 +48,8 @@ public class ArtistInfoLoader extends Box {
             var next = new ArtistInfoFlowBox(
                     thumbLoader,
                     info,
-                    albumInfo -> this.onAlbumSelected(albumInfo));
+                    this::onAlbumSelected
+            );
             this.viewHolder.set(next);
             this.append(next);
         });
@@ -70,8 +71,8 @@ public class ArtistInfoLoader extends Box {
         this.onAlbumSelected = onAlbumSelected;
     }
 
-    public void onAlbumSelected(ArtistAlbumInfo selected) {
-        var handler = onAlbumSelected;
+    private void onAlbumSelected(ArtistAlbumInfo selected) {
+        var handler = this.onAlbumSelected;
         if (handler == null) {
             return;
         }
