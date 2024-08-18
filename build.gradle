@@ -1,9 +1,11 @@
+
 plugins {
     id 'application'
 }
 
 repositories {
     mavenCentral()
+    google()
 }
 
 dependencies {
