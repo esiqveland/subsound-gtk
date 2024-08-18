@@ -70,6 +70,7 @@ Later goals:
  - [ ] support multiple servers
  - [ ] could support chromecast
  - [ ] support the subsonic podcast features
+ - [ ] support embedded image tags? https://github.com/neithern/g4music/blob/bf80b5cad448a57c635f01d0a315671fef045d14/src/gst/tag-parser.vala#L99
 
 Non-goals:
  - Video support  

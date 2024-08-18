@@ -2,10 +2,12 @@ package io.github.jwharm.javagi.examples.playsound.ui.components;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
+import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.Adjustment;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.FlowBox;
 import org.gnome.gtk.Orientation;
+import org.gnome.gtk.SelectionMode;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -21,14 +23,18 @@ public class AlbumsFlowBox extends FlowBox {
             Consumer<ServerClient.ArtistAlbumInfo> onSelected
     ) {
         super();
+        //setCssClasses(Utils.cssClasses("navigation-sidebar"));
         setOrientation(Orientation.HORIZONTAL);
         setRowSpacing(24);
         setColumnSpacing(24);
         setHexpand(false);
         setVexpand(true);
         setHomogeneous(true);
-        setHalign(Align.CENTER);
+        setHalign(Align.START);
         setValign(Align.START);
+        setMinChildrenPerLine(1);
+        setSensitive(true);
+        setSelectionMode(SelectionMode.SINGLE);
 
         this.thumbLoader = thumbLoader;
         this.albumInfo = albumInfo;

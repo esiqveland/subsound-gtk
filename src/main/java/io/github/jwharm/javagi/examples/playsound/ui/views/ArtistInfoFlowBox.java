@@ -60,7 +60,7 @@ public class ArtistInfoFlowBox extends Box {
             }
             handler.accept(albumInfo);
         });
-        var box = Box.builder().setMarginStart(BIG_SPACING).setSpacing(BIG_SPACING).setOrientation(Orientation.VERTICAL).build();
+        var box = Box.builder().setMarginStart(BIG_SPACING).setSpacing(BIG_SPACING).setMarginEnd(BIG_SPACING).setOrientation(Orientation.VERTICAL).build();
         box.append(listView);
 
         this.viewBox.append(infoContainer);

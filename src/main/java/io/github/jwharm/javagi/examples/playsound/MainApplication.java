@@ -42,7 +42,7 @@ public class MainApplication {
         StyleContext.addProviderForDisplay(Display.getDefault(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 
         var searchButton = Button.builder()
-                .setIconName("edit-find-symbolic")
+                .setIconName(Icons.SearchEdit.getIconName())
                 .setActionName("app.open-search")
 //                .setLabel("Search")
                 .build();
@@ -109,20 +109,20 @@ public class MainApplication {
         {
             var artistsContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
             artistsContainer.append(artistListBox);
-            ViewStackPage artistsPage = viewStack.addTitled(artistsContainer, "artistsPage", "Artists");
+            ViewStackPage artistsPage = viewStack.addTitledWithIcon(artistsContainer, "artistsPage", "Artists", Icons.Artist.getIconName());
         }
 
         var artistContainer = new ArtistInfoLoader(thumbLoader, client);
         {
             var artistId = "7bfaa1b4f3be9ef4f7275de2511da1aa";
             artistContainer.setArtistId(artistId);
-            ViewStackPage artistsPage = viewStack.addTitled(artistContainer, "artistInfoPage", "Artist");
+            ViewStackPage artistsPage = viewStack.addTitledWithIcon(artistContainer, "artistInfoPage", "Artist", Icons.ARTIST_ALBUM.getIconName());
         }
         {
             ViewStackPage searchPage = viewStack.addTitledWithIcon(searchContainer, "searchPage", "Search", Icons.Search.getIconName());
         }
         {
-            ViewStackPage playlistPage = viewStack.addTitledWithIcon(playlistsContainer, "playlistPage", "Playlists", Icons.PlaylistConsecutive.getIconName());
+            ViewStackPage playlistPage = viewStack.addTitledWithIcon(playlistsContainer, "playlistPage", "Playlists", Icons.Playlists.getIconName());
         }
 
         var albumInfoContainer = new AlbumInfoLoader(
@@ -131,7 +131,7 @@ public class MainApplication {
                 appManager::handleAction
         );
         {
-            ViewStackPage albumInfoPage = viewStack.addTitled(albumInfoContainer, "albumInfoPage", "AlbumInfo");
+            ViewStackPage albumInfoPage = viewStack.addTitledWithIcon(albumInfoContainer, "albumInfoPage", "AlbumInfo", Icons.Albums.getIconName());
         }
 
         var appNavigation = new AppNavigation((appRoute) -> switch (appRoute) {
@@ -209,7 +209,7 @@ public class MainApplication {
         // Pack everything together, and show the window
         var window = ApplicationWindow.builder()
                 .setApplication(app)
-                .setDefaultWidth(1000).setDefaultHeight(700)
+                .setDefaultWidth(1040).setDefaultHeight(780)
                 .setContent(toolbarView)
                 .build();
 

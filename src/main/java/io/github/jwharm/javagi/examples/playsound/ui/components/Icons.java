@@ -18,6 +18,14 @@ public enum Icons {
     NetworkOffline("network-offline-symbolic"),
     RefreshView("view-refresh-symbolic"),
     Search("system-search-symbolic"),
+    SearchEdit("edit-find-symbolic"),
+    Artist("system-users-symbolic"),
+    Albums("drive-multidisk-symbolic"),
+    Playlists("view-list-symbolic"),
+    ARTIST_ALBUM("avatar-default-symbolic"),
+    Music("folder-music-symbolic"),
+    Recent("document-open-recent-symbolic"),
+    AlbumPlaceholder("media-optical-cd-audio-symbolic"),
     ;
 
     private final String iconName;
