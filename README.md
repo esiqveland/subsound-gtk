@@ -48,7 +48,8 @@ TODO:
   - perhaps there is a good android library for migrating sqlite ?
   - [ ] record what we have downloaded / want to keep offline
 - [ ] Create a persistent store for server settings / authentication
-- [ ] Implement star/unstar
+  - [ ] store authentication in platform password storage / libsecret ?
+- [X] Implement star/unstar
   - [ ] Optimistically update the local copy of Starred list based on star / unstar actions
 - [ ] Playlist support
   - browsing playlists
@@ -63,6 +64,16 @@ TODO:
     - [ ] thumbnail
     - [ ] play/pause
     - [ ] skip
+
+
+Later goals:
+ - [ ] support multiple servers
+ - [ ] could support chromecast
+ - [ ] support the subsonic podcast features
+
+Non-goals:
+ - Video support  
+ - Jukebox support
 
 
 My notes:

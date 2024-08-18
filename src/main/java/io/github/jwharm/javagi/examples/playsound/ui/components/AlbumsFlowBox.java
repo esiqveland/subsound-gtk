@@ -24,11 +24,11 @@ public class AlbumsFlowBox extends FlowBox {
         setOrientation(Orientation.HORIZONTAL);
         setRowSpacing(24);
         setColumnSpacing(24);
-        setHexpand(true);
+        setHexpand(false);
         setVexpand(true);
         setHomogeneous(true);
-        setHalign(Align.BASELINE_CENTER);
-        setValign(Align.CENTER);
+        setHalign(Align.CENTER);
+        setValign(Align.START);
 
         this.thumbLoader = thumbLoader;
         this.albumInfo = albumInfo;
