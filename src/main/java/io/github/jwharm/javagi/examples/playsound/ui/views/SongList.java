@@ -6,7 +6,7 @@ import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.github.jwharm.javagi.examples.playsound.ui.components.NowPlayingOverlayIcon;
 import io.github.jwharm.javagi.examples.playsound.ui.components.RoundedAlbumArt;
-import io.github.jwharm.javagi.examples.playsound.ui.components.StarredButton;
+import io.github.jwharm.javagi.examples.playsound.ui.components.StarButton;
 import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
 
@@ -69,7 +69,7 @@ public class SongList extends ListBox {
             var id = strObj.getString();
             var songInfo = this.songIdMap.get(id);
 
-            var starredButton = new StarredButton(
+            var starredButton = new StarButton(
                     songInfo.starred(),
                     newValue -> {
                         var action = newValue ? new PlayerAction.Star(songInfo) : new PlayerAction.Unstar(songInfo);
@@ -118,7 +118,10 @@ public class SongList extends ListBox {
             bitRateLabel.ifPresent(hoverBox::append);
             fileFormatLabel.ifPresent(hoverBox::append);
             hoverBox.append(fileSizeLabel);
-            hoverBox.append(playButton);
+
+            var playButtonBox = Box.builder().setMarginStart(6).setMarginEnd(6).setVexpand(true).setValign(Align.CENTER).build();
+            playButtonBox.append(playButton);
+            hoverBox.append(playButtonBox);
 
             var revealer = Revealer.builder()
                     .setChild(hoverBox)

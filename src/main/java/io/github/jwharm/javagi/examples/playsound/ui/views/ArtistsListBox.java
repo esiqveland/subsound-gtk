@@ -24,7 +24,8 @@ public class ArtistsListBox extends Box {
     private final NavigationSplitView view;
     private final NavigationPage initialPage;
     private final NavigationPage page1;
-    //private final NavigationPage page2;
+    private final NavigationPage contentPage;
+    private final ArtistInfoLoader artistInfoLoader;
 
     public ArtistsListBox(ThumbnailCache thumbLoader, ServerClient client, List<ArtistEntry> artists, Consumer<ArtistAlbumInfo> onAlbumSelected) {
         super(Orientation.VERTICAL, 0);
@@ -33,6 +34,9 @@ public class ArtistsListBox extends Box {
         this.artists = artists;
         this.artistsMap = artists.stream().collect(Collectors.toMap(ArtistEntry::id, a -> a));
         this.onAlbumSelected = onAlbumSelected;
+        this.artistInfoLoader = new ArtistInfoLoader(this.thumbLoader, this.client, albumInfo -> this.onAlbumSelected.accept(albumInfo));
+        this.contentPage = NavigationPage.builder().setTag("page-2").setChild(this.artistInfoLoader).setTitle("ArtistView").build();
+
         var b = Box.builder().setValign(Align.CENTER).setHalign(Align.CENTER).build();
         b.append(Label.builder().setLabel("Select an artist to view").setCssClasses(cssClasses("title-1")).build());
         var statusPage = StatusPage.builder().setChild(b).build();
@@ -44,16 +48,10 @@ public class ArtistsListBox extends Box {
         list.onRowActivated(row -> {
             var artist = this.artists.get(row.getIndex());
             System.out.println("Artists: goto " + artist.name());
-            var loader = new ArtistInfoLoader(thumbLoader, client);
-            loader.setOnAlbumSelected(this.onAlbumSelected);
-            loader.setArtistId(artist.id());
-            var page = NavigationPage.builder().setTag("page-2").setChild(loader).setTitle("ArtistView").build();
-            this.view.setContent(page);
-            this.view.setShowContent(true);
+            this.contentPage.setTitle(artist.name());
+            this.setSelectedArtist(artist.id());
         });
 
-//        var model = ListModel.ListModelImpl.builder().build();
-//        var listSTore = ListStore.builder().build();
         var stringList = StringList.builder().build();
         this.artists.forEach(i -> stringList.append(i.id()));
         list.bindModel(stringList, item -> {
@@ -85,9 +83,6 @@ public class ArtistsListBox extends Box {
         this.view.setHalign(Align.FILL);
         this.view.setValign(Align.BASELINE_FILL);
         this.view.setContent(initialPage);
-        //this.artistLoader = new ArtistInfoLoader();
-        //this.page2 = NavigationPage.builder().setTag("page-2").setChild().setTitle("ArtistView").build();
-        //this.page2 = NavigationPage.builder().setTag("page-2").setChild().setTitle("ArtistView").build();
         this.setHexpand(true);
         this.setVexpand(true);
         this.append(view);
@@ -98,5 +93,8 @@ public class ArtistsListBox extends Box {
     }
 
     public void setSelectedArtist(String artistId) {
+        this.artistInfoLoader.setArtistId(artistId);
+        this.view.setContent(contentPage);
+        this.view.setShowContent(true);
     }
 }

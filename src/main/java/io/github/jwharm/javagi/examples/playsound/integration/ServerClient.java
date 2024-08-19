@@ -1,5 +1,8 @@
 package io.github.jwharm.javagi.examples.playsound.integration;
 
+import io.soabase.recordbuilder.core.RecordBuilder;
+import io.soabase.recordbuilder.core.RecordBuilderFull;
+
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
@@ -18,6 +21,7 @@ public interface ServerClient {
     void unStarId(String id);
     ServerType getServerType();
 
+    @RecordBuilderFull
     record SongInfo(
             String id,
             String title,
@@ -40,12 +44,13 @@ public interface ServerClient {
             String streamSuffix,
             URI downloadUri,
             URI streamUri
-    ) {
+    ) implements ServerClientSongInfoBuilder.With {
         public boolean isStarred() {
             return starred.isPresent();
         }
     }
 
+    @RecordBuilder
     record AlbumInfo(
             String id,
             String name,
@@ -66,6 +71,7 @@ public interface ServerClient {
         }
     }
 
+    @RecordBuilder
     record ArtistInfo(
             String id,
             String name,
@@ -83,6 +89,7 @@ public interface ServerClient {
         }
     }
 
+    @RecordBuilder
     record ArtistAlbumInfo(
             String id,
             String name,
@@ -100,6 +107,7 @@ public interface ServerClient {
         }
     }
 
+    @RecordBuilder
     record CoverArt(
             String serverId,
             String coverArtId,
@@ -107,6 +115,7 @@ public interface ServerClient {
     ) {
     }
 
+    @RecordBuilder
     record ArtistEntry(
             String id,
             String name,
@@ -115,11 +124,13 @@ public interface ServerClient {
     ) {
     }
 
+    @RecordBuilder
     record ListArtists(
             List<ArtistEntry> list
     ) {
     }
 
+    @RecordBuilder
     record ListStarred(
             List<SongInfo> songs
     ) {

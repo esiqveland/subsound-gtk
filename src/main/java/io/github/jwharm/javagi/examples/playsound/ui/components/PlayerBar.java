@@ -2,6 +2,8 @@ package io.github.jwharm.javagi.examples.playsound.ui.components;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager.AppState;
+import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
@@ -18,6 +20,7 @@ import org.gnome.pango.EllipsizeMode;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -50,6 +53,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
     private final Button skipForwardButton;
     private final PlayerScrubber playerScrubber;
     private final VolumeButton volumeButton;
+    private final StarButton starButton;
     private final Scale volumeScale;
 
     public static class VolumeButton extends Button {
@@ -128,6 +132,24 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         this.player.addOnStateChanged(this);
         this.currentState = new AtomicReference<>(this.player.getState());
 
+        this.starButton = new StarButton(
+                Optional.empty(),
+                isStarredPtr -> {
+                    boolean isStarred = isStarredPtr;
+                    var currentState = this.currentState.get();
+                    var action = currentState.nowPlaying()
+                            .map(AppManager.NowPlaying::song)
+                            .map(songInfo -> isStarred
+                                    ? new PlayerAction.Star(songInfo)
+                                    : new PlayerAction.Unstar(songInfo)
+                            );
+
+                    return action
+                            .map(this.player::handleAction)
+                            .orElseGet(() -> CompletableFuture.failedFuture(new RuntimeException("no song playing")));
+                }
+        );
+        this.starButton.setSensitive(false);
         songInfoBox = Box.builder()
                 .setOrientation(Orientation.VERTICAL)
                 .setSpacing(2)
@@ -159,6 +181,9 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                 .build();
         nowPlaying.append(albumArtBox);
         nowPlaying.append(songInfoBox);
+        var starredButtonBox = Box.builder().setMarginStart(6).setMarginEnd(6).setVexpand(true).setValign(Align.CENTER).build();
+        starredButtonBox.append(this.starButton);
+        nowPlaying.append(starredButtonBox);
 
         volumeButton = new VolumeButton(this.currentState.get().player().muted(), PlaybinPlayer.toVolumeCubic(this.currentState.get().player().volume()));
         volumeButton.onClicked(() -> {
@@ -259,6 +284,8 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
     public void onStateChanged(AppState state) {
         var player = state.player();
         var playing = state.nowPlaying();
+        var prevState = this.currentState.get();
+
         Optional<CoverArt> nextCover = playing.flatMap(st -> st.song().coverArt());
         try {
             isStateChanging.set(true);
@@ -285,6 +312,12 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
             this.playerScrubber.updateDuration(duration.orElse(Duration.ZERO));
             position.ifPresent(this.playerScrubber::updatePosition);
 
+            Optional<SongInfo> prevSongInfo = prevState.nowPlaying().map(AppManager.NowPlaying::song);
+            var prevSongTitle = prevSongInfo.map(SongInfo::title).orElse("");
+            var prevSongArtist = prevSongInfo.map(SongInfo::artist).orElse("");
+            var prevSongAlbumTitle = prevSongInfo.map(SongInfo::album).orElse("");
+            var prevSongStarred = prevSongInfo.flatMap(SongInfo::starred);
+
             Utils.runOnMainThread(() -> {
                 this.volumeButton.setMute(player.muted());
                 var cubicVolume = PlaybinPlayer.toVolumeCubic(linearVolume);
@@ -299,16 +332,24 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                     this.updatePlayingState(nextPlayingState);
                 }
 
+                if (playing.isPresent() != prevSongInfo.isPresent()) {
+                    this.starButton.setSensitive(playing.isPresent());
+                }
+
                 playing.ifPresent(nowPlaying -> {
                     var song = nowPlaying.song();
+                    if (prevSongStarred != song.starred()) {
+                        this.starButton.setStarredAt(song.starred());
+                    }
+                    this.starButton.setSensitive(true);
 
-                    if (!song.title().equals(songTitle.getLabel())) {
+                    if (!song.title().equals(prevSongTitle)) {
                         songTitle.setLabel(song.title());
                     }
-                    if (!song.album().equals(albumTitle.getLabel())) {
+                    if (!song.album().equals(prevSongAlbumTitle)) {
                         albumTitle.setLabel(song.album());
                     }
-                    if (!song.artist().equals(artistTitle.getLabel())) {
+                    if (!song.artist().equals(prevSongArtist)) {
                         artistTitle.setLabel(song.artist());
                     }
                 });

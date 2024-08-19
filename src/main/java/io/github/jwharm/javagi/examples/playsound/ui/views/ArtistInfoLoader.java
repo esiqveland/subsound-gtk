@@ -20,10 +20,11 @@ public class ArtistInfoLoader extends Box {
     private final AtomicReference<ArtistInfoFlowBox> viewHolder = new AtomicReference<>();
     private Consumer<ArtistAlbumInfo> onAlbumSelected;
 
-    public ArtistInfoLoader(ThumbnailCache thumbLoader, ServerClient client) {
+    public ArtistInfoLoader(ThumbnailCache thumbLoader, ServerClient client, Consumer<ArtistAlbumInfo> onAlbumSelected) {
         super(Orientation.VERTICAL, 0);
         this.thumbLoader = thumbLoader;
         this.client = client;
+        this.onAlbumSelected = onAlbumSelected;
         this.setHexpand(true);
         this.setVexpand(true);
         this.setHalign(Align.FILL);

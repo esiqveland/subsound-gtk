@@ -10,7 +10,7 @@ import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.github.jwharm.javagi.examples.playsound.ui.components.NowPlayingOverlayIcon;
 import io.github.jwharm.javagi.examples.playsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
 import io.github.jwharm.javagi.examples.playsound.ui.components.RoundedAlbumArt;
-import io.github.jwharm.javagi.examples.playsound.ui.components.StarredButton;
+import io.github.jwharm.javagi.examples.playsound.ui.components.StarButton;
 import org.gnome.adw.ActionRow;
 import org.gnome.gtk.*;
 
@@ -59,7 +59,7 @@ public class AlbumInfoBox extends Box {
                     .setSpacing(8)
                     .build();
 
-            var starredButton = new StarredButton(
+            var starredButton = new StarButton(
                     songInfo.starred(),
                     newValue -> {
                         var action = newValue ? new PlayerAction.Star(songInfo) : new PlayerAction.Unstar(songInfo);
@@ -90,7 +90,7 @@ public class AlbumInfoBox extends Box {
                             .setSensitive(false)
                             .setVexpand(false)
                             .setValign(CENTER)
-                            .setCssClasses(cssClasses("flat", "pill", "dim-label"))
+                            .setCssClasses(cssClasses("dim-label"))
                             .build()
                     );
 
@@ -100,7 +100,9 @@ public class AlbumInfoBox extends Box {
             bitRateLabel.ifPresent(hoverBox::append);
             fileFormatLabel.ifPresent(hoverBox::append);
             hoverBox.append(fileSizeLabel);
-            hoverBox.append(playButton);
+            var playButtonBox = Box.builder().setMarginStart(6).setMarginEnd(6).setVexpand(true).setValign(Align.CENTER).build();
+            playButtonBox.append(playButton);
+            hoverBox.append(playButtonBox);
 
             var revealer = Revealer.builder()
                     .setChild(hoverBox)
@@ -117,7 +119,9 @@ public class AlbumInfoBox extends Box {
                 ));
             });
             suffix.append(revealer);
-            suffix.append(starredButton);
+            var starredButtonBox = Box.builder().setMarginStart(6).setMarginEnd(6).setVexpand(true).setValign(Align.CENTER).build();
+            starredButtonBox.append(starredButton);
+            suffix.append(starredButtonBox);
 
             //var trackNumberTitle = songInfo.trackNumber().map(num -> "%d ⦁ ".formatted(num)).orElse("");
             String durationString = Utils.formatDurationShortest(songInfo.duration());

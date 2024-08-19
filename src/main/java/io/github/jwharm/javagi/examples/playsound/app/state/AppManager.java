@@ -3,6 +3,7 @@ package io.github.jwharm.javagi.examples.playsound.app.state;
 import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction.Enqueue;
 import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction.PlayPositionInQueue;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClientSongInfoBuilder;
 import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.CacheSong;
@@ -10,10 +11,13 @@ import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.LoadSong
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
+import io.soabase.recordbuilder.core.RecordBuilder;
+import io.soabase.recordbuilder.core.RecordBuilderFull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -89,17 +93,19 @@ public class AppManager {
         listeners.remove(lis);
     }
 
-    public record NowPlaying(
+    @RecordBuilderFull
+    public record NowPlaying (
             SongInfo song,
             LoadSongResult cacheResult
-    ) {
+    ) implements AppManagerNowPlayingBuilder.With {
     }
 
+    @RecordBuilderFull
     public record AppState(
             Optional<NowPlaying> nowPlaying,
             PlaybinPlayer.PlayerState player,
             PlayQueue.PlayQueueState queue
-    ) {
+    ) implements AppManagerAppStateBuilder.With {
     }
 
     public void enqueue(SongInfo songInfo) {
@@ -168,6 +174,7 @@ public class AppManager {
         return Utils.doAsync(() -> {
             log.info("handleAction: payload={}", action);
             switch (action) {
+                // player actions:
                 case Enqueue a -> this.playQueue.enqueue(a.song());
                 case PlayPositionInQueue a -> this.playQueue.playPosition(a.position());
                 case PlayerAction.PlayQueue a -> {
@@ -179,10 +186,40 @@ public class AppManager {
                 case PlayerAction.PlayNext a -> this.playQueue.attemptPlayNext();
                 case PlayerAction.PlayPrev a -> this.playQueue.attemptPlayPrev();
                 case PlayerAction.SeekTo seekTo -> this.player.seekTo(seekTo.position());
-                case PlayerAction.Star a -> this.client.starId(a.song().id());
-                case PlayerAction.Unstar a -> this.client.unStarId(a.song().id());
+
+                // API actions
+                case PlayerAction.Star a -> this.starSong(a);
+                case PlayerAction.Unstar a -> this.unstarSong(a);
             }
         });
+    }
+
+    private void unstarSong(PlayerAction.Unstar a) {
+        this.client.unStarId(a.song().id());
+        setState(appState -> appState.nowPlaying()
+                .map(nowPlaying -> {
+                    var song = nowPlaying.song();
+                    if (song.id().equals(a.song().id())) {
+                        var updated = nowPlaying.withSong(song.withStarred(Optional.empty()));
+                        return appState.withNowPlaying(Optional.of(updated));
+                    } else {
+                        return appState;
+                    }
+                }).orElse(appState));
+    }
+
+    private void starSong(PlayerAction.Star a) {
+        this.client.starId(a.song().id());
+        setState(appState -> appState.nowPlaying()
+                .map(nowPlaying -> {
+                    var song = nowPlaying.song();
+                    if (song.id().equals(a.song().id())) {
+                        var updated = nowPlaying.withSong(song.withStarred(Optional.ofNullable(Instant.now())));
+                        return appState.withNowPlaying(Optional.of(updated));
+                    } else {
+                        return appState;
+                    }
+                }).orElse(appState));
     }
 
     private void setState(Function<AppState, AppState> modifier) {

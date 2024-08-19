@@ -111,7 +111,7 @@ public class MainApplication {
             ViewStackPage artistsPage = viewStack.addTitledWithIcon(artistsContainer, "artistsPage", "Artists", Icons.Artist.getIconName());
         }
 
-        var artistContainer = new ArtistInfoLoader(thumbLoader, client);
+        var artistContainer = new ArtistInfoLoader(thumbLoader, client, (albumInfo) -> {});
         {
             var artistId = "7bfaa1b4f3be9ef4f7275de2511da1aa";
             artistContainer.setArtistId(artistId);
