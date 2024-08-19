@@ -47,9 +47,14 @@ TODO:
 - ArtistListing:
   - [X] add a circular artist thumbnail in the left prefix area
   - [ ] convert to using a ~AdwLeaflet~ `AdwNavigationSplitView`
-- [X] Make ArtistInfo page coverart prettier with:
+  - [ ] model loading state when switching selected artist
+- Make ArtistInfo page coverart prettier with:
+  - [X] better design 
   - [ ] a blurred paintable background ?
     - Something like: https://github.com/neithern/g4music/blob/master/src/ui/paintables.vala#L357
+- Make AlbumView page prettier with:
+  - [ ] better design
+  - [ ] a blurred paintable background ?
 - [X] Make downloading song async
 - [X] PlayQueue: implement a in-memory play queue
   - [X] PlayQueue: auto playback of next queue item
