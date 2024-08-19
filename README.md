@@ -27,8 +27,8 @@ TODO:
 - [X] PlayerBar: play/pause button
 - [X] PlayerBar: find icons for buttons
   - [X] PlayerBar: Playing ProgressBar
-  - [ ] make play/pause icon slightly bigger than the others
-  - [ ] add star button to star/unstar currently playing song
+  - [X] make play/pause icon slightly bigger than the others
+  - [X] add star button to star/unstar currently playing song
   - [ ] model loading state
     - [ ] show loading state in playerbar
     - [ ] show loading state as a overlay icon and switch to paused?
@@ -45,7 +45,7 @@ TODO:
   - [ ] Most played: https://subsonic.org/pages/api.jsp#getAlbumList2 type=frequent
   - [ ] https://subsonic.org/pages/api.jsp#getTopSongs
 - ArtistListing:
-  - [ ] add a circular artist thumbnail in the left prefix area
+  - [X] add a circular artist thumbnail in the left prefix area
   - [ ] convert to using a ~AdwLeaflet~ `AdwNavigationSplitView`
 - [X] Make ArtistInfo page coverart prettier with:
   - [ ] a blurred paintable background ?
