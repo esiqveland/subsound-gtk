@@ -206,6 +206,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
 
         playPauseButton = Button.builder().setIconName(Icons.PLAY.getIconName()).build();
         playPauseButton.addCssClass("circular");
+        playPauseButton.addCssClass("playerBar-playPauseButton");
         playPauseButton.setSizeRequest(48, 48);
         playPauseButton.onClicked(this::playPause);
         updatePlayingState(toPlayingState(player.getState().player().state()));

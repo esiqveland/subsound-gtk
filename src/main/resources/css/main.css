@@ -2,6 +2,9 @@
 .now-playing-overlay:hover {
     color: red;
 }
+.playerBar-playPauseButton {
+    -gtk-icon-size: 24px;
+}
 .starred {
     color: yellow;
     font-size: 24px;
