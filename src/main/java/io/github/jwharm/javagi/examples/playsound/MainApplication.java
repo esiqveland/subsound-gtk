@@ -17,6 +17,8 @@ import org.gnome.adw.HeaderBar;
 import org.gnome.adw.*;
 import org.gnome.gdk.Display;
 import org.gnome.gtk.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -24,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class MainApplication {
+    private static final Logger log = LoggerFactory.getLogger(MainApplication.class);
     private final AppManager appManager;
     private final ThumbnailCache thumbLoader;
     private final SubsonicClient client;
@@ -89,6 +92,7 @@ public class MainApplication {
         var playlistsContainer = BoxFullsize().build();
         playlistsContainer.append(playlistsMe);
 
+        NavigationView navigationView = NavigationView.builder().build();
         ViewStack viewStack = ViewStack.builder().build();
         {
             var testPlayerPage = new TestPlayerPage(this.appManager);
@@ -156,8 +160,13 @@ public class MainApplication {
                 yield false;
             }
             case AppNavigation.AppRoute.RouteAlbumInfo route -> {
-                albumInfoContainer.setAlbumId(route.albumId());
-                viewStack.setVisibleChildName("albumInfoPage");
+                var viewAlbumPage = new AlbumInfoLoader(this.thumbLoader, this.appManager, appManager::handleAction)
+                        .setAlbumId(route.albumId());
+                NavigationPage albumPage = NavigationPage.builder().setChild(viewAlbumPage).setTitle("%s".formatted(route.albumId())).build();
+                navigationView.push(albumPage);
+
+//                albumInfoContainer.setAlbumId(route.albumId());
+//                viewStack.setVisibleChildName("albumInfoPage");
                 yield true;
             }
         });
@@ -173,15 +182,6 @@ public class MainApplication {
                 .setPolicy(ViewSwitcherPolicy.WIDE)
                 .setStack(viewStack)
                 .build();
-
-        viewSwitcher.onShow(() -> {
-            var visibleChild = viewStack.getVisibleChildName();
-            System.out.println("viewSwitcher.onShow.visibleChild: " + visibleChild);
-        });
-        viewSwitcher.onRealize(() -> {
-            var visibleChild = viewStack.getVisibleChildName();
-            System.out.println("viewSwitcher.onRealize.visibleChild: " + visibleChild);
-        });
 
         ViewSwitcherBar viewSwitcherBar = ViewSwitcherBar.builder()
                 .setStack(viewStack)
@@ -199,17 +199,37 @@ public class MainApplication {
         bottomBar.append(viewSwitcherBar);
         bottomBar.append(playerBar);
 
+        navigationView.onPopped(page -> {
+            if (page instanceof AutoCloseable c) {
+                try {
+                    c.close();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            if (page.getChild() instanceof AutoCloseable c) {
+                try {
+                    log.info("closing child of type: {}", page.getChild().getClass().getName());
+                    c.close();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
         ToolbarView toolbarView = ToolbarView.builder().build();
         toolbarView.addTopBar(headerBar);
         toolbarView.setContent(viewStack);
         toolbarView.addBottomBar(bottomBar);
-        //toolbarView.addBottomBar(viewSwitcherBar);
+
+        var mainPage = NavigationPage.builder().setChild(toolbarView).setTag("main").build();
+        navigationView.push(mainPage);
 
         // Pack everything together, and show the window
         var window = ApplicationWindow.builder()
                 .setApplication(app)
                 .setDefaultWidth(1040).setDefaultHeight(780)
-                .setContent(toolbarView)
+                .setContent(navigationView)
                 .build();
 
         window.present();
