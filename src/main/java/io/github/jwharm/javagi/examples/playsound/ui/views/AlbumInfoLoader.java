@@ -5,6 +5,7 @@ import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.AlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
+import io.github.jwharm.javagi.gobject.SignalConnection;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Orientation;
@@ -29,7 +30,8 @@ public class AlbumInfoLoader extends Box implements AutoCloseable, AppManager.St
         this.thumbLoader = thumbLoader;
         this.client = client;
         this.onAction = onAction;
-        this.client.addOnStateChanged(this);
+        this.onMap(() -> this.client.addOnStateChanged(this));
+        this.onUnmap(() -> this.client.removeOnStateChanged(this));
         this.setHexpand(true);
         this.setVexpand(true);
         this.setHalign(Align.FILL);

@@ -200,21 +200,7 @@ public class MainApplication {
         bottomBar.append(playerBar);
 
         navigationView.onPopped(page -> {
-            if (page instanceof AutoCloseable c) {
-                try {
-                    c.close();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            if (page.getChild() instanceof AutoCloseable c) {
-                try {
-                    log.info("closing child of type: {}", page.getChild().getClass().getName());
-                    c.close();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
+            log.info("navigationView.pop: page={} child={}", page.getClass().getName(), page.getChild().getClass().getName());
         });
 
         ToolbarView toolbarView = ToolbarView.builder().build();
