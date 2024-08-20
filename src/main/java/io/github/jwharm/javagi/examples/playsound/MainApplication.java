@@ -205,17 +205,17 @@ public class MainApplication {
 
         ToolbarView toolbarView = ToolbarView.builder().build();
         toolbarView.addTopBar(headerBar);
-        toolbarView.setContent(viewStack);
+        toolbarView.setContent(navigationView);
         toolbarView.addBottomBar(bottomBar);
 
-        var mainPage = NavigationPage.builder().setChild(toolbarView).setTag("main").build();
+        var mainPage = NavigationPage.builder().setChild(viewStack).setTag("main").build();
         navigationView.push(mainPage);
 
         // Pack everything together, and show the window
         var window = ApplicationWindow.builder()
                 .setApplication(app)
                 .setDefaultWidth(1040).setDefaultHeight(780)
-                .setContent(navigationView)
+                .setContent(toolbarView)
                 .build();
 
         window.present();
