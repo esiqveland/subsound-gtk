@@ -6,12 +6,14 @@ import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.AlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
+import io.github.jwharm.javagi.examples.playsound.ui.components.MainViewClamp;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.github.jwharm.javagi.examples.playsound.ui.components.NowPlayingOverlayIcon;
 import io.github.jwharm.javagi.examples.playsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
 import io.github.jwharm.javagi.examples.playsound.ui.components.RoundedAlbumArt;
 import io.github.jwharm.javagi.examples.playsound.ui.components.StarButton;
 import org.gnome.adw.ActionRow;
+import org.gnome.adw.Clamp;
 import org.gnome.gtk.*;
 
 import java.util.List;
@@ -23,7 +25,9 @@ import java.util.function.Function;
 
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.*;
 import static org.gnome.gtk.Align.CENTER;
+import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
+import static org.gnome.gtk.Orientation.VERTICAL;
 
 public class AlbumInfoBox extends Box {
     private final ThumbnailCache thumbLoader;
@@ -226,7 +230,8 @@ public class AlbumInfoBox extends Box {
         rows.forEach(this.list::append);
 
         infoContainer.append(list);
-        this.scroll = ScrolledWindow.builder().setChild(infoContainer).setHexpand(true).setVexpand(true).build();
+        var clamp = MainViewClamp.create(infoContainer);
+        this.scroll = ScrolledWindow.builder().setChild(clamp).setHexpand(true).setVexpand(true).build();
         this.setHexpand(true);
         this.setVexpand(true);
         this.append(scroll);
