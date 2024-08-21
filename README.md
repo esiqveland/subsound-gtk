@@ -13,9 +13,10 @@ TODO:
   - [ ] display artist
   - [ ] display album?
 - [X] cache thumbnails on disk
-  - [ ] load from file
-  - [ ] reuse pixbuf for albumart
-  - [ ] use a paintable instead ?
+  - [ ] use a paintable instead ? pixbuf is deprecated
+  - [ ] switch load directly from cached file?
+  - [ ] reuse the pixbuf for albumart
+  - [X] make resize retain aspect ratio
 - [X] cache mp3 variant on disk
   - [X] fix song cache storing with original suffix instead of transcode format suffix
     - This caused us to save mp3 transcoded flac data with .flac extension

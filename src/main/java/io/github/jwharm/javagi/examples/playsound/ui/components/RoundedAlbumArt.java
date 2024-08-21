@@ -3,7 +3,9 @@ package io.github.jwharm.javagi.examples.playsound.ui.components;
 import io.github.jwharm.javagi.base.GErrorException;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
+import org.gnome.adw.Clamp;
 import org.gnome.gdk.Texture;
+import org.gnome.gdkpixbuf.InterpType;
 import org.gnome.gdkpixbuf.Pixbuf;
 import org.gnome.gdkpixbuf.PixbufLoader;
 import org.gnome.glib.GLib;
@@ -17,12 +19,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.doAsync;
 
-public class RoundedAlbumArt extends Grid {
+public class RoundedAlbumArt extends Box {
     private static final Logger log = LoggerFactory.getLogger(RoundedAlbumArt.class);
 
     private final ThumbnailCache thumbLoader;
     private final CoverArt artwork;
     private final Picture image;
+    private final Grid grid;
     private final AtomicBoolean hasLoaded = new AtomicBoolean(false);
     private final AtomicBoolean isLoading = new AtomicBoolean(false);
     private final AtomicBoolean isUpdating = new AtomicBoolean(false);
@@ -58,51 +61,65 @@ public class RoundedAlbumArt extends Grid {
     }
 
     public RoundedAlbumArt(CoverArt artwork, ThumbnailCache thumbLoader, int size) {
-        super();
-        this.setSizeRequest(size, size);
+        super(Orientation.VERTICAL, 0);
+        //this.setSizeRequest(size, size);
         this.setHexpand(false);
-        this.setVexpand(false);
+        this.setVexpand(true);
         this.setHalign(Align.CENTER);
         this.setValign(Align.CENTER);
         this.setOverflow(Overflow.HIDDEN);
-        this.addCssClass("rounded");
+//        this.addCssClass("rounded");
+
+        this.grid = Grid.builder()
+                .setHexpand(false)
+                .setVexpand(true)
+                .setHalign(Align.CENTER)
+                .setValign(Align.CENTER)
+                .build();
+        this.grid.setSizeRequest(size, size);
+        this.grid.setOverflow(Overflow.HIDDEN);
+        this.grid.addCssClass("rounded");
 
         this.artwork = artwork;
         this.thumbLoader = thumbLoader;
         // See: https://docs.gtk.org/gdk-pixbuf/class.PixbufLoader.html
         var loader = PixbufLoader.builder().build();
-        loader.setSize(size, size);
-        var pixbuf = loader.getPixbuf();
-        //pixbuf.scaleSimple(size, size, InterpType.BILINEAR);
+        //loader.setSize(size, size);
 
         // See: https://docs.gtk.org/gdk-pixbuf/class.Picture.html
-        this.image = Picture.forPixbuf(pixbuf);
-        //this.image = Picture.forPaintable(Texture.forPixbuf(pixbuf));
+        this.image = Picture.builder()
+                .setCanShrink(true)
+                .setContentFit(ContentFit.COVER)
+                .setWidthRequest(size)
+                .setHeightRequest(size)
+                .build();
         this.image.setSizeRequest(size, size);
-        this.image.setContentFit(ContentFit.COVER);
 
+        loader.onAreaPrepared(() -> {
+            var pixbuf = loader.getPixbuf();
+            this.image.setPixbuf(pixbuf);
+            this.image.setContentFit(ContentFit.COVER);
+        });
         loader.onAreaUpdated((x, y, h, w) -> {
             if (!isUpdating.compareAndSet(false, true)) {
                 return;
             }
             try {
                 // apparently we need to touch the image and make it redraw somehow:
-                this.image.setPixbuf(loader.getPixbuf());
+                //this.image.setPixbuf(loader.getPixbuf());
             } finally {
                 isUpdating.set(false);
             }
         });
 
-        this.onRealize(() -> {
-            log.info("%s: onRealize: id=%s".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
-            this.startLoad(loader);
-        });
-        this.onShow(() -> {
-            log.info("%s: onShow: id=%s".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
+        this.onMap(() -> {
+            log.info("%s: onMap: id=%s".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
             this.startLoad(loader);
         });
 
-        this.attach(image, 0, 0, 1, 1);
+        this.grid.attach(image, 0, 0, 1, 1);
+        var clamp = Clamp.builder().setChild(this.grid).setMaximumSize(size).build();
+        this.append(clamp);
     }
 
     public void startLoad(PixbufLoader loader) {
