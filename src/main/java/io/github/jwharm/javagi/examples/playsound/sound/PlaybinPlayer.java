@@ -1,6 +1,7 @@
 package io.github.jwharm.javagi.examples.playsound.sound;
 
 import io.github.jwharm.javagi.base.Out;
+import io.soabase.recordbuilder.core.RecordBuilderFull;
 import org.freedesktop.gstreamer.gst.*;
 import org.gnome.glib.GError;
 import org.gnome.glib.GLib;
@@ -59,19 +60,21 @@ public class PlaybinPlayer {
     }
 
     // a public read-only view of the player state
+    @RecordBuilderFull
     public record PlayerState(
             PlayerStates state,
             double volume,
             boolean muted,
             Optional<Source> source
-    ) {
+    ) implements PlaybinPlayerPlayerStateBuilder.With {
     }
 
+    @RecordBuilderFull
     public record Source(
             URI current,
             Optional<Duration> position,
             Optional<Duration> duration
-    ) {
+    ) implements PlaybinPlayerSourceBuilder.With {
     }
 
     public enum PlayerStates {
@@ -121,6 +124,7 @@ public class PlaybinPlayer {
     public void setSource(URI uri) {
         setSource(uri, true);
     }
+
     public void setSource(URI uri, boolean startPlaying) {
         this.currentUri = uri;
         var fileUri = uri.toString();

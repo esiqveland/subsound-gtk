@@ -8,6 +8,7 @@ import org.gnome.gtk.*;
 import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -39,6 +40,7 @@ public class PlayerScrubber extends Box {
         scale.setSizeRequest(400, 24);
         scale.setHalign(Align.FILL);
         scale.setDrawValue(false);
+        scale.setShowFillLevel(true);
         scale.setRestrictToFillLevel(false);
 
         final Range.ValueChangedCallback onPressedCallback = () -> {
@@ -151,5 +153,25 @@ public class PlayerScrubber extends Box {
         ec.onScroll((double dx, double dy) -> true);
         scale.addController(ec);
         return scale;
+    }
+
+    private final AtomicInteger counter = new AtomicInteger();
+    public void setFill(long total, long count) {
+        int i = counter.addAndGet(1);
+        if (i % 50 != 0) {
+            return;
+        }
+        this.scale.setShowFillLevel(true);
+        //this.scale.setRestrictToFillLevel(true);
+        double fill = (double) count / (double) total;
+        double fillLevel = endTime.toSeconds() * fill;
+        this.scale.setFillLevel(fillLevel);
+        System.out.printf("fill: %.2f level=%.1f\n", fill, fillLevel);
+    }
+
+    public void disableFill() {
+        this.scale.setFillLevel(1.0);
+        this.scale.setRestrictToFillLevel(false);
+        this.scale.setShowFillLevel(false);
     }
 }

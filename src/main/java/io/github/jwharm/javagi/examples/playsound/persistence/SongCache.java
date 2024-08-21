@@ -43,7 +43,8 @@ public class SongCache {
             // the stream originalFileSuffix is the format we will receive when loading streamUri
             String streamSuffix,
             // original size
-            long originalSize
+            long originalSize,
+            DownloadProgressHandler progressHandler
     ) {
     }
 
@@ -91,9 +92,14 @@ public class SongCache {
         }
 
         try {
-            long downloadSize = downloadTo(songData.streamUri(), new FileOutputStream(cacheTmpFile));
+            long downloadSize = downloadTo(
+                    songData.streamUri(),
+                    new FileOutputStream(cacheTmpFile),
+                    songData.originalSize,
+                    songData.progressHandler
+            );
             if (downloadSize != songData.originalSize) {
-                log.info("download size={} does not equal originalSize={}", downloadSize, songData.originalSize);
+                //log.info("download size={} does not equal originalSize={}", downloadSize, songData.originalSize);
             }
             // rename tmp file to target file.
             cacheTmpFile.renameTo(cacheFile);
@@ -103,19 +109,38 @@ public class SongCache {
         }
     }
 
-    private long downloadTo(URI uri, OutputStream out) {
+    public interface DownloadProgressHandler {
+        void progress(long total, long count);
+    }
+    private long downloadTo(URI uri, OutputStream output, long originalSize, DownloadProgressHandler ph) {
         var req = HttpRequest.newBuilder().uri(uri).GET().build();
         try {
             HttpResponse<InputStream> res = this.client.send(req, HttpResponse.BodyHandlers.ofInputStream());
             if (res.statusCode() != 200) {
                 throw new RuntimeException("error: statusCode=%d uri=%s".formatted(res.statusCode(), uri.toString()));
             }
+
             String contentType = res.headers().firstValue("content-type").orElse("");
             if (contentType.isEmpty() || contentType.contains("xml") || contentType.contains("html") || contentType.contains("json")) {
                 // response does not look like binary music data...
                 throw new RuntimeException("error: statusCode=%d uri=%s contentType=%s".formatted(res.statusCode(), uri.toString(), contentType));
             }
-            return Utils.copyLarge(res.body(), out);
+            long expectedSize = res.headers().firstValueAsLong("Content-Length").orElse(originalSize);
+
+            var stream = res.body();
+            byte[] buffer = new byte[8192];
+            long count = 0L;
+            int n;
+            while(-1 != (n = stream.read(buffer))) {
+                output.write(buffer, 0, n);
+                count += n;
+                if (count > expectedSize) {
+                    expectedSize = count;
+                }
+                ph.progress(expectedSize, count);
+            }
+
+            return count;
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }

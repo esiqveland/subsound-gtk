@@ -10,6 +10,7 @@ import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.CacheSon
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.LoadSongResult;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
+import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.Source;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.soabase.recordbuilder.core.RecordBuilder;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
@@ -19,12 +20,17 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+
+import static io.github.jwharm.javagi.examples.playsound.app.state.AppManager.NowPlaying.State.LOADING;
+import static io.github.jwharm.javagi.examples.playsound.app.state.AppManager.NowPlaying.State.READY;
 
 public class AppManager {
     private static final Logger log = LoggerFactory.getLogger(AppManager.class);
@@ -51,11 +57,7 @@ public class AppManager {
         this.thumbnailCache = thumbnailCache;
         this.playQueue = new PlayQueue(
                 player,
-                nextState -> this.setState(old -> new AppState(
-                        old.nowPlaying,
-                        old.player,
-                        nextState
-                )),
+                nextState -> this.setState(old -> old.withQueue(nextState)),
                 this::loadSource
         );
         this.client = client;
@@ -93,11 +95,19 @@ public class AppManager {
         listeners.remove(lis);
     }
 
+    public record Progress(long total, long count) {}
     @RecordBuilderFull
     public record NowPlaying (
             SongInfo song,
-            LoadSongResult cacheResult
+            State state,
+            UUID requestId,
+            Progress progress,
+            Optional<LoadSongResult> cacheResult
     ) implements AppManagerNowPlayingBuilder.With {
+        public enum State {
+            LOADING,
+            READY,
+        }
     }
 
     @RecordBuilderFull
@@ -119,21 +129,77 @@ public class AppManager {
         );
     }
 
+    @FunctionalInterface
+    public interface ProgressHandler {
+        interface ProgressUpdate {}
+        record Start(SongInfo songInfo) implements ProgressUpdate {}
+        record Update(SongInfo songInfo, float percent) implements ProgressUpdate {}
+        record Completed(SongInfo songInfo) implements ProgressUpdate {}
+
+        void update(ProgressUpdate u);
+    }
+
     private LoadSongResult loadSourceSync(SongInfo songInfo) {
+        this.pause();
+        UUID requestId = UUID.randomUUID();
+        this.setState(old -> old.with()
+                .nowPlaying(Optional.of(new NowPlaying(
+                        songInfo,
+                        LOADING,
+                        requestId,
+                        new Progress(songInfo.size(), 0),
+                        Optional.empty()
+                )))
+                .player(old.player.withSource(Optional.of(new Source(
+                        songInfo.streamUri(),
+                        Optional.of(Duration.ZERO),
+                        Optional.of(songInfo.duration())
+                ))))
+                .build()
+        );
+        AtomicBoolean isCancelled = new AtomicBoolean(false);
         LoadSongResult song = songCache.getSong(new CacheSong(
                 SERVER_ID,
                 songInfo.id(),
                 songInfo.streamUri(),
                 songInfo.suffix(),
                 songInfo.streamSuffix(),
-                songInfo.size()
+                songInfo.size(),
+                (total, count) -> {
+                    if (isCancelled.get()) {
+                        return;
+                    }
+                    this.setState(old -> {
+                        Optional<NowPlaying> nowPlaying = old.nowPlaying();
+                        if (nowPlaying.isEmpty()) {
+                            isCancelled.set(true);
+                            return old;
+                        }
+                        var np = nowPlaying.get();
+                        if (!np.requestId.equals(requestId)) {
+                            isCancelled.set(true);
+                            return old;
+                        }
+                        return old.withNowPlaying(Optional.of(np.withProgress(
+                                new Progress(total, count)
+                        )));
+                    });
+                }
         ));
         log.info("cached: result={} id={} title={}", song.result().name(), songInfo.id(), songInfo.title());
-        this.setState(old -> new AppState(
-                Optional.of(new NowPlaying(songInfo, song)),
-                old.player,
-                old.queue
-        ));
+        AppState appState = this.currentState.get();
+        var currentSongId = appState.nowPlaying().map(NowPlaying::song).map(SongInfo::id).orElse("");
+        if (!currentSongId.equals(songInfo.id())) {
+            // we changed song while loading. Ignore this and do nothing:
+            return song;
+        }
+        this.setState(old -> old.withNowPlaying(Optional.of(new NowPlaying(
+                songInfo,
+                READY,
+                requestId,
+                new Progress(1000, 1000),
+                Optional.of(song)
+        ))));
         this.player.setSource(song.uri());
         return song;
     }

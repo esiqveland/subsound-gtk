@@ -5,6 +5,7 @@ import net.beardbot.subsonic.client.Subsonic;
 import net.beardbot.subsonic.client.SubsonicPreferences;
 import net.beardbot.subsonic.client.api.media.CoverArtParams;
 import net.beardbot.subsonic.client.base.ApiParams;
+import okhttp3.HttpUrl;
 import org.subsonic.restapi.AlbumWithSongsID3;
 import org.subsonic.restapi.ArtistWithAlbumsID3;
 import org.subsonic.restapi.Child;
@@ -133,6 +134,10 @@ public class SubsonicClient implements ServerClient {
             URI downloadUri = toDownloadUri(client, song);
             String streamSuffix = this.client.getPreferences().getStreamFormat();
             URI streamUri = this.client.media().streamUrl(song.getId()).toURI();
+            streamUri = HttpUrl.get(streamUri).newBuilder()
+                    .setQueryParameter("estimateContentLength", "true")
+                    .build()
+                    .uri();
 
             return new SongInfo(
                     song.getId(),

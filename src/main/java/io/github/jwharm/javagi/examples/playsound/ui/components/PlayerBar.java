@@ -352,6 +352,10 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                     if (!song.artist().equals(prevSongArtist)) {
                         artistTitle.setLabel(song.artist());
                     }
+                    switch (nowPlaying.state()) {
+                        case LOADING -> this.playerScrubber.setFill(nowPlaying.progress().total(), nowPlaying.progress().count());
+                        case READY -> this.playerScrubber.disableFill();
+                    }
                 });
             });
         } finally {
