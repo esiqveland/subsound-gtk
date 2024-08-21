@@ -2,16 +2,25 @@ package io.github.jwharm.javagi.examples.playsound.ui.views;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
+import io.github.jwharm.javagi.examples.playsound.utils.Utils;
+import org.gnome.glib.GLib;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
 import org.gnome.gtk.Orientation;
+import org.gnome.gtk.Scale;
 
 import java.io.File;
 import java.net.URI;
+import java.sql.Time;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.sha256;
@@ -86,6 +95,20 @@ public class TestPlayerPage extends Box {
             return btn;
         }).toList();
 
+        var scale1 = Scale.builder().setOrientation(Orientation.HORIZONTAL).build();
+        scale1.setRange(0, 100);
+        scale1.setShowFillLevel(true);
+        scale1.setFillLevel(50);
+
+        var fill = new AtomicInteger();
+        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
+            int i = fill.addAndGet(1);
+            if (i > 99) {
+                fill.set(0);
+            }
+            GLib.idleAddOnce(() -> scale1.setFillLevel(fill.get()));
+        }, 1000, 1000, TimeUnit.MILLISECONDS);
+
         var testPageContainer = this;
         testPageContainer.append(playButton);
         testPageContainer.append(pauseButton);
@@ -95,6 +118,7 @@ public class TestPlayerPage extends Box {
         testPageContainer.append(volumeFull);
         testPageContainer.append(volumeHalf);
         testPageContainer.append(volumeQuarter);
+        testPageContainer.append(scale1);
     }
 
     public record Sample(
