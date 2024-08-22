@@ -3,7 +3,6 @@ package io.github.jwharm.javagi.examples.playsound.app.state;
 import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction.Enqueue;
 import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction.PlayPositionInQueue;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
-import io.github.jwharm.javagi.examples.playsound.integration.ServerClientSongInfoBuilder;
 import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.CacheSong;
@@ -12,7 +11,6 @@ import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.Source;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
-import io.soabase.recordbuilder.core.RecordBuilder;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +25,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
 import static io.github.jwharm.javagi.examples.playsound.app.state.AppManager.NowPlaying.State.LOADING;
@@ -95,13 +95,13 @@ public class AppManager {
         listeners.remove(lis);
     }
 
-    public record Progress(long total, long count) {}
+    public record BufferingProgress(long total, long count) {}
     @RecordBuilderFull
     public record NowPlaying (
             SongInfo song,
             State state,
             UUID requestId,
-            Progress progress,
+            BufferingProgress bufferingProgress,
             Optional<LoadSongResult> cacheResult
     ) implements AppManagerNowPlayingBuilder.With {
         public enum State {
@@ -147,7 +147,7 @@ public class AppManager {
                         songInfo,
                         LOADING,
                         requestId,
-                        new Progress(songInfo.size(), 0),
+                        new BufferingProgress(songInfo.size(), 0),
                         Optional.empty()
                 )))
                 .player(old.player.withSource(Optional.of(new Source(
@@ -180,8 +180,8 @@ public class AppManager {
                             isCancelled.set(true);
                             return old;
                         }
-                        return old.withNowPlaying(Optional.of(np.withProgress(
-                                new Progress(total, count)
+                        return old.withNowPlaying(Optional.of(np.withBufferingProgress(
+                                new BufferingProgress(total, count)
                         )));
                     });
                 }
@@ -197,7 +197,7 @@ public class AppManager {
                 songInfo,
                 READY,
                 requestId,
-                new Progress(1000, 1000),
+                new BufferingProgress(1000, 1000),
                 Optional.of(song)
         ))));
         this.player.setSource(song.uri());
@@ -288,8 +288,14 @@ public class AppManager {
                 }).orElse(appState));
     }
 
+    private final Lock lock = new ReentrantLock();
     private void setState(Function<AppState, AppState> modifier) {
-        this.currentState.set(modifier.apply(this.currentState.get()));
+        try {
+            lock.lock();
+            this.currentState.set(modifier.apply(this.currentState.get()));
+        } finally {
+            lock.unlock();
+        }
         this.notifyListeners();
     }
 

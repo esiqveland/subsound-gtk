@@ -100,14 +100,14 @@ public class TestPlayerPage extends Box {
         scale1.setShowFillLevel(true);
         scale1.setFillLevel(50);
 
-        var fill = new AtomicInteger();
-        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
-            int i = fill.addAndGet(1);
-            if (i > 99) {
-                fill.set(0);
-            }
-            GLib.idleAddOnce(() -> scale1.setFillLevel(fill.get()));
-        }, 1000, 1000, TimeUnit.MILLISECONDS);
+//        var fill = new AtomicInteger();
+//        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
+//            int i = fill.addAndGet(1);
+//            if (i > 99) {
+//                fill.set(0);
+//            }
+//            GLib.idleAddOnce(() -> scale1.setFillLevel(fill.get()));
+//        }, 1000, 1000, TimeUnit.MILLISECONDS);
 
         var testPageContainer = this;
         testPageContainer.append(playButton);

@@ -129,12 +129,14 @@ public class PlayerScrubber extends Box {
             });
             return;
         }
+
         // avoid rounding down a second to always be certain scale is never shorter than song duration:
         totalTime = totalTime.plusMillis(500);
         totalTime = Duration.ofSeconds(totalTime.toSeconds());
         if (endTime.equals(totalTime)) {
             return;
         }
+        System.out.printf("PlayerBar.newDuration: %dsec\n", totalTime.getSeconds());
         endTime = totalTime;
         var endTimeText = Utils.formatDurationShortest(totalTime);
         Utils.runOnMainThread(() -> {
@@ -158,14 +160,19 @@ public class PlayerScrubber extends Box {
     private final AtomicInteger counter = new AtomicInteger();
     public void setFill(long total, long count) {
         int i = counter.addAndGet(1);
-        if (i % 50 != 0) {
-            return;
+        if (i % 25 != 0) {
+            if (total != count) {
+                return;
+            }
         }
         this.scale.setShowFillLevel(true);
         //this.scale.setRestrictToFillLevel(true);
         double fill = (double) count / (double) total;
         double fillLevel = endTime.toSeconds() * fill;
         this.scale.setFillLevel(fillLevel);
+        // changing fill level does not always redraw the scale component,
+        // but scale.getAdjustment().emitValueChanged() forces a redraw:
+        this.scale.getAdjustment().emitValueChanged();
         System.out.printf("fill: %.2f level=%.1f\n", fill, fillLevel);
     }
 
@@ -173,5 +180,6 @@ public class PlayerScrubber extends Box {
         this.scale.setFillLevel(1.0);
         this.scale.setRestrictToFillLevel(false);
         this.scale.setShowFillLevel(false);
+        this.scale.getAdjustment().emitValueChanged();
     }
 }

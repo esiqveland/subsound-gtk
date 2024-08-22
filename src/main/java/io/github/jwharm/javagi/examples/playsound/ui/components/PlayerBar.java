@@ -2,6 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.ui.components;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager.AppState;
+import io.github.jwharm.javagi.examples.playsound.app.state.AppManager.NowPlaying;
 import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
@@ -24,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.github.jwharm.javagi.examples.playsound.app.state.AppManager.NowPlaying.State.LOADING;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.withinEpsilon;
 import static io.github.jwharm.javagi.examples.playsound.ui.components.PlayerBar.CoverArtDiff.CHANGED;
@@ -138,7 +140,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                     boolean isStarred = isStarredPtr;
                     var currentState = this.currentState.get();
                     var action = currentState.nowPlaying()
-                            .map(AppManager.NowPlaying::song)
+                            .map(NowPlaying::song)
                             .map(songInfo -> isStarred
                                     ? new PlayerAction.Star(songInfo)
                                     : new PlayerAction.Unstar(songInfo)
@@ -307,12 +309,24 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
             PlayingState nextPlayingState = toPlayingState(player.state());
             double linearVolume = state.player().volume();
 
-            Optional<Duration> duration = state.player().source().flatMap(s -> s.duration());
-            Optional<Duration> position = state.player().source().flatMap(s -> s.position());
+            var nowPlayingState = state.nowPlaying().map(NowPlaying::state).orElse(LOADING);
+            Optional<Duration> duration = switch (nowPlayingState) {
+                // we get the duration from the songInfo while LOADING:
+                case LOADING -> state.nowPlaying().map(NowPlaying::song).map(SongInfo::duration);
+                // READY: get the duration from the loaded source:
+                case READY -> state.player().source().flatMap(s -> s.duration())
+                        .or(() -> state.nowPlaying().map(NowPlaying::song).map(SongInfo::duration));
+            };
+            Duration position = switch (nowPlayingState) {
+                // we get the position ZERO while loading:
+                case LOADING -> Duration.ZERO;
+                // READY: get the position from the loaded source:
+                case READY -> state.player().source().flatMap(s -> s.position()).orElse(Duration.ZERO);
+            };
             this.playerScrubber.updateDuration(duration.orElse(Duration.ZERO));
-            position.ifPresent(this.playerScrubber::updatePosition);
+            this.playerScrubber.updatePosition(position);
 
-            Optional<SongInfo> prevSongInfo = prevState.nowPlaying().map(AppManager.NowPlaying::song);
+            Optional<SongInfo> prevSongInfo = prevState.nowPlaying().map(NowPlaying::song);
             var prevSongTitle = prevSongInfo.map(SongInfo::title).orElse("");
             var prevSongArtist = prevSongInfo.map(SongInfo::artist).orElse("");
             var prevSongAlbumTitle = prevSongInfo.map(SongInfo::album).orElse("");
@@ -353,7 +367,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                         artistTitle.setLabel(song.artist());
                     }
                     switch (nowPlaying.state()) {
-                        case LOADING -> this.playerScrubber.setFill(nowPlaying.progress().total(), nowPlaying.progress().count());
+                        case LOADING -> this.playerScrubber.setFill(nowPlaying.bufferingProgress().total(), nowPlaying.bufferingProgress().count());
                         case READY -> this.playerScrubber.disableFill();
                     }
                 });
