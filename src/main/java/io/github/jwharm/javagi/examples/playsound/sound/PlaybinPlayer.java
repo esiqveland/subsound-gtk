@@ -121,8 +121,13 @@ public class PlaybinPlayer {
         return muteState.get();
     }
 
-    public void setSource(URI uri) {
-        setSource(uri, true);
+    public record AudioSource(
+            URI uri,
+            Duration estimatedDuration
+    ){}
+    public void setSource(AudioSource src, boolean startPlaying) {
+        this.duration = src.estimatedDuration;
+        this.setSource(src.uri, startPlaying);
     }
 
     public void setSource(URI uri, boolean startPlaying) {

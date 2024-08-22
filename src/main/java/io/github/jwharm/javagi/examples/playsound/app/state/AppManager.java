@@ -9,6 +9,7 @@ import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.CacheSon
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.LoadSongResult;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
+import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.AudioSource;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.Source;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
@@ -193,6 +194,10 @@ public class AppManager {
             // we changed song while loading. Ignore this and do nothing:
             return song;
         }
+        this.player.setSource(
+                new AudioSource(song.uri(), songInfo.duration()),
+                true
+        );
         this.setState(old -> old.withNowPlaying(Optional.of(new NowPlaying(
                 songInfo,
                 READY,
@@ -200,7 +205,6 @@ public class AppManager {
                 new BufferingProgress(1000, 1000),
                 Optional.of(song)
         ))));
-        this.player.setSource(song.uri());
         return song;
     }
 
