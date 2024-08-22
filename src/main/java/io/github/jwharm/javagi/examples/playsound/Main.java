@@ -57,7 +57,7 @@ public class Main {
                 config.serverConfig.username(),
                 config.serverConfig.password()
         );
-        preferences.setStreamBitRate(192);
+        preferences.setStreamBitRate(321);
         preferences.setClientName("Subsound");
         return preferences;
     }
