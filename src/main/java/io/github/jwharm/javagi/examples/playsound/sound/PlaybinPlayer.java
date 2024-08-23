@@ -1,6 +1,7 @@
 package io.github.jwharm.javagi.examples.playsound.sound;
 
 import io.github.jwharm.javagi.base.Out;
+import io.github.jwharm.javagi.examples.playsound.utils.OsUtil;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
 import org.freedesktop.gstreamer.gst.*;
 import org.gnome.glib.GError;
@@ -21,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 import static io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.PlayerStates.*;
+import static io.github.jwharm.javagi.examples.playsound.utils.OsUtil.OS.MACOS;
 
 // TODO: Try to make it work closer to a audio-only playbin:
 //  https://gstreamer.freedesktop.org/documentation/playback/playbin.html?gi-language=c#playbin
@@ -31,6 +33,7 @@ public class PlaybinPlayer {
     private static final Logger log = LoggerFactory.getLogger(PlaybinPlayer.class);
 
     private static final int GST_PLAY_FLAG_AUDIO = 2;
+    private static final int GST_PLAY_FLAG_SOFT_VOLUME = 0x00000010;
     private static final List<OnStateChanged> listeners = new CopyOnWriteArrayList<>();
 
     public interface OnStateChanged {
@@ -387,7 +390,12 @@ public class PlaybinPlayer {
         }
         // playbin: we only want to enable audio:
         // https://gstreamer.freedesktop.org/documentation/playback/playsink.html?gi-language=c#GstPlayFlags
-        playbinEl.set("flags", GST_PLAY_FLAG_AUDIO, null);
+        // MacOS: needs soft-volume flag
+        int flags = GST_PLAY_FLAG_AUDIO;
+        if (OsUtil.getOSPlatform() == MACOS) {
+            flags = flags | GST_PLAY_FLAG_SOFT_VOLUME;
+        }
+        playbinEl.set("flags", flags, null);
 
         // We add a message handler
         bus = playbinEl.getBus();
