@@ -1,13 +1,14 @@
 package io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
+import io.github.jwharm.javagi.examples.playsound.utils.Utils;
+import io.github.jwharm.javagi.examples.playsound.utils.javahttp.TextUtils;
 import net.beardbot.subsonic.client.Subsonic;
 import net.beardbot.subsonic.client.SubsonicPreferences;
 import net.beardbot.subsonic.client.api.media.CoverArtParams;
 import net.beardbot.subsonic.client.base.ApiParams;
 import okhttp3.HttpUrl;
 import org.subsonic.restapi.AlbumWithSongsID3;
-import org.subsonic.restapi.ArtistWithAlbumsID3;
 import org.subsonic.restapi.Child;
 import org.subsonic.restapi.Starred2;
 
@@ -17,6 +18,7 @@ import java.time.Duration;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static io.github.jwharm.javagi.examples.playsound.app.state.AppManager.SERVER_ID;
 import static java.util.Optional.ofNullable;
@@ -83,47 +85,57 @@ public class SubsonicClient implements ServerClient {
 
     @Override
     public ArtistInfo getArtistInfo(String artistId) {
-        ArtistWithAlbumsID3 artist = this.client.browsing().getArtist(artistId);
+//        try (var scope = new StructuredTaskScope<Object>()){
+//            var task1 = scope.fork(() -> this.client.browsing().getArtist(artistId));
+//            var task2 = scope.fork(() -> this.client.browsing().getArtistInfo2(artistId));
+//        }
 
-        var albums = artist.getAlbums().stream().map(album -> new ArtistAlbumInfo(
-                album.getId(),
-                album.getName(),
-                album.getSongCount(),
-                album.getArtistId(),
-                album.getArtist(),
-                Duration.ofSeconds(album.getDuration()),
-                ofNullable(album.getGenre()).filter(s -> !s.isBlank()),
-                ofNullable(album.getYear()),
-                ofNullable(album.getStarred()).map(ts -> ts.toInstant(ZoneOffset.UTC)),
-                toCoverArt(album.getCoverArtId())
-        )).toList();
+        var task1 = Utils.doAsync(() -> this.client.browsing().getArtist(artistId));
+        var task2 = Utils.doAsync(() -> this.client.browsing().getArtistInfo2(artistId));
+        return task1.thenCombine(task2, (artist, info) -> {
+            var albums = artist.getAlbums().stream()
+                    .map(album -> ArtistAlbumInfo.create(
+                            album,
+                            toCoverArt(album.getCoverArtId()))
+                    )
+                    .toList();
 
-        return new ArtistInfo(
-                artist.getId(),
-                artist.getName(),
-                artist.getAlbumCount(),
-                ofNullable(artist.getStarred()).map(d -> d.toInstant(ZoneOffset.UTC)),
-                toCoverArt(artist.getCoverArtId()),
-                albums
-        );
+            var bio = Optional.ofNullable(info.getBiography())
+                    .filter(str -> !str.isBlank())
+                    .orElse("");
+            Biography biography = TextUtils.parseLink(bio);
+            return new ArtistInfo(
+                    artist.getId(),
+                    artist.getName(),
+                    artist.getAlbumCount(),
+                    ofNullable(artist.getStarred()).map(d -> d.toInstant(ZoneOffset.UTC)),
+                    toCoverArt(artist.getCoverArtId()),
+                    albums,
+                    biography
+            );
+        }).join();
     }
 
     @Override
     public AlbumInfo getAlbumInfo(String albumId) {
-        AlbumWithSongsID3 album = this.client.browsing().getAlbum(albumId);
-        return new AlbumInfo(
-                album.getId(),
-                album.getName(),
-                album.getSongCount(),
-                album.getArtistId(),
-                album.getArtist(),
-                Duration.ofSeconds(album.getDuration()),
-                ofNullable(album.getStarred()).map(d -> d.toInstant(ZoneOffset.UTC)),
-                toCoverArt(album.getCoverArtId()),
-                toSongInfo(album.getSongs())
-        );
-    }
+        var task1 = Utils.doAsync(() -> this.client.browsing().getAlbum(albumId));
+        var task2 = Utils.doAsync(() -> this.client.browsing().getAlbumInfo2(albumId));
+        return task1.thenCombine(task2, (album, info) -> {
+            //info.getNotes();
 
+            return new AlbumInfo(
+                    album.getId(),
+                    album.getName(),
+                    album.getSongCount(),
+                    album.getArtistId(),
+                    album.getArtist(),
+                    Duration.ofSeconds(album.getDuration()),
+                    ofNullable(album.getStarred()).map(d -> d.toInstant(ZoneOffset.UTC)),
+                    toCoverArt(album.getCoverArtId()),
+                    toSongInfo(album.getSongs())
+            );
+        }).join();
+    }
     @Override
     public ServerType getServerType() {
         return ServerType.SUBSONIC;

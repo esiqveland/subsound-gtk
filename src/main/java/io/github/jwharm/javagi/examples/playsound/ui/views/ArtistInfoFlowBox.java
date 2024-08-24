@@ -6,12 +6,14 @@ import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.ui.components.AlbumsFlowBox;
 import io.github.jwharm.javagi.examples.playsound.ui.components.RoundedAlbumArt;
 import org.gnome.gtk.*;
+import org.gnome.pango.WrapMode;
 
 import java.time.Duration;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static io.github.jwharm.javagi.examples.playsound.utils.Utils.borderBox;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
 
 public class ArtistInfoFlowBox extends Box {
@@ -24,8 +26,11 @@ public class ArtistInfoFlowBox extends Box {
     private final Widget artistImage;
     private final ThumbnailCache thumbLoader;
     private final AlbumsFlowBox listView;
-    private final Box artistInfoBox;
+
     private final Box viewBox;
+    private final Box artistInfoBox;
+    private final Box biographyBox;
+    private final Box biographyBoxBox;
 
     public ArtistInfoFlowBox(
             ThumbnailCache thumbLoader,
@@ -38,7 +43,7 @@ public class ArtistInfoFlowBox extends Box {
         this.onAlbumSelected = onAlbumSelected;
         this.viewBox = Box.builder().setSpacing(BIG_SPACING).setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).build();
         this.artistImage = RoundedAlbumArt.resolveCoverArt(this.thumbLoader, this.artist.coverArt(), 300);
-        this.infoContainer = Box.builder().setMarginStart(BIG_SPACING).setMarginTop(BIG_SPACING).setMarginEnd(BIG_SPACING).setSpacing(BIG_SPACING).setOrientation(Orientation.HORIZONTAL).setHexpand(true).setVexpand(false).setCssClasses(cssClasses("card")).build();
+        this.infoContainer = Box.builder().setSpacing(BIG_SPACING).setOrientation(Orientation.HORIZONTAL).setHexpand(true).setVexpand(false).setCssClasses(cssClasses("card")).build();
         this.artistInfoBox = Box.builder().setSpacing(10).setMarginEnd(BIG_SPACING).setOrientation(Orientation.VERTICAL).setHexpand(true).setHalign(Align.START).setValign(Align.CENTER).build();
         this.infoContainer.append(this.artistImage);
         this.infoContainer.append(this.artistInfoBox);
@@ -46,6 +51,13 @@ public class ArtistInfoFlowBox extends Box {
         this.artistInfoBox.append(Label.builder().setLabel("%d albums".formatted(this.artist.albumCount())).setHalign(Align.START).setCssClasses(cssClasses("title-3")).build());
         this.artistInfoBox.append(Label.builder().setLabel("%d songs".formatted(this.artist.songCount())).setHalign(Align.START).setCssClasses(cssClasses("dim-label")).build());
         this.artistInfoBox.append(Label.builder().setLabel("%s playtime".formatted(formatDuration(this.artist.totalPlayTime()))).setHalign(Align.START).setCssClasses(cssClasses("dim-label")).build());
+
+        this.biographyBoxBox = borderBox(Orientation.VERTICAL, BIG_SPACING).setSpacing(BIG_SPACING/4).build();
+        this.biographyBoxBox.append(Label.builder().setLabel("About").setHalign(Align.START).setCssClasses(cssClasses("title-3")).build());
+        this.biographyBoxBox.append(Label.builder().setLabel(this.artist.biography().cleaned()).setWrap(true).setWrapMode(WrapMode.WORD).setNaturalWrapMode(NaturalWrapMode.WORD).setUseMarkup(true).setHalign(Align.START).setCssClasses(cssClasses("dim-label")).build());
+        this.biographyBoxBox.append(Label.builder().setLabel(this.artist.biography().link()).setWrap(true).setWrapMode(WrapMode.WORD).setNaturalWrapMode(NaturalWrapMode.WORD).setUseMarkup(true).setHalign(Align.START).build());
+        this.biographyBox = Box.builder().setOrientation(Orientation.VERTICAL).setHexpand(true).setCssClasses(cssClasses("card")).build();
+        this.biographyBox.append(biographyBoxBox);
 
         this.artistsMap = artistInfo.albums().stream().collect(Collectors.toMap(
                 ArtistAlbumInfo::id,
@@ -60,12 +72,15 @@ public class ArtistInfoFlowBox extends Box {
             }
             handler.accept(albumInfo);
         });
-        var box = Box.builder().setMarginStart(BIG_SPACING).setSpacing(BIG_SPACING).setMarginEnd(BIG_SPACING).setOrientation(Orientation.VERTICAL).build();
+        var box = Box.builder().setOrientation(Orientation.VERTICAL).build();
         box.append(listView);
 
         this.viewBox.append(infoContainer);
+        this.viewBox.append(this.biographyBox);
         this.viewBox.append(box);
-        this.scroll = ScrolledWindow.builder().setChild(this.viewBox).setHexpand(true).setVexpand(true).build();
+        var mainContainer = borderBox(Orientation.VERTICAL, BIG_SPACING).build();
+        mainContainer.append(viewBox);
+        this.scroll = ScrolledWindow.builder().setChild(mainContainer).setHexpand(true).setVexpand(true).build();
         this.setHexpand(true);
         this.setVexpand(true);
         this.append(scroll);

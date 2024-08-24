@@ -2,12 +2,16 @@ package io.github.jwharm.javagi.examples.playsound.integration;
 
 import io.soabase.recordbuilder.core.RecordBuilder;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
+import org.subsonic.restapi.AlbumID3;
 
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+
+import static java.util.Optional.ofNullable;
 
 public interface ServerClient {
     // serverId is a client generated or server generated globally unique id for this specific server integration
@@ -78,7 +82,8 @@ public interface ServerClient {
             int albumCount,
             Optional<Instant> starredAt,
             Optional<CoverArt> coverArt,
-            List<ArtistAlbumInfo> albums
+            List<ArtistAlbumInfo> albums,
+            Biography biography
     ) {
         public Duration totalPlayTime() {
             return Duration.ofSeconds(this.albums.stream().mapToLong(a -> a.duration.toSeconds()).sum());
@@ -104,6 +109,20 @@ public interface ServerClient {
     ) {
         public boolean isStarred() {
             return starredAt.isPresent();
+        }
+        public static ArtistAlbumInfo create(AlbumID3 album, Optional<CoverArt> coverArt) {
+            return new ArtistAlbumInfo(
+                    album.getId(),
+                    album.getName(),
+                    album.getSongCount(),
+                    album.getArtistId(),
+                    album.getArtist(),
+                    Duration.ofSeconds(album.getDuration()),
+                    ofNullable(album.getGenre()).filter(s -> !s.isBlank()),
+                    ofNullable(album.getYear()),
+                    ofNullable(album.getStarred()).map(ts -> ts.toInstant(ZoneOffset.UTC)),
+                    coverArt
+            );
         }
     }
 
@@ -135,6 +154,12 @@ public interface ServerClient {
             List<SongInfo> songs
     ) {
     }
+
+    record Biography(
+            String original,
+            String cleaned,
+            String link
+    ) {}
 
     enum ServerType {
         SUBSONIC,

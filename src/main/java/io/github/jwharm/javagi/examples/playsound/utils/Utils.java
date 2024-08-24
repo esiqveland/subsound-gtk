@@ -2,7 +2,9 @@ package io.github.jwharm.javagi.examples.playsound.utils;
 
 import org.gnome.glib.GLib;
 import org.gnome.glib.SourceOnceFunc;
+import org.gnome.gtk.Box;
 import org.gnome.gtk.EventControllerMotion;
+import org.gnome.gtk.Orientation;
 import org.gnome.gtk.PropagationLimit;
 import org.gnome.gtk.PropagationPhase;
 import org.gnome.gtk.Widget;
@@ -177,5 +179,16 @@ public class Utils {
     public static boolean withinEpsilon(double value1, double value2, double epsilon) {
         var diff = Math.abs(value1 - value2);
         return diff < epsilon;
+    }
+
+    public static Box.Builder<? extends Box.Builder> borderBox(Orientation orientation, int margins) {
+        return Box.builder()
+                .setOrientation(orientation)
+                .setHexpand(true)
+                .setVexpand(true)
+                .setMarginStart(margins)
+                .setMarginTop(margins)
+                .setMarginEnd(margins)
+                .setMarginBottom(margins);
     }
 }
