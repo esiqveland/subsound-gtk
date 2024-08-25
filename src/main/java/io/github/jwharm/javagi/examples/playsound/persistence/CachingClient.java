@@ -29,6 +29,11 @@ public class CachingClient implements ServerClient {
     }
 
     @Override
+    public HomeOverview getHomeOverview() {
+        return delegate.getHomeOverview();
+    }
+
+    @Override
     public void starId(String id) {
         delegate.starId(id);
     }

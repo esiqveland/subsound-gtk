@@ -5,10 +5,11 @@ import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.github.jwharm.javagi.examples.playsound.utils.javahttp.TextUtils;
 import net.beardbot.subsonic.client.Subsonic;
 import net.beardbot.subsonic.client.SubsonicPreferences;
+import net.beardbot.subsonic.client.api.lists.AlbumListParams;
+import net.beardbot.subsonic.client.api.lists.AlbumListType;
 import net.beardbot.subsonic.client.api.media.CoverArtParams;
 import net.beardbot.subsonic.client.base.ApiParams;
 import okhttp3.HttpUrl;
-import org.subsonic.restapi.AlbumWithSongsID3;
 import org.subsonic.restapi.Child;
 import org.subsonic.restapi.Starred2;
 
@@ -22,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static io.github.jwharm.javagi.examples.playsound.app.state.AppManager.SERVER_ID;
 import static java.util.Optional.ofNullable;
+
 
 public class SubsonicClient implements ServerClient {
     private final Subsonic client;
@@ -81,6 +83,35 @@ public class SubsonicClient implements ServerClient {
         Starred2 starred2 = this.client.lists().getStarred2();
         var songs = starred2.getSongs().stream().map(this::toSongInfo).toList();
         return new ListStarred(songs);
+    }
+
+    @Override
+    public HomeOverview getHomeOverview() {
+        var recentTask = Utils.doAsync(() -> this.loadAlbumList(AlbumListType.RECENT));
+        var newestTask = Utils.doAsync(() -> this.loadAlbumList(AlbumListType.NEWEST));
+        var frequentTask = Utils.doAsync(() -> this.loadAlbumList(AlbumListType.FREQUENT));
+        var highestTask = Utils.doAsync(() -> this.loadAlbumList(AlbumListType.HIGHEST));
+
+        return CompletableFuture
+                .allOf(recentTask, newestTask, frequentTask, highestTask)
+                .thenApply(_ -> new HomeOverview(
+                        recentTask.join(),
+                        newestTask.join(),
+                        frequentTask.join(),
+                        highestTask.join()
+                ))
+                .join();
+    }
+
+    private List<ArtistAlbumInfo> loadAlbumList(AlbumListType albumListType) {
+        var albums = this.client.lists().getAlbumList2(listParams(albumListType)).getAlbums();
+        return albums.stream()
+                .map(album -> ArtistAlbumInfo.create(album, toCoverArt(album.getCoverArtId())))
+                .toList();
+    }
+
+    private AlbumListParams listParams(AlbumListType albumListType) {
+        return AlbumListParams.create().type(albumListType);
     }
 
     @Override

@@ -6,6 +6,7 @@ import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.ui.views.AlbumInfoLoader;
 import io.github.jwharm.javagi.examples.playsound.ui.views.ArtistInfoLoader;
 import io.github.jwharm.javagi.examples.playsound.ui.views.ArtistsListBox;
+import io.github.jwharm.javagi.examples.playsound.ui.views.FrontpagePage;
 import io.github.jwharm.javagi.examples.playsound.ui.views.StarredLoader;
 import io.github.jwharm.javagi.examples.playsound.ui.views.TestPlayerPage;
 import io.github.jwharm.javagi.examples.playsound.ui.components.AppNavigation;
@@ -76,8 +77,6 @@ public class MainApplication {
                 .setChild(searchEntry)
                 .build();
 
-        var frontPageContainer = BoxFullsize().build();
-
         var searchMe = Button.withLabel("Search me");
         searchMe.onClicked(() -> {
             System.out.println("SearchMe.onClicked");
@@ -100,6 +99,7 @@ public class MainApplication {
             ViewStackPage testPage = viewStack.addTitled(testPlayerPage, "testPage", "Testpage");
         }
         {
+            var frontPageContainer = new FrontpagePage(thumbLoader, appManager);
             ViewStackPage frontPage = viewStack.addTitled(frontPageContainer, "frontPage", "Home");
         }
         {

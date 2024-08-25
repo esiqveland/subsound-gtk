@@ -21,6 +21,7 @@ public interface ServerClient {
     ArtistInfo getArtistInfo(String artistId);
     AlbumInfo getAlbumInfo(String albumId);
     ListStarred getStarred();
+    HomeOverview getHomeOverview();
     void starId(String id);
     void unStarId(String id);
     ServerType getServerType();
@@ -161,7 +162,15 @@ public interface ServerClient {
             String link
     ) {}
 
+    public record HomeOverview(
+            List<ArtistAlbumInfo> recent,
+            List<ArtistAlbumInfo> newest,
+            List<ArtistAlbumInfo> frequent,
+            List<ArtistAlbumInfo> highest
+    ) {}
+
     enum ServerType {
         SUBSONIC,
     }
+
 }
