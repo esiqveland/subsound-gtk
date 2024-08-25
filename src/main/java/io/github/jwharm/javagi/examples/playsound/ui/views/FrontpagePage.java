@@ -118,8 +118,8 @@ public class FrontpagePage extends Box {
         private final Label recentLabel = heading1("Recently played").build();
         private final Label newLabel = heading1("Newly added").build();
 
-        private HorizontalAlbumsFlowBox recentList;
-        private HorizontalAlbumsFlowBox newList;
+        private HorizontalAlbumsFlowBoxV3 recentList;
+        private HorizontalAlbumsFlowBoxV3 newList;
 
         public HomeView(ThumbnailCache thumbLoader) {
             super(Orientation.VERTICAL, 0);
@@ -177,14 +177,53 @@ public class FrontpagePage extends Box {
             }
         }
 
-        public static class HorizontalAlbumsFlowBox extends Box {
+        public static class HorizontalAlbumsFlowBoxV3 extends Box {
+            private final List<ArtistAlbumInfo> albums;
+            private final List<AlbumFlowBoxChild> list;
+            private final Box carousel;
+            private final ThumbnailCache thumbLoader;
+            private final ScrolledWindow scroll;
+
+            public HorizontalAlbumsFlowBoxV3(List<ArtistAlbumInfo> albums, ThumbnailCache thumbLoader) {
+                super(HORIZONTAL, 0);
+                this.albums = albums;
+                this.thumbLoader = thumbLoader;
+                this.setHalign(START);
+                this.setHexpand(true);
+                this.carousel = Box.builder()
+                        .setOrientation(HORIZONTAL)
+                        .setHexpand(true)
+                        .setHalign(START)
+                        .setValign(START)
+                        .setSpacing(24)
+                        .build();
+                this.list = this.albums.stream().map(album -> {
+                    var item = new AlbumFlowBoxChild(this.thumbLoader, album);
+                    return item;
+                }).toList();
+                for (AlbumFlowBoxChild albumFlowBoxChild : list) {
+                    this.carousel.append(albumFlowBoxChild);
+                }
+                this.scroll = ScrolledWindow.builder()
+                        .setHexpand(true)
+                        .setVexpand(true)
+                        .setPropagateNaturalHeight(true)
+                        .setPropagateNaturalWidth(true)
+                        .setVscrollbarPolicy(PolicyType.NEVER)
+                        .build();
+                this.scroll.setChild(this.carousel);
+                this.append(this.scroll);
+            }
+        }
+
+        public static class HorizontalAlbumsListView extends Box {
             private final List<ArtistAlbumInfo> albums;
             private final ListView listView;
             private final ThumbnailCache thumbLoader;
             private final ListIndexModel listModel;
             private final ScrolledWindow scroll;
 
-            public HorizontalAlbumsFlowBox(List<ArtistAlbumInfo> albums, ThumbnailCache thumbLoader) {
+            public HorizontalAlbumsListView(List<ArtistAlbumInfo> albums, ThumbnailCache thumbLoader) {
                 super(HORIZONTAL, 0);
                 this.albums = albums;
                 this.thumbLoader = thumbLoader;
@@ -193,6 +232,7 @@ public class FrontpagePage extends Box {
                 var factory = new SignalListItemFactory();
                 factory.onSetup(object -> {
                     ListItem listitem = (ListItem) object;
+                    listitem.setActivatable(true);
                     var item = new OverviewAlbumChild(thumbLoader);
                     listitem.setChild(item);
                 });
@@ -203,6 +243,7 @@ public class FrontpagePage extends Box {
                     if (child == null || item == null) {
                         return;
                     }
+                    listitem.setActivatable(true);
 
                     // The ListIndexModel contains ListIndexItems that contain only their index in the list.
                     int index = item.getIndex();
@@ -240,8 +281,8 @@ public class FrontpagePage extends Box {
             }
         }
 
-        private HorizontalAlbumsFlowBox flowBox(List<ArtistAlbumInfo> list) {
-            return new HorizontalAlbumsFlowBox(list, this.thumbLoader);
+        private HorizontalAlbumsFlowBoxV3 flowBox(List<ArtistAlbumInfo> list) {
+            return new HorizontalAlbumsFlowBoxV3(list, this.thumbLoader);
         }
 
         public void setData(HomeOverview homeOverview) {

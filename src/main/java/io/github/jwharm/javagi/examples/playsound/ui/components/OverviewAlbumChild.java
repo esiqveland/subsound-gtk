@@ -29,6 +29,12 @@ public class OverviewAlbumChild extends Box {
     private ArtistAlbumInfo albumInfo;
 
     public void setAlbumInfo(ArtistAlbumInfo albumInfo) {
+        if (this.albumInfo != null) {
+            // stops blinking on hover when the ListItem is updated again:
+            if (this.albumInfo.id().equals(albumInfo.id())) {
+                return;
+            }
+        }
         this.albumInfo = albumInfo;
         this.albumTitle.setLabel(albumInfo.name());
         this.albumArtist.setLabel(albumInfo.artistName());
