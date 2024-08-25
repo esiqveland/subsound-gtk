@@ -33,17 +33,61 @@ public class MainApplication {
     private final SubsonicClient client;
     private final String cssMain;
 
+    private final ViewStack viewStack = ViewStack.builder().build();
+    private final NavigationView navigationView = NavigationView.builder().build();
+    private AppNavigation appNavigation;
+    private ArtistInfoLoader artistContainer;
+
     public MainApplication(AppManager appManager) {
         this.appManager = appManager;
         this.thumbLoader = appManager.getThumbnailCache();
         this.client = appManager.getClient();
         this.cssMain = mustRead(Path.of("src/main/resources/css/main.css"));
+        this.artistContainer = new ArtistInfoLoader(
+                thumbLoader,
+                client,
+                albumInfo -> this.appNavigation.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(albumInfo.id()))
+        );
     }
 
     public void runActivate(Application app) {
         var provider = CssProvider.builder().build();
         provider.loadFromString(cssMain);
         StyleContext.addProviderForDisplay(Display.getDefault(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+        this.appNavigation = new AppNavigation((appRoute) -> switch (appRoute) {
+            case AppNavigation.AppRoute.RouteAlbumsOverview routeAlbumsOverview -> {
+                viewStack.setVisibleChildName("albumsPage");
+                yield true;
+            }
+            case AppNavigation.AppRoute.RouteArtistInfo routeArtistInfo -> {
+                artistContainer.setArtistId(routeArtistInfo.artistId());
+                viewStack.setVisibleChildName("artistInfoPage");
+                yield true;
+            }
+            case AppNavigation.AppRoute.RouteArtistsOverview routeArtistsOverview -> {
+                viewStack.setVisibleChildName("artistsPage");
+                yield true;
+            }
+            case AppNavigation.AppRoute.RouteHome routeHome -> {
+                viewStack.setVisibleChildName("testPage");
+                yield false;
+            }
+            case AppNavigation.AppRoute.RouteStarred starred -> {
+                viewStack.setVisibleChildName("starredPage");
+                yield false;
+            }
+            case AppNavigation.AppRoute.RouteAlbumInfo route -> {
+                var viewAlbumPage = new AlbumInfoLoader(this.thumbLoader, this.appManager, appManager::handleAction)
+                        .setAlbumId(route.albumId());
+                NavigationPage albumPage = NavigationPage.builder().setChild(viewAlbumPage).setTitle("%s".formatted(route.albumId())).build();
+                navigationView.push(albumPage);
+
+//                albumInfoContainer.setAlbumId(route.albumId());
+//                viewStack.setVisibleChildName("albumInfoPage");
+                yield true;
+            }
+        });
 
         var searchButton = Button.builder()
                 .setIconName(Icons.SearchEdit.getIconName())
@@ -91,15 +135,17 @@ public class MainApplication {
         var playlistsContainer = BoxFullsize().build();
         playlistsContainer.append(playlistsMe);
 
-        NavigationView navigationView = NavigationView.builder().build();
-        ViewStack viewStack = ViewStack.builder().build();
         {
             var testPlayerPage = new TestPlayerPage(this.appManager);
             this.appManager.loadSource(testPlayerPage.knownSongs.getFirst().toSongInfo()).join();
             ViewStackPage testPage = viewStack.addTitled(testPlayerPage, "testPage", "Testpage");
         }
         {
-            var frontPageContainer = new FrontpagePage(thumbLoader, appManager);
+            var frontPageContainer = new FrontpagePage(
+                    thumbLoader,
+                    appManager,
+                    albumInfo -> this.appNavigation.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(albumInfo.id()))
+            );
             ViewStackPage frontPage = viewStack.addTitled(frontPageContainer, "frontPage", "Home");
         }
         {
@@ -108,14 +154,18 @@ public class MainApplication {
             ViewStackPage starredPage = viewStack.addTitled(starredPageContainer, "starredPage", "Starred");
         }
         var artists = this.client.getArtists();
-        var artistListBox = new ArtistsListBox(thumbLoader, client, artists.list(), albumInfo -> {});
+        var artistListBox = new ArtistsListBox(
+                thumbLoader,
+                client,
+                artists.list(),
+                albumInfo -> this.appNavigation.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(albumInfo.id()))
+        );
         {
             var artistsContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
             artistsContainer.append(artistListBox);
             ViewStackPage artistsPage = viewStack.addTitledWithIcon(artistsContainer, "artistsPage", "Artists", Icons.Artist.getIconName());
         }
 
-        var artistContainer = new ArtistInfoLoader(thumbLoader, client, (albumInfo) -> {});
         {
             var artistId = "7bfaa1b4f3be9ef4f7275de2511da1aa";
             artistContainer.setArtistId(artistId);
@@ -136,43 +186,6 @@ public class MainApplication {
         {
             ViewStackPage albumInfoPage = viewStack.addTitledWithIcon(albumInfoContainer, "albumInfoPage", "AlbumInfo", Icons.Albums.getIconName());
         }
-
-        var appNavigation = new AppNavigation((appRoute) -> switch (appRoute) {
-            case AppNavigation.AppRoute.RouteAlbumsOverview routeAlbumsOverview -> {
-                viewStack.setVisibleChildName("albumsPage");
-                yield true;
-            }
-            case AppNavigation.AppRoute.RouteArtistInfo routeArtistInfo -> {
-                artistContainer.setArtistId(routeArtistInfo.artistId());
-                viewStack.setVisibleChildName("artistInfoPage");
-                yield true;
-            }
-            case AppNavigation.AppRoute.RouteArtistsOverview routeArtistsOverview -> {
-                viewStack.setVisibleChildName("artistsPage");
-                yield true;
-            }
-            case AppNavigation.AppRoute.RouteHome routeHome -> {
-                viewStack.setVisibleChildName("testPage");
-                yield false;
-            }
-            case AppNavigation.AppRoute.RouteStarred starred -> {
-                viewStack.setVisibleChildName("starredPage");
-                yield false;
-            }
-            case AppNavigation.AppRoute.RouteAlbumInfo route -> {
-                var viewAlbumPage = new AlbumInfoLoader(this.thumbLoader, this.appManager, appManager::handleAction)
-                        .setAlbumId(route.albumId());
-                NavigationPage albumPage = NavigationPage.builder().setChild(viewAlbumPage).setTitle("%s".formatted(route.albumId())).build();
-                navigationView.push(albumPage);
-
-//                albumInfoContainer.setAlbumId(route.albumId());
-//                viewStack.setVisibleChildName("albumInfoPage");
-                yield true;
-            }
-        });
-
-        artistListBox.setOnAlbumSelected(albumInfo -> appNavigation.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(albumInfo.id())));
-        artistContainer.setOnAlbumSelected(albumInfo -> appNavigation.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(albumInfo.id())));
 
         viewStack.getPages().onSelectionChanged((position, nItems) -> {
             var visibleChild = viewStack.getVisibleChildName();
