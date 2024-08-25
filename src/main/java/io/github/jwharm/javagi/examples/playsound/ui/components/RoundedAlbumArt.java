@@ -5,11 +5,18 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.Cover
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import org.gnome.adw.Clamp;
 import org.gnome.gdk.Texture;
-import org.gnome.gdkpixbuf.InterpType;
 import org.gnome.gdkpixbuf.Pixbuf;
 import org.gnome.gdkpixbuf.PixbufLoader;
 import org.gnome.glib.GLib;
-import org.gnome.gtk.*;
+import org.gnome.gtk.Align;
+import org.gnome.gtk.Box;
+import org.gnome.gtk.ContentFit;
+import org.gnome.gtk.Grid;
+import org.gnome.gtk.Image;
+import org.gnome.gtk.Orientation;
+import org.gnome.gtk.Overflow;
+import org.gnome.gtk.Picture;
+import org.gnome.gtk.Widget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

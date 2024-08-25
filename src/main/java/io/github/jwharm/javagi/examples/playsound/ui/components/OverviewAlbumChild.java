@@ -6,6 +6,7 @@ import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
+import org.gnome.gtk.GestureClick;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Widget;
@@ -13,6 +14,7 @@ import org.gnome.pango.EllipsizeMode;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.addHover;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
@@ -25,6 +27,8 @@ public class OverviewAlbumChild extends Box {
     private final Label albumArtist;
     private final Label yearLabel;
     private final AlbumCoverHolder albumCoverHolder;
+    private final GestureClick gestureClick;
+    private final Consumer<ArtistAlbumInfo> onAction;
 
     private ArtistAlbumInfo albumInfo;
 
@@ -42,10 +46,9 @@ public class OverviewAlbumChild extends Box {
         this.albumCoverHolder.setArtwork(albumInfo.coverArt());
     }
 
-    public OverviewAlbumChild(
-            ThumbnailCache thumbLoader
-    ) {
+    public OverviewAlbumChild(ThumbnailCache thumbLoader, Consumer<ArtistAlbumInfo> onAction) {
         super(Orientation.VERTICAL, 0);
+        this.onAction = onAction;
         //setCssClasses(cssClasses("card", "activatable"));
         addHover(
                 this,
@@ -58,8 +61,15 @@ public class OverviewAlbumChild extends Box {
                     this.removeCssClass("activatable");
                 })
         );
+        gestureClick = new GestureClick();
+        gestureClick.onReleased((int nPress, double x, double y) -> {
+            System.out.println("clicked: " + this.albumInfo.name());
+            this.onAction.accept(this.albumInfo);
+        });
+        this.addController(gestureClick);
+
         this.thumbLoader = thumbLoader;
-        this.albumCoverHolder = new AlbumCoverHolder(thumbLoader);
+        this.albumCoverHolder = new AlbumCoverHolder(this.thumbLoader);
         this.albumTitle = Label.builder()
                 .setLabel("")
                 .setCssClasses(cssClasses("heading"))
@@ -99,7 +109,6 @@ public class OverviewAlbumChild extends Box {
     }
 
 
-
     public static class AlbumCoverHolder extends Box {
         private static final Widget PLACEHOLDER = RoundedAlbumArt.placeholderImage(COVER_SIZE);
         private final ThumbnailCache thumbLoader;
@@ -121,7 +130,7 @@ public class OverviewAlbumChild extends Box {
             }
             Widget next = this.artwork
                     .map(coverArt -> new RoundedAlbumArt(coverArt, this.thumbLoader, COVER_SIZE))
-                    .map(a -> (Widget)a)
+                    .map(a -> (Widget) a)
                     .orElse(PLACEHOLDER);
             this.ref.set(next);
             this.append(next);

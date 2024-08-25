@@ -1,11 +1,13 @@
 package io.github.jwharm.javagi.examples.playsound.ui.views;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
+import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistAlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.HomeOverview;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.ui.components.AlbumFlowBoxChild;
 import io.github.jwharm.javagi.examples.playsound.ui.components.AlbumsFlowBox;
+import io.github.jwharm.javagi.examples.playsound.ui.components.BoxHolder;
 import io.github.jwharm.javagi.examples.playsound.ui.components.LoadingSpinner;
 import io.github.jwharm.javagi.examples.playsound.ui.components.OverviewAlbumChild;
 import io.github.jwharm.javagi.examples.playsound.ui.views.FrontpagePage.FrontpagePageState.Loading;
@@ -24,7 +26,10 @@ import org.gnome.gtk.SingleSelection;
 import org.gnome.gtk.Stack;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static io.github.jwharm.javagi.examples.playsound.ui.views.ArtistInfoFlowBox.BIG_SPACING;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.borderBox;
@@ -33,16 +38,15 @@ import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 
 public class FrontpagePage extends Box {
-
-
     sealed interface FrontpagePageState {
-        record Loading() implements FrontpagePageState {}
-        record Ready(HomeOverview data) implements FrontpagePageState {}
-        record Error(Throwable t) implements FrontpagePageState {}
+        record Loading() implements FrontpagePageState {};
+        record Ready(HomeOverview data) implements FrontpagePageState {};
+        record Error(Throwable t) implements FrontpagePageState {};
     }
 
     private final ThumbnailCache thumbLoader;
     private final AppManager appManager;
+    private final Consumer<ArtistAlbumInfo> onAlbumSelected;
     private final AtomicReference<FrontpagePageState> state = new AtomicReference<>(new Loading());
 
     private final Box view;
@@ -51,8 +55,9 @@ public class FrontpagePage extends Box {
     private final Label errorLabel;
     private final HomeView homeView;
 
-    public FrontpagePage(ThumbnailCache thumbLoader, AppManager appManager) {
+    public FrontpagePage(ThumbnailCache thumbLoader, AppManager appManager, Consumer<ArtistAlbumInfo> onAlbumSelected) {
         super(Orientation.VERTICAL, 0);
+        this.onAlbumSelected = onAlbumSelected;
         this.setHexpand(true);
         this.setVexpand(true);
         this.setHalign(START);
@@ -61,8 +66,9 @@ public class FrontpagePage extends Box {
         this.view = borderBox(Orientation.VERTICAL, BIG_SPACING).setHalign(START).setValign(START).build();
         this.thumbLoader = thumbLoader;
         this.appManager = appManager;
-        this.homeView = new HomeView(thumbLoader);
-        this.onMap(() -> this.doLoad());
+        this.homeView = new HomeView(thumbLoader, this.appManager, this.onAlbumSelected);
+        //this.onMap(() -> this.doLoad());
+        this.onRealize(() -> this.doLoad());
 
         this.viewStack = Stack.builder().setHhomogeneous(false).setHexpand(true).setVexpand(true).build();
         this.viewStack.setHalign(START);
@@ -112,28 +118,45 @@ public class FrontpagePage extends Box {
 
     private static class HomeView extends Box {
         private final ThumbnailCache thumbLoader;
+        private final AppManager appManager;
+        private final Consumer<ArtistAlbumInfo> onAlbumSelected;
 
         private HomeOverview data;
 
         private final Label recentLabel = heading1("Recently played").build();
-        private final Label newLabel = heading1("Newly added").build();
+        private final Label newLabel = heading1("Newly added releases").build();
+        private final Label mostLabel = heading1("Most played").build();
 
-        private HorizontalAlbumsFlowBoxV3 recentList;
-        private HorizontalAlbumsFlowBoxV3 newList;
+        private final BoxHolder recentList;
+        private final BoxHolder newList;
+        private final BoxHolder mostPlayedList;
 
-        public HomeView(ThumbnailCache thumbLoader) {
+        public HomeView(ThumbnailCache thumbLoader, AppManager appManager, Consumer<ArtistAlbumInfo> onAlbumSelected) {
             super(Orientation.VERTICAL, 0);
+            this.appManager = appManager;
+            this.onAlbumSelected = onAlbumSelected;
             this.setHexpand(true);
             this.setVexpand(true);
             this.setHalign(START);
             this.setValign(START);
             this.thumbLoader = thumbLoader;
-            this.recentList = flowBox(List.of());
-            this.newList = flowBox(List.of());
+            this.recentList = holder();
+            this.newList = holder();
+            this.mostPlayedList = holder();
             this.append(recentLabel);
             this.append(recentList);
             this.append(newLabel);
             this.append(newList);
+            this.append(mostLabel);
+            this.append(mostPlayedList);
+        }
+
+        private BoxHolder holder() {
+            var h = new BoxHolder();
+            h.setHexpand(true);
+            h.setHalign(START);
+            h.setValign(START);
+            return h;
         }
 
         public static class HorizontalAlbumsFlowBoxV1 extends Box {
@@ -179,15 +202,25 @@ public class FrontpagePage extends Box {
 
         public static class HorizontalAlbumsFlowBoxV3 extends Box {
             private final List<ArtistAlbumInfo> albums;
-            private final List<AlbumFlowBoxChild> list;
+            private final List<OverviewAlbumChild> list;
+            //private final List<AlbumFlowBoxChild> list;
             private final Box carousel;
             private final ThumbnailCache thumbLoader;
             private final ScrolledWindow scroll;
+            private final Function<PlayerAction, CompletableFuture<Void>> onAction;
+            private final Consumer<ArtistAlbumInfo> onAlbumSelected;
 
-            public HorizontalAlbumsFlowBoxV3(List<ArtistAlbumInfo> albums, ThumbnailCache thumbLoader) {
+            public HorizontalAlbumsFlowBoxV3(
+                    List<ArtistAlbumInfo> albums,
+                    ThumbnailCache thumbLoader,
+                    Function<PlayerAction, CompletableFuture<Void>> onAction,
+                    Consumer<ArtistAlbumInfo> onAlbumSelected
+            ) {
                 super(HORIZONTAL, 0);
                 this.albums = albums;
                 this.thumbLoader = thumbLoader;
+                this.onAction = onAction;
+                this.onAlbumSelected = onAlbumSelected;
                 this.setHalign(START);
                 this.setHexpand(true);
                 this.carousel = Box.builder()
@@ -198,10 +231,12 @@ public class FrontpagePage extends Box {
                         .setSpacing(24)
                         .build();
                 this.list = this.albums.stream().map(album -> {
-                    var item = new AlbumFlowBoxChild(this.thumbLoader, album);
+//                    var item = new AlbumFlowBoxChild(this.thumbLoader, album);
+                    var item = new OverviewAlbumChild(this.thumbLoader, this.onAlbumSelected);
+                    item.setAlbumInfo(album);
                     return item;
                 }).toList();
-                for (AlbumFlowBoxChild albumFlowBoxChild : list) {
+                for (var albumFlowBoxChild : list) {
                     this.carousel.append(albumFlowBoxChild);
                 }
                 this.scroll = ScrolledWindow.builder()
@@ -217,23 +252,29 @@ public class FrontpagePage extends Box {
         }
 
         public static class HorizontalAlbumsListView extends Box {
+            private final ThumbnailCache thumbLoader;
+            private final Consumer<ArtistAlbumInfo> onAlbumSelected;
             private final List<ArtistAlbumInfo> albums;
             private final ListView listView;
-            private final ThumbnailCache thumbLoader;
             private final ListIndexModel listModel;
             private final ScrolledWindow scroll;
 
-            public HorizontalAlbumsListView(List<ArtistAlbumInfo> albums, ThumbnailCache thumbLoader) {
+            public HorizontalAlbumsListView(
+                    List<ArtistAlbumInfo> albums,
+                    ThumbnailCache thumbLoader,
+                    Consumer<ArtistAlbumInfo> onAlbumSelected
+            ) {
                 super(HORIZONTAL, 0);
                 this.albums = albums;
                 this.thumbLoader = thumbLoader;
+                this.onAlbumSelected = onAlbumSelected;
                 this.setHalign(START);
                 this.setHexpand(true);
                 var factory = new SignalListItemFactory();
                 factory.onSetup(object -> {
                     ListItem listitem = (ListItem) object;
                     listitem.setActivatable(true);
-                    var item = new OverviewAlbumChild(thumbLoader);
+                    var item = new OverviewAlbumChild(thumbLoader, this.onAlbumSelected);
                     listitem.setChild(item);
                 });
                 factory.onBind(object -> {
@@ -282,7 +323,7 @@ public class FrontpagePage extends Box {
         }
 
         private HorizontalAlbumsFlowBoxV3 flowBox(List<ArtistAlbumInfo> list) {
-            return new HorizontalAlbumsFlowBoxV3(list, this.thumbLoader);
+            return new HorizontalAlbumsFlowBoxV3(list, this.thumbLoader, this.appManager::handleAction, this.onAlbumSelected);
         }
 
         public void setData(HomeOverview homeOverview) {
@@ -293,14 +334,12 @@ public class FrontpagePage extends Box {
         private void update(HomeOverview data) {
             var r = flowBox(data.recent());
             var n = flowBox(data.newest());
+            var freq = flowBox(data.frequent());
             Utils.runOnMainThread(() -> {
-                this.remove(this.recentList);
-                this.remove(this.newList);
-                this.append(r);
-                this.append(n);
+                this.recentList.setChild(r);
+                this.newList.setChild(n);
+                this.mostPlayedList.setChild(freq);
             });
-            this.recentList = r;
-            this.newList = n;
         }
     }
 }
