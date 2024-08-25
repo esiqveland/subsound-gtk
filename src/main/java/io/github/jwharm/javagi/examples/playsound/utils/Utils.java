@@ -2,8 +2,10 @@ package io.github.jwharm.javagi.examples.playsound.utils;
 
 import org.gnome.glib.GLib;
 import org.gnome.glib.SourceOnceFunc;
+import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.EventControllerMotion;
+import org.gnome.gtk.Label;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.PropagationLimit;
 import org.gnome.gtk.PropagationPhase;
@@ -190,5 +192,9 @@ public class Utils {
                 .setMarginTop(margins)
                 .setMarginEnd(margins)
                 .setMarginBottom(margins);
+    }
+
+    public static Label.Builder<? extends Label.Builder> heading1(String labelText) {
+        return Label.builder().setLabel(labelText).setHalign(Align.START).setCssClasses(cssClasses("title-3"));
     }
 }
