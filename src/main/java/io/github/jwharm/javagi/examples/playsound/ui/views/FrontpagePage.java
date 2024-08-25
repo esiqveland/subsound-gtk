@@ -17,6 +17,7 @@ import org.gnome.gtk.Label;
 import org.gnome.gtk.ListItem;
 import org.gnome.gtk.ListView;
 import org.gnome.gtk.Orientation;
+import org.gnome.gtk.PolicyType;
 import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.SignalListItemFactory;
 import org.gnome.gtk.SingleSelection;
@@ -181,6 +182,7 @@ public class FrontpagePage extends Box {
             private final ListView listView;
             private final ThumbnailCache thumbLoader;
             private final ListIndexModel listModel;
+            private final ScrolledWindow scroll;
 
             public HorizontalAlbumsFlowBox(List<ArtistAlbumInfo> albums, ThumbnailCache thumbLoader) {
                 super(HORIZONTAL, 0);
@@ -226,7 +228,15 @@ public class FrontpagePage extends Box {
 //                for (AlbumFlowBoxChild albumFlowBoxChild : list) {
 //                    this.carousel.append(albumFlowBoxChild);
 //                }
-                this.append(this.listView);
+                this.scroll = ScrolledWindow.builder()
+                        .setHexpand(true)
+                        .setVexpand(true)
+                        .setPropagateNaturalHeight(true)
+                        .setPropagateNaturalWidth(true)
+                        .setVscrollbarPolicy(PolicyType.NEVER)
+                        .build();
+                this.scroll.setChild(this.listView);
+                this.append(this.scroll);
             }
         }
 
