@@ -62,13 +62,13 @@ public class StarredListView extends Box {
             ListItem listitem = (ListItem) object;
             listitem.setActivatable(true);
 
-            var item = new StarredItemActionRow(this.thumbLoader, this.onAction);
+            var item = new StarredItemRow(this.thumbLoader, this.onAction);
             listitem.setChild(item);
         });
         factory.onBind(object -> {
             ListItem listitem = (ListItem) object;
             ListIndexModel.ListIndex item = (ListIndexModel.ListIndex) listitem.getItem();
-            StarredItemActionRow child = (StarredItemActionRow) listitem.getChild();
+            StarredItemRow child = (StarredItemRow) listitem.getChild();
             if (child == null || item == null) {
                 return;
             }
@@ -83,7 +83,8 @@ public class StarredListView extends Box {
         });
         this.listModel = ListIndexModel.newInstance(data.songs().size());
         this.listView = ListView.builder()
-                .setModel(new SingleSelection(this.listModel))
+                //.setCssClasses(cssClasses("boxed-list"))
+                .setShowSeparators(false)
                 .setOrientation(VERTICAL)
                 .setHexpand(true)
                 .setVexpand(true)
@@ -91,6 +92,7 @@ public class StarredListView extends Box {
                 .setValign(START)
                 .setFocusOnClick(true)
                 .setSingleClickActivate(false)
+                .setModel(new SingleSelection(this.listModel))
                 .setFactory(factory)
                 .build();
         this.listView.onActivate(index -> {
@@ -103,12 +105,14 @@ public class StarredListView extends Box {
         this.append(this.listView);
     }
 
-    public static class StarredItemActionRow extends ActionRow {
+    public static class StarredItemRow extends Box {
         private final ThumbnailCache thumbLoader;
         private final Function<PlayerAction, CompletableFuture<Void>> onAction;
 
         private SongInfo songInfo;
 
+        private final ActionRow row;
+        private final Box suffixBox;
         private final NowPlayingOverlayIcon nowPlayingOverlayIcon;
         private final AlbumCoverHolderSmall albumCoverHolder;
         private final StarButton starredButton;
@@ -119,10 +123,14 @@ public class StarredListView extends Box {
         private final Label fileSizeLabel;
         private final Label bitRateLabel;
 
-        public StarredItemActionRow(
+        public StarredItemRow(
                 ThumbnailCache thumbLoader,
                 Function<PlayerAction, CompletableFuture<Void>> onAction
         ) {
+            super(VERTICAL, 0);
+            this.setMarginStart(2);
+            this.setMarginEnd(2);
+
             this.thumbLoader = thumbLoader;
             this.onAction = onAction;
 
@@ -138,7 +146,7 @@ public class StarredListView extends Box {
             );
 
             albumCoverHolder = new AlbumCoverHolderSmall(this.thumbLoader);
-            var suffix = Box.builder()
+            suffixBox = Box.builder()
                     .setOrientation(HORIZONTAL)
                     .setHalign(Align.END)
                     .setValign(CENTER)
@@ -189,19 +197,21 @@ public class StarredListView extends Box {
                 System.out.println("SongList.playButton: play " + this.songInfo.title() + " (%s)".formatted(this.songInfo.id()));
                 this.selectSong(this.songInfo);
             });
-            suffix.append(revealer);
-            suffix.append(starredButton);
+            suffixBox.append(revealer);
+            suffixBox.append(starredButton);
 
-            this.setTitle("");
-            this.setSubtitle("");
-            this.setUseMarkup(false);
-            this.setActivatable(true);
-            this.setFocusable(true);
-            this.setFocusOnClick(true);
+            this.row = ActionRow.builder()
+                    .setTitle("")
+                    .setSubtitle("")
+                    .setUseMarkup(false)
+                    .setActivatable(false)
+                    .setFocusable(true)
+                    .setFocusOnClick(true)
+                    .build();
 
             var isHoverActive = new AtomicBoolean(false);
             addHover2(
-                    this,
+                    row,
                     () -> {
                         isHoverActive.set(true);
                         revealer.setRevealChild(true);
@@ -223,8 +233,10 @@ public class StarredListView extends Box {
 
 
             nowPlayingOverlayIcon = new NowPlayingOverlayIcon(48, this.albumCoverHolder);
-            this.addPrefix(nowPlayingOverlayIcon);
-            this.addSuffix(suffix);
+
+            this.row.addPrefix(nowPlayingOverlayIcon);
+            this.row.addSuffix(suffixBox);
+            this.append(this.row);
         }
 
         private void selectSong(SongInfo songInfo) {
@@ -246,10 +258,11 @@ public class StarredListView extends Box {
             var songInfo = this.songInfo;
 
             String durationString = Utils.formatDurationShort(songInfo.duration());
-            String subtitle = "%s ⦁ %s".formatted(songInfo.artist(), durationString);
+            String subtitle = "%s ⦁ %s\n%s".formatted(songInfo.artist(), songInfo.album(), durationString);
 
-            this.setTitle(songInfo.title());
-            this.setSubtitle(subtitle);
+            this.row.setTitle(songInfo.title());
+            this.row.setSubtitle(subtitle);
+            this.row.setSubtitleLines(2);
 
             Optional.ofNullable(songInfo.suffix())
                     .filter(fileExt -> !fileExt.isBlank())
