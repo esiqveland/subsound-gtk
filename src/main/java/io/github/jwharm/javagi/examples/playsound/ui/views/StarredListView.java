@@ -5,7 +5,7 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ListS
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.ui.components.NowPlayingOverlayIcon;
-import io.github.jwharm.javagi.examples.playsound.ui.components.OverviewAlbumChild.AlbumCoverHolder;
+import io.github.jwharm.javagi.examples.playsound.ui.components.OverviewAlbumChild.AlbumCoverHolderSmall;
 import io.github.jwharm.javagi.examples.playsound.ui.components.StarButton;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.github.jwharm.javagi.gio.ListIndexModel;
@@ -16,10 +16,8 @@ import org.gnome.gtk.Button;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListItem;
 import org.gnome.gtk.ListView;
-import org.gnome.gtk.PolicyType;
 import org.gnome.gtk.Revealer;
 import org.gnome.gtk.RevealerTransitionType;
-import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.SignalListItemFactory;
 import org.gnome.gtk.SingleSelection;
 import org.gnome.gtk.StateFlags;
@@ -43,7 +41,6 @@ public class StarredListView extends Box {
     private final ListStarred data;
     private final ListView listView;
     private final ListIndexModel listModel;
-    private final ScrolledWindow scroll;
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
 
     public StarredListView(
@@ -55,7 +52,8 @@ public class StarredListView extends Box {
         this.data = data;
         this.thumbLoader = thumbLoader;
         this.onAction = onAction;
-        this.setHalign(START);
+        this.setHalign(CENTER);
+        this.setValign(START);
         this.setHexpand(true);
         this.setVexpand(true);
 
@@ -87,22 +85,14 @@ public class StarredListView extends Box {
         this.listView = ListView.builder()
                 .setModel(new SingleSelection(this.listModel))
                 .setOrientation(VERTICAL)
-                .setHexpand(false)
+                .setHexpand(true)
                 .setVexpand(true)
                 .setHalign(START)
                 .setValign(START)
                 .setSingleClickActivate(true)
                 .setFactory(factory)
                 .build();
-        this.scroll = ScrolledWindow.builder()
-                .setHexpand(false)
-                .setVexpand(true)
-                .setPropagateNaturalHeight(true)
-                .setPropagateNaturalWidth(true)
-                .setHscrollbarPolicy(PolicyType.NEVER)
-                .build();
-        this.scroll.setChild(this.listView);
-        this.append(this.scroll);
+        this.append(this.listView);
     }
 
     public static class StarredItemActionRow extends ActionRow {
@@ -112,7 +102,7 @@ public class StarredListView extends Box {
         private SongInfo songInfo;
 
         private final NowPlayingOverlayIcon nowPlayingOverlayIcon;
-        private final AlbumCoverHolder albumCoverHolder;
+        private final AlbumCoverHolderSmall albumCoverHolder;
         private final StarButton starredButton;
         private final Revealer revealer;
         private final Box hoverBox;
@@ -139,7 +129,7 @@ public class StarredListView extends Box {
                     }
             );
 
-            albumCoverHolder = new AlbumCoverHolder(this.thumbLoader);
+            albumCoverHolder = new AlbumCoverHolderSmall(this.thumbLoader);
             var suffix = Box.builder()
                     .setOrientation(HORIZONTAL)
                     .setHalign(Align.END)

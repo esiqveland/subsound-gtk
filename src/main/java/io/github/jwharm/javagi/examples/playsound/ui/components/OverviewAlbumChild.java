@@ -136,4 +136,32 @@ public class OverviewAlbumChild extends Box {
             this.append(next);
         }
     }
+
+    public static class AlbumCoverHolderSmall extends Box {
+        private static final Widget PLACEHOLDER = RoundedAlbumArt.placeholderImage(48);
+        private final ThumbnailCache thumbLoader;
+        private final AtomicReference<Widget> ref = new AtomicReference<>();
+        private Optional<CoverArt> artwork;
+
+        public AlbumCoverHolderSmall(ThumbnailCache thumbLoader) {
+            super(Orientation.VERTICAL, 0);
+            this.thumbLoader = thumbLoader;
+            this.ref.set(PLACEHOLDER);
+            this.append(PLACEHOLDER);
+        }
+
+        public void setArtwork(Optional<CoverArt> artwork) {
+            this.artwork = artwork;
+            var prev = this.ref.get();
+            if (prev != null) {
+                this.remove(prev);
+            }
+            Widget next = this.artwork
+                    .map(coverArt -> new RoundedAlbumArt(coverArt, this.thumbLoader, 48))
+                    .map(a -> (Widget) a)
+                    .orElse(PLACEHOLDER);
+            this.ref.set(next);
+            this.append(next);
+        }
+    }
 }
