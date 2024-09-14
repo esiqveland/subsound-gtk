@@ -260,6 +260,7 @@ public class AppManager {
                 // API actions
                 case PlayerAction.Star a -> this.starSong(a);
                 case PlayerAction.Unstar a -> this.unstarSong(a);
+                case PlayerAction.PlaySong playSong -> this.loadSource(playSong.song());
             }
         });
     }

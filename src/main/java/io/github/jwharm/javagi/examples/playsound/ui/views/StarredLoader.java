@@ -51,7 +51,7 @@ public class StarredLoader extends Box {
         CompletableFuture<ListStarred> adsf = doLoad();
         var loader = new FutureLoader<>(
                 adsf,
-                starred -> new SongList(thumbLoader, starred.songs(), this.onAction, this.onSongSelected::apply)
+                starred -> new StarredListView(starred, this.thumbLoader, this.onAction)
         );
         replaceWidget(loader);
         return this;

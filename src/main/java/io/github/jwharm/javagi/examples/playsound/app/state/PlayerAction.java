@@ -13,6 +13,7 @@ public sealed interface PlayerAction {
     record SeekTo(Duration position) implements PlayerAction {}
     record PlayQueue(List<SongInfo> queue, int position) implements PlayerAction {}
     record PlayPositionInQueue(int position) implements PlayerAction {}
+    record PlaySong(SongInfo song) implements PlayerAction {}
     record Enqueue(SongInfo song) implements PlayerAction {}
     record Star(SongInfo song) implements PlayerAction {}
     record Unstar(SongInfo song) implements PlayerAction {}

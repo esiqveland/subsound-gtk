@@ -178,6 +178,22 @@ public class Utils {
         return row;
     }
 
+    public static <T extends Widget> T addHover2(T row, Runnable onEnter, Runnable onLeave) {
+        var ec = EventControllerMotion.builder().setPropagationPhase(PropagationPhase.CAPTURE).setPropagationLimit(PropagationLimit.NONE).build();
+        var enterCallbackSignalConnection = ec.onEnter((x, y) -> {
+            onEnter.run();
+        });
+        var leaveSignal = ec.onLeave(() -> {
+            onLeave.run();
+        });
+        row.addController(ec);
+        row.onDestroy(() -> {
+            enterCallbackSignalConnection.disconnect();
+            leaveSignal.disconnect();
+        });
+        return row;
+    }
+
     public static boolean withinEpsilon(double value1, double value2, double epsilon) {
         var diff = Math.abs(value1 - value2);
         return diff < epsilon;
