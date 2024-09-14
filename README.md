@@ -1,5 +1,18 @@
+# subsound-gtk
 
-TODO:
+Subsonic compatible player in GTK4 / Adwaita
+
+Very early project still, but it works ok for basic playback and browsing.
+
+### Screenshots
+
+A few samples of what the UI looks like:
+
+![Artists listing](screenshots/artists.png)
+
+![Starred playlist](screenshots/starred.png)
+
+### TODO
 
 - [X] songlist: duration, tracknumber, starred
 - [X] songlist: bitrate, size, format
@@ -8,10 +21,18 @@ TODO:
 - [X] songlist: Single click to select, double-click/enter to activate (start playback)
 - [X] songlist: Hover-shows-play ?
   - [ ] songlist: hover play icon is not tab-able for focus when row is selected, only when hover...
-- [X] Favorites page
-  - [ ] remove the track number 
-  - [ ] display artist
-  - [ ] display album?
+- [X] Starred page
+  - [X] remove the track number
+    - [ ] Attempt to add list item number as the first element in the prefix field
+  - [ ] goto artist when clicking artist name
+  - [X] display artist
+  - [X] make album art only load while in view
+  - [X] Fix play on row click + make focusable and double click to activate
+  - [X] Fix keyboard navigation in the listview
+  - [ ] add a reload button or keep starred list up-to-date in the app at least
+  - [X] Make cover art be prettier in the ActionRow
+  - [ ] Fix blinking when hover/unhover
+  - [ ] display whole albums / artist that have been starred?
 - [X] cache thumbnails on disk
   - [ ] use a paintable instead ? pixbuf is deprecated
   - [ ] switch load directly from cached file?
@@ -87,11 +108,23 @@ TODO:
     - [ ] play/pause
     - [ ] skip
 
+Features:
+- [X] Local music cache
+- [X] Local artwork cache
+- [X] Transcoding music
+- [ ] Metadata cache / offline storage
+- [ ] Download manager for offline usage
+- [ ] Configuration UI
+- [ ] Onboarding UI
+- [X] Starred listing
+- [X] Browse albums
+- [X] Browse artists
+- [X] Plays any track!
 
 Later goals:
- - [ ] support multiple servers
- - [ ] could support chromecast
+ - [ ] support multiple server types
  - [ ] support the subsonic podcast features
+ - [ ] could support chromecast
  - [ ] support embedded image tags? https://github.com/neithern/g4music/blob/bf80b5cad448a57c635f01d0a315671fef045d14/src/gst/tag-parser.vala#L99
 
 Non-goals:
