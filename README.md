@@ -112,10 +112,10 @@ Features:
 - [X] Local music cache
 - [X] Local artwork cache
 - [X] Transcoding music
-- [ ] Metadata cache / offline storage
-- [ ] Download manager for offline usage
-- [ ] Configuration UI
+- [ ] Metadata cache / offline storage for song/artist metadata
+- [ ] Download manager for offline available content
 - [ ] Onboarding UI
+- [ ] Configuration UI
 - [X] Starred listing
 - [X] Browse albums
 - [X] Browse artists
@@ -123,6 +123,7 @@ Features:
 
 Later goals:
  - [ ] support multiple server types
+ - [ ] Player for local media, not just for a streaming server
  - [ ] support the subsonic podcast features
  - [ ] could support chromecast
  - [ ] support embedded image tags? https://github.com/neithern/g4music/blob/bf80b5cad448a57c635f01d0a315671fef045d14/src/gst/tag-parser.vala#L99
