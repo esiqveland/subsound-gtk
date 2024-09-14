@@ -89,9 +89,17 @@ public class StarredListView extends Box {
                 .setVexpand(true)
                 .setHalign(START)
                 .setValign(START)
-                .setSingleClickActivate(true)
+                .setFocusOnClick(true)
+                .setSingleClickActivate(false)
                 .setFactory(factory)
                 .build();
+        this.listView.onActivate(index -> {
+            var songInfo = this.data.songs().get(index);
+            if (songInfo == null) {
+                return;
+            }
+            this.onAction.apply(new PlayerAction.PlaySong(songInfo));
+        });
         this.append(this.listView);
     }
 
@@ -252,6 +260,7 @@ public class StarredListView extends Box {
                     .map("%d kbps"::formatted)
                     .ifPresent(this.bitRateLabel::setLabel);
             this.albumCoverHolder.setArtwork(songInfo.coverArt());
+            this.starredButton.setStarredAt(songInfo.starred());
         }
     }
 }
