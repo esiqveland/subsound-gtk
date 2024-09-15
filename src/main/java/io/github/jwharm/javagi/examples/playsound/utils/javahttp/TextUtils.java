@@ -17,4 +17,9 @@ public class TextUtils {
         var cleaned = biography.substring(0, index).trim();
         return new ServerClient.Biography(biography, cleaned, linkString);
     }
+
+    public static String padLeft(String inputString, int length) {
+        return String.format("%1$" + length + "s", inputString);
+    }
 }
+

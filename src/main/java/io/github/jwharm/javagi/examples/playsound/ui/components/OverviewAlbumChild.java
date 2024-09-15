@@ -151,6 +151,9 @@ public class OverviewAlbumChild extends Box {
         }
 
         public void setArtwork(Optional<CoverArt> artwork) {
+            if (this.artwork == artwork) {
+                return;
+            }
             this.artwork = artwork;
             var prev = this.ref.get();
             if (prev != null) {

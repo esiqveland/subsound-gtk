@@ -25,6 +25,7 @@ import org.gnome.gtk.RevealerTransitionType;
 import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.StateFlags;
 import org.gnome.gtk.Widget;
+import org.gnome.pango.EllipsizeMode;
 
 import java.util.List;
 import java.util.Optional;
@@ -299,6 +300,6 @@ public class AlbumInfoBox extends Box {
     }
 
     public static Label infoLabel(String label, String[] cssClazz) {
-        return Label.builder().setLabel(label).setCssClasses(cssClazz).setUseMarkup(false).build();
+        return Label.builder().setLabel(label).setCssClasses(cssClazz).setUseMarkup(false).setEllipsize(EllipsizeMode.END).build();
     }
 }

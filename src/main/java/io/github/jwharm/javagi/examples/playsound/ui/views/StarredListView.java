@@ -4,6 +4,7 @@ import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ListStarred;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
+import io.github.jwharm.javagi.examples.playsound.ui.components.Classes;
 import io.github.jwharm.javagi.examples.playsound.ui.components.NowPlayingOverlayIcon;
 import io.github.jwharm.javagi.examples.playsound.ui.components.OverviewAlbumChild.AlbumCoverHolderSmall;
 import io.github.jwharm.javagi.examples.playsound.ui.components.StarButton;
@@ -13,6 +14,7 @@ import org.gnome.adw.ActionRow;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
+import org.gnome.gtk.Justification;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListItem;
 import org.gnome.gtk.ListView;
@@ -21,6 +23,8 @@ import org.gnome.gtk.RevealerTransitionType;
 import org.gnome.gtk.SignalListItemFactory;
 import org.gnome.gtk.SingleSelection;
 import org.gnome.gtk.StateFlags;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -31,12 +35,14 @@ import static io.github.jwharm.javagi.examples.playsound.ui.views.AlbumInfoBox.i
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.addHover2;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.formatBytesSI;
+import static io.github.jwharm.javagi.examples.playsound.utils.javahttp.TextUtils.padLeft;
 import static org.gnome.gtk.Align.CENTER;
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
 
 public class StarredListView extends Box {
+    private static final Logger log = LoggerFactory.getLogger(StarredListView.class);
     private final ThumbnailCache thumbLoader;
     private final ListStarred data;
     private final ListView listView;
@@ -68,21 +74,28 @@ public class StarredListView extends Box {
         factory.onBind(object -> {
             ListItem listitem = (ListItem) object;
             ListIndexModel.ListIndex item = (ListIndexModel.ListIndex) listitem.getItem();
-            StarredItemRow child = (StarredItemRow) listitem.getChild();
-            if (child == null || item == null) {
+            if (item == null) {
                 return;
             }
-            listitem.setActivatable(true);
-
             // The ListIndexModel contains ListIndexItems that contain only their index in the list.
             int index = item.getIndex();
 
             // Retrieve the index of the item and show the entry from the ArrayList with random strings.
             var songInfo = this.data.songs().get(index);
-            child.setSongInfo(songInfo);
+            if (songInfo == null) {
+                return;
+            }
+            StarredItemRow child = (StarredItemRow) listitem.getChild();
+            if (child == null) {
+                return;
+            }
+            listitem.setActivatable(true);
+            log.info("bind {} {}", index, songInfo.title());
+            child.setSongInfo(songInfo, index);
         });
         this.listModel = ListIndexModel.newInstance(data.songs().size());
         this.listView = ListView.builder()
+                //.setCssClasses(cssClasses(Classes.richlist.className()))
                 //.setCssClasses(cssClasses("boxed-list"))
                 .setShowSeparators(false)
                 .setOrientation(VERTICAL)
@@ -106,13 +119,18 @@ public class StarredListView extends Box {
     }
 
     public static class StarredItemRow extends Box {
+        private static final int trackNumberLabelChars = 4;
+
         private final ThumbnailCache thumbLoader;
         private final Function<PlayerAction, CompletableFuture<Void>> onAction;
 
         private SongInfo songInfo;
+        private int index;
 
         private final ActionRow row;
+        private final Box prefixBox;
         private final Box suffixBox;
+        private final Label trackNumberLabel;
         private final NowPlayingOverlayIcon nowPlayingOverlayIcon;
         private final AlbumCoverHolderSmall albumCoverHolder;
         private final StarButton starredButton;
@@ -146,6 +164,14 @@ public class StarredListView extends Box {
             );
 
             albumCoverHolder = new AlbumCoverHolderSmall(this.thumbLoader);
+            prefixBox = Box.builder()
+                    .setOrientation(HORIZONTAL)
+                    .setHalign(START)
+                    .setValign(CENTER)
+                    .setVexpand(true)
+                    .setSpacing(0)
+                    .build();
+
             suffixBox = Box.builder()
                     .setOrientation(HORIZONTAL)
                     .setHalign(Align.END)
@@ -232,9 +258,22 @@ public class StarredListView extends Box {
             });
 
 
-            nowPlayingOverlayIcon = new NowPlayingOverlayIcon(48, this.albumCoverHolder);
+            this.nowPlayingOverlayIcon = new NowPlayingOverlayIcon(48, this.albumCoverHolder);
+            this.trackNumberLabel = infoLabel("    ", Classes.labelDim.add(Classes.labelNumeric));
+            //this.trackNumberLabel.setHexpand(false);
+            this.trackNumberLabel.setVexpand(false);
+            this.trackNumberLabel.setMarginEnd(6);
+            this.trackNumberLabel.setValign(CENTER);
+            this.trackNumberLabel.setSingleLineMode(true);
+            this.trackNumberLabel.setMaxWidthChars(4);
+            this.trackNumberLabel.setJustify(Justification.RIGHT);
+            this.trackNumberLabel.setSizeRequest(40, 32);
+            //Box trackNumberBox = Box.builder().setValign(CENTER).setVexpand(true).setHalign(END).build();
+            //trackNumberBox.append(trackNumberLabel);
+            prefixBox.append(trackNumberLabel);
+            prefixBox.append(nowPlayingOverlayIcon);
 
-            this.row.addPrefix(nowPlayingOverlayIcon);
+            this.row.addPrefix(prefixBox);
             this.row.addSuffix(suffixBox);
             this.append(this.row);
         }
@@ -246,8 +285,9 @@ public class StarredListView extends Box {
             this.onAction.apply(new PlayerAction.PlaySong(songInfo));
         }
 
-        public void setSongInfo(SongInfo songInfo) {
+        public void setSongInfo(SongInfo songInfo, int index) {
             this.songInfo = songInfo;
+            this.index = index;
             this.updateView();
         }
 
@@ -263,6 +303,10 @@ public class StarredListView extends Box {
             this.row.setTitle(songInfo.title());
             this.row.setSubtitle(subtitle);
             this.row.setSubtitleLines(2);
+            int trackNumber = this.index + 1;
+            String trackNumberText = padLeft("%d".formatted(trackNumber), trackNumberLabelChars);
+            log.info("trackNumberText='{}'", trackNumberText);
+            trackNumberLabel.setLabel(trackNumberText);
 
             Optional.ofNullable(songInfo.suffix())
                     .filter(fileExt -> !fileExt.isBlank())
