@@ -6,13 +6,12 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ListS
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.LoadSongResult;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
+import io.github.jwharm.javagi.examples.playsound.ui.components.BoxHolder;
 import io.github.jwharm.javagi.examples.playsound.ui.components.FutureLoader;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Orientation;
-import org.gnome.gtk.ScrolledWindow;
-import org.gnome.gtk.Widget;
 
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
@@ -24,7 +23,7 @@ public class StarredLoader extends Box {
     private final Function<SongInfo, CompletableFuture<LoadSongResult>> onSongSelected;
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
 
-    private final ScrolledWindow window;
+    private final BoxHolder holder;
 
     public StarredLoader(
             ThumbnailCache thumbLoader,
@@ -43,33 +42,28 @@ public class StarredLoader extends Box {
         this.setValign(Align.FILL);
         this.onShow(this::refresh);
         this.onRealize(this::refresh);
-        this.window = ScrolledWindow.builder()
-                .setVexpand(true)
-                .setHexpand(true)
-                .setHalign(Align.FILL)
-                .setValign(Align.FILL)
-                .build();
-        this.append(window);
+        this.holder = new BoxHolder();
+        this.append(holder);
     }
 
     public synchronized StarredLoader refresh() {
-        CompletableFuture<ListStarred> adsf = doLoad();
+        CompletableFuture<ListStarred> adsf = doLoad()
+                .thenApply(listStarred -> {
+                    int size = listStarred.songs().size();
+                    int newSize = listStarred.songs().size() * 20;
+                    var newList = new ArrayList<SongInfo>(newSize);
+                    for (int i = 0; i < newSize; i++) {
+                        int idx = i % size;
+                        newList.add(listStarred.songs().get(idx));
+                    }
+                    return new ListStarred(newList);
+                });
         var loader = new FutureLoader<>(
                 adsf,
                 starred -> new StarredListView(starred, this.thumbLoader, this.onAction)
         );
-        replaceWidget(loader);
+        this.holder.setChild(loader);
         return this;
-    }
-
-    private void replaceWidget(Widget w) {
-        Utils.runOnMainThread(() -> {
-            var old = this.window.getChild();
-            if (old != null) {
-                this.remove(old);
-            }
-            this.window.setChild(w);
-        });
     }
 
     private CompletableFuture<ListStarred> doLoad() {

@@ -1,5 +1,6 @@
 package io.github.jwharm.javagi.examples.playsound.ui.components;
 
+import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Widget;
@@ -20,13 +21,16 @@ public class BoxHolder extends Box {
     }
 
     public void setChild(Widget nextChild) {
-        var old = this.child;
-        this.child = nextChild;
-        if (old != null) {
-            this.remove(old);
-        }
-        this.append(child);
+        Utils.runOnMainThread(() -> {
+            var old = this.child;
+            this.child = nextChild;
+            if (old != null) {
+                this.remove(old);
+            }
+            this.append(child);
+        });
     }
+
     public Widget getChild() {
         return child;
     }

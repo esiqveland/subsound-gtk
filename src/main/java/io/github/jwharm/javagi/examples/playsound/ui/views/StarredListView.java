@@ -20,6 +20,7 @@ import org.gnome.gtk.ListItem;
 import org.gnome.gtk.ListView;
 import org.gnome.gtk.Revealer;
 import org.gnome.gtk.RevealerTransitionType;
+import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.SignalListItemFactory;
 import org.gnome.gtk.SingleSelection;
 import org.gnome.gtk.StateFlags;
@@ -48,6 +49,7 @@ public class StarredListView extends Box {
     private final ListView listView;
     private final ListIndexModel listModel;
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
+    private final ScrolledWindow scroll;
 
     public StarredListView(
             ListStarred data,
@@ -85,13 +87,14 @@ public class StarredListView extends Box {
             if (songInfo == null) {
                 return;
             }
-            StarredItemRow child = (StarredItemRow) listitem.getChild();
+            var child = (StarredItemRow) listitem.getChild();
             if (child == null) {
                 return;
             }
             listitem.setActivatable(true);
             log.info("factory.onBind: {} {}", index, songInfo.title());
             child.setSongInfo(songInfo, index);
+//            child.setLabel("%d %s - %s".formatted(index+1, songInfo.artist(), songInfo.title()));
         });
         this.listModel = ListIndexModel.newInstance(data.songs().size());
         this.listView = ListView.builder()
@@ -117,7 +120,16 @@ public class StarredListView extends Box {
             log.debug("listView.onActivate: {} {}", index, songInfo.title());
             this.onAction.apply(new PlayerAction.PlayQueue(songs, index));
         });
-        this.append(this.listView);
+        this.scroll = ScrolledWindow.builder()
+                .setVexpand(true)
+                .setHexpand(true)
+                .setHalign(Align.FILL)
+                .setValign(Align.FILL)
+                .setPropagateNaturalWidth(true)
+                .setPropagateNaturalHeight(true)
+                .build();
+        this.scroll.setChild(this.listView);
+        this.append(this.scroll);
     }
 
     public static class StarredItemRow extends Box {

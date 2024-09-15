@@ -1,6 +1,7 @@
 package io.github.jwharm.javagi.examples.playsound.ui.components;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public enum Classes {
@@ -35,7 +36,9 @@ public enum Classes {
     }
     public static String[] toClassnames(Classes clazz, Classes ...classes) {
         return Stream.concat(Stream.ofNullable(clazz), Arrays.stream(classes))
+                .filter(Objects::nonNull)
                 .map(Classes::className)
                 .toArray(String[]::new);
     }
+
 }
