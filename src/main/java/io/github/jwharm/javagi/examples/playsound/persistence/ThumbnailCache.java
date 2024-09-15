@@ -1,14 +1,22 @@
 package io.github.jwharm.javagi.examples.playsound.persistence;
 
-import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import io.github.jwharm.javagi.base.GErrorException;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.github.jwharm.javagi.examples.playsound.utils.javahttp.LoggingHttpClient;
+import org.gnome.gdkpixbuf.Pixbuf;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.*;
-import java.net.URI;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -23,20 +31,63 @@ import static io.github.jwharm.javagi.examples.playsound.persistence.SongCache.j
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.sha256;
 
 public class ThumbnailCache {
+    private static final Logger log = LoggerFactory.getLogger(ThumbnailCache.class);
+
     private final Path root;
     private final HttpClient client = new LoggingHttpClient(HttpClient.newBuilder().build());
     // semaphore limits concurrency a little, we could send 1000s request concurrently on page load of a e.g. starred page:
     private final Semaphore semaphore = new Semaphore(2);
+    private final Semaphore semaphorePixbuf = new Semaphore(2);
     private final ConcurrentHashMap<String, CompletableFuture<ThumbLoaded>> inFlight = new ConcurrentHashMap<>();
+
+    record PixbufCacheKey(
+            CoverArt coverArt,
+            String id,
+            int size
+    ) {
+    }
+
+    private final Cache<PixbufCacheKey, Pixbuf> pixbufCache = Caffeine.newBuilder()
+            .maximumSize(500)
+            .build();
 
     public ThumbnailCache(Path root) {
         this.root = root;
     }
 
+    public CompletableFuture<Pixbuf> loadPixbuf(CoverArt coverArt, int size) {
+        return Utils.doAsync(() -> {
+            try {
+                semaphorePixbuf.acquire(1);
+                var key = new PixbufCacheKey(coverArt, coverArt.coverArtId(), size);
+
+                var pixbuf = pixbufCache.get(key, k -> {
+                    ThumbLoaded loaded = loadThumbAsync(k.coverArt).join();
+                    String path = loaded.path().cachePath().toAbsolutePath().toString();
+                    log.debug("ThumbCache: cache miss: {} size={}", k.coverArt.coverArtId(), k.size);
+                    try {
+                        var p = Pixbuf.fromFileAtSize(
+                                path,
+                                k.size, k.size
+                        );
+                        return p;
+                    } catch (GErrorException e) {
+                        throw new RuntimeException("unable to create pixbuf from path='%s'".formatted(path), e);
+                    }
+                });
+                return pixbuf;
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } finally {
+                semaphorePixbuf.release(1);
+            }
+        });
+    }
+
     public void load(CoverArt coverArt, Consumer<byte[]> target) {
         var cachehPath = toCachePath(coverArt);
-        var filePath = cachehPath.cachePath().toAbsolutePath();
-        var file = filePath.toFile();
+        var cacheAbsPath = cachehPath.cachePath().toAbsolutePath();
+        var file = cacheAbsPath.toFile();
         if (file.exists() && file.length() > 0) {
             serveFile(file, target);
             return;
@@ -44,30 +95,7 @@ public class ThumbnailCache {
 
         var job = inFlight.computeIfAbsent(
                 coverArt.coverArtId(),
-                key -> loadThumbAsync(coverArt, cachehPath)
-                        .thenApply(thumbsLoaded -> {
-                            try {
-                                filePath.getParent().toFile().mkdirs();
-                                file.delete();
-
-                                var tmpFilePath = cachehPath.tmpFilePath().toAbsolutePath();
-                                var tmpFile = tmpFilePath.toFile();
-                                if (tmpFile.exists()) {
-                                    tmpFile.delete();
-                                }
-                                tmpFile.createNewFile();
-                                tmpFile.deleteOnExit();
-                                var out = new FileOutputStream(tmpFile);
-                                out.write(thumbsLoaded.blob);
-                                out.close();
-
-                                tmpFile.renameTo(file);
-
-                                return thumbsLoaded;
-                            } catch (IOException ex) {
-                                throw new RuntimeException(ex);
-                            }
-                        })
+                key -> loadThumbAsync(coverArt)
         );
 
         try {
@@ -93,14 +121,22 @@ public class ThumbnailCache {
     ) {
     }
 
-    private CompletableFuture<ThumbLoaded> loadThumbAsync(CoverArt coverArt, CachehPath cachehPath) {
+    private CompletableFuture<ThumbLoaded> loadThumbAsync(CoverArt coverArt) {
+        var cachehPath = toCachePath(coverArt);
+        var cacheAbsPath = cachehPath.cachePath().toAbsolutePath();
+        var cacheFile = cacheAbsPath.toFile();
         return Utils.doAsync(() -> {
-            var link = coverArt.coverArtLink();
-            var req = HttpRequest.newBuilder().GET().uri(link).build();
-            var bodyHandler = HttpResponse.BodyHandlers.ofByteArray();
-            //CompletableFuture<HttpResponse<Void>> httpResponseCompletableFuture = this.client.sendAsync(req, bodyHandler);
             try {
                 semaphore.acquire(1);
+                var file = cacheAbsPath.toFile();
+                if (file.exists() && file.length() > 0) {
+                    return new ThumbLoaded(cachehPath, Files.readAllBytes(cacheAbsPath));
+                }
+                var link = coverArt.coverArtLink();
+                var req = HttpRequest.newBuilder().GET().uri(link).build();
+                var bodyHandler = HttpResponse.BodyHandlers.ofByteArray();
+                //CompletableFuture<HttpResponse<Void>> httpResponseCompletableFuture = this.client.sendAsync(req, bodyHandler);
+
 
                 HttpResponse<byte[]> res = this.client.send(req, bodyHandler);
                 if (res.statusCode() != 200) {
@@ -126,11 +162,34 @@ public class ThumbnailCache {
                     );
                 }
             } catch (IOException e) {
-                throw new RuntimeException("error loading: " + link.toString(), e);
+                throw new RuntimeException("error loading: " + coverArt.coverArtLink().toString(), e);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             } finally {
                 semaphore.release(1);
+            }
+        }).thenApply(thumbsLoaded -> {
+            try {
+                cacheAbsPath.getParent().toFile().mkdirs();
+                cacheFile.delete();
+
+                var tmpFilePath = cachehPath.tmpFilePath().toAbsolutePath();
+                var tmpFile = tmpFilePath.toFile();
+                if (tmpFile.exists()) {
+                    tmpFile.delete();
+                }
+                tmpFile.createNewFile();
+                tmpFile.deleteOnExit();
+
+                var out = new FileOutputStream(tmpFile);
+                out.write(thumbsLoaded.blob);
+                out.close();
+
+                tmpFile.renameTo(cacheFile);
+
+                return thumbsLoaded;
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
             }
         });
     }

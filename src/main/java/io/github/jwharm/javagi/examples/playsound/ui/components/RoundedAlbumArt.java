@@ -3,6 +3,7 @@ package io.github.jwharm.javagi.examples.playsound.ui.components;
 import io.github.jwharm.javagi.base.GErrorException;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
+import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.adw.Clamp;
 import org.gnome.gdk.Texture;
 import org.gnome.gdkpixbuf.Pixbuf;
@@ -36,6 +37,7 @@ public class RoundedAlbumArt extends Box {
     private final AtomicBoolean hasLoaded = new AtomicBoolean(false);
     private final AtomicBoolean isLoading = new AtomicBoolean(false);
     private final AtomicBoolean isUpdating = new AtomicBoolean(false);
+    private final int size;
 
     public static Grid placeholderImage(int size) {
         try {
@@ -69,6 +71,10 @@ public class RoundedAlbumArt extends Box {
 
     public RoundedAlbumArt(CoverArt artwork, ThumbnailCache thumbLoader, int size) {
         super(Orientation.VERTICAL, 0);
+        this.artwork = artwork;
+        this.thumbLoader = thumbLoader;
+        this.size = size;
+
         //this.setSizeRequest(size, size);
         this.setHexpand(false);
         this.setVexpand(true);
@@ -87,12 +93,6 @@ public class RoundedAlbumArt extends Box {
         this.grid.setOverflow(Overflow.HIDDEN);
         this.grid.addCssClass("rounded");
 
-        this.artwork = artwork;
-        this.thumbLoader = thumbLoader;
-        // See: https://docs.gtk.org/gdk-pixbuf/class.PixbufLoader.html
-        var loader = PixbufLoader.builder().build();
-        //loader.setSize(size, size);
-
         // See: https://docs.gtk.org/gdk-pixbuf/class.Picture.html
         this.image = Picture.builder()
                 .setCanShrink(true)
@@ -102,26 +102,9 @@ public class RoundedAlbumArt extends Box {
                 .build();
         this.image.setSizeRequest(size, size);
 
-        loader.onAreaPrepared(() -> {
-            var pixbuf = loader.getPixbuf();
-            this.image.setPixbuf(pixbuf);
-            this.image.setContentFit(ContentFit.COVER);
-        });
-        loader.onAreaUpdated((x, y, h, w) -> {
-            if (!isUpdating.compareAndSet(false, true)) {
-                return;
-            }
-            try {
-                // apparently we need to touch the image and make it redraw somehow:
-                //this.image.setPixbuf(loader.getPixbuf());
-            } finally {
-                isUpdating.set(false);
-            }
-        });
-
         this.onMap(() -> {
             log.info("%s: onMap: id=%s".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
-            this.startLoad(loader);
+            this.startLoad(this.image);
         });
 
         this.grid.attach(image, 0, 0, 1, 1);
@@ -129,7 +112,19 @@ public class RoundedAlbumArt extends Box {
         this.append(clamp);
     }
 
-    public void startLoad(PixbufLoader loader) {
+    public void startLoad(Picture image) {
+        this.thumbLoader.loadPixbuf(this.artwork, this.size)
+                .thenAccept(pixbuf -> {
+                    //Texture texture = Texture.forPixbuf(pixbuf);
+                    Utils.runOnMainThread(() -> {
+                        //image.setPaintable(texture);
+                        image.setPixbuf(pixbuf);
+                        image.setSizeRequest(size, size);
+                    });
+                });
+    }
+
+    public void startLoad2(PixbufLoader loader) {
         CompletableFuture<Boolean> loadingFuture = doAsync(() -> {
                     if (hasLoaded.get()) {
                         return false;
