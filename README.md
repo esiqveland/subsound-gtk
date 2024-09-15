@@ -23,16 +23,19 @@ A few samples of what the UI looks like:
   - [ ] songlist: hover play icon is not tab-able for focus when row is selected, only when hover...
 - [X] Starred page
   - [X] remove the track number
-    - [ ] Attempt to add list item number as the first element in the prefix field
-  - [ ] goto artist when clicking artist name
+    - [X] Add list item number as the first element in the prefix field
   - [X] display artist
-  - [X] make album art only load while in view
+  - [X] make album art only load while in view (lazy list view)
   - [X] Fix play on row click + make focusable and double click to activate
   - [X] Fix keyboard navigation in the listview
-  - [ ] add a reload button or keep starred list up-to-date in the app at least
+  - [X] Fix focus on propagating to child of the ListItem in the listview (ActionRow does not get `focused` state when row is selected / focused)
   - [X] Make cover art be prettier in the ActionRow
-  - [ ] Fix blinking when hover/unhover
-  - [ ] display whole albums / artist that have been starred?
+  - [X] Fix blinking when hover/unhover
+  - [ ] add a reload button or keep starred list up-to-date in the app at least
+  - [ ] goto artist when clicking artist name
+  - [ ] goto album when clicking on album artwork
+    - [ ] add hover / glow / overlay icon when hovering over artwork?
+  - [ ] display whole albums / artist that have been starred in addition to individual songs?
 - [X] cache thumbnails on disk
   - [ ] use a paintable instead ? pixbuf is deprecated
   - [ ] switch load directly from cached file?
@@ -51,10 +54,10 @@ A few samples of what the UI looks like:
   - [X] PlayerBar: Playing ProgressBar
   - [X] make play/pause icon slightly bigger than the others
   - [X] add star button to star/unstar currently playing song
-  - [ ] model loading state
-    - [ ] show loading state in playerbar
+  - [X] model loading state
+    - [X] show loading progress in player seek bar 
     - [ ] show loading state as a overlay icon and switch to paused?
-  - [ ] add rating button
+  - [ ] add rating button to the right?
   - [ ] goto artist when clicking artist name
   - [ ] goto album when clicking song name or album artwork
 - [ ] Icons for top bar pages
@@ -62,21 +65,23 @@ A few samples of what the UI looks like:
     - [ ] icon for starred page
 - HomePage
   - [ ] icon
-  - [ ] Recently added: https://subsonic.org/pages/api.jsp#getAlbumList2 type=newest
-  - [ ] recently played: https://subsonic.org/pages/api.jsp#getAlbumList2 type=recent
-  - [ ] Most played: https://subsonic.org/pages/api.jsp#getAlbumList2 type=frequent
+  - [X] Newly added: https://subsonic.org/pages/api.jsp#getAlbumList2 type=newest
+  - [X] recently played: https://subsonic.org/pages/api.jsp#getAlbumList2 type=recent
+  - [X] Most played: https://subsonic.org/pages/api.jsp#getAlbumList2 type=frequent
   - [ ] https://subsonic.org/pages/api.jsp#getTopSongs
 - ArtistListing:
   - [X] add a circular artist thumbnail in the left prefix area
   - [ ] convert to using a ~AdwLeaflet~ `AdwNavigationSplitView`
   - [ ] model loading state when switching selected artist
 - Make ArtistInfo page coverart prettier with:
-  - [X] better design 
+  - [X] better design
+    - [ ] Find a reasonable way to include the artistinfo text, without making it so dominant
   - [ ] a blurred paintable background ?
     - Something like: https://github.com/neithern/g4music/blob/master/src/ui/paintables.vala#L357
 - Make AlbumView page prettier with:
   - [ ] better design
   - [ ] a blurred paintable background ?
+    - BlurHash / ThumbHash / dominant color gradient / 
 - [X] Make downloading song async
 - [X] PlayQueue: implement a in-memory play queue
   - [X] PlayQueue: auto playback of next queue item
@@ -116,13 +121,14 @@ Features:
 - [ ] Download manager for offline available content
 - [ ] Onboarding UI
 - [ ] Configuration UI
+- [ ] Scrobble plays
 - [X] Starred listing
 - [X] Browse albums
 - [X] Browse artists
 - [X] Plays any track!
 
 Later goals:
- - [ ] support multiple server types
+ - [ ] support multiple server types (native Navidrome API, Jellyfish etc)
  - [ ] Player for local media, not just for a streaming server
  - [ ] support the subsonic podcast features
  - [ ] could support chromecast

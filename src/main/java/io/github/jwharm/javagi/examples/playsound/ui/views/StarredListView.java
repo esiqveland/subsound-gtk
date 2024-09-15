@@ -26,6 +26,7 @@ import org.gnome.gtk.StateFlags;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -113,7 +114,9 @@ public class StarredListView extends Box {
             if (songInfo == null) {
                 return;
             }
-            this.onAction.apply(new PlayerAction.PlaySong(songInfo));
+            List<SongInfo> songs = this.data.songs();
+            log.debug("listView.onActivate: {} {}", index, songInfo.title());
+            this.onAction.apply(new PlayerAction.PlayQueue(songs, index));
         });
         this.append(this.listView);
     }
@@ -136,7 +139,6 @@ public class StarredListView extends Box {
         private final StarButton starredButton;
         private final Revealer revealer;
         private final Box hoverBox;
-        private final Button playButton;
         private final Button fileFormatLabel;
         private final Label fileSizeLabel;
         private final Label bitRateLabel;
@@ -146,22 +148,11 @@ public class StarredListView extends Box {
                 Function<PlayerAction, CompletableFuture<Void>> onAction
         ) {
             super(VERTICAL, 0);
-            this.setMarginStart(2);
-            this.setMarginEnd(2);
-
             this.thumbLoader = thumbLoader;
             this.onAction = onAction;
 
-            starredButton = new StarButton(
-                    Optional.empty(),
-                    newValue -> {
-                        if (this.songInfo == null) {
-                            return CompletableFuture.completedFuture(null);
-                        }
-                        var action = newValue ? new PlayerAction.Star(this.songInfo) : new PlayerAction.Unstar(this.songInfo);
-                        return this.onAction.apply(action);
-                    }
-            );
+            this.setMarginStart(2);
+            this.setMarginEnd(2);
 
             albumCoverHolder = new AlbumCoverHolderSmall(this.thumbLoader);
             prefixBox = Box.builder()
@@ -187,13 +178,6 @@ public class StarredListView extends Box {
                     .setSpacing(8)
                     .build();
 
-            playButton = Button.builder()
-                    //.setLabel("Play")
-                    .setIconName("media-playback-start-symbolic")
-                    .setCssClasses(cssClasses("success", "circular", "raised"))
-                    .setVisible(true)
-                    .build();
-
             fileFormatLabel = Button.builder()
                     .setLabel("")
                     .setSensitive(false)
@@ -205,26 +189,30 @@ public class StarredListView extends Box {
             fileSizeLabel = infoLabel("1.1 MB", cssClasses("dim-label"));
             bitRateLabel = infoLabel("%d kbps".formatted(1), cssClasses("dim-label"));
 
+            starredButton = new StarButton(
+                    Optional.empty(),
+                    newValue -> {
+                        if (this.songInfo == null) {
+                            return CompletableFuture.completedFuture(null);
+                        }
+                        var action = newValue ? new PlayerAction.Star(this.songInfo) : new PlayerAction.Unstar(this.songInfo);
+                        return this.onAction.apply(action);
+                    }
+            );
+            var starredButtonBox = Box.builder().setMarginStart(6).setMarginEnd(6).setVexpand(true).setValign(Align.CENTER).build();
+            starredButtonBox.append(starredButton);
+
             hoverBox.append(bitRateLabel);
             hoverBox.append(fileFormatLabel);
             hoverBox.append(fileSizeLabel);
-
-            var playButtonBox = Box.builder().setMarginStart(6).setMarginEnd(6).setVexpand(true).setValign(Align.CENTER).build();
-            playButtonBox.append(playButton);
-            hoverBox.append(playButtonBox);
+            hoverBox.append(starredButtonBox);
 
             revealer = Revealer.builder()
                     .setChild(hoverBox)
                     .setRevealChild(false)
                     .setTransitionType(RevealerTransitionType.CROSSFADE)
                     .build();
-
-            playButton.onClicked(() -> {
-                System.out.println("SongList.playButton: play " + this.songInfo.title() + " (%s)".formatted(this.songInfo.id()));
-                this.selectSong(this.songInfo);
-            });
             suffixBox.append(revealer);
-            suffixBox.append(starredButton);
 
             this.row = ActionRow.builder()
                     .setTitle("")
@@ -244,13 +232,13 @@ public class StarredListView extends Box {
                     },
                     () -> {
                         isHoverActive.set(false);
-                        var focused = this.hasFocus() || playButton.hasFocus();
+                        var focused = this.hasFocus();
                         //System.out.println("onLeave: focused=" + focused);
                         revealer.setRevealChild(focused);
                     }
             );
             this.onStateFlagsChanged(flags -> {
-                var hasFocus = playButton.hasFocus() || flags.contains(StateFlags.FOCUSED) || flags.contains(StateFlags.FOCUS_WITHIN) || flags.contains(StateFlags.FOCUS_VISIBLE);
+                var hasFocus = flags.contains(StateFlags.FOCUSED) || flags.contains(StateFlags.FOCUS_WITHIN) || flags.contains(StateFlags.FOCUS_VISIBLE);
                 var hasHover = isHoverActive.get();
                 //System.out.println("onStateFlagsChanged: " + String.join(", ", flags.stream().map(s -> s.name()).toList()) + " hasHover=" + hasHover + " hasFocus=" + hasFocus);
                 //playButton.setVisible(hasFocus || hasHover);
@@ -275,11 +263,12 @@ public class StarredListView extends Box {
             this.append(this.row);
         }
 
-        private void selectSong(SongInfo songInfo) {
+        private void selectSong(SongInfo songInfo, int index) {
             if (songInfo == null) {
                 return;
             }
-            this.onAction.apply(new PlayerAction.PlaySong(songInfo));
+            log.debug("selectSong: {} {}", index, songInfo.title());
+            //this.onAction.apply(new PlayerAction.PlaySong(songInfo));
         }
 
         public void setSongInfo(SongInfo songInfo, int index) {
