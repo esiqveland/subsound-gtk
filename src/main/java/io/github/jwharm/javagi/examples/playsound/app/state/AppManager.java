@@ -2,6 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.app.state;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction.Enqueue;
 import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction.PlayPositionInQueue;
+import io.github.jwharm.javagi.examples.playsound.configuration.Config;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache;
@@ -39,6 +40,7 @@ public class AppManager {
     public static final Executor ASYNC_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
     public static final String SERVER_ID = "123";
 
+    private final Config config;
     private final PlaybinPlayer player;
     private final PlayQueue playQueue;
     private final SongCache songCache;
@@ -48,11 +50,13 @@ public class AppManager {
     private final CopyOnWriteArrayList<StateListener> listeners = new CopyOnWriteArrayList<>();
 
     public AppManager(
+            Config config,
             PlaybinPlayer player,
             SongCache songCache,
             ThumbnailCache thumbnailCache,
             SubsonicClient client
     ) {
+        this.config = config;
         this.player = player;
         this.songCache = songCache;
         this.thumbnailCache = thumbnailCache;
@@ -82,6 +86,10 @@ public class AppManager {
 
     public SubsonicClient getClient() {
         return this.client;
+    }
+
+    public Config getConfig() {
+        return config;
     }
 
     public interface StateListener {

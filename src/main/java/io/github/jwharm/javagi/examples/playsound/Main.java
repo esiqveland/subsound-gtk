@@ -10,7 +10,6 @@ import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import net.beardbot.subsonic.client.SubsonicPreferences;
 import org.freedesktop.gstreamer.gst.Gst;
 import org.gnome.adw.Application;
-import org.gnome.gdk.Texture;
 import org.gnome.gdkpixbuf.Pixbuf;
 import org.gnome.gio.ApplicationFlags;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -36,7 +35,7 @@ public class Main {
         var thumbnailCache = new ThumbnailCache(config.cacheDir);
         var client = SubsonicClient.create(getSubsonicSettings(config));
         var player = new PlaybinPlayer();
-        this.appManager = new AppManager(player, songCache, thumbnailCache, client);
+        this.appManager = new AppManager(this.config, player, songCache, thumbnailCache, client);
 
         try {
             var app = new Application("com.subsound.player", ApplicationFlags.DEFAULT_FLAGS);

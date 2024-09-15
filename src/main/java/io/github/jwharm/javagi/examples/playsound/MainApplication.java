@@ -3,6 +3,7 @@ package io.github.jwharm.javagi.examples.playsound;
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
+import io.github.jwharm.javagi.examples.playsound.ui.components.SettingsPage;
 import io.github.jwharm.javagi.examples.playsound.ui.views.AlbumInfoLoader;
 import io.github.jwharm.javagi.examples.playsound.ui.views.ArtistInfoLoader;
 import io.github.jwharm.javagi.examples.playsound.ui.views.ArtistsListBox;
@@ -77,6 +78,20 @@ public class MainApplication {
                 viewStack.setVisibleChildName("starredPage");
                 yield false;
             }
+            case AppNavigation.AppRoute.SettingsPage s -> {
+                var cfg = this.appManager.getConfig();
+                var settings = new SettingsPage();
+                settings.setSettingsInfo(new SettingsPage.SettingsInfo(
+                        cfg.serverConfig.type(),
+                        cfg.serverConfig.url(),
+                        cfg.serverConfig.username(),
+                        cfg.serverConfig.password()
+                ));
+                NavigationPage navPage = NavigationPage.builder().setChild(settings).setTitle("Settings").build();
+                navigationView.push(navPage);
+
+                yield true;
+            }
             case AppNavigation.AppRoute.RouteAlbumInfo route -> {
                 var viewAlbumPage = new AlbumInfoLoader(this.thumbLoader, this.appManager, appManager::handleAction)
                         .setAlbumId(route.albumId());
@@ -100,16 +115,13 @@ public class MainApplication {
 
         var settingsButton = Button.builder()
                 .setIconName("preferences-other")
-                .setActionName("app.open-settings")
+                //.setActionName("app.open-settings")
                 //.setLabel("Settings")
                 .setTooltipText("Settings")
                 .build();
-        settingsButton.actionSetEnabled("app.open-settings", true);
-        settingsButton.onActivate(() -> {
-            System.out.println("settingsButton.onActivate");
-        });
         settingsButton.onClicked(() -> {
             System.out.println("settingsButton.onClicked");
+            appNavigation.navigateTo(new AppNavigation.AppRoute.SettingsPage());
         });
 
         var searchEntry = SearchEntry.builder().build();
