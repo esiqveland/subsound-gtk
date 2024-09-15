@@ -36,7 +36,6 @@ import static io.github.jwharm.javagi.examples.playsound.ui.views.AlbumInfoBox.i
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.addHover2;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.formatBytesSI;
-import static io.github.jwharm.javagi.examples.playsound.utils.javahttp.TextUtils.padLeft;
 import static org.gnome.gtk.Align.CENTER;
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
@@ -122,7 +121,7 @@ public class StarredListView extends Box {
     }
 
     public static class StarredItemRow extends Box {
-        private static final int trackNumberLabelChars = 4;
+        private static final int TRACK_NUMBER_LABEL_CHARS = 4;
 
         private final ThumbnailCache thumbLoader;
         private final Function<PlayerAction, CompletableFuture<Void>> onAction;
@@ -249,12 +248,12 @@ public class StarredListView extends Box {
             this.nowPlayingOverlayIcon = new NowPlayingOverlayIcon(48, this.albumCoverHolder);
             this.trackNumberLabel = infoLabel("    ", Classes.labelDim.add(Classes.labelNumeric));
             this.trackNumberLabel.setVexpand(false);
-            this.trackNumberLabel.setMarginEnd(8);
             this.trackNumberLabel.setValign(CENTER);
-            this.trackNumberLabel.setSingleLineMode(true);
-            this.trackNumberLabel.setMaxWidthChars(4);
+            this.trackNumberLabel.setMarginEnd(8);
             this.trackNumberLabel.setJustify(Justification.RIGHT);
-            this.trackNumberLabel.setSizeRequest(32, 32);
+            this.trackNumberLabel.setSingleLineMode(true);
+            this.trackNumberLabel.setWidthChars(TRACK_NUMBER_LABEL_CHARS);
+            this.trackNumberLabel.setMaxWidthChars(TRACK_NUMBER_LABEL_CHARS);
             prefixBox.append(trackNumberLabel);
             prefixBox.append(nowPlayingOverlayIcon);
 
@@ -289,20 +288,22 @@ public class StarredListView extends Box {
 
             this.row.setTitle(songInfo.title());
             this.row.setSubtitle(subtitle);
-            this.row.setSubtitleLines(2);
+            this.row.setSubtitleLines(1);
+            this.row.setFocusable(true);
             int trackNumber = this.index + 1;
-            String trackNumberText = padLeft("%d".formatted(trackNumber), trackNumberLabelChars);
-            log.debug("trackNumberText='{}'", trackNumberText);
-            trackNumberLabel.setLabel(trackNumberText);
+            this.trackNumberLabel.setLabel("%d".formatted(trackNumber));
 
-            Optional.ofNullable(songInfo.suffix())
+            var fileSuffixText = Optional.ofNullable(songInfo.suffix())
                     .filter(fileExt -> !fileExt.isBlank())
-                    .ifPresent(this.fileFormatLabel::setLabel);
+                    .orElse("");
+            this.fileFormatLabel.setLabel(fileSuffixText);
 
-            fileSizeLabel.setLabel(formatBytesSI(songInfo.size()));
-            songInfo.bitRate()
+            this.fileSizeLabel.setLabel(formatBytesSI(songInfo.size()));
+            var bitRateText = songInfo.bitRate()
                     .map("%d kbps"::formatted)
-                    .ifPresent(this.bitRateLabel::setLabel);
+                    .orElse("");
+            this.bitRateLabel.setLabel(bitRateText);
+
             this.albumCoverHolder.setArtwork(songInfo.coverArt());
             this.starredButton.setStarredAt(songInfo.starred());
         }
