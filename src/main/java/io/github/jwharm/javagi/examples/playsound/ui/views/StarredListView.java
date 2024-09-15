@@ -260,7 +260,6 @@ public class StarredListView extends Box {
 
             this.nowPlayingOverlayIcon = new NowPlayingOverlayIcon(48, this.albumCoverHolder);
             this.trackNumberLabel = infoLabel("    ", Classes.labelDim.add(Classes.labelNumeric));
-            //this.trackNumberLabel.setHexpand(false);
             this.trackNumberLabel.setVexpand(false);
             this.trackNumberLabel.setMarginEnd(8);
             this.trackNumberLabel.setValign(CENTER);
@@ -304,7 +303,7 @@ public class StarredListView extends Box {
             this.row.setSubtitleLines(2);
             int trackNumber = this.index + 1;
             String trackNumberText = padLeft("%d".formatted(trackNumber), trackNumberLabelChars);
-            log.info("trackNumberText='{}'", trackNumberText);
+            log.debug("trackNumberText='{}'", trackNumberText);
             trackNumberLabel.setLabel(trackNumberText);
 
             Optional.ofNullable(songInfo.suffix())
