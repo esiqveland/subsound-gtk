@@ -90,7 +90,7 @@ public class StarredListView extends Box {
                 return;
             }
             listitem.setActivatable(true);
-            log.info("bind {} {}", index, songInfo.title());
+            log.info("factory.onBind: {} {}", index, songInfo.title());
             child.setSongInfo(songInfo, index);
         });
         this.listModel = ListIndexModel.newInstance(data.songs().size());
