@@ -6,10 +6,15 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ListS
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.LoadSongResult;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
-import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.github.jwharm.javagi.examples.playsound.ui.components.FutureLoader;
-import org.gnome.gtk.*;
+import io.github.jwharm.javagi.examples.playsound.utils.Utils;
+import org.gnome.gtk.Align;
+import org.gnome.gtk.Box;
+import org.gnome.gtk.Orientation;
+import org.gnome.gtk.ScrolledWindow;
+import org.gnome.gtk.Widget;
 
+import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
