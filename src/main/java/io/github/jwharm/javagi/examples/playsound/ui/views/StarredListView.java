@@ -262,14 +262,12 @@ public class StarredListView extends Box {
             this.trackNumberLabel = infoLabel("    ", Classes.labelDim.add(Classes.labelNumeric));
             //this.trackNumberLabel.setHexpand(false);
             this.trackNumberLabel.setVexpand(false);
-            this.trackNumberLabel.setMarginEnd(6);
+            this.trackNumberLabel.setMarginEnd(8);
             this.trackNumberLabel.setValign(CENTER);
             this.trackNumberLabel.setSingleLineMode(true);
             this.trackNumberLabel.setMaxWidthChars(4);
             this.trackNumberLabel.setJustify(Justification.RIGHT);
-            this.trackNumberLabel.setSizeRequest(40, 32);
-            //Box trackNumberBox = Box.builder().setValign(CENTER).setVexpand(true).setHalign(END).build();
-            //trackNumberBox.append(trackNumberLabel);
+            this.trackNumberLabel.setSizeRequest(32, 32);
             prefixBox.append(trackNumberLabel);
             prefixBox.append(nowPlayingOverlayIcon);
 
@@ -298,7 +296,8 @@ public class StarredListView extends Box {
             var songInfo = this.songInfo;
 
             String durationString = Utils.formatDurationShort(songInfo.duration());
-            String subtitle = "%s ⦁ %s\n%s".formatted(songInfo.artist(), songInfo.album(), durationString);
+            //String subtitle = "%s ⦁ %s\n%s".formatted(songInfo.artist(), songInfo.album(), durationString);
+            String subtitle = "%s ⦁ %s ⦁ %s".formatted(durationString, songInfo.artist(), songInfo.album());
 
             this.row.setTitle(songInfo.title());
             this.row.setSubtitle(subtitle);
