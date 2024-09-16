@@ -1,5 +1,8 @@
 package io.github.jwharm.javagi.examples.playsound.utils;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.Strictness;
 import org.gnome.glib.GLib;
 import org.gnome.glib.SourceOnceFunc;
 import org.gnome.gtk.Align;
@@ -31,6 +34,8 @@ import java.util.function.Supplier;
 public class Utils {
     private static final ExecutorService EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
     private static final HexFormat HEX = HexFormat.of().withLowerCase();
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().setStrictness(Strictness.STRICT).create();
+
 
     public static <T> CompletableFuture<T> doAsync(Supplier<T> supplier) {
         return CompletableFuture.supplyAsync(supplier, EXECUTOR);
@@ -212,5 +217,12 @@ public class Utils {
 
     public static Label.Builder<? extends Label.Builder> heading1(String labelText) {
         return Label.builder().setLabel(labelText).setHalign(Align.START).setCssClasses(cssClasses("title-3"));
+    }
+
+    public static <T> T fromJson(String s, Class<T> clazz) {
+        return GSON.fromJson(s, clazz);
+    }
+    public static <T> String toJson(T obj) {
+        return GSON.toJson(obj);
     }
 }

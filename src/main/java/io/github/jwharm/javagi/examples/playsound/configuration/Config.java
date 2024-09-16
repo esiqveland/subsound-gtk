@@ -1,31 +1,50 @@
 package io.github.jwharm.javagi.examples.playsound.configuration;
 
+import com.google.gson.annotations.SerializedName;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ServerType;
+import io.github.jwharm.javagi.examples.playsound.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 
 public class Config {
+    private static final Logger log = LoggerFactory.getLogger(Config.class);
     public static final Dotenv DOTENV = Dotenv.load();
 
-    public static Config createDefault() {
-        Config config = new Config();
-        config.cacheDir = defaultCacheDir();
-        config.serverConfig = defaultServerConfig();
-        return config;
+    private final Path configFilePath;
+    public Path cacheDir = defaultCacheDir();
+    public ServerConfig serverConfig;
+
+    public Config(Path configFilePath) {
+        this.configFilePath = configFilePath;
     }
 
-    public Path cacheDir = defaultCacheDir();
+    public void saveToFile() throws IOException {
+        // assure parent folder exists:
+        this.configFilePath.getParent().toFile().mkdirs();
+        var dto = toFileFormat();
+        var jsonStr = Utils.toJson(dto);
+        Files.writeString(this.configFilePath, jsonStr, StandardCharsets.UTF_8);
+    }
 
-    public static record ServerConfig(
+    private ConfigurationDTO toFileFormat() {
+        var d = new ConfigurationDTO();
+        d.server = this.serverConfig;
+        return d;
+    }
+
+    public record ServerConfig(
             ServerType type,
             String url,
             String username,
             String password
-    ) {
-    }
-
-    public ServerConfig serverConfig;
+    ) {}
 
     private static ServerConfig defaultServerConfig() {
         return new ServerConfig(
@@ -34,14 +53,63 @@ public class Config {
                 DOTENV.get("SERVER_USERNAME"),
                 DOTENV.get("SERVER_PASSWORD")
         );
+    }
 
+    public static Config createDefault() {
+        var configDir = defaultConfigDir();
+        var configFilePath = configDir.resolve("config.json");
+
+        Config config = new Config(configFilePath);
+        config.cacheDir = defaultCacheDir();
+        config.serverConfig = defaultServerConfig();
+
+        readConfigFile(configFilePath)
+                .ifPresentOrElse(
+                        cfg -> {
+                            log.debug("read config file at path={}", configFilePath);
+                            if (cfg.server != null) {
+                                config.serverConfig = cfg.server;
+                            }
+                        },
+                        () -> log.debug("no config file found at path={}", configFilePath)
+                );
+
+        return config;
+    }
+
+    public static class ConfigurationDTO {
+        @SerializedName("server")
+        public ServerConfig server;
+    }
+
+    private static Optional<ConfigurationDTO> readConfigFile(Path configPath) {
+        var configFile = configPath.toFile();
+        if (!configFile.exists()) {
+            return Optional.empty();
+        }
+        if (configFile.isDirectory()) {
+            throw new IllegalStateException("expected file at path=%s".formatted(configPath.toString()));
+        }
+        if (!configFile.isFile()) {
+            throw new IllegalStateException("expected file at path=%s".formatted(configPath.toString()));
+        }
+        if (!configFile.canRead()) {
+            throw new IllegalStateException("unable to read file at path=%s".formatted(configPath.toString()));
+        }
+        try {
+            String value = Files.readString(configPath, StandardCharsets.UTF_8);
+            var cfg = Utils.fromJson(value, ConfigurationDTO.class);
+            return Optional.ofNullable(cfg);
+        } catch (IOException e) {
+            throw new RuntimeException("unable to read file at path=%s".formatted(configPath.toString()), e);
+        }
     }
 
     private static Path defaultCacheDir() {
         {
             var xdg = System.getenv("XDG_CACHE_HOME");
             if (xdg != null && !xdg.isBlank()) {
-                Path path = Path.of(xdg, "subsound-gtk").toAbsolutePath();
+                Path path = java.nio.file.Path.of(xdg, "subsound-gtk").toAbsolutePath();
                 var fHandle = path.toFile();
                 if (!fHandle.exists()) {
                     fHandle.mkdirs();
@@ -62,5 +130,30 @@ public class Config {
             }
             return path;
         }
+    }
+
+    // https://specifications.freedesktop.org/basedir-spec/latest/index.html#variables
+    private static Path defaultConfigDir() {
+        var xdg = System.getenv("XDG_CONFIG_HOME");
+        if (xdg != null && !xdg.isBlank()) {
+            Path path = Path.of(xdg, "subsound-gtk").toAbsolutePath();
+            var fHandle = path.toFile();
+            if (!fHandle.exists()) {
+                fHandle.mkdirs();
+            }
+            return path;
+        }
+
+        //  If $XDG_CONFIG_HOME is either not set or empty, a default equal to $HOME/.config should be used
+        var homeDir = System.getenv("HOME");
+        if (homeDir == null || homeDir.isBlank()) {
+            throw new IllegalStateException("unable to determine a location for cache dir");
+        }
+        Path path = Path.of(homeDir, ".config", "subsound-gtk").toAbsolutePath();
+        var fHandle = path.toFile();
+        if (!fHandle.exists()) {
+            fHandle.mkdirs();
+        }
+        return path;
     }
 }
