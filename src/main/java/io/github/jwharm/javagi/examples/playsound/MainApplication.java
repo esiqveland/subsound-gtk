@@ -123,15 +123,6 @@ public class MainApplication {
             }
         });
 
-        var searchButton = Button.builder()
-                .setIconName(Icons.SearchEdit.getIconName())
-                .setActionName("app.open-search")
-//                .setLabel("Search")
-                .build();
-        searchButton.onClicked(() -> {
-            System.out.println("searchButton.onClicked");
-        });
-
         var settingsButton = Button.builder()
                 .setIconName("preferences-other")
                 //.setActionName("app.open-settings")
@@ -235,7 +226,6 @@ public class MainApplication {
                 .setHexpand(true)
                 .setTitleWidget(viewSwitcher)
                 .build();
-        headerBar.packStart(searchButton);
         headerBar.packEnd(settingsButton);
 
         var playerBar = new PlayerBar(thumbLoader, appManager);
