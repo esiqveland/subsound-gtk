@@ -1,7 +1,18 @@
 package io.github.jwharm.javagi.examples.playsound.ui.components;
 
 // https://specifications.freedesktop.org/icon-naming-spec/latest/
+// https://gitlab.gnome.org/GNOME/adwaita-icon-theme/-/tree/master/Adwaita/symbolic?ref_type=heads
 public enum Icons {
+    GoHome("go-home"),
+    GoHomeSymbolic("go-home-symbolic"),
+    UserHome("user-home"),
+    UserHomeSymbolic("user-home-symbolic"),
+    Starred("starred"),
+    StarredSymbolic("starred-symbolic"),
+    AddStar("star-new"),
+    AddStarSymbolic("star-new-symbolic"),
+    NetworkServer("network-server"),
+    FolderRemote("folder-remote"),
     PLAY("media-playback-start-symbolic"),
     PAUSE("media-playback-pause-symbolic"),
     SkipBackward("media-skip-backward-symbolic"),

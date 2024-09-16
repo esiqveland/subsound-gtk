@@ -158,12 +158,12 @@ public class MainApplication {
                     appManager,
                     albumInfo -> this.appNavigation.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(albumInfo.id()))
             );
-            ViewStackPage frontPage = viewStack.addTitled(frontPageContainer, "frontPage", "Home");
+            ViewStackPage frontPage = viewStack.addTitledWithIcon(frontPageContainer, "frontPage", "Home", Icons.GoHome.getIconName());
         }
         {
             var starredPageContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
             starredPageContainer.append(new StarredLoader(thumbLoader, client, appManager::loadSource, appManager::handleAction));
-            ViewStackPage starredPage = viewStack.addTitled(starredPageContainer, "starredPage", "Starred");
+            ViewStackPage starredPage = viewStack.addTitledWithIcon(starredPageContainer, "starredPage", "Starred", Icons.Starred.getIconName());
         }
         var artists = this.client.getArtists();
         var artistListBox = new ArtistsListBox(

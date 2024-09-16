@@ -60,11 +60,11 @@ A few samples of what the UI looks like:
   - [ ] add rating button to the right?
   - [ ] goto artist when clicking artist name
   - [ ] goto album when clicking song name or album artwork
-- [ ] Icons for top bar pages
-    - [] icon for Home page
-    - [ ] icon for starred page
+- [X] Icons for top bar pages
+    - [X] icon for Home page
+    - [X] icon for starred page
 - HomePage
-  - [ ] icon
+  - [X] icon
   - [X] Newly added: https://subsonic.org/pages/api.jsp#getAlbumList2 type=newest
   - [X] recently played: https://subsonic.org/pages/api.jsp#getAlbumList2 type=recent
   - [X] Most played: https://subsonic.org/pages/api.jsp#getAlbumList2 type=frequent
