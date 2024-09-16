@@ -3,6 +3,7 @@ package io.github.jwharm.javagi.examples.playsound.ui.components;
 import io.github.jwharm.javagi.examples.playsound.configuration.Config.ServerConfig;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ServerType;
+import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.adw.Clamp;
 import org.gnome.adw.EntryRow;
 import org.gnome.adw.PasswordEntryRow;
@@ -81,16 +82,20 @@ public class SettingsPage extends Box {
     private void testConnection() {
         this.testButton.setCssClasses(none.add());
         var data = getFormData();
-        ServerClient serverClient = ServerClient.create(new ServerConfig(
-                data.type,
-                data.serverUrl,
-                data.username,
-                data.password
-        ));
-        boolean success = serverClient.testConnection();
-        this.saveButton.setSensitive(success);
-        Classes color = success ? colorSuccess : colorError;
-        this.testButton.setCssClasses(color.add());
+        Utils.doAsync(() -> {
+            ServerClient serverClient = ServerClient.create(new ServerConfig(
+                    data.type,
+                    data.serverUrl,
+                    data.username,
+                    data.password
+            ));
+            boolean success = serverClient.testConnection();
+            Utils.runOnMainThread(() -> {
+                this.saveButton.setSensitive(success);
+                Classes color = success ? colorSuccess : colorError;
+                this.testButton.setCssClasses(color.add());
+            });
+        });
     }
 
     public record SettingsInfo(
@@ -102,14 +107,16 @@ public class SettingsPage extends Box {
     }
 
     public void setSettingsInfo(SettingsInfo s) {
-        this.serverTypeInfoLabel.setLabel("%s server".formatted(capitalize(s.type.name())));
-        this.serverUrlEntry.setText(s.serverUrl);
-        this.usernameEntry.setText(s.username);
-        this.passwordEntry.setText(s.password);
-        this.tlsSwitchEntry.setSensitive(false);
-        this.testButton.setSensitive(true);
-        this.testButton.setCssClasses(none.add());
-        this.saveButton.setSensitive(false);
+        Utils.runOnMainThread(() -> {
+            this.serverTypeInfoLabel.setLabel("%s server".formatted(capitalize(s.type.name())));
+            this.serverUrlEntry.setText(s.serverUrl);
+            this.usernameEntry.setText(s.username);
+            this.passwordEntry.setText(s.password);
+            this.tlsSwitchEntry.setSensitive(false);
+            this.testButton.setSensitive(true);
+            this.testButton.setCssClasses(none.add());
+            this.saveButton.setSensitive(false);
+        });
     }
 
     private void saveForm() {
