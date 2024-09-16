@@ -11,11 +11,15 @@ import org.gnome.gtk.Button;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListBox;
 import org.gnome.gtk.SelectionMode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.borderBox;
+import static io.github.jwharm.javagi.examples.playsound.utils.javahttp.TextUtils.capitalize;
 import static org.gnome.gtk.Orientation.VERTICAL;
 
 public class SettingsPage extends Box {
+    private static final Logger log = LoggerFactory.getLogger(SettingsPage.class);
 
     private final Clamp clamp;
     private final Box centerBox;
@@ -41,9 +45,9 @@ public class SettingsPage extends Box {
         this.passwordEntry = PasswordEntryRow.builder().setTitle("Password").build();
         this.testButton = Button.builder().setLabel("Test").build();
         this.saveButton = Button.builder().setLabel("Save").build();
+        this.saveButton.onClicked(() -> this.saveForm());
 
         this.listBox = ListBox.builder().setSelectionMode(SelectionMode.NONE).setCssClasses(Classes.boxedList.add()).build();
-        this.listBox.append(serverTypeInfoLabel);
         this.listBox.append(serverUrlEntry);
         this.listBox.append(tlsSwitchEntry);
         this.listBox.append(usernameEntry);
@@ -52,9 +56,20 @@ public class SettingsPage extends Box {
         this.listBox.append(saveButton);
 
         this.centerBox = borderBox(VERTICAL, 8).setSpacing(8).build();
+        this.centerBox.append(serverTypeInfoLabel);
         this.centerBox.append(this.listBox);
         this.clamp = Clamp.builder().setMaximumSize(600).setChild(this.centerBox).build();
         this.append(clamp);
+    }
+
+    private void saveForm() {
+        var data = new SettingsInfo(
+                ServerType.SUBSONIC,
+                this.serverUrlEntry.getText(),
+                this.usernameEntry.getText(),
+                this.passwordEntry.getText()
+        );
+        log.info("saveForm: data={}", data);
     }
 
     public record SettingsInfo(
@@ -65,7 +80,7 @@ public class SettingsPage extends Box {
     ) {}
 
     public void setSettingsInfo(SettingsInfo s) {
-        this.serverTypeInfoLabel.setLabel("%s server".formatted(s.type.name()));
+        this.serverTypeInfoLabel.setLabel("%s server".formatted(capitalize(s.type.name())));
         this.serverUrlEntry.setText(s.serverUrl);
         this.usernameEntry.setText(s.username);
         this.passwordEntry.setText(s.password);
