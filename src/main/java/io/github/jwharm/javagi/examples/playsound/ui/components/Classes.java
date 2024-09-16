@@ -5,9 +5,17 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 public enum Classes {
+    none(""),
     card("card"),
     boxedList("boxed-list"),
     richlist("rich-list"),
+    // colors: https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/style-classes.html#colors
+    colorSuccess("success"),
+    colorAccent("accent"),
+    colorWarning("warning"),
+    colorError("error"),
+    suggestedAction("suggested-action"),
+    titleLarge("large-title"),
     title1("title1"),
     title2("title2"),
     title3("title3"),

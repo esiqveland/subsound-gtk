@@ -169,6 +169,11 @@ public class SubsonicClient implements ServerClient {
         return ServerType.SUBSONIC;
     }
 
+    @Override
+    public boolean testConnection() {
+        return this.client.testConnection();
+    }
+
     private SongInfo toSongInfo(Child song) {
         try {
             URI downloadUri = toDownloadUri(client, song);

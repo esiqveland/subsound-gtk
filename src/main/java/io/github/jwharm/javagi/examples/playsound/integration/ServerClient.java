@@ -27,6 +27,7 @@ public interface ServerClient {
     void starId(String id);
     void unStarId(String id);
     ServerType getServerType();
+    boolean testConnection();
 
     @RecordBuilderFull
     record SongInfo(

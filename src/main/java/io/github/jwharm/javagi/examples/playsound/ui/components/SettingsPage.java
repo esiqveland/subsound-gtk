@@ -1,5 +1,7 @@
 package io.github.jwharm.javagi.examples.playsound.ui.components;
 
+import io.github.jwharm.javagi.examples.playsound.configuration.Config.ServerConfig;
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ServerType;
 import org.gnome.adw.Clamp;
 import org.gnome.adw.EntryRow;
@@ -17,6 +19,13 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+import static io.github.jwharm.javagi.examples.playsound.ui.components.Classes.boxedList;
+import static io.github.jwharm.javagi.examples.playsound.ui.components.Classes.colorError;
+import static io.github.jwharm.javagi.examples.playsound.ui.components.Classes.colorSuccess;
+import static io.github.jwharm.javagi.examples.playsound.ui.components.Classes.none;
+import static io.github.jwharm.javagi.examples.playsound.ui.components.Classes.suggestedAction;
+import static io.github.jwharm.javagi.examples.playsound.ui.components.Classes.title1;
+import static io.github.jwharm.javagi.examples.playsound.ui.components.Classes.titleLarge;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.borderBox;
 import static io.github.jwharm.javagi.examples.playsound.utils.javahttp.TextUtils.capitalize;
 import static org.gnome.gtk.Orientation.VERTICAL;
@@ -43,16 +52,17 @@ public class SettingsPage extends Box {
         this.setValign(Align.CENTER);
         this.setHalign(Align.CENTER);
 
-        this.serverTypeInfoLabel = Label.builder().setLabel("").setCssClasses(Classes.title1.add()).build();
+        this.serverTypeInfoLabel = Label.builder().setLabel("").setCssClasses(titleLarge.add()).build();
         this.serverUrlEntry = EntryRow.builder().setTitle("Server URL").build();
         this.tlsSwitchEntry = SwitchRow.builder().setTitle("Accept unverified certificate").setSensitive(false).build();
         this.usernameEntry = EntryRow.builder().setTitle("Username").build();
         this.passwordEntry = PasswordEntryRow.builder().setTitle("Password").build();
-        this.testButton = Button.builder().setLabel("Test").build();
-        this.saveButton = Button.builder().setLabel("Save").build();
+        this.testButton = Button.builder().setLabel("Test").setCssClasses(none.add()).build();
+        this.testButton.onClicked(() -> this.testConnection());
+        this.saveButton = Button.builder().setLabel("Save").setCssClasses(title1.add(suggestedAction)).setSensitive(false).build();
         this.saveButton.onClicked(() -> this.saveForm());
 
-        this.listBox = ListBox.builder().setSelectionMode(SelectionMode.NONE).setCssClasses(Classes.boxedList.add()).build();
+        this.listBox = ListBox.builder().setSelectionMode(SelectionMode.NONE).setCssClasses(boxedList.add()).build();
         this.listBox.append(serverUrlEntry);
         this.listBox.append(tlsSwitchEntry);
         this.listBox.append(usernameEntry);
@@ -68,25 +78,19 @@ public class SettingsPage extends Box {
         this.setSettingsInfo(settingsInfo);
     }
 
-    private void saveForm() {
-        var data = new SettingsInfo(
-                ServerType.SUBSONIC,
-                this.serverUrlEntry.getText(),
-                this.usernameEntry.getText(),
-                this.passwordEntry.getText()
-        );
-        log.info("saveForm: data={}", data);
-        onSave.apply(data)
-                .handle((success, throwable) -> {
-                    if (throwable != null) {
-                        log.error("saveForm: data={} error: ", data, throwable);
-                        // TODO(toast): ERROR
-                    } else {
-                        log.error("saveForm: data={} success!", data);
-                        // TODO(toast): SUCCESS
-                    }
-                    return null;
-                });
+    private void testConnection() {
+        this.testButton.setCssClasses(none.add());
+        var data = getFormData();
+        ServerClient serverClient = ServerClient.create(new ServerConfig(
+                data.type,
+                data.serverUrl,
+                data.username,
+                data.password
+        ));
+        boolean success = serverClient.testConnection();
+        this.saveButton.setSensitive(success);
+        Classes color = success ? colorSuccess : colorError;
+        this.testButton.setCssClasses(color.add());
     }
 
     public record SettingsInfo(
@@ -103,5 +107,34 @@ public class SettingsPage extends Box {
         this.usernameEntry.setText(s.username);
         this.passwordEntry.setText(s.password);
         this.tlsSwitchEntry.setSensitive(false);
+        this.testButton.setSensitive(true);
+        this.testButton.setCssClasses(none.add());
+        this.saveButton.setSensitive(false);
+    }
+
+    private void saveForm() {
+        var data = getFormData();
+        log.info("saveForm: data={}", data);
+        onSave.apply(data)
+                .handle((success, throwable) -> {
+                    if (throwable != null) {
+                        log.error("saveForm: data={} error: ", data, throwable);
+                        // TODO(toast): ERROR
+                    } else {
+                        log.error("saveForm: data={} success!", data);
+                        // TODO(toast): SUCCESS
+                    }
+                    return null;
+                });
+    }
+
+
+    private SettingsInfo getFormData() {
+        return new SettingsInfo(
+                ServerType.SUBSONIC,
+                this.serverUrlEntry.getText(),
+                this.usernameEntry.getText(),
+                this.passwordEntry.getText()
+        );
     }
 }
