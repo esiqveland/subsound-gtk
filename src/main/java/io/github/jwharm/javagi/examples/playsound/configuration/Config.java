@@ -98,11 +98,15 @@ public class Config {
         }
         try {
             String value = Files.readString(configPath, StandardCharsets.UTF_8);
-            var cfg = Utils.fromJson(value, ConfigurationDTO.class);
-            return Optional.ofNullable(cfg);
+            return parseCfg(value);
         } catch (IOException e) {
             throw new RuntimeException("unable to read file at path=%s".formatted(configPath.toString()), e);
         }
+    }
+
+    static Optional<ConfigurationDTO> parseCfg(String value) {
+        var cfg = Utils.fromJson(value, ConfigurationDTO.class);
+        return Optional.ofNullable(cfg);
     }
 
     private static Path defaultCacheDir() {

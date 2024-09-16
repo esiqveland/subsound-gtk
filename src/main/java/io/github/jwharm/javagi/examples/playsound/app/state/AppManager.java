@@ -3,8 +3,8 @@ package io.github.jwharm.javagi.examples.playsound.app.state;
 import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction.Enqueue;
 import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction.PlayPositionInQueue;
 import io.github.jwharm.javagi.examples.playsound.configuration.Config;
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
-import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.CacheSong;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache.LoadSongResult;
@@ -46,7 +46,7 @@ public class AppManager {
     private final PlayQueue playQueue;
     private final SongCache songCache;
     private final ThumbnailCache thumbnailCache;
-    private final SubsonicClient client;
+    private final ServerClient client;
     private final AtomicReference<AppState> currentState = new AtomicReference<>();
     private final CopyOnWriteArrayList<StateListener> listeners = new CopyOnWriteArrayList<>();
 
@@ -55,7 +55,7 @@ public class AppManager {
             PlaybinPlayer player,
             SongCache songCache,
             ThumbnailCache thumbnailCache,
-            SubsonicClient client
+            ServerClient client
     ) {
         this.config = config;
         this.player = player;
@@ -85,7 +85,7 @@ public class AppManager {
         return thumbnailCache;
     }
 
-    public SubsonicClient getClient() {
+    public ServerClient getClient() {
         return this.client;
     }
 

@@ -1,5 +1,7 @@
 package io.github.jwharm.javagi.examples.playsound.integration;
 
+import io.github.jwharm.javagi.examples.playsound.configuration.Config.ServerConfig;
+import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
 import io.soabase.recordbuilder.core.RecordBuilder;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
 import org.subsonic.restapi.AlbumID3;
@@ -173,4 +175,9 @@ public interface ServerClient {
         SUBSONIC,
     }
 
+    static ServerClient create(ServerConfig cfg) {
+        return switch (cfg.type()) {
+            case SUBSONIC -> SubsonicClient.create(cfg);
+        };
+    }
 }

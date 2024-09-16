@@ -3,6 +3,7 @@ package io.github.jwharm.javagi.examples.playsound;
 import io.github.jwharm.javagi.base.Out;
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.configuration.Config;
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
 import io.github.jwharm.javagi.examples.playsound.persistence.SongCache;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
@@ -33,7 +34,7 @@ public class Main {
         this.config = Config.createDefault();
         var songCache = new SongCache(config.cacheDir);
         var thumbnailCache = new ThumbnailCache(config.cacheDir);
-        var client = SubsonicClient.create(getSubsonicSettings(config));
+        var client = ServerClient.create(config.serverConfig);
         var player = new PlaybinPlayer();
         this.appManager = new AppManager(this.config, player, songCache, thumbnailCache, client);
 
@@ -48,17 +49,6 @@ public class Main {
         } finally {
             player.quit();
         }
-    }
-
-    private SubsonicPreferences getSubsonicSettings(Config config) {
-        SubsonicPreferences preferences = new SubsonicPreferences(
-                config.serverConfig.url(),
-                config.serverConfig.username(),
-                config.serverConfig.password()
-        );
-        preferences.setStreamBitRate(321);
-        preferences.setClientName("Subsound");
-        return preferences;
     }
 
     public static void main(String[] args) {

@@ -37,9 +37,9 @@ A few samples of what the UI looks like:
     - [ ] add hover / glow / overlay icon when hovering over artwork?
   - [ ] display whole albums / artist that have been starred in addition to individual songs?
 - [X] cache thumbnails on disk
-  - [ ] use a paintable instead ? pixbuf is deprecated
-  - [ ] switch load directly from cached file?
-  - [ ] reuse the pixbuf for albumart
+  - [ ] use a Texture / Paintable instead ? pixbuf is deprecated it looks like
+  - [X] switch load directly from cached file?
+  - [X] reuse the pixbuf for albumart (in memory cache)
   - [X] make resize retain aspect ratio
 - [X] cache mp3 variant on disk
   - [X] fix song cache storing with original suffix instead of transcode format suffix
@@ -94,7 +94,17 @@ A few samples of what the UI looks like:
 - [ ] set up a sqlite database with migrations
   - perhaps there is a good android library for migrating sqlite ?
   - [ ] record what we have downloaded / want to keep offline
-- [ ] Create a persistent store for server settings / authentication
+- Configuration Page
+  - [X] Create a page
+  - [X] Edit basic server settings
+  - [X] Read configuration from file
+  - [X] Save configuration to file
+  - [ ] Toast on success / failure
+  - [ ] "Test mode" for client
+  - [ ] Update the ServerClient dynamically when configuration is changed, and reflect it in the entire app
+  - [ ] extend to custom server specific settings, such as transcode format and bitrate
+  - [ ] support for tlsNoVerify
+- [X] Create a persistent store for server settings / authentication
   - [ ] store authentication in platform password storage / libsecret ?
 - [X] Implement star/unstar
   - [ ] Optimistically update the local copy of Starred list based on star / unstar actions

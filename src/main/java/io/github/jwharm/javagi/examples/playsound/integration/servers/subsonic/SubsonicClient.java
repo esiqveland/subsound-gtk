@@ -1,5 +1,6 @@
 package io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic;
 
+import io.github.jwharm.javagi.examples.playsound.configuration.Config.ServerConfig;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.github.jwharm.javagi.examples.playsound.utils.javahttp.TextUtils;
@@ -30,10 +31,6 @@ public class SubsonicClient implements ServerClient {
 
     public SubsonicClient(Subsonic client) {
         this.client = client;
-    }
-
-    public static SubsonicClient create(SubsonicPreferences preferences) {
-        return new SubsonicClient(new Subsonic(preferences));
     }
 
     public URI coverArtLink(String coverArtId) {
@@ -240,5 +237,23 @@ public class SubsonicClient implements ServerClient {
 
     public Optional<CoverArt> toCoverArt(String coverArtId) {
         return ofNullable(coverArtId).map(id -> new CoverArt(SERVER_ID, id, coverArtLink(id)));
+    }
+
+    public static SubsonicPreferences createSettings(ServerConfig cfg) {
+        SubsonicPreferences preferences = new SubsonicPreferences(
+                cfg.url(),
+                cfg.username(),
+                cfg.password()
+        );
+        preferences.setStreamBitRate(321);
+        preferences.setClientName("subsound-gtk");
+        return preferences;
+    }
+
+    public static SubsonicClient create(SubsonicPreferences preferences) {
+        return new SubsonicClient(new Subsonic(preferences));
+    }
+    public static SubsonicClient create(ServerConfig cfg) {
+        return new SubsonicClient(new Subsonic(createSettings(cfg)));
     }
 }
