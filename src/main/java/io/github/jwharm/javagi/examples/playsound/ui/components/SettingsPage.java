@@ -36,7 +36,7 @@ public class SettingsPage extends Box {
 
         this.serverTypeInfoLabel = Label.builder().setLabel("").setCssClasses(Classes.title1.add()).build();
         this.serverUrlEntry = EntryRow.builder().setTitle("Server URL").build();
-        this.tlsSwitchEntry = SwitchRow.builder().setTitle("Accept unverified certificate").build();
+        this.tlsSwitchEntry = SwitchRow.builder().setTitle("Accept unverified certificate").setSensitive(false).build();
         this.usernameEntry = EntryRow.builder().setTitle("Username").build();
         this.passwordEntry = PasswordEntryRow.builder().setTitle("Password").build();
         this.testButton = Button.builder().setLabel("Test").build();
@@ -69,5 +69,6 @@ public class SettingsPage extends Box {
         this.serverUrlEntry.setText(s.serverUrl);
         this.usernameEntry.setText(s.username);
         this.passwordEntry.setText(s.password);
+        this.tlsSwitchEntry.setSensitive(false);
     }
 }
