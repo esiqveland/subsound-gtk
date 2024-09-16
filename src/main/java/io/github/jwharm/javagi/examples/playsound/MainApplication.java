@@ -19,6 +19,7 @@ import org.gnome.adw.ApplicationWindow;
 import org.gnome.adw.HeaderBar;
 import org.gnome.adw.NavigationPage;
 import org.gnome.adw.NavigationView;
+import org.gnome.adw.ToastOverlay;
 import org.gnome.adw.ToolbarView;
 import org.gnome.adw.ViewStack;
 import org.gnome.adw.ViewStackPage;
@@ -52,6 +53,7 @@ public class MainApplication {
 
     private final ViewStack viewStack = ViewStack.builder().build();
     private final NavigationView navigationView = NavigationView.builder().build();
+    private final ToastOverlay toastOverlay = ToastOverlay.builder().setChild(navigationView).build();
     private AppNavigation appNavigation;
     private ArtistInfoLoader artistContainer;
 
@@ -239,7 +241,7 @@ public class MainApplication {
 
         ToolbarView toolbarView = ToolbarView.builder().build();
         toolbarView.addTopBar(headerBar);
-        toolbarView.setContent(navigationView);
+        toolbarView.setContent(toastOverlay);
         toolbarView.addBottomBar(bottomBar);
 
         var mainPage = NavigationPage.builder().setChild(viewStack).setTag("main").build();
