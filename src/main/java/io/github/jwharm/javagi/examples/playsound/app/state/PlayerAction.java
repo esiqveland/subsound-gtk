@@ -1,6 +1,7 @@
 package io.github.jwharm.javagi.examples.playsound.app.state;
 
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
+import io.github.jwharm.javagi.examples.playsound.ui.components.SettingsPage.SettingsInfo;
 
 import java.time.Duration;
 import java.util.List;
@@ -22,4 +23,7 @@ public sealed interface PlayerAction {
     record Enqueue(SongInfo song) implements PlayerAction {}
     record Star(SongInfo song) implements PlayerAction {}
     record Unstar(SongInfo song) implements PlayerAction {}
+
+    // not strictly player actions:
+    record SaveConfig(SettingsInfo next) implements PlayerAction {}
 }

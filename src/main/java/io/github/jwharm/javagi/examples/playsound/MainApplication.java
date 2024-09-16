@@ -1,6 +1,7 @@
 package io.github.jwharm.javagi.examples.playsound;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
+import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.integration.servers.subsonic.SubsonicClient;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.ui.components.SettingsPage;
@@ -80,13 +81,16 @@ public class MainApplication {
             }
             case AppNavigation.AppRoute.SettingsPage s -> {
                 var cfg = this.appManager.getConfig();
-                var settings = new SettingsPage();
-                settings.setSettingsInfo(new SettingsPage.SettingsInfo(
+                var info = new SettingsPage.SettingsInfo(
                         cfg.serverConfig.type(),
                         cfg.serverConfig.url(),
                         cfg.serverConfig.username(),
                         cfg.serverConfig.password()
-                ));
+                );
+                var settings = new SettingsPage(
+                        info,
+                        next -> appManager.handleAction(new PlayerAction.SaveConfig(next))
+                );
                 NavigationPage navPage = NavigationPage.builder().setChild(settings).setTitle("Settings").build();
                 navigationView.push(navPage);
 

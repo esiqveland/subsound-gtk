@@ -14,6 +14,9 @@ import org.gnome.gtk.SelectionMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.borderBox;
 import static io.github.jwharm.javagi.examples.playsound.utils.javahttp.TextUtils.capitalize;
 import static org.gnome.gtk.Orientation.VERTICAL;
@@ -21,6 +24,7 @@ import static org.gnome.gtk.Orientation.VERTICAL;
 public class SettingsPage extends Box {
     private static final Logger log = LoggerFactory.getLogger(SettingsPage.class);
 
+    private final Function<SettingsInfo, CompletableFuture<Void>> onSave;
     private final Clamp clamp;
     private final Box centerBox;
 
@@ -33,8 +37,9 @@ public class SettingsPage extends Box {
     private final Button testButton;
     private final Button saveButton;
 
-    public SettingsPage() {
+    public SettingsPage(SettingsInfo settingsInfo, Function<SettingsInfo, CompletableFuture<Void>> onSave) {
         super(VERTICAL, 0);
+        this.onSave = onSave;
         this.setValign(Align.CENTER);
         this.setHalign(Align.CENTER);
 
@@ -60,6 +65,7 @@ public class SettingsPage extends Box {
         this.centerBox.append(this.listBox);
         this.clamp = Clamp.builder().setMaximumSize(600).setChild(this.centerBox).build();
         this.append(clamp);
+        this.setSettingsInfo(settingsInfo);
     }
 
     private void saveForm() {
@@ -70,6 +76,17 @@ public class SettingsPage extends Box {
                 this.passwordEntry.getText()
         );
         log.info("saveForm: data={}", data);
+        onSave.apply(data)
+                .handle((success, throwable) -> {
+                    if (throwable != null) {
+                        log.error("saveForm: data={} error: ", data, throwable);
+                        // TODO(toast): ERROR
+                    } else {
+                        log.error("saveForm: data={} success!", data);
+                        // TODO(toast): SUCCESS
+                    }
+                    return null;
+                });
     }
 
     public record SettingsInfo(
@@ -77,7 +94,8 @@ public class SettingsPage extends Box {
             String serverUrl,
             String username,
             String password
-    ) {}
+    ) {
+    }
 
     public void setSettingsInfo(SettingsInfo s) {
         this.serverTypeInfoLabel.setLabel("%s server".formatted(capitalize(s.type.name())));

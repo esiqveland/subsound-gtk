@@ -17,6 +17,7 @@ import io.soabase.recordbuilder.core.RecordBuilderFull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -252,6 +253,9 @@ public class AppManager {
         return Utils.doAsync(() -> {
             log.info("handleAction: payload={}", action);
             switch (action) {
+                // config actions:
+                case PlayerAction.SaveConfig settings -> this.saveConfig(settings);
+
                 // player actions:
                 case Enqueue a -> this.playQueue.enqueue(a.song());
                 case PlayPositionInQueue a -> this.playQueue.playPosition(a.position());
@@ -271,6 +275,20 @@ public class AppManager {
                 case PlayerAction.PlaySong playSong -> this.loadSource(playSong.song());
             }
         });
+    }
+
+    private void saveConfig(PlayerAction.SaveConfig settings) {
+        this.config.serverConfig = new Config.ServerConfig(
+                settings.next().type(),
+                settings.next().serverUrl(),
+                settings.next().username(),
+                settings.next().password()
+        );
+        try {
+            this.config.saveToFile();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void unstarSong(PlayerAction.Unstar a) {
