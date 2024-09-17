@@ -1,5 +1,6 @@
 package io.github.jwharm.javagi.examples.playsound.ui.components;
 
+import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.configuration.Config.ServerConfig;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ServerType;
@@ -8,6 +9,7 @@ import org.gnome.adw.Clamp;
 import org.gnome.adw.EntryRow;
 import org.gnome.adw.PasswordEntryRow;
 import org.gnome.adw.SwitchRow;
+import org.gnome.adw.Toast;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
@@ -23,6 +25,7 @@ import java.util.function.Function;
 import static io.github.jwharm.javagi.examples.playsound.ui.components.Classes.boxedList;
 import static io.github.jwharm.javagi.examples.playsound.ui.components.Classes.colorError;
 import static io.github.jwharm.javagi.examples.playsound.ui.components.Classes.colorSuccess;
+import static io.github.jwharm.javagi.examples.playsound.ui.components.Classes.colorWarning;
 import static io.github.jwharm.javagi.examples.playsound.ui.components.Classes.none;
 import static io.github.jwharm.javagi.examples.playsound.ui.components.Classes.suggestedAction;
 import static io.github.jwharm.javagi.examples.playsound.ui.components.Classes.title1;
@@ -34,7 +37,7 @@ import static org.gnome.gtk.Orientation.VERTICAL;
 public class SettingsPage extends Box {
     private static final Logger log = LoggerFactory.getLogger(SettingsPage.class);
 
-    private final Function<SettingsInfo, CompletableFuture<Void>> onSave;
+    private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private final Clamp clamp;
     private final Box centerBox;
 
@@ -47,9 +50,12 @@ public class SettingsPage extends Box {
     private final Button testButton;
     private final Button saveButton;
 
-    public SettingsPage(SettingsInfo settingsInfo, Function<SettingsInfo, CompletableFuture<Void>> onSave) {
+    public SettingsPage(
+            SettingsInfo settingsInfo,
+            Function<PlayerAction, CompletableFuture<Void>> onAction
+    ) {
         super(VERTICAL, 0);
-        this.onSave = onSave;
+        this.onAction = onAction;
         this.setValign(Align.CENTER);
         this.setHalign(Align.CENTER);
 
@@ -81,6 +87,7 @@ public class SettingsPage extends Box {
 
     private void testConnection() {
         this.testButton.setCssClasses(none.add());
+        this.saveButton.setSensitive(false);
         var data = getFormData();
         Utils.doAsync(() -> {
             ServerClient serverClient = ServerClient.create(new ServerConfig(
@@ -90,6 +97,19 @@ public class SettingsPage extends Box {
                     data.password
             ));
             boolean success = serverClient.testConnection();
+            if (success) {
+                Toast build = Toast.builder()
+                        .setTimeout(1)
+                        .setCustomTitle(Label.builder().setLabel("Connection OK!").setCssClasses(title1.add(colorSuccess)).build())
+                        .build();
+                this.onAction.apply(new PlayerAction.Toast(build));
+            } else {
+                Toast build = Toast.builder()
+                        .setTimeout(2)
+                        .setCustomTitle(Label.builder().setLabel("Connection failed!").setCssClasses(title1.add(colorWarning)).build())
+                        .build();
+                this.onAction.apply(new PlayerAction.Toast(build));
+            }
             Utils.runOnMainThread(() -> {
                 this.saveButton.setSensitive(success);
                 Classes color = success ? colorSuccess : colorError;
@@ -122,17 +142,25 @@ public class SettingsPage extends Box {
     private void saveForm() {
         var data = getFormData();
         log.info("saveForm: data={}", data);
-        onSave.apply(data)
+        onAction.apply(new PlayerAction.SaveConfig(data))
                 .handle((success, throwable) -> {
                     if (throwable != null) {
                         log.error("saveForm: data={} error: ", data, throwable);
-                        // TODO(toast): ERROR
+                        Toast toast = Toast.builder()
+                                .setTimeout(30)
+                                .setCustomTitle(Label.builder().setLabel("Error saving configuration!").setCssClasses(title1.add(colorError)).build())
+                                .build();
+                        return new PlayerAction.Toast(toast);
                     } else {
-                        log.error("saveForm: data={} success!", data);
-                        // TODO(toast): SUCCESS
+                        log.info("saveForm: data={} success!", data);
+                        Toast toast = Toast.builder()
+                                .setTimeout(4)
+                                .setCustomTitle(Label.builder().setLabel("Configuration saved!").setCssClasses(title1.add(colorSuccess)).build())
+                                .build();
+                        return new PlayerAction.Toast(toast);
                     }
-                    return null;
-                });
+                })
+                .thenAccept(this.onAction::apply);
     }
 
 

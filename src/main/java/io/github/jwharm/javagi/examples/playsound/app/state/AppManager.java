@@ -14,6 +14,7 @@ import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.AudioSourc
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer.Source;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
+import org.gnome.adw.ToastOverlay;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +50,7 @@ public class AppManager {
     private final ServerClient client;
     private final AtomicReference<AppState> currentState = new AtomicReference<>();
     private final CopyOnWriteArrayList<StateListener> listeners = new CopyOnWriteArrayList<>();
+    private ToastOverlay toastOverlay;
 
     public AppManager(
             Config config,
@@ -91,6 +93,11 @@ public class AppManager {
 
     public Config getConfig() {
         return config;
+    }
+
+    public AppManager setToastOverlay(ToastOverlay toastOverlay) {
+        this.toastOverlay = toastOverlay;
+        return this;
     }
 
     public interface StateListener {
@@ -255,6 +262,7 @@ public class AppManager {
             switch (action) {
                 // config actions:
                 case PlayerAction.SaveConfig settings -> this.saveConfig(settings);
+                case PlayerAction.Toast t -> this.toast(t);
 
                 // player actions:
                 case Enqueue a -> this.playQueue.enqueue(a.song());
@@ -274,6 +282,16 @@ public class AppManager {
                 case PlayerAction.Unstar a -> this.unstarSong(a);
                 case PlayerAction.PlaySong playSong -> this.loadSource(playSong.song());
             }
+        });
+    }
+
+    private void toast(PlayerAction.Toast t) {
+        if (this.toastOverlay == null) {
+            log.warn("unable to toast because toastOverlay={}", this.toastOverlay);
+            return;
+        }
+        Utils.runOnMainThread(() -> {
+            this.toastOverlay.addToast(t.toast());
         });
     }
 

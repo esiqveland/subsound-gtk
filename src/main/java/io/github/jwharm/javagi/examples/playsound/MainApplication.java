@@ -1,7 +1,6 @@
 package io.github.jwharm.javagi.examples.playsound;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
-import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.ui.components.AppNavigation;
@@ -58,7 +57,7 @@ public class MainApplication {
     private ArtistInfoLoader artistContainer;
 
     public MainApplication(AppManager appManager) {
-        this.appManager = appManager;
+        this.appManager = appManager.setToastOverlay(toastOverlay);
         this.thumbLoader = appManager.getThumbnailCache();
         this.client = appManager.getClient();
         this.cssMain = mustRead(Path.of("src/main/resources/css/main.css"));
@@ -106,7 +105,7 @@ public class MainApplication {
                 );
                 var settings = new SettingsPage(
                         info,
-                        next -> appManager.handleAction(new PlayerAction.SaveConfig(next))
+                        appManager::handleAction
                 );
                 NavigationPage navPage = NavigationPage.builder().setChild(settings).setTitle("Settings").build();
                 navigationView.push(navPage);

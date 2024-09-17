@@ -99,9 +99,9 @@ A few samples of what the UI looks like:
   - [X] Edit basic server settings
   - [X] Read configuration from file
   - [X] Save configuration to file
-  - [ ] Toast on success / failure
-  - [ ] "Test mode" for client
-  - [ ] Update the ServerClient dynamically when configuration is changed, and reflect it in the entire app
+  - [X] Toast on success / failure
+  - [X] "Test mode" for client
+  - [ ] Update the ServerClient configuration dynamically when configuration is saved, and reflect it in the entire app
   - [ ] extend to custom server specific settings, such as transcode format and bitrate
   - [ ] support for tlsNoVerify
 - [X] Create a persistent store for server settings / authentication
