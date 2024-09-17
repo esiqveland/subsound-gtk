@@ -37,6 +37,8 @@ public enum Icons {
     Music("folder-music-symbolic"),
     Recent("document-open-recent-symbolic"),
     AlbumPlaceholder("media-optical-cd-audio-symbolic"),
+    SettingsOld("settings-symbolic"),
+    Settings("emblem-system-symbolic"),
     ;
 
     private final String iconName;

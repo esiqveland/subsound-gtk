@@ -32,8 +32,6 @@ import org.gnome.gtk.Button;
 import org.gnome.gtk.CssProvider;
 import org.gnome.gtk.Gtk;
 import org.gnome.gtk.Orientation;
-import org.gnome.gtk.SearchBar;
-import org.gnome.gtk.SearchEntry;
 import org.gnome.gtk.StyleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,24 +123,13 @@ public class MainApplication {
         });
 
         var settingsButton = Button.builder()
-                .setIconName("preferences-other")
-                //.setActionName("app.open-settings")
-                //.setLabel("Settings")
+                .setIconName(Icons.Settings.getIconName())
                 .setTooltipText("Settings")
                 .build();
         settingsButton.onClicked(() -> {
             System.out.println("settingsButton.onClicked");
             appNavigation.navigateTo(new AppNavigation.AppRoute.SettingsPage());
         });
-
-        var searchEntry = SearchEntry.builder().build();
-        searchEntry.onSearchChanged(() -> {
-            var text = searchEntry.getText();
-            System.out.printf("searchEntry.onSearchChanged: %s\n", text);
-        });
-        var searchBar = SearchBar.builder()
-                .setChild(searchEntry)
-                .build();
 
         var searchMe = Button.withLabel("Search me");
         searchMe.onClicked(() -> {
@@ -199,15 +186,6 @@ public class MainApplication {
         }
         {
             ViewStackPage playlistPage = viewStack.addTitledWithIcon(playlistsContainer, "playlistPage", "Playlists", Icons.Playlists.getIconName());
-        }
-
-        var albumInfoContainer = new AlbumInfoLoader(
-                thumbLoader,
-                appManager,
-                appManager::handleAction
-        );
-        {
-            ViewStackPage albumInfoPage = viewStack.addTitledWithIcon(albumInfoContainer, "albumInfoPage", "AlbumInfo", Icons.Albums.getIconName());
         }
 
         viewStack.getPages().onSelectionChanged((position, nItems) -> {

@@ -64,11 +64,11 @@ A few samples of what the UI looks like:
     - [X] icon for Home page
     - [X] icon for starred page
 - HomePage
-  - [X] icon
   - [X] Newly added: https://subsonic.org/pages/api.jsp#getAlbumList2 type=newest
   - [X] recently played: https://subsonic.org/pages/api.jsp#getAlbumList2 type=recent
   - [X] Most played: https://subsonic.org/pages/api.jsp#getAlbumList2 type=frequent
   - [ ] https://subsonic.org/pages/api.jsp#getTopSongs
+  - [ ] https://subsonic.org/pages/api.jsp#getSimilarSongs2
 - ArtistListing:
   - [X] add a circular artist thumbnail in the left prefix area
   - [ ] convert to using a ~AdwLeaflet~ `AdwNavigationSplitView`
@@ -88,7 +88,9 @@ A few samples of what the UI looks like:
   - [X] PlayQueue: prev with position >= 4.0 seconds played means seekToStart
   - [ ] PlayQueue: enqueue a song that will be added after the current playing song in the playqueue
   - [ ] PlayQueue: Gapless playback of queue using gstreamer soon-finished signal / message + setting next-uri property
-- [ ] Proper navigation
+- Proper navigation
+  - [ ] fix the navigationview
+  - [ ] fix back button in headerbar
   - AdwNavigationView ?
   - AdwLeaflet + AdwClamp? see https://gitlab.gnome.org/GNOME/gnome-music/-/blob/master/data/ui/ArtistAlbumsWidget.ui
 - [ ] set up a sqlite database with migrations
