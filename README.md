@@ -166,3 +166,10 @@ https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/class.Leaflet.html
 
 AdwClamp:
 https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/class.Clamp.html
+
+List Widget Overview
+https://docs.gtk.org/gtk4/section-list-widget.html
+
+Scalable lists in GTK 4
+https://blog.gtk.org/2020/06/07/scalable-lists-in-gtk-4/
+
