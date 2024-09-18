@@ -47,7 +47,7 @@ public class AppManager {
     private final PlayQueue playQueue;
     private final SongCache songCache;
     private final ThumbnailCache thumbnailCache;
-    private final ServerClient client;
+    private final AtomicReference<ServerClient> client;
     private final AtomicReference<AppState> currentState = new AtomicReference<>();
     private final CopyOnWriteArrayList<StateListener> listeners = new CopyOnWriteArrayList<>();
     private ToastOverlay toastOverlay;
@@ -68,7 +68,7 @@ public class AppManager {
                 nextState -> this.setState(old -> old.withQueue(nextState)),
                 this::loadSource
         );
-        this.client = client;
+        this.client = new AtomicReference<>(client);
         player.onStateChanged(next -> this.setState(old -> new AppState(
                 old.nowPlaying, next, old.queue
         )));
@@ -88,7 +88,7 @@ public class AppManager {
     }
 
     public ServerClient getClient() {
-        return this.client;
+        return this.client.get();
     }
 
     public Config getConfig() {
@@ -304,13 +304,15 @@ public class AppManager {
         );
         try {
             this.config.saveToFile();
+            var newClient = ServerClient.create(this.config.serverConfig);
+            this.client.set(newClient);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     private void unstarSong(PlayerAction.Unstar a) {
-        this.client.unStarId(a.song().id());
+        this.client.get().unStarId(a.song().id());
         setState(appState -> appState.nowPlaying()
                 .map(nowPlaying -> {
                     var song = nowPlaying.song();
@@ -324,7 +326,7 @@ public class AppManager {
     }
 
     private void starSong(PlayerAction.Star a) {
-        this.client.starId(a.song().id());
+        this.client.get().starId(a.song().id());
         setState(appState -> appState.nowPlaying()
                 .map(nowPlaying -> {
                     var song = nowPlaying.song();
