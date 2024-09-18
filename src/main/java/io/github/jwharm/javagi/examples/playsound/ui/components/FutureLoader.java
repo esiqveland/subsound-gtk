@@ -26,7 +26,7 @@ public class FutureLoader<T, R extends Widget> extends Box {
         this.statusPage = StatusPage.builder().setChild(LoadingSpinner.fullscreen()).build();
         this.append(statusPage);
 
-        future.whenCompleteAsync((value, exception) -> {
+        this.future.whenCompleteAsync((value, exception) -> {
             if (exception != null) {
                 log.warn("error loading: {}", exception.getMessage(), exception);
                 Utils.runOnMainThread(() -> {
@@ -35,12 +35,13 @@ public class FutureLoader<T, R extends Widget> extends Box {
                 });
             } else {
                 var widget = this.builder.apply(value);
+                log.info("FutureLoader hello {}", widget.getClass().getName());
                 Utils.runOnMainThread(() -> {
                     this.remove(statusPage);
                     this.append(widget);
                 });
             }
-        });
+        }).whenCompleteAsync((v, ex) -> log.error("error: ", ex));
 //        future.whenComplete()
 //        switch (this.future.state()) {
 //            case RUNNING ->
