@@ -23,7 +23,6 @@ import org.gnome.adw.ToolbarView;
 import org.gnome.adw.ViewStack;
 import org.gnome.adw.ViewStackPage;
 import org.gnome.adw.ViewSwitcher;
-import org.gnome.adw.ViewSwitcherBar;
 import org.gnome.adw.ViewSwitcherPolicy;
 import org.gnome.gdk.Display;
 import org.gnome.gtk.Align;
@@ -197,10 +196,6 @@ public class MainApplication {
                 .setStack(viewStack)
                 .build();
 
-        ViewSwitcherBar viewSwitcherBar = ViewSwitcherBar.builder()
-                .setStack(viewStack)
-                .build();
-
         var headerBar = HeaderBar.builder()
                 .setHexpand(true)
                 .setTitleWidget(viewSwitcher)
@@ -209,7 +204,6 @@ public class MainApplication {
 
         var playerBar = new PlayerBar(thumbLoader, appManager);
         var bottomBar = new Box(Orientation.VERTICAL, 2);
-        bottomBar.append(viewSwitcherBar);
         bottomBar.append(playerBar);
 
         navigationView.onPopped(page -> {
