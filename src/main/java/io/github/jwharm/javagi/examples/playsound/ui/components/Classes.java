@@ -15,7 +15,7 @@ public enum Classes {
     colorWarning("warning"),
     colorError("error"),
     suggestedAction("suggested-action"),
-    titleLarge("large-title"),
+    titleLarge("larger-title"),
     title1("title1"),
     title2("title2"),
     title3("title3"),

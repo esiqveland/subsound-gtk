@@ -22,3 +22,8 @@ scale slider {
     min-width: 20px;
     min-height: 20px;
 }
+
+.larger-title {
+  font-weight: 600;
+  font-size: 24pt;
+}

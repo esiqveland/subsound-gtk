@@ -8,6 +8,7 @@ import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.ui.components.AlbumFlowBoxChild;
 import io.github.jwharm.javagi.examples.playsound.ui.components.AlbumsFlowBox;
 import io.github.jwharm.javagi.examples.playsound.ui.components.BoxHolder;
+import io.github.jwharm.javagi.examples.playsound.ui.components.Classes;
 import io.github.jwharm.javagi.examples.playsound.ui.components.LoadingSpinner;
 import io.github.jwharm.javagi.examples.playsound.ui.components.OverviewAlbumChild;
 import io.github.jwharm.javagi.examples.playsound.ui.views.FrontpagePage.FrontpagePageState.Loading;
@@ -36,6 +37,7 @@ import static io.github.jwharm.javagi.examples.playsound.utils.Utils.borderBox;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.heading1;
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
+import static org.gnome.gtk.Orientation.VERTICAL;
 
 public class FrontpagePage extends Box {
     sealed interface FrontpagePageState {
@@ -63,7 +65,7 @@ public class FrontpagePage extends Box {
         this.setHalign(START);
         this.setValign(START);
 
-        this.view = borderBox(Orientation.VERTICAL, BIG_SPACING).setHalign(START).setValign(START).build();
+        this.view = borderBox(Orientation.VERTICAL, BIG_SPACING).setSpacing(BIG_SPACING).setHalign(START).setValign(START).build();
         this.thumbLoader = thumbLoader;
         this.appManager = appManager;
         this.homeView = new HomeView(thumbLoader, this.appManager, this.onAlbumSelected);
@@ -77,9 +79,16 @@ public class FrontpagePage extends Box {
         this.errorLabel = Label.builder().build();
         this.viewStack.addNamed(errorLabel, "error");
         this.viewStack.addNamed(homeView, "home");
-        this.view.append(Label.builder().setLabel("fdsafdsafdsa").build());
+        this.view.append(Label.builder().setLabel("Home").setHalign(START).setCssClasses(Classes.titleLarge.add()).build());
         this.view.append(viewStack);
-        this.append(view);
+        var scroll = ScrolledWindow.builder()
+                .setVexpand(true)
+                .setHscrollbarPolicy(PolicyType.NEVER)
+                .setPropagateNaturalHeight(true)
+                .setPropagateNaturalWidth(true)
+                .setChild(view)
+                .build();
+        this.append(scroll);
     }
 
     private void doLoad() {
@@ -132,7 +141,7 @@ public class FrontpagePage extends Box {
         private final BoxHolder mostPlayedList;
 
         public HomeView(ThumbnailCache thumbLoader, AppManager appManager, Consumer<ArtistAlbumInfo> onAlbumSelected) {
-            super(Orientation.VERTICAL, 0);
+            super(Orientation.VERTICAL, BIG_SPACING);
             this.appManager = appManager;
             this.onAlbumSelected = onAlbumSelected;
             this.setHexpand(true);
@@ -143,12 +152,16 @@ public class FrontpagePage extends Box {
             this.recentList = holder();
             this.newList = holder();
             this.mostPlayedList = holder();
-            this.append(recentLabel);
-            this.append(recentList);
-            this.append(newLabel);
-            this.append(newList);
-            this.append(mostLabel);
-            this.append(mostPlayedList);
+            this.append(wrap(recentLabel, recentList));
+            this.append(wrap(newLabel, newList));
+            this.append(wrap(mostLabel, mostPlayedList));
+        }
+
+        private static Box wrap(Label recentLabel, BoxHolder recentList) {
+            var b = Box.builder().setOrientation(VERTICAL).setSpacing(8).build();
+            b.append(recentLabel);
+            b.append(recentList);
+            return b;
         }
 
         private BoxHolder holder() {
@@ -228,7 +241,7 @@ public class FrontpagePage extends Box {
                         .setHexpand(true)
                         .setHalign(START)
                         .setValign(START)
-                        .setSpacing(24)
+                        .setSpacing(BIG_SPACING/2)
                         .build();
                 this.list = this.albums.stream().map(album -> {
 //                    var item = new AlbumFlowBoxChild(this.thumbLoader, album);
@@ -245,6 +258,8 @@ public class FrontpagePage extends Box {
                         .setPropagateNaturalHeight(true)
                         .setPropagateNaturalWidth(true)
                         .setVscrollbarPolicy(PolicyType.NEVER)
+                        .setOverlayScrolling(true)
+                        //.setVadjustment(Adjustment.builder().setUpper(0))
                         .build();
                 this.scroll.setChild(this.carousel);
                 this.append(this.scroll);
