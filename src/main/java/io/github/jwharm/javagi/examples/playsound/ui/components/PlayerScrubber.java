@@ -29,10 +29,14 @@ public class PlayerScrubber extends Box {
 
         currentTimeLabel = Label.builder()
                 .setLabel(LABEL_ZERO)
+                .setWidthChars(5)
+                .setMaxWidthChars(5)
                 .setCssClasses(Utils.cssClasses("dim-label", "numeric"))
                 .build();
         endTimeLabel = Label.builder()
                 .setLabel(LABEL_ZERO)
+                .setWidthChars(5)
+                .setMaxWidthChars(5)
                 .setCssClasses(Utils.cssClasses("dim-label", "numeric"))
                 .build();
 
