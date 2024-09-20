@@ -5,6 +5,7 @@ import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ListStarred;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
+import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import io.github.jwharm.javagi.examples.playsound.ui.components.Classes;
 import io.github.jwharm.javagi.examples.playsound.ui.components.NowPlayingOverlayIcon;
 import io.github.jwharm.javagi.examples.playsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
@@ -58,7 +59,7 @@ public class StarredListView extends Box implements AppManager.StateListener {
     private final AtomicReference<MiniState> prevState;
 
     public interface UpdateListener {
-        record MiniState(Optional<SongInfo> songInfo) {}
+        record MiniState(Optional<SongInfo> songInfo, NowPlayingState nowPlayingState) {}
         void update(MiniState n);
     }
     private final ConcurrentHashMap<StarredItemRow, StarredItemRow> listeners = new ConcurrentHashMap<>();
@@ -364,7 +365,7 @@ public class StarredListView extends Box implements AppManager.StateListener {
         private NowPlayingState getNextPlayingState(MiniState n) {
             return n.songInfo.map(songInfo -> {
                 if (songInfo.id().equals(this.songInfo.id())) {
-                    return NowPlayingState.PLAYING;
+                    return n.nowPlayingState;
                 } else {
                     return NowPlayingState.NONE;
                 }
@@ -388,17 +389,33 @@ public class StarredListView extends Box implements AppManager.StateListener {
 
     private MiniState selectState(MiniState prev, AppManager.AppState state) {
         var npSong = state.nowPlaying().map(AppManager.NowPlaying::song);
+        var nowPlayingState = getNowPlayingState(state.player().state());
         if (prev == null) {
-            return new MiniState(npSong);
+            return new MiniState(npSong, nowPlayingState);
         }
-        if (prev.songInfo == npSong) {
+        if (prev.songInfo == npSong && prev.nowPlayingState == nowPlayingState) {
             return prev;
         }
         if (npSong.isPresent()) {
             if (npSong.get().id().equals(prev.songInfo.map(SongInfo::id).orElse(""))) {
-                return prev;
+                if (prev.nowPlayingState == nowPlayingState) {
+                    return prev;
+                } else {
+                    return new MiniState(npSong, nowPlayingState);
+                }
             }
         }
-        return new MiniState(npSong);
+        return new MiniState(npSong, nowPlayingState);
+    }
+
+    private NowPlayingState getNowPlayingState(PlaybinPlayer.PlayerStates state) {
+        return switch (state) {
+            case INIT -> NowPlayingState.NONE;
+            case BUFFERING -> NowPlayingState.PLAYING;
+            case READY -> NowPlayingState.PAUSED;
+            case PAUSED -> NowPlayingState.PAUSED;
+            case PLAYING -> NowPlayingState.PLAYING;
+            case END_OF_STREAM -> NowPlayingState.NONE;
+        };
     }
 }
