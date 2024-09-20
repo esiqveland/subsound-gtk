@@ -42,20 +42,9 @@ import static org.gnome.gtk.Orientation.VERTICAL;
 
 public class FrontpagePage extends Box {
     sealed interface FrontpagePageState {
-        record Loading() implements FrontpagePageState {
-        }
-
-        ;
-
-        record Ready(HomeOverview data) implements FrontpagePageState {
-        }
-
-        ;
-
-        record Error(Throwable t) implements FrontpagePageState {
-        }
-
-        ;
+        record Loading() implements FrontpagePageState {}
+        record Ready(HomeOverview data) implements FrontpagePageState {}
+        record Error(Throwable t) implements FrontpagePageState {}
     }
 
     private final ThumbnailCache thumbLoader;
@@ -64,6 +53,7 @@ public class FrontpagePage extends Box {
     private final AtomicReference<FrontpagePageState> state = new AtomicReference<>(new Loading());
     private final AtomicBoolean isMapped = new AtomicBoolean(false);
 
+    private final ScrolledWindow scroll;
     private final Box view;
     private final Stack viewStack;
     private final LoadingSpinner spinner = new LoadingSpinner();
@@ -98,7 +88,7 @@ public class FrontpagePage extends Box {
         this.viewStack.addNamed(homeView, "home");
         this.view.append(Label.builder().setLabel("Home").setHalign(START).setCssClasses(Classes.titleLarge.add()).build());
         this.view.append(viewStack);
-        var scroll = ScrolledWindow.builder()
+        this.scroll = ScrolledWindow.builder()
                 .setVexpand(true)
                 .setHscrollbarPolicy(PolicyType.NEVER)
                 .setPropagateNaturalHeight(true)
