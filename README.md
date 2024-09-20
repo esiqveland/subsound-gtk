@@ -111,7 +111,7 @@ A few samples of what the UI looks like:
 - [X] Implement star/unstar
   - [ ] Optimistically update the local copy of Starred list based on star / unstar actions
 - [ ] Playlist support
-  - [ ] move Starred as a fake playlist under the playlists view 
+  - [ ] move Starred as a fake playlist under the playlists view ?
   - browsing playlists
   - add song to playlist
   - remove song from playlist
