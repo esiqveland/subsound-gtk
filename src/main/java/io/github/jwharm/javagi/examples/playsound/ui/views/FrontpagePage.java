@@ -28,6 +28,7 @@ import org.gnome.gtk.Stack;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -41,15 +42,27 @@ import static org.gnome.gtk.Orientation.VERTICAL;
 
 public class FrontpagePage extends Box {
     sealed interface FrontpagePageState {
-        record Loading() implements FrontpagePageState {};
-        record Ready(HomeOverview data) implements FrontpagePageState {};
-        record Error(Throwable t) implements FrontpagePageState {};
+        record Loading() implements FrontpagePageState {
+        }
+
+        ;
+
+        record Ready(HomeOverview data) implements FrontpagePageState {
+        }
+
+        ;
+
+        record Error(Throwable t) implements FrontpagePageState {
+        }
+
+        ;
     }
 
     private final ThumbnailCache thumbLoader;
     private final AppManager appManager;
     private final Consumer<ArtistAlbumInfo> onAlbumSelected;
     private final AtomicReference<FrontpagePageState> state = new AtomicReference<>(new Loading());
+    private final AtomicBoolean isMapped = new AtomicBoolean(false);
 
     private final Box view;
     private final Stack viewStack;
@@ -69,8 +82,12 @@ public class FrontpagePage extends Box {
         this.thumbLoader = thumbLoader;
         this.appManager = appManager;
         this.homeView = new HomeView(thumbLoader, this.appManager, this.onAlbumSelected);
-        //this.onMap(() -> this.doLoad());
-        this.onRealize(() -> this.doLoad());
+        this.onMap(() -> {
+            isMapped.set(true);
+            this.doLoad();
+        });
+        this.onUnmap(() -> isMapped.set(false));
+        //this.onRealize(() -> this.doLoad());
 
         this.viewStack = Stack.builder().setHhomogeneous(false).setHexpand(true).setVexpand(true).build();
         this.viewStack.setHalign(START);
@@ -92,13 +109,15 @@ public class FrontpagePage extends Box {
     }
 
     private void doLoad() {
-        try {
-            this.setState(new Loading());
-            var data = this.appManager.getClient().getHomeOverview();
-            this.setState(new FrontpagePageState.Ready(data));
-        } catch (Exception e) {
-            this.setState(new FrontpagePageState.Error(e));
-        }
+        this.setState(new Loading());
+        Utils.doAsync(() -> {
+            try {
+                var data = this.appManager.getClient().getHomeOverview();
+                this.setState(new FrontpagePageState.Ready(data));
+            } catch (Exception e) {
+                this.setState(new FrontpagePageState.Error(e));
+            }
+        });
     }
 
     private void setState(FrontpagePageState next) {
@@ -107,22 +126,27 @@ public class FrontpagePage extends Box {
     }
 
     private void updateView() {
-        var s = this.state.get();
-        switch (s) {
-            case Loading l -> {
-                this.errorLabel.setLabel("");
-                this.viewStack.setVisibleChildName("loading");
-            }
-            case FrontpagePageState.Error t -> {
-                this.errorLabel.setLabel(t.t.getMessage());
-                this.viewStack.setVisibleChildName("error");
-            }
-            case FrontpagePageState.Ready ready -> {
-                this.errorLabel.setLabel("");
-                this.homeView.setData(ready.data);
-                this.viewStack.setVisibleChildName("home");
-            }
+        if (!this.isMapped.get()) {
+            return;
         }
+        Utils.runOnMainThread(() -> {
+            var s = this.state.get();
+            switch (s) {
+                case Loading l -> {
+                    this.errorLabel.setLabel("");
+                    this.viewStack.setVisibleChildName("loading");
+                }
+                case FrontpagePageState.Error t -> {
+                    this.errorLabel.setLabel(t.t.getMessage());
+                    this.viewStack.setVisibleChildName("error");
+                }
+                case FrontpagePageState.Ready ready -> {
+                    this.errorLabel.setLabel("");
+                    this.homeView.setData(ready.data);
+                    this.viewStack.setVisibleChildName("home");
+                }
+            }
+        });
     }
 
     private static class HomeView extends Box {
@@ -241,7 +265,7 @@ public class FrontpagePage extends Box {
                         .setHexpand(true)
                         .setHalign(START)
                         .setValign(START)
-                        .setSpacing(BIG_SPACING/2)
+                        .setSpacing(BIG_SPACING / 2)
                         .build();
                 this.list = this.albums.stream().map(album -> {
 //                    var item = new AlbumFlowBoxChild(this.thumbLoader, album);
