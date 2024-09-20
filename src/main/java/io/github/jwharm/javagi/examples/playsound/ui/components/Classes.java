@@ -19,9 +19,10 @@ public enum Classes {
     title1("title1"),
     title2("title2"),
     title3("title3"),
+    heading("heading"),
     labelDim("dim-label"),
     labelNumeric("numeric"), // display label with numbers as monospace-ish
-    ;
+    flat("flat");
 
     private final String className;
     Classes(String className) {
