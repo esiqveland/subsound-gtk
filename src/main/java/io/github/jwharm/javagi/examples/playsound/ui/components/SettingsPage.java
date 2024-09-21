@@ -1,5 +1,6 @@
 package io.github.jwharm.javagi.examples.playsound.ui.components;
 
+import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.configuration.Config.ServerConfig;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
@@ -91,6 +92,7 @@ public class SettingsPage extends Box {
         var data = getFormData();
         Utils.doAsync(() -> {
             ServerClient serverClient = ServerClient.create(new ServerConfig(
+                    AppManager.SERVER_ID,
                     data.type,
                     data.serverUrl,
                     data.username,

@@ -2,6 +2,8 @@ package io.github.jwharm.javagi.examples.playsound.configuration;
 
 import com.google.gson.annotations.SerializedName;
 import io.github.cdimascio.dotenv.Dotenv;
+import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
+import io.github.jwharm.javagi.examples.playsound.configuration.Config.ConfigurationDTO.ServerConfigDTO;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ServerType;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.slf4j.Logger;
@@ -35,11 +37,18 @@ public class Config {
 
     private ConfigurationDTO toFileFormat() {
         var d = new ConfigurationDTO();
-        d.server = this.serverConfig;
+        d.server = new ServerConfigDTO(
+                this.serverConfig.id(),
+                this.serverConfig.type(),
+                this.serverConfig.url(),
+                this.serverConfig.username(),
+                this.serverConfig.password()
+        );
         return d;
     }
 
     public record ServerConfig(
+            String id,
             ServerType type,
             String url,
             String username,
@@ -48,6 +57,7 @@ public class Config {
 
     private static ServerConfig defaultServerConfig() {
         return new ServerConfig(
+                AppManager.SERVER_ID,
                 ServerType.SUBSONIC,
                 DOTENV.get("SERVER_URL"),
                 DOTENV.get("SERVER_USERNAME"),
@@ -68,7 +78,13 @@ public class Config {
                         cfg -> {
                             log.debug("read config file at path={}", configFilePath);
                             if (cfg.server != null) {
-                                config.serverConfig = cfg.server;
+                                config.serverConfig = new ServerConfig(
+                                        cfg.server.id,
+                                        cfg.server.type,
+                                        cfg.server.url,
+                                        cfg.server.username,
+                                        cfg.server.password
+                                );
                             }
                         },
                         () -> log.debug("no config file found at path={}", configFilePath)
@@ -78,8 +94,16 @@ public class Config {
     }
 
     public static class ConfigurationDTO {
+        public record ServerConfigDTO(
+                String id,
+                ServerType type,
+                String url,
+                String username,
+                String password
+        ) {}
+
         @SerializedName("server")
-        public ServerConfig server;
+        public ServerConfigDTO server;
     }
 
     private static Optional<ConfigurationDTO> readConfigFile(Path configPath) {

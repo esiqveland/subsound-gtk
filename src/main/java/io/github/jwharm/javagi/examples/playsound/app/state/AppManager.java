@@ -297,6 +297,7 @@ public class AppManager {
 
     private void saveConfig(PlayerAction.SaveConfig settings) {
         this.config.serverConfig = new Config.ServerConfig(
+                SERVER_ID,
                 settings.next().type(),
                 settings.next().serverUrl(),
                 settings.next().username(),
