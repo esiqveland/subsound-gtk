@@ -89,8 +89,8 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
                     .setVexpand(true)
                     .setHexpand(true)
                     .setSpacing(0)
-                    .setMarginStart(4)
-                    .setMarginEnd(4)
+                    .setMarginStart(8)
+                    .setMarginEnd(8)
                     .build();
 
             centerContent = Box.builder()
@@ -99,7 +99,7 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
                     .setValign(CENTER)
                     .setVexpand(true)
                     .setHexpand(true)
-                    .setSpacing(2)
+                    .setSpacing(4)
                     .build();
 
             subtitleBox = Box.builder()
