@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 /**
  * Adwaita available style classes stylesheet:
  * https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/style-classes.html
- * 
+ *
  * colors: https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/style-classes.html#colors
  *
  * Available named colors:
