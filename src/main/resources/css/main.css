@@ -1,4 +1,16 @@
 
+.now-playing-overlay-icon {
+    /*background-color: red;*/
+    background-color: rgba(1, 1, 0, 0.4);
+    opacity: 1.0;
+}
+
+.now-playing-overlay-icon .np-icon {
+    /*background-color: blue;*/
+    /*background-color: rgba(1, 1, 0, 0.4);*/
+    opacity: 1.0;
+}
+
 .now-playing-overlay:hover {
     color: red;
 }
