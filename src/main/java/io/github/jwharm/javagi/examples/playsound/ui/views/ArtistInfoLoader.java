@@ -1,6 +1,6 @@
 package io.github.jwharm.javagi.examples.playsound.ui.views;
 
-import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
+import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistAlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
@@ -15,12 +15,12 @@ import java.util.function.Consumer;
 
 public class ArtistInfoLoader extends Box {
     private final ThumbnailCache thumbLoader;
-    private final ServerClient client;
+    private final AppManager client;
     private final String artistId = "";
     private final AtomicReference<ArtistInfoFlowBox> viewHolder = new AtomicReference<>();
     private Consumer<ArtistAlbumInfo> onAlbumSelected;
 
-    public ArtistInfoLoader(ThumbnailCache thumbLoader, ServerClient client, Consumer<ArtistAlbumInfo> onAlbumSelected) {
+    public ArtistInfoLoader(ThumbnailCache thumbLoader, AppManager client, Consumer<ArtistAlbumInfo> onAlbumSelected) {
         super(Orientation.VERTICAL, 0);
         this.thumbLoader = thumbLoader;
         this.client = client;
@@ -58,7 +58,7 @@ public class ArtistInfoLoader extends Box {
 
     private CompletableFuture<ArtistInfo> doLoad(String artistId) {
         return CompletableFuture.supplyAsync(() -> {
-            var info = this.client.getArtistInfo(artistId);
+            var info = this.client.getClient().getArtistInfo(artistId);
 
             // just make sure we didnt change artist in the meantime we were loading data:
             if (info.id().equals(artistId)) {
