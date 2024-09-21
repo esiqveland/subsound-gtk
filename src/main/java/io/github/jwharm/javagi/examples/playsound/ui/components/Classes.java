@@ -22,7 +22,8 @@ public enum Classes {
     heading("heading"),
     labelDim("dim-label"),
     labelNumeric("numeric"), // display label with numbers as monospace-ish
-    flat("flat");
+    flat("flat"),
+    clickLabel("click-label");
 
     private final String className;
     Classes(String className) {
