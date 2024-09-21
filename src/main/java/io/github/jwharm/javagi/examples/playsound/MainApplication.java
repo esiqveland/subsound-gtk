@@ -60,7 +60,7 @@ public class MainApplication {
         this.cssMain = mustRead(Path.of("src/main/resources/css/main.css"));
         this.artistContainer = new ArtistInfoLoader(
                 thumbLoader,
-                client,
+                this.appManager,
                 albumInfo -> this.appNavigation.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(albumInfo.id()))
         );
     }
@@ -78,6 +78,15 @@ public class MainApplication {
             case AppNavigation.AppRoute.RouteArtistInfo routeArtistInfo -> {
                 artistContainer.setArtistId(routeArtistInfo.artistId());
                 viewStack.setVisibleChildName("artistInfoPage");
+                yield true;
+            }
+            case AppNavigation.AppRoute.RouteArtistInfo2 routeArtistInfo -> {
+                var content = new ArtistInfoLoader(this.thumbLoader, this.appManager, albumInfo -> {
+                    appNavigation.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(albumInfo.id()));
+                });
+                content.setArtistId(routeArtistInfo.artistId());
+                var albumPage = NavigationPage.builder().setChild(content).build();
+                navigationView.push(albumPage);
                 yield true;
             }
             case AppNavigation.AppRoute.RouteArtistsOverview routeArtistsOverview -> {
@@ -121,14 +130,15 @@ public class MainApplication {
             }
         });
 
+
         var settingsButton = Button.builder()
                 .setIconName(Icons.Settings.getIconName())
                 .setTooltipText("Settings")
                 .build();
         settingsButton.onClicked(() -> {
-            System.out.println("settingsButton.onClicked");
             appNavigation.navigateTo(new AppNavigation.AppRoute.SettingsPage());
         });
+
 
         var searchMe = Button.withLabel("Search me");
         searchMe.onClicked(() -> {
@@ -165,7 +175,7 @@ public class MainApplication {
         var artists = this.client.getArtists();
         var artistListBox = new ArtistsListBox(
                 thumbLoader,
-                client,
+                appManager,
                 artists.list(),
                 albumInfo -> this.appNavigation.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(albumInfo.id()))
         );
@@ -202,8 +212,10 @@ public class MainApplication {
                 .build();
         headerBar.packEnd(settingsButton);
 
-        var playerBar = new PlayerBar(thumbLoader, appManager);
-        var bottomBar = new Box(Orientation.VERTICAL, 2);
+        var playerBar = new PlayerBar(thumbLoader, appManager, (SongInfo songInfo) -> {
+            appNavigation.navigateTo(new AppNavigation.AppRoute.RouteArtistInfo2(songInfo.artistId()));
+        });
+        bottomBar = new Box(Orientation.VERTICAL, 2);
         bottomBar.append(playerBar);
 
         navigationView.onPopped(page -> {

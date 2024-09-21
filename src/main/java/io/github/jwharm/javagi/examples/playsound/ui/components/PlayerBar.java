@@ -8,7 +8,6 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongI
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
-import org.gnome.glib.GLib;
 import org.gnome.gtk.ActionBar;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
@@ -24,19 +23,21 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import static io.github.jwharm.javagi.examples.playsound.app.state.AppManager.NowPlaying.State.LOADING;
-import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
-import static io.github.jwharm.javagi.examples.playsound.utils.Utils.withinEpsilon;
+import static io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
 import static io.github.jwharm.javagi.examples.playsound.ui.components.PlayerBar.CoverArtDiff.CHANGED;
 import static io.github.jwharm.javagi.examples.playsound.ui.components.PlayerBar.CoverArtDiff.SAME;
-import static io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
+import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
+import static io.github.jwharm.javagi.examples.playsound.utils.Utils.withinEpsilon;
 
 public class PlayerBar extends Box implements AppManager.StateListener, AutoCloseable {
     private static final int ARTWORK_SIZE = 64;
 
     private final ThumbnailCache thumbLoader;
     private final AppManager player;
+    private final Consumer<SongInfo> onOpenArtistInfo;
 
     private final ActionBar mainBar;
 
@@ -45,8 +46,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
     // box that holds the song details
     private final Box songInfoBox;
     private final Label songTitle;
-    private final Label albumTitle;
-    private final Label artistTitle;
+    private final ClickLabel artistTitle;
     private final Widget placeholderAlbumArt;
 
     // player controls
@@ -57,61 +57,6 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
     private final VolumeButton volumeButton;
     private final StarButton starButton;
     private final Scale volumeScale;
-
-    public static class VolumeButton extends Button {
-        private boolean isMuted;
-        private double currentVolume = -2.0;
-        private Icons currentIcon = Icons.VolumeHigh;
-
-        public VolumeButton(boolean isMuted, double volume) {
-            this.isMuted = isMuted;
-            this.setIconName(currentIcon.getIconName());
-            this.setVolume(volume);
-        }
-
-        public void setMute(boolean isMuted) {
-            this.isMuted = isMuted;
-            if (this.isMuted) {
-                updateIcon(Icons.VolumeMuted);
-            } else {
-                setVolume(currentVolume);
-            }
-        }
-
-        public void setVolume(double nextVolume) {
-            currentVolume = nextVolume;
-            if (isMuted) {
-                updateIcon(Icons.VolumeMuted);
-                return;
-            }
-            if (nextVolume < 0.01) {
-                updateIcon(Icons.VolumeMuted);
-                return;
-            }
-            if (nextVolume >= 0.70) {
-                updateIcon(Icons.VolumeHigh);
-                return;
-            }
-            if (nextVolume >= 0.50) {
-                updateIcon(Icons.VolumeMedium);
-                return;
-            }
-            if (nextVolume > 0.0) {
-                updateIcon(Icons.VolumeLow);
-                return;
-            }
-        }
-
-        private void updateIcon(Icons next) {
-            if (next != currentIcon) {
-                System.out.printf("VolumeIcon: old icon=%s next=%s%n", currentIcon.getIconName(), next.getIconName());
-                currentIcon = next;
-                GLib.idleAddOnce(() -> {
-                    this.setIconName(next.getIconName());
-                });
-            }
-        }
-    }
 
     private final AtomicBoolean isStateChanging = new AtomicBoolean(false);
     private final AtomicReference<AppState> currentState;
@@ -127,10 +72,11 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         //BUFFERING,
     }
 
-    public PlayerBar(ThumbnailCache thumbLoader, AppManager player) {
+    public PlayerBar(ThumbnailCache thumbLoader, AppManager player, Consumer<SongInfo> onOpenArtistInfo) {
         super(Orientation.VERTICAL, 2);
         this.thumbLoader = thumbLoader;
         this.player = player;
+        this.onOpenArtistInfo = onOpenArtistInfo;
         this.player.addOnStateChanged(this);
         this.currentState = new AtomicReference<>(this.player.getState());
 
@@ -162,9 +108,20 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                 .build();
         songTitle = Label.builder().setLabel("Song title").setHalign(Align.START).setMaxWidthChars(30).setEllipsize(EllipsizeMode.END).setCssClasses(cssClasses("heading")).build();
         songInfoBox.append(songTitle);
-        albumTitle = Label.builder().setLabel("Album title").setHalign(Align.START).setMaxWidthChars(28).setEllipsize(EllipsizeMode.END).build();
-        //songInfo.append(albumTitle);
-        artistTitle = Label.builder().setLabel("Artist title").setHalign(Align.START).setMaxWidthChars(28).setEllipsize(EllipsizeMode.END).setCssClasses(cssClasses("dim-label", "body")).build();
+        //artistTitle = Label.builder().setLabel("Artist title").build();
+        artistTitle = new ClickLabel("Artist title", () -> {
+            var state = this.currentState.get();
+            if (state == null) {
+                return;
+            }
+            state.nowPlaying().ifPresent(np -> {
+                this.onOpenArtistInfo.accept(np.song());
+            });
+        });
+        artistTitle.setHalign(Align.START);
+        artistTitle.setMaxWidthChars(28);
+        artistTitle.setEllipsize(EllipsizeMode.END);
+        artistTitle.addCssClass(Classes.labelDim.className());
         songInfoBox.append(artistTitle);
 
         this.albumArtBox = Box.builder()
@@ -359,9 +316,6 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
 
                     if (!song.title().equals(prevSongTitle)) {
                         songTitle.setLabel(song.title());
-                    }
-                    if (!song.album().equals(prevSongAlbumTitle)) {
-                        albumTitle.setLabel(song.album());
                     }
                     if (!song.artist().equals(prevSongArtist)) {
                         artistTitle.setLabel(song.artist());

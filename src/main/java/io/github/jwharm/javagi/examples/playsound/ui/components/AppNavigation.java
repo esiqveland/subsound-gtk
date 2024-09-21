@@ -22,6 +22,7 @@ public class AppNavigation {
         record RouteArtistsOverview() implements AppRoute {}
         record RouteAlbumsOverview() implements AppRoute {}
         record RouteArtistInfo(String artistId) implements AppRoute {}
+        record RouteArtistInfo2(String artistId) implements AppRoute {}
         record RouteAlbumInfo(String albumId) implements AppRoute {}
     }
 
