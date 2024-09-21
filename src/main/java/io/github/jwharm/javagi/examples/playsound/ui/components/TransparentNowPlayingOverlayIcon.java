@@ -113,6 +113,7 @@ public class TransparentNowPlayingOverlayIcon extends Overlay {
             }
             case PAUSED -> {
                 this.icon.setFromIconName(Icons.PAUSE.getIconName());
+                this.iconBox.setChild(this.icon);
                 this.showOverlay();
             }
             case PLAYING -> {
