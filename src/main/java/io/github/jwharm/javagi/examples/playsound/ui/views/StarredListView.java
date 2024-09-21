@@ -187,7 +187,7 @@ public class StarredListView extends Box implements AppManager.StateListener {
     private NowPlayingState getNowPlayingState(PlaybinPlayer.PlayerStates state) {
         return switch (state) {
             case INIT -> NowPlayingState.NONE;
-            case BUFFERING -> NowPlayingState.PLAYING;
+            case BUFFERING -> NowPlayingState.LOADING;
             case READY -> NowPlayingState.PAUSED;
             case PAUSED -> NowPlayingState.PAUSED;
             case PLAYING -> NowPlayingState.PLAYING;

@@ -15,6 +15,7 @@ public class NowPlayingOverlayIcon extends Overlay {
         NONE,
         PLAYING,
         PAUSED,
+        LOADING,
     }
     private final Image icon;
     private final Widget child;
@@ -63,13 +64,13 @@ public class NowPlayingOverlayIcon extends Overlay {
                 this.showOverlay();
             } else {
                 switch (this.state.get()) {
-                    case PLAYING, PAUSED -> this.showOverlay();
+                    case PLAYING, PAUSED, LOADING -> this.showOverlay();
                     case NONE -> this.hideOverlay();
                 }
             }
 
             switch (this.state.get()) {
-                case PLAYING, PAUSED -> {
+                case PLAYING, PAUSED, LOADING -> {
                     if (!this.icon.hasCssClass("success")) {
                         this.icon.addCssClass("success");
                     }

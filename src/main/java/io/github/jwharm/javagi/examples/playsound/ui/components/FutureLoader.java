@@ -23,7 +23,7 @@ public class FutureLoader<T, R extends Widget> extends Box {
         super(Orientation.VERTICAL, 0);
         this.future = future;
         this.builder = builder;
-        this.statusPage = StatusPage.builder().setChild(LoadingSpinner.fullscreen()).build();
+        this.statusPage = StatusPage.builder().setChild(LoadingSpinner.fullscreen("Loading...")).build();
         this.append(statusPage);
 
         this.future.whenCompleteAsync((value, exception) -> {
