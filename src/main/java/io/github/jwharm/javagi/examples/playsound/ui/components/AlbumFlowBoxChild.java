@@ -35,7 +35,7 @@ public class AlbumFlowBoxChild extends FlowBoxChild {
         );
         this.thumbLoader = thumbLoader;
         this.albumInfo = albumInfo;
-        this.albumCover = RoundedAlbumArt.resolveCoverArt(this.thumbLoader, albumInfo.coverArt(), COVER_SIZE);
+        this.albumCover = RoundedAlbumArt.resolveCoverArt(this.thumbLoader, this.albumInfo.coverArt(), COVER_SIZE);
         var albumTitle = Label.builder()
                 .setLabel(albumInfo.name())
                 .setCssClasses(cssClasses("heading"))
