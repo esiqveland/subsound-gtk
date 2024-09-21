@@ -2,6 +2,7 @@ package io.github.jwharm.javagi.examples.playsound;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.ui.components.AppNavigation;
 import io.github.jwharm.javagi.examples.playsound.ui.components.Icons;
@@ -32,6 +33,7 @@ import org.gnome.gtk.CssProvider;
 import org.gnome.gtk.Gtk;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.StyleContext;
+import org.gnome.gtk.Widget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
