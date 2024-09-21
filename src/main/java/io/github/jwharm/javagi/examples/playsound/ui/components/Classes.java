@@ -4,12 +4,20 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+/**
+ * Adwaita available style classes stylesheet:
+ * https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/style-classes.html
+ * 
+ * colors: https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/style-classes.html#colors
+ *
+ * Available named colors:
+ * https://gnome.pages.gitlab.gnome.org/libadwaita/doc/1.5/named-colors.html#palette-colors
+ */
 public enum Classes {
     none(""),
     card("card"),
     boxedList("boxed-list"),
     richlist("rich-list"),
-    // colors: https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/style-classes.html#colors
     colorSuccess("success"),
     colorAccent("accent"),
     colorWarning("warning"),
@@ -54,5 +62,4 @@ public enum Classes {
                 .map(Classes::className)
                 .toArray(String[]::new);
     }
-
 }
