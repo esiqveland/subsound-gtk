@@ -5,6 +5,7 @@ import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ListStarred;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
+import io.github.jwharm.javagi.examples.playsound.ui.components.AppNavigation;
 import io.github.jwharm.javagi.examples.playsound.ui.components.BoxHolder;
 import io.github.jwharm.javagi.examples.playsound.ui.components.FutureLoader;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
@@ -16,24 +17,28 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class StarredLoader extends Box {
     private static final Logger log = LoggerFactory.getLogger(StarredLoader.class);
     private final ThumbnailCache thumbLoader;
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
+    private final Consumer<AppNavigation.AppRoute> onNavigate;
 
     private final BoxHolder holder;
     private final AppManager appManager;
 
     public StarredLoader(
             ThumbnailCache thumbLoader,
-            AppManager appManager
+            AppManager appManager,
+            Consumer<AppNavigation.AppRoute> onNavigate
     ) {
         super(Orientation.VERTICAL, 0);
         this.thumbLoader = thumbLoader;
         this.appManager = appManager;
         this.onAction = appManager::handleAction;
+        this.onNavigate = onNavigate;
         this.holder = new BoxHolder();
         this.setHexpand(true);
         this.setVexpand(true);
@@ -60,7 +65,7 @@ public class StarredLoader extends Box {
                 });
         var loader = new FutureLoader<>(
                 adsf,
-                starred -> new StarredListView(starred, this.thumbLoader, this.appManager, this.onAction)
+                starred -> new StarredListView(starred, this.thumbLoader, this.appManager, this.onNavigate)
         );
         this.holder.setChild(loader);
         return this;

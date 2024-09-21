@@ -6,6 +6,7 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ListS
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
+import io.github.jwharm.javagi.examples.playsound.ui.components.AppNavigation;
 import io.github.jwharm.javagi.examples.playsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
 import io.github.jwharm.javagi.examples.playsound.ui.components.StarredItemRow;
 import io.github.jwharm.javagi.examples.playsound.ui.views.StarredListView.UpdateListener.MiniState;
@@ -26,6 +27,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static org.gnome.gtk.Align.CENTER;
@@ -41,6 +43,7 @@ public class StarredListView extends Box implements AppManager.StateListener {
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private final ScrolledWindow scroll;
     private final AtomicReference<MiniState> prevState;
+    private final Consumer<AppNavigation.AppRoute> onNavigate;
 
     public interface UpdateListener {
         record MiniState(Optional<SongInfo> songInfo, NowPlayingState nowPlayingState) {}
@@ -52,13 +55,14 @@ public class StarredListView extends Box implements AppManager.StateListener {
             ListStarred data,
             ThumbnailCache thumbLoader,
             AppManager appManager,
-            Function<PlayerAction, CompletableFuture<Void>> onAction
+            Consumer<AppNavigation.AppRoute> onNavigate
     ) {
         super(VERTICAL, 0);
         this.data = data;
         this.thumbLoader = thumbLoader;
-        this.onAction = onAction;
+        this.onAction = appManager::handleAction;
         this.prevState = new AtomicReference<>(selectState(null, appManager.getState()));
+        this.onNavigate = onNavigate;
         this.setHalign(CENTER);
         this.setValign(START);
         this.setHexpand(true);
@@ -72,7 +76,7 @@ public class StarredListView extends Box implements AppManager.StateListener {
             ListItem listitem = (ListItem) object;
             listitem.setActivatable(true);
 
-            var item = new StarredItemRow(this.thumbLoader, this.onAction);
+            var item = new StarredItemRow(this.thumbLoader, this.onAction, this.onNavigate);
             listeners.put(item, item);
             listitem.setChild(item);
         });
