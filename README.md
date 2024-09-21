@@ -96,6 +96,9 @@ A few samples of what the UI looks like:
 - [ ] set up a sqlite database with migrations
   - perhaps there is a good android library for migrating sqlite ?
   - [ ] record what we have downloaded / want to keep offline
+- Onboarding
+  - [ ] Detect we are first launch / have no configuration to load
+  - [ ] Send to Configuration Page on first launch
 - Configuration Page
   - [X] Create a page
   - [X] Edit basic server settings
@@ -132,7 +135,7 @@ Features:
 - [ ] Metadata cache / offline storage for song/artist metadata
 - [ ] Download manager for offline available content
 - [ ] Onboarding UI
-- [ ] Configuration UI
+- [X] Configuration UI
 - [ ] Scrobble plays
 - [X] Starred listing
 - [X] Browse albums
