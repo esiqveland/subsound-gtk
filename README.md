@@ -10,7 +10,7 @@ A few samples of what the UI looks like:
 
 ![Artists listing](screenshots/artists.png)
 
-![Starred playlist](screenshots/starredv2.png)
+![Starred playlist](screenshots/starredv3.png)
 
 ### TODO
 
