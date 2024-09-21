@@ -1,12 +1,22 @@
 package io.github.jwharm.javagi.examples.playsound.ui.views;
 
-import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
+import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistAlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistEntry;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.ui.components.RoundedAlbumArt;
-import org.gnome.adw.*;
-import org.gnome.gtk.*;
+import org.gnome.adw.ActionRow;
+import org.gnome.adw.NavigationPage;
+import org.gnome.adw.NavigationSplitView;
+import org.gnome.adw.StatusPage;
+import org.gnome.gtk.Align;
+import org.gnome.gtk.Box;
+import org.gnome.gtk.Label;
+import org.gnome.gtk.ListBox;
+import org.gnome.gtk.Orientation;
+import org.gnome.gtk.ScrolledWindow;
+import org.gnome.gtk.StringList;
+import org.gnome.gtk.StringObject;
 
 import java.util.List;
 import java.util.Map;
@@ -17,7 +27,7 @@ import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
 
 public class ArtistsListBox extends Box {
     private final ThumbnailCache thumbLoader;
-    private final ServerClient client;
+    private final AppManager client;
     private final List<ArtistEntry> artists;
     private final Map<String, ArtistEntry> artistsMap;
     private Consumer<ArtistAlbumInfo> onAlbumSelected;
@@ -27,7 +37,7 @@ public class ArtistsListBox extends Box {
     private final NavigationPage contentPage;
     private final ArtistInfoLoader artistInfoLoader;
 
-    public ArtistsListBox(ThumbnailCache thumbLoader, ServerClient client, List<ArtistEntry> artists, Consumer<ArtistAlbumInfo> onAlbumSelected) {
+    public ArtistsListBox(ThumbnailCache thumbLoader, AppManager client, List<ArtistEntry> artists, Consumer<ArtistAlbumInfo> onAlbumSelected) {
         super(Orientation.VERTICAL, 0);
         this.thumbLoader = thumbLoader;
         this.client = client;
