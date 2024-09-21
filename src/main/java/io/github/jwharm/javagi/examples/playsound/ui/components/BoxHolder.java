@@ -21,13 +21,16 @@ public class BoxHolder extends Box {
     }
 
     public void setChild(Widget nextChild) {
+        this.child = nextChild;
         Utils.runOnMainThread(() -> {
-            var old = this.child;
-            this.child = nextChild;
-            if (old != null) {
-                this.remove(old);
+            var child = this.child;
+            var firstChild = this.getFirstChild();
+            if (firstChild != null) {
+                this.remove(firstChild);
             }
-            this.append(child);
+            if (child != null) {
+                this.append(child);
+            }
         });
     }
 
