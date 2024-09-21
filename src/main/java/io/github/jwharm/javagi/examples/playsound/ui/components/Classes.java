@@ -20,6 +20,10 @@ public enum Classes {
     title2("title2"),
     title3("title3"),
     heading("heading"),
+    captionHeading("caption-heading"),
+    caption("caption"),
+    monospace("monospace"),
+    bodyText("body"), // The .body style class is the default text style.
     labelDim("dim-label"),
     labelNumeric("numeric"), // display label with numbers as monospace-ish
     flat("flat"),
