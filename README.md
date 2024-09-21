@@ -173,3 +173,9 @@ https://docs.gtk.org/gtk4/section-list-widget.html
 Scalable lists in GTK 4
 https://blog.gtk.org/2020/06/07/scalable-lists-in-gtk-4/
 
+Named colors in
+https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/named-colors.html#palette-colors
+
+Adwaita available style classes stylesheet
+https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/style-classes.html
+
