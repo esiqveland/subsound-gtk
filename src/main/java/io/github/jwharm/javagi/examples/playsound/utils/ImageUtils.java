@@ -3,18 +3,70 @@ package io.github.jwharm.javagi.examples.playsound.utils;
 import de.androidpit.colorthief.ColorThief;
 import de.androidpit.colorthief.MMCQ.CMap;
 import de.androidpit.colorthief.MMCQ.VBox;
+import io.github.jwharm.javagi.base.GErrorException;
 import org.gnome.gdk.RGBA;
+import org.gnome.gdkpixbuf.InterpType;
+import org.gnome.gdkpixbuf.Pixbuf;
+import org.gnome.gio.InputStream;
+import org.gnome.gio.MemoryInputStream;
 
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ImageUtils {
 
+    public Pixbuf readPixbuf(byte[] bytes) {
+        try (var stream = MemoryInputStream.fromData(bytes)) {
+            return readPixbuf(stream);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+//    public Pixbuf readPixbuf(Path filePath) {
+//        UnixInputStream.builder().build();
+//        FileInputStream ss = FileInputStream.builder().build();
+//        try (var stream = FileInputStream(bytes)) {
+//            return readPixbuf(stream);
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
+
+    // careful: uses a GIO InputStream:
+    public Pixbuf readPixbuf(InputStream stream) {
+        // we will buffer pixbuf of maximum this size:
+        final int PIXBUF_SIZE = 300;
+        try {
+            //Pixbuf.fromStreamAtScale(stream, )
+            Pixbuf pixbuf = Pixbuf.fromStream(stream, null);
+            int width = pixbuf.getWidth();
+            int height = pixbuf.getHeight();
+            float ratio = (float) width / (float) height;
+
+            int w, h;
+            if (ratio > 1.0) {
+                w = PIXBUF_SIZE;
+                h = (int) ((float) PIXBUF_SIZE / ratio);
+            } else {
+                w = (int) ((float) PIXBUF_SIZE * ratio);
+                h = PIXBUF_SIZE;
+            }
+            var scaled = pixbuf.scaleSimple(w, h, InterpType.BILINEAR);
+            return scaled;
+        } catch (GErrorException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     record ColorValue(
             int[] colors,
             RGBA rgba
-    ) {}
+    ) {
+    }
+
     // See: https://github.com/SvenWoltmann/color-thief-java/blob/master/src/test/java/de/androidpit/colorthief/test/ColorThiefTest.java
     public static List<ColorValue> getPalette(BufferedImage img) {
         // The dominant color is taken from a 5-map
@@ -40,6 +92,7 @@ public class ImageUtils {
 
     /**
      * Creates a string representation of an RGB array.
+     *
      * @param rgb the RGB array
      * @return the string representation
      */
@@ -49,6 +102,7 @@ public class ImageUtils {
 
     /**
      * Creates an HTML hex color code for the given RGB array (e.g. <code>#ff0000</code> for red).
+     *
      * @param rgb the RGB array
      * @return the HTML hex color code
      */

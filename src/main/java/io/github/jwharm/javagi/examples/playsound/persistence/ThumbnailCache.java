@@ -14,7 +14,6 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.http.HttpClient;
@@ -23,13 +22,17 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
-import java.util.function.Consumer;
 
 import static io.github.jwharm.javagi.examples.playsound.persistence.SongCache.joinPath;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.sha256;
 
+/**
+ * ThumbnailCache does 3 things:
+ *  1. make sure to get requested images from server onto local disk
+ *  2. make sure to cache remote photos on disk and organize this. we store originals on disk.
+ *  3. keep often requested images as GDK Pixbufs in a in-memory-cache
+ */
 public class ThumbnailCache {
     private static final Logger log = LoggerFactory.getLogger(ThumbnailCache.class);
 
@@ -37,8 +40,9 @@ public class ThumbnailCache {
     private final HttpClient client = new LoggingHttpClient(HttpClient.newBuilder().build());
     // semaphore limits concurrency a little, we could send 1000s request concurrently on page load of a e.g. starred page:
     private final Semaphore semaphore = new Semaphore(2);
+    // A separate semaphore for querying the cache, so downloading new content does not block us from loading content we already have stored
     private final Semaphore semaphorePixbuf = new Semaphore(2);
-    private final ConcurrentHashMap<String, CompletableFuture<ThumbLoaded>> inFlight = new ConcurrentHashMap<>();
+    private final Cache<PixbufCacheKey, Pixbuf> pixbufCache = Caffeine.newBuilder().maximumSize(500).build();
 
     record PixbufCacheKey(
             CoverArt coverArt,
@@ -46,10 +50,6 @@ public class ThumbnailCache {
             int size
     ) {
     }
-
-    private final Cache<PixbufCacheKey, Pixbuf> pixbufCache = Caffeine.newBuilder()
-            .maximumSize(500)
-            .build();
 
     public ThumbnailCache(Path root) {
         this.root = root;
@@ -62,14 +62,12 @@ public class ThumbnailCache {
                 var key = new PixbufCacheKey(coverArt, coverArt.coverArtId(), size);
 
                 var pixbuf = pixbufCache.get(key, k -> {
+                    log.debug("ThumbCache: cache miss: {} size={}", k.coverArt.coverArtId(), k.size);
                     ThumbLoaded loaded = loadThumbAsync(k.coverArt).join();
                     String path = loaded.path().cachePath().toAbsolutePath().toString();
-                    log.debug("ThumbCache: cache miss: {} size={}", k.coverArt.coverArtId(), k.size);
                     try {
-                        var p = Pixbuf.fromFileAtSize(
-                                path,
-                                k.size, k.size
-                        );
+                        var p = Pixbuf.fromFileAtSize(path, k.size, k.size);
+                        p.readPixelBytes()
                         return p;
                     } catch (GErrorException e) {
                         throw new RuntimeException("unable to create pixbuf from path='%s'".formatted(path), e);
@@ -84,43 +82,13 @@ public class ThumbnailCache {
         });
     }
 
-    public void load(CoverArt coverArt, Consumer<byte[]> target) {
-        var cachehPath = toCachePath(coverArt);
-        var cacheAbsPath = cachehPath.cachePath().toAbsolutePath();
-        var file = cacheAbsPath.toFile();
-        if (file.exists() && file.length() > 0) {
-            serveFile(file, target);
-            return;
-        }
-
-        var job = inFlight.computeIfAbsent(
-                coverArt.coverArtId(),
-                key -> loadThumbAsync(coverArt)
-        );
-
-        try {
-            var thumbLoaded = job.join();
-            serveFile(thumbLoaded.path().cachePath().toFile(), target);
-        } finally {
-            inFlight.remove(coverArt.coverArtId());
-        }
-    }
-
-    private void serveFile(File file, Consumer<byte[]> target) {
-        try {
-            byte[] bytes = Files.readAllBytes(file.toPath());
-            target.accept(bytes);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     record ThumbLoaded(
             CachehPath path,
             byte[] blob
     ) {
     }
 
+    // TODO: since we are using Pixbuf.fromFileAtSize anyway, we dont need the blob in memory any more.
     private CompletableFuture<ThumbLoaded> loadThumbAsync(CoverArt coverArt) {
         var cachehPath = toCachePath(coverArt);
         var cacheAbsPath = cachehPath.cachePath().toAbsolutePath();
@@ -136,7 +104,6 @@ public class ThumbnailCache {
                 var req = HttpRequest.newBuilder().GET().uri(link).build();
                 var bodyHandler = HttpResponse.BodyHandlers.ofByteArray();
                 //CompletableFuture<HttpResponse<Void>> httpResponseCompletableFuture = this.client.sendAsync(req, bodyHandler);
-
 
                 HttpResponse<byte[]> res = this.client.send(req, bodyHandler);
                 if (res.statusCode() != 200) {
@@ -156,10 +123,7 @@ public class ThumbnailCache {
                             convertWebpToJpeg(body)
                     );
                 } else {
-                    return new ThumbLoaded(
-                            cachehPath,
-                            body
-                    );
+                    return new ThumbLoaded(cachehPath, body);
                 }
             } catch (IOException e) {
                 throw new RuntimeException("error loading: " + coverArt.coverArtLink().toString(), e);

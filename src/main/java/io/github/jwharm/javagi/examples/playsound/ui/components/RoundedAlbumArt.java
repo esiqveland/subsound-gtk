@@ -7,8 +7,6 @@ import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.adw.Clamp;
 import org.gnome.gdk.Texture;
 import org.gnome.gdkpixbuf.Pixbuf;
-import org.gnome.gdkpixbuf.PixbufLoader;
-import org.gnome.glib.GLib;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.ContentFit;
@@ -22,10 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static io.github.jwharm.javagi.examples.playsound.utils.Utils.doAsync;
 
 public class RoundedAlbumArt extends Box {
     private static final Logger log = LoggerFactory.getLogger(RoundedAlbumArt.class);
@@ -121,48 +116,6 @@ public class RoundedAlbumArt extends Box {
                         image.setPixbuf(pixbuf);
                         image.setSizeRequest(size, size);
                     });
-                });
-    }
-
-    public void startLoad2(PixbufLoader loader) {
-        CompletableFuture<Boolean> loadingFuture = doAsync(() -> {
-                    if (hasLoaded.get()) {
-                        return false;
-                    }
-                    if (isLoading.get()) {
-                        return false;
-                    }
-                    try {
-                        thumbLoader.load(this.artwork, buffer -> {
-                            if (buffer == null || buffer.length == 0) {
-                                return;
-                            }
-                            GLib.idleAddOnce(() -> {
-                                try {
-                                    loader.write(buffer);
-                                } catch (GErrorException e) {
-                                    throw new RuntimeException("error writing: coverArtId=%s link=%s".formatted(artwork.coverArtId(), artwork.coverArtLink()), e);
-                                }
-                            });
-                        });
-                        log.info("%s: id=%s: LOADED OK".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
-                    } finally {
-                        isLoading.set(false);
-                        GLib.idleAddOnce(() -> {
-                            try {
-                                loader.close();
-                            } catch (GErrorException e) {
-                                throw new RuntimeException("error closing: coverArtId=%s link=%s".formatted(artwork.coverArtId(), artwork.coverArtLink()), e);
-                            }
-                        });
-                        hasLoaded.set(true);
-                        this.image.queueDraw();
-                    }
-                    return true;
-                })
-                .exceptionallyAsync(ex -> {
-                    log.error("error loading img: {}", ex.getMessage(), ex);
-                    throw new RuntimeException(ex);
                 });
     }
 
