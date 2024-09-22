@@ -67,7 +67,8 @@ public class ThumbnailCache {
                     String path = loaded.path().cachePath().toAbsolutePath().toString();
                     try {
                         var p = Pixbuf.fromFileAtSize(path, k.size, k.size);
-                        p.readPixelBytes()
+                        //p.readPixelBytes()
+                        // BufferedImage ?
                         return p;
                     } catch (GErrorException e) {
                         throw new RuntimeException("unable to create pixbuf from path='%s'".formatted(path), e);
