@@ -47,7 +47,11 @@ public class FutureLoader<T, WIDGET extends Widget> extends Box {
                 });
             }
         }, ASYNC_EXECUTOR)
-                .whenCompleteAsync((v, ex) -> log.error("error: ", ex));
+                .whenCompleteAsync((v, throwable) -> {
+                    if (throwable != null) {
+                        log.error("error: ", throwable);
+                    }
+                });
     }
 
     public Optional<WIDGET> getMainWidget() {

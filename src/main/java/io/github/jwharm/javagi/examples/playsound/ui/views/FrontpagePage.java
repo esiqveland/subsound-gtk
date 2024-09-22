@@ -150,9 +150,9 @@ public class FrontpagePage extends Box {
         private final Label newLabel = heading1("Newly added releases").build();
         private final Label mostLabel = heading1("Most played").build();
 
-        private final BoxHolder recentList;
-        private final BoxHolder newList;
-        private final BoxHolder mostPlayedList;
+        private final BoxHolder<HorizontalAlbumsFlowBoxV3> recentList;
+        private final BoxHolder<HorizontalAlbumsFlowBoxV3> newList;
+        private final BoxHolder<HorizontalAlbumsFlowBoxV3> mostPlayedList;
 
         public HomeView(ThumbnailCache thumbLoader, AppManager appManager, Consumer<ArtistAlbumInfo> onAlbumSelected) {
             super(Orientation.VERTICAL, BIG_SPACING);
@@ -171,15 +171,15 @@ public class FrontpagePage extends Box {
             this.append(wrap(mostLabel, mostPlayedList));
         }
 
-        private static Box wrap(Label recentLabel, BoxHolder recentList) {
+        private static Box wrap(Label recentLabel, BoxHolder<HorizontalAlbumsFlowBoxV3> recentList) {
             var b = Box.builder().setOrientation(VERTICAL).setSpacing(8).build();
             b.append(recentLabel);
             b.append(recentList);
             return b;
         }
 
-        private BoxHolder holder() {
-            var h = new BoxHolder();
+        private BoxHolder<HorizontalAlbumsFlowBoxV3> holder() {
+            var h = new BoxHolder<HorizontalAlbumsFlowBoxV3>();
             h.setHexpand(true);
             h.setHalign(START);
             h.setValign(START);

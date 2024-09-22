@@ -24,7 +24,7 @@ public class StarredLoader extends Box {
     private final ThumbnailCache thumbLoader;
     private final Consumer<AppNavigation.AppRoute> onNavigate;
 
-    private final BoxHolder holder;
+    private final BoxHolder<FutureLoader<ListStarred, StarredListView>> holder;
     private final AppManager appManager;
 
     public StarredLoader(
@@ -36,7 +36,7 @@ public class StarredLoader extends Box {
         this.thumbLoader = thumbLoader;
         this.appManager = appManager;
         this.onNavigate = onNavigate;
-        this.holder = new BoxHolder();
+        this.holder = new BoxHolder<>();
         this.setHexpand(true);
         this.setVexpand(true);
         this.setHalign(Align.FILL);

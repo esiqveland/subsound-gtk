@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class TransparentNowPlayingOverlayIcon extends Overlay {
     private static final Logger log = LoggerFactory.getLogger(TransparentNowPlayingOverlayIcon.class);
 
-    private final BoxHolder iconBox;
+    private final BoxHolder<Widget> iconBox;
     private final Image icon;
     private final Classes activeColorClass = Classes.colorAccent;
     private final LoadingSpinner spinner;
@@ -33,7 +33,7 @@ public class TransparentNowPlayingOverlayIcon extends Overlay {
         super();
         this.child = child;
         this.state.set(isPlaying);
-        this.iconBox = new BoxHolder();
+        this.iconBox = new BoxHolder<>();
         this.iconBox.setSpacing(0);
         this.iconBox.setOrientation(Orientation.VERTICAL);
         this.iconBox.setHexpand(true);

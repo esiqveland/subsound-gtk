@@ -2,6 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.ui.views;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistAlbumInfo;
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.ui.components.BoxHolder;
 import io.github.jwharm.javagi.examples.playsound.ui.components.FutureLoader;
@@ -17,15 +18,15 @@ public class ArtistInfoLoader extends Box {
     private final ThumbnailCache thumbLoader;
     private final AppManager client;
     private final AtomicReference<String> artistId = new AtomicReference<>("");
-    private Consumer<ArtistAlbumInfo> onAlbumSelected;
-    private final BoxHolder holder;
+    private final Consumer<ArtistAlbumInfo> onAlbumSelected;
+    private final BoxHolder<FutureLoader<ArtistInfo, ArtistInfoFlowBox>> holder;
 
     public ArtistInfoLoader(ThumbnailCache thumbLoader, AppManager client, Consumer<ArtistAlbumInfo> onAlbumSelected) {
         super(Orientation.VERTICAL, 0);
         this.thumbLoader = thumbLoader;
         this.client = client;
         this.onAlbumSelected = onAlbumSelected;
-        this.holder = new BoxHolder();
+        this.holder = new BoxHolder<>();
         this.setHexpand(true);
         this.setVexpand(true);
         this.setHalign(Align.FILL);
