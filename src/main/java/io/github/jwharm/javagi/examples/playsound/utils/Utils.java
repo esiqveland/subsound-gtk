@@ -32,17 +32,17 @@ import java.util.function.Supplier;
 
 
 public class Utils {
-    private static final ExecutorService EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
+    public static final ExecutorService ASYNC_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
     private static final HexFormat HEX = HexFormat.of().withLowerCase();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().setStrictness(Strictness.STRICT).create();
 
 
     public static <T> CompletableFuture<T> doAsync(Supplier<T> supplier) {
-        return CompletableFuture.supplyAsync(supplier, EXECUTOR);
+        return CompletableFuture.supplyAsync(supplier, ASYNC_EXECUTOR);
     }
 
     public static CompletableFuture<Void> doAsync(Runnable supplier) {
-        return CompletableFuture.runAsync(supplier, EXECUTOR);
+        return CompletableFuture.runAsync(supplier, ASYNC_EXECUTOR);
     }
 
     public static void runOnMainThread(SourceOnceFunc fn) {

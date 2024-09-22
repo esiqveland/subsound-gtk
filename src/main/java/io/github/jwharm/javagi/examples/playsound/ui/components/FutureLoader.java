@@ -10,16 +10,20 @@ import org.gnome.gtk.Widget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
-public class FutureLoader<T, R extends Widget> extends Box {
+import static io.github.jwharm.javagi.examples.playsound.app.state.AppManager.ASYNC_EXECUTOR;
+
+public class FutureLoader<T, WIDGET extends Widget> extends Box {
     private static final Logger log = LoggerFactory.getLogger(FutureLoader.class);
     private final CompletableFuture<T> future;
-    private final Function<T, R> builder;
+    private final Function<T, WIDGET> builder;
     private final StatusPage statusPage;
+    private WIDGET widget;
 
-    public FutureLoader(CompletableFuture<T> future, Function<T, R> builder) {
+    public FutureLoader(CompletableFuture<T> future, Function<T, WIDGET> builder) {
         super(Orientation.VERTICAL, 0);
         this.future = future;
         this.builder = builder;
@@ -35,19 +39,18 @@ public class FutureLoader<T, R extends Widget> extends Box {
                 });
             } else {
                 var widget = this.builder.apply(value);
+                this.widget = widget;
                 log.info("FutureLoader hello {}", widget.getClass().getName());
                 Utils.runOnMainThread(() -> {
                     this.remove(statusPage);
                     this.append(widget);
                 });
             }
-        }).whenCompleteAsync((v, ex) -> log.error("error: ", ex));
-//        future.whenComplete()
-//        switch (this.future.state()) {
-//            case RUNNING ->
-//        }
+        }, ASYNC_EXECUTOR)
+                .whenCompleteAsync((v, ex) -> log.error("error: ", ex));
+    }
 
-//        this.future.handle()
-
+    public Optional<WIDGET> getMainWidget() {
+        return Optional.ofNullable(this.widget);
     }
 }

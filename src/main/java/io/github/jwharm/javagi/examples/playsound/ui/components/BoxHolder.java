@@ -5,14 +5,14 @@ import org.gnome.gtk.Box;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Widget;
 
-public class BoxHolder extends Box {
-    private Widget child;
+public class BoxHolder<T extends Widget> extends Box {
+    private T child;
 
     public BoxHolder() {
         this(null);
     }
 
-    public BoxHolder(Widget child) {
+    public BoxHolder(T child) {
         super(Orientation.VERTICAL, 0);
         this.child = child;
         if (this.child != null) {
@@ -20,7 +20,7 @@ public class BoxHolder extends Box {
         }
     }
 
-    public void setChild(Widget nextChild) {
+    public void setChild(T nextChild) {
         this.child = nextChild;
         Utils.runOnMainThread(() -> {
             var child = this.child;
@@ -34,7 +34,7 @@ public class BoxHolder extends Box {
         });
     }
 
-    public Widget getChild() {
+    public T getChild() {
         return child;
     }
 }
