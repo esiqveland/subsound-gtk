@@ -40,9 +40,36 @@ scale slider {
   font-size: 24pt;
 }
 
+.larger-title-2 {
+  font-weight: 400;
+  font-size: 24pt;
+}
+
+.larger-title-3 {
+  font-weight: 400;
+  font-size: 16pt;
+}
+
 .click-label:hover {
     /*color: white;*/
     color: white;
     opacity: 1.0;
     text-decoration: underline;
 }
+
+.darken {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.blurred {
+  filter: blur(6px);
+}
+
+.album-main-cover {
+  box-shadow: 0px 1px 6px rgba(0,0,0,0.3),
+              0px 2px 12px rgba(0,0,0,0.15),
+              0px 6px 32px rgba(0,0,0,0.1);
+  /*border-radius: 12px;*/
+  margin: 6px;
+}
+

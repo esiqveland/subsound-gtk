@@ -6,6 +6,7 @@ import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.AlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
+import io.github.jwharm.javagi.examples.playsound.ui.components.Classes;
 import io.github.jwharm.javagi.examples.playsound.ui.components.MainView;
 import io.github.jwharm.javagi.examples.playsound.ui.components.MainViewClamp;
 import io.github.jwharm.javagi.examples.playsound.ui.components.NowPlayingOverlayIcon;
@@ -39,6 +40,7 @@ import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.formatBytesSI;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.formatDurationLong;
 import static org.gnome.gtk.Align.CENTER;
+import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 
 public class AlbumInfoBox extends Box {
@@ -50,6 +52,7 @@ public class AlbumInfoBox extends Box {
 
     private final ScrolledWindow scroll;
     private final Box infoContainer;
+    private final Box albumInfoBox;
     private final ListBox list;
     private final List<AlbumSongActionRow> rows;
     private final Widget artistImage;
@@ -209,14 +212,12 @@ public class AlbumInfoBox extends Box {
                         this.thumbLoader,
                         300
                 ))
+                .map(albumArt -> {
+                    albumArt.addCssClass("album-main-cover");
+                    return albumArt;
+                })
                 .map(artwork -> (Widget) artwork)
                 .orElseGet(() -> RoundedAlbumArt.placeholderImage(300));
-        this.infoContainer = Box.builder().setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).build();
-        this.infoContainer.append(this.artistImage);
-        this.infoContainer.append(infoLabel(this.albumInfo.name(), cssClasses("heading")));
-        this.infoContainer.append(infoLabel(this.albumInfo.artistName(), cssClasses("dim-label", "body")));
-        this.infoContainer.append(infoLabel("%d songs".formatted(this.albumInfo.songCount()), cssClasses("dim-label", "body")));
-        this.infoContainer.append(infoLabel("%s playtime".formatted(formatDurationLong(this.albumInfo.totalPlayTime())), cssClasses("dim-label", "body")));
 
         this.list = ListBox.builder()
                 .setValign(Align.START)
@@ -225,6 +226,7 @@ public class AlbumInfoBox extends Box {
                 .setActivateOnSingleClick(false)
                 .setCssClasses(new String[]{"boxed-list"})
                 .build();
+
         this.list.onRowActivated(row -> {
             var songInfo = this.albumInfo.songs().get(row.getIndex());
             System.out.println("AlbumInfoBox: play " + songInfo.title() + " (%s)".formatted(songInfo.id()));
@@ -241,7 +243,17 @@ public class AlbumInfoBox extends Box {
 
         rows.forEach(this.list::append);
 
-        infoContainer.append(list);
+        this.albumInfoBox = Box.builder().setHalign(CENTER).setSpacing(4).setValign(START).setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).build();
+
+        this.infoContainer = Box.builder().setHalign(CENTER).setSpacing(8).setValign(START).setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).build();
+        this.infoContainer.append(this.artistImage);
+        this.albumInfoBox.append(infoLabel(this.albumInfo.name(), Classes.titleLarge2.add()));
+        this.albumInfoBox.append(infoLabel(this.albumInfo.artistName(), Classes.titleLarge3.add()));
+        this.albumInfoBox.append(infoLabel("%d songs".formatted(this.albumInfo.songCount()), Classes.labelDim.add(Classes.bodyText)));
+        this.albumInfoBox.append(infoLabel("%s playtime".formatted(formatDurationLong(this.albumInfo.totalPlayTime())), Classes.labelDim.add(Classes.bodyText)));
+        this.infoContainer.append(this.albumInfoBox);
+        this.infoContainer.append(list);
+
         var clamp = MainViewClamp.create(infoContainer);
         this.scroll = ScrolledWindow.builder().setChild(clamp).setHexpand(true).setVexpand(true).build();
         var mainView = new MainView(this.scroll);
