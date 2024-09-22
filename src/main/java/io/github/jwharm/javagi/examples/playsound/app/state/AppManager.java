@@ -87,11 +87,6 @@ public class AppManager {
         return thumbnailCache;
     }
 
-    @Deprecated
-    public ServerClient getClient() {
-        return this.client.get();
-    }
-
     public <T> T useClient(Function<ServerClient, T> useFunc) {
         return useFunc.apply(this.client.get());
     }

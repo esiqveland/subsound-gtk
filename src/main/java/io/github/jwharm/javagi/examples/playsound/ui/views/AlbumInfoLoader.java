@@ -52,7 +52,7 @@ public class AlbumInfoLoader extends Box implements AutoCloseable, AppManager.St
     private void doLoad(String albumId) {
         this.albumId.set(albumId);
         var future =  CompletableFuture.supplyAsync(() -> {
-            var info = this.appManager.getClient().getAlbumInfo(albumId);
+            var info = this.appManager.useClient(client -> client.getAlbumInfo(albumId));
 
             return info;
         });

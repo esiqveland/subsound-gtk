@@ -2,6 +2,7 @@ package io.github.jwharm.javagi.examples.playsound.ui.views;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ArtistAlbumInfo;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.HomeOverview;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
@@ -102,7 +103,7 @@ public class FrontpagePage extends Box {
         this.setState(new Loading());
         Utils.doAsync(() -> {
             try {
-                var data = this.appManager.getClient().getHomeOverview();
+                var data = this.appManager.useClient(ServerClient::getHomeOverview);
                 this.setState(new FrontpagePageState.Ready(data));
             } catch (Exception e) {
                 this.setState(new FrontpagePageState.Error(e));

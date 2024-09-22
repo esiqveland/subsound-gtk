@@ -32,7 +32,8 @@ A few samples of what the UI looks like:
   - [X] Make cover art be prettier in the ActionRow
   - [X] Fix blinking when hover/unhover
   - [ ] add a reload button or keep starred list up-to-date in the app at least
-  - [ ] goto artist when clicking artist name
+  - [X] goto artist when clicking artist name
+  - [X] goto album when clicking album name
   - [ ] goto album when clicking on album artwork
     - [ ] add hover / glow / overlay icon when hovering over artwork?
   - [ ] display whole albums / artist that have been starred in addition to individual songs?
@@ -44,7 +45,7 @@ A few samples of what the UI looks like:
 - [X] cache mp3 variant on disk
   - [X] fix song cache storing with original suffix instead of transcode format suffix
     - This caused us to save mp3 transcoded flac data with .flac extension
-- [ ] find a way to handle difference between original and stream (transcoded) data better
+  - [ ] find a way to handle difference between original and stream (transcoded) data better
 - [X] replace gtk.image with gtk.picture? https://docs.gtk.org/gtk4/class.Picture.html
 - [X] PlayerBar: title/album
 - [X] PlayerBar: wire up now-playing to playerState
@@ -58,8 +59,8 @@ A few samples of what the UI looks like:
     - [X] show loading progress in player seek bar 
     - [ ] show loading state as a overlay icon and switch to paused?
   - [ ] add rating button to the right?
-  - [ ] goto artist when clicking artist name
-  - [ ] goto album when clicking song name or album artwork
+  - [X] goto artist when clicking artist name
+  - [ ] goto album when clicking on album artwork
 - [X] Icons for top bar pages
     - [X] icon for Home page
     - [X] icon for starred page
@@ -106,7 +107,7 @@ A few samples of what the UI looks like:
   - [X] Save configuration to file
   - [X] Toast on success / failure
   - [X] "Test mode" for client
-  - [ ] Update the ServerClient configuration dynamically when configuration is saved, and reflect it in the entire app
+  - [X] Update the ServerClient configuration dynamically when configuration is saved, and reflect it in the entire app
   - [ ] extend to custom server specific settings, such as transcode format and bitrate
   - [ ] support for tlsNoVerify
 - [X] Create a persistent store for server settings / authentication
@@ -144,14 +145,17 @@ Features:
 
 Later goals:
  - [ ] support multiple server types (native Navidrome API, Jellyfish etc)
- - [ ] Player for local media, not just for a streaming server
  - [ ] support the subsonic podcast features
- - [ ] could support chromecast
  - [ ] support embedded image tags? https://github.com/neithern/g4music/blob/bf80b5cad448a57c635f01d0a315671fef045d14/src/gst/tag-parser.vala#L99
 
 Non-goals:
  - Video support  
  - Jukebox support
+
+Possible ideas:
+  - Shared remote control, think something like Spotify Connect
+  - Could support chromecast
+  - Player for local media, not just for a streaming server
 
 
 My notes:
