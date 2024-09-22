@@ -1,7 +1,7 @@
 package io.github.jwharm.javagi.examples.playsound.ui.views;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
-import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
+import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ListStarred;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
@@ -18,12 +18,10 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class StarredLoader extends Box {
     private static final Logger log = LoggerFactory.getLogger(StarredLoader.class);
     private final ThumbnailCache thumbLoader;
-    private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private final Consumer<AppNavigation.AppRoute> onNavigate;
 
     private final BoxHolder holder;
@@ -37,7 +35,6 @@ public class StarredLoader extends Box {
         super(Orientation.VERTICAL, 0);
         this.thumbLoader = thumbLoader;
         this.appManager = appManager;
-        this.onAction = appManager::handleAction;
         this.onNavigate = onNavigate;
         this.holder = new BoxHolder();
         this.setHexpand(true);
@@ -72,6 +69,6 @@ public class StarredLoader extends Box {
     }
 
     private CompletableFuture<ListStarred> doLoad() {
-        return Utils.doAsync(() -> this.appManager.getClient().getStarred());
+        return Utils.doAsync(() -> this.appManager.useClient(ServerClient::getStarred));
     }
 }
