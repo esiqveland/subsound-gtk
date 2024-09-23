@@ -303,8 +303,7 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
         Utils.runOnMainThread(() -> {
             this.nowPlayingOverlayIcon.setPlayingState(this.playingState);
             switch (this.playingState) {
-                case PAUSED -> {
-                }
+                case PAUSED -> {}
                 case PLAYING -> this.titleLabel.addCssClass(Classes.colorAccent.className());
                 case NONE -> this.titleLabel.removeCssClass(Classes.colorAccent.className());
             }
