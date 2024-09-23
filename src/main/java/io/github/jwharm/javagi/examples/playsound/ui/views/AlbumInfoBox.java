@@ -13,11 +13,15 @@ import io.github.jwharm.javagi.examples.playsound.ui.components.NowPlayingOverla
 import io.github.jwharm.javagi.examples.playsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
 import io.github.jwharm.javagi.examples.playsound.ui.components.RoundedAlbumArt;
 import io.github.jwharm.javagi.examples.playsound.ui.components.StarButton;
+import io.github.jwharm.javagi.examples.playsound.utils.ImageUtils;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.adw.ActionRow;
+import org.gnome.gdk.Display;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
+import org.gnome.gtk.CssProvider;
+import org.gnome.gtk.Gtk;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListBox;
 import org.gnome.gtk.Orientation;
@@ -25,6 +29,7 @@ import org.gnome.gtk.Revealer;
 import org.gnome.gtk.RevealerTransitionType;
 import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.StateFlags;
+import org.gnome.gtk.StyleContext;
 import org.gnome.gtk.Widget;
 import org.gnome.pango.EllipsizeMode;
 
@@ -57,6 +62,7 @@ public class AlbumInfoBox extends Box {
     private final List<AlbumSongActionRow> rows;
     private final Widget artistImage;
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
+    private static final int COVER_SIZE = 300;
 
     public static class AlbumSongActionRow extends ActionRow {
         private final AlbumInfo albumInfo;
@@ -64,11 +70,17 @@ public class AlbumInfoBox extends Box {
         private final Function<PlayerAction, CompletableFuture<Void>> onAction;
         public final NowPlayingOverlayIcon icon;
 
-        public AlbumSongActionRow(AlbumInfo albumInfo, SongInfo songInfo, Function<PlayerAction, CompletableFuture<Void>> onAction) {
+        public AlbumSongActionRow(
+                AlbumInfo albumInfo,
+                SongInfo songInfo,
+                Function<PlayerAction, CompletableFuture<Void>> onAction
+        ) {
             super();
             this.albumInfo = albumInfo;
             this.songInfo = songInfo;
             this.onAction = onAction;
+            this.addCssClass(Classes.rounded.className());
+            this.addCssClass("AlbumSongActionRow");
 
             var suffix = Box.builder()
                     .setOrientation(HORIZONTAL)
@@ -193,6 +205,8 @@ public class AlbumInfoBox extends Box {
             this.setActivatable(true);
             this.setFocusable(true);
             this.setFocusOnClick(true);
+            this.setHexpand(true);
+
         }
 
     }
@@ -210,21 +224,26 @@ public class AlbumInfoBox extends Box {
                 .map(coverArt -> new RoundedAlbumArt(
                         coverArt,
                         this.thumbLoader,
-                        300
+                        COVER_SIZE
                 ))
                 .map(albumArt -> {
                     albumArt.addCssClass("album-main-cover");
                     return albumArt;
                 })
                 .map(artwork -> (Widget) artwork)
-                .orElseGet(() -> RoundedAlbumArt.placeholderImage(300));
+                .orElseGet(() -> RoundedAlbumArt.placeholderImage(COVER_SIZE));
 
         this.list = ListBox.builder()
                 .setValign(Align.START)
                 .setHalign(Align.FILL)
+                .setHexpand(true)
                 // require double click to activate:
                 .setActivateOnSingleClick(false)
-                .setCssClasses(new String[]{"boxed-list"})
+                .setCssClasses(Classes.darken.add(
+                        Classes.rounded
+                        //Classes.boxedList
+                ))
+                .setShowSeparators(false)
                 .build();
 
         this.list.onRowActivated(row -> {

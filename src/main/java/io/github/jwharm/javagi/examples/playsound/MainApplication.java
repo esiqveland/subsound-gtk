@@ -46,7 +46,6 @@ public class MainApplication {
     private static final Logger log = LoggerFactory.getLogger(MainApplication.class);
     private final AppManager appManager;
     private final ThumbnailCache thumbLoader;
-    private final ServerClient client;
     private final String cssMain;
 
     private final ViewStack viewStack = ViewStack.builder().build();
@@ -54,11 +53,11 @@ public class MainApplication {
     private final ToastOverlay toastOverlay = ToastOverlay.builder().setChild(navigationView).build();
     private AppNavigation appNavigation;
     private ArtistInfoLoader artistContainer;
+    private CssProvider mainProvider = CssProvider.builder().build();
 
     public MainApplication(AppManager appManager) {
         this.appManager = appManager.setToastOverlay(toastOverlay);
         this.thumbLoader = appManager.getThumbnailCache();
-        this.client = appManager.getClient();
         this.cssMain = mustRead(Path.of("src/main/resources/css/main.css"));
         this.artistContainer = new ArtistInfoLoader(
                 thumbLoader,
@@ -68,9 +67,8 @@ public class MainApplication {
     }
 
     public void runActivate(Application app) {
-        var provider = CssProvider.builder().build();
-        provider.loadFromString(cssMain);
-        StyleContext.addProviderForDisplay(Display.getDefault(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+        mainProvider.loadFromString(cssMain);
+        StyleContext.addProviderForDisplay(Display.getDefault(), mainProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 
         this.appNavigation = new AppNavigation((appRoute) -> switch (appRoute) {
             case AppNavigation.AppRoute.RouteAlbumsOverview routeAlbumsOverview -> {
@@ -178,7 +176,7 @@ public class MainApplication {
             ));
             ViewStackPage starredPage = viewStack.addTitledWithIcon(starredPageContainer, "starredPage", "Starred", Icons.Starred.getIconName());
         }
-        var artists = this.client.getArtists();
+        var artists = this.appManager.useClient(client -> client.getArtists());
         var artistListBox = new ArtistsListBox(
                 thumbLoader,
                 appManager,

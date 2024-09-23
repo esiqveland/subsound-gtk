@@ -57,6 +57,16 @@ scale slider {
     text-decoration: underline;
 }
 
+.AlbumSongActionRow {
+    min-width: 600px;
+    max-width: 900px;
+}
+
+.transparent {
+  background: transparent;
+  background-color: transparent;
+}
+
 .darken {
   background-color: rgba(0, 0, 0, 0.08);
 }
