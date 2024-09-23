@@ -2,8 +2,10 @@ package io.github.jwharm.javagi.examples.playsound.persistence;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import io.github.jwharm.javagi.base.GErrorException;
+import io.github.jwharm.javagi.base.Out;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.CoverArt;
+import io.github.jwharm.javagi.examples.playsound.utils.ImageUtils;
+import io.github.jwharm.javagi.examples.playsound.utils.ImageUtils.ColorValue;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import io.github.jwharm.javagi.examples.playsound.utils.javahttp.LoggingHttpClient;
 import org.gnome.gdkpixbuf.Pixbuf;
@@ -21,6 +23,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Semaphore;
 
@@ -42,7 +45,7 @@ public class ThumbnailCache {
     private final Semaphore semaphore = new Semaphore(2);
     // A separate semaphore for querying the cache, so downloading new content does not block us from loading content we already have stored
     private final Semaphore semaphorePixbuf = new Semaphore(2);
-    private final Cache<PixbufCacheKey, Pixbuf> pixbufCache = Caffeine.newBuilder().maximumSize(500).build();
+    private final Cache<PixbufCacheKey, StoredPixbuf> pixbufCache = Caffeine.newBuilder().maximumSize(500).build();
 
     record PixbufCacheKey(
             CoverArt coverArt,
@@ -55,7 +58,12 @@ public class ThumbnailCache {
         this.root = root;
     }
 
-    public CompletableFuture<Pixbuf> loadPixbuf(CoverArt coverArt, int size) {
+    public record StoredPixbuf(
+            Pixbuf pixbuf,
+            List<ColorValue> palette
+    ) {}
+
+    public CompletableFuture<StoredPixbuf> loadPixbuf(CoverArt coverArt, int size) {
         return Utils.doAsync(() -> {
             try {
                 semaphorePixbuf.acquire(1);
@@ -67,16 +75,20 @@ public class ThumbnailCache {
                     String path = loaded.path().cachePath().toAbsolutePath().toString();
                     try {
                         var p = Pixbuf.fromFileAtSize(path, k.size, k.size);
-                        //p.readPixelBytes()
-                        // BufferedImage ?
-                        return p;
-                    } catch (GErrorException e) {
+                        var scaledOut = new Out<byte[]>();
+                        boolean success = p.saveToBufferv(scaledOut, "jpeg", null, null);
+                        if (!success) {
+                            throw new RuntimeException("halp");
+                        }
+                        var palette = ImageUtils.getPalette(scaledOut.get());
+                        return new StoredPixbuf(p, palette);
+                    } catch (Throwable e) {
                         throw new RuntimeException("unable to create pixbuf from path='%s'".formatted(path), e);
                     }
                 });
                 return pixbuf;
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+            } catch (Throwable t) {
+                throw new RuntimeException(t);
             } finally {
                 semaphorePixbuf.release(1);
             }

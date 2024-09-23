@@ -113,7 +113,7 @@ public class RoundedAlbumArt extends Box {
                     //Texture texture = Texture.forPixbuf(pixbuf);
                     Utils.runOnMainThread(() -> {
                         //image.setPaintable(texture);
-                        image.setPixbuf(pixbuf);
+                        image.setPixbuf(pixbuf.pixbuf());
                         image.setSizeRequest(size, size);
                     });
                 });
