@@ -51,6 +51,8 @@ public class MainApplication {
     private final ViewStack viewStack = ViewStack.builder().build();
     private final NavigationView navigationView = NavigationView.builder().build();
     private final ToastOverlay toastOverlay = ToastOverlay.builder().setChild(navigationView).build();
+    private HeaderBar headerBar;
+    private Box bottomBar;
     private AppNavigation appNavigation;
     private ArtistInfoLoader artistContainer;
     private CssProvider mainProvider = CssProvider.builder().build();
@@ -210,7 +212,7 @@ public class MainApplication {
                 .setStack(viewStack)
                 .build();
 
-        var headerBar = HeaderBar.builder()
+        headerBar = HeaderBar.builder()
                 .setHexpand(true)
                 .setTitleWidget(viewSwitcher)
                 .build();
@@ -224,6 +226,8 @@ public class MainApplication {
 
         navigationView.onPopped(page -> {
             log.info("navigationView.pop: page={} child={}", page.getClass().getName(), page.getChild().getClass().getName());
+            //boolean canPop = navigationView.getNavigationStack().getNItems() > 1;
+            //headerBar.setShowBackButton(canPop);
         });
 
         ToolbarView toolbarView = ToolbarView.builder().build();
