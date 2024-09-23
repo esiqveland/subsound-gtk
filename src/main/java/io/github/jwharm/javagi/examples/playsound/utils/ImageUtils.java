@@ -10,7 +10,9 @@ import org.gnome.gdkpixbuf.Pixbuf;
 import org.gnome.gio.InputStream;
 import org.gnome.gio.MemoryInputStream;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,18 +63,28 @@ public class ImageUtils {
         }
     }
 
-    record ColorValue(
+    public record ColorValue(
             int[] colors,
             RGBA rgba
     ) {
+    }
+
+    public static List<ColorValue> getPalette(byte[] jpegBlob) {
+        try {
+            var img = ImageIO.read(new ByteArrayInputStream(jpegBlob));
+            return getPalette(img);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // See: https://github.com/SvenWoltmann/color-thief-java/blob/master/src/test/java/de/androidpit/colorthief/test/ColorThiefTest.java
     public static List<ColorValue> getPalette(BufferedImage img) {
         // The dominant color is taken from a 5-map
         CMap result = ColorThief.getColorMap(img, 5);
-        VBox dominantColor = result.vboxes.getFirst();
-        int[] rgbDominant = dominantColor.avg(false);
+
+        //VBox dominantColor = result.vboxes.getFirst();
+        //int[] rgbDominant = dominantColor.avg(false);
 
         // Get the full palette
         //result = ColorThief.getColorMap(img, 10);
@@ -80,8 +92,8 @@ public class ImageUtils {
         for (VBox vbox : result.vboxes) {
             int[] rgb = vbox.avg(false);
             // Create color String representations
-            String rgbString = createRGBString(rgb);
-            String rgbHexString = createRGBHexString(rgb);
+            //String rgbString = createRGBString(rgb);
+            //String rgbHexString = createRGBHexString(rgb);
 
             var rgba = new RGBA(rgb[0] / 255f, rgb[1] / 255f, rgb[2] / 255f, 1.0f);
             list.add(new ColorValue(rgb, rgba));
