@@ -37,7 +37,11 @@ public enum Classes {
     labelDim("dim-label"),
     labelNumeric("numeric"), // display label with numbers as monospace-ish
     flat("flat"),
-    clickLabel("click-label");
+    clickLabel("click-label"),
+    transparent("transparent"),
+    darken("darken"),
+    rounded("rounded"),
+    ;
 
     private final String className;
     Classes(String className) {
