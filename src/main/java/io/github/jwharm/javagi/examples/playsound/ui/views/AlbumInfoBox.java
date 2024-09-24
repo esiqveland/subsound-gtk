@@ -22,6 +22,7 @@ import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
 import org.gnome.gtk.CssProvider;
 import org.gnome.gtk.Gtk;
+import org.gnome.gtk.Justification;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListBox;
 import org.gnome.gtk.Orientation;
@@ -81,6 +82,11 @@ public class AlbumInfoBox extends Box {
             this.onAction = onAction;
             this.addCssClass(Classes.rounded.className());
             this.addCssClass("AlbumSongActionRow");
+            this.setUseMarkup(false);
+            this.setActivatable(true);
+            this.setFocusable(true);
+            this.setFocusOnClick(true);
+            this.setHexpand(true);
 
             var suffix = Box.builder()
                     .setOrientation(HORIZONTAL)
@@ -166,12 +172,14 @@ public class AlbumInfoBox extends Box {
 
             Label songNumberLabel = Label.builder()
                     .setLabel(songInfo.trackNumber().map(String::valueOf).orElse(""))
+                    .setWidthChars(2)
+                    .setMaxWidthChars(2)
+                    .setSingleLineMode(true)
+                    .setJustify(Justification.RIGHT)
+                    .setEllipsize(EllipsizeMode.START)
                     .setCssClasses(cssClasses("dim-label", "numeric"))
                     .build();
             icon = new NowPlayingOverlayIcon(16, songNumberLabel);
-            if ("166bcd70e38d8f0a202e0a907b8c0727".equals(songInfo.id())) {
-                icon.setPlayingState(NowPlayingState.PAUSED);
-            }
             var isHoverActive = new AtomicBoolean(false);
             addHover(
                     this,
@@ -201,12 +209,6 @@ public class AlbumInfoBox extends Box {
             this.addSuffix(suffix);
             this.setTitle(songInfo.title());
             this.setSubtitle(subtitle);
-            this.setUseMarkup(false);
-            this.setActivatable(true);
-            this.setFocusable(true);
-            this.setFocusOnClick(true);
-            this.setHexpand(true);
-
         }
 
     }
@@ -331,6 +333,6 @@ public class AlbumInfoBox extends Box {
     }
 
     public static Label infoLabel(String label, String[] cssClazz) {
-        return Label.builder().setLabel(label).setCssClasses(cssClazz).setUseMarkup(false).setEllipsize(EllipsizeMode.END).build();
+        return Label.builder().setCssClasses(cssClazz).setUseMarkup(false).setEllipsize(EllipsizeMode.END).setLabel(label).build();
     }
 }
