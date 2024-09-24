@@ -91,6 +91,20 @@ public class Utils {
                 (seconds == 0 ? "" : seconds + " seconds");
     }
 
+    public static String formatDurationMedium(Duration d) {
+        long days = d.toDays();
+        d = d.minusDays(days);
+        long hours = d.toHours();
+        d = d.minusHours(hours);
+        long minutes = d.toMinutes();
+        d = d.minusMinutes(minutes);
+        long seconds = d.getSeconds();
+        return  (days == 0 ? "" : days + " days, ") +
+                (hours == 0 ? "" : hours + " hr, ") +
+                (minutes == 0 ? "" : minutes + " min, ") +
+                (seconds == 0 ? "" : seconds + " sec");
+    }
+
     public static String formatDurationShort(Duration d) {
         long days = d.toDays();
         d = d.minusDays(days);

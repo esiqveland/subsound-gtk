@@ -44,7 +44,7 @@ import java.util.function.Function;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.addHover;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.formatBytesSI;
-import static io.github.jwharm.javagi.examples.playsound.utils.Utils.formatDurationLong;
+import static io.github.jwharm.javagi.examples.playsound.utils.Utils.formatDurationMedium;
 import static org.gnome.gtk.Align.CENTER;
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
@@ -183,6 +183,7 @@ public class AlbumInfoBox extends Box {
                     .build();
             icon = new NowPlayingOverlayIcon(16, songNumberLabel);
             var isHoverActive = new AtomicBoolean(false);
+
             addHover(
                     this,
                     () -> {
@@ -269,14 +270,15 @@ public class AlbumInfoBox extends Box {
 
         rows.forEach(this.list::append);
 
-        this.albumInfoBox = Box.builder().setHalign(CENTER).setSpacing(4).setValign(START).setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).build();
+        this.albumInfoBox = Box.builder().setHalign(CENTER).setSpacing(4).setValign(START).setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).setMarginBottom(10).build();
 
-        this.infoContainer = Box.builder().setHalign(CENTER).setSpacing(8).setValign(START).setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).build();
+        this.infoContainer = Box.builder().setHalign(CENTER).setSpacing(8).setValign(START).setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).setMarginBottom(10).build();
         this.infoContainer.append(this.artistImage);
         this.albumInfoBox.append(infoLabel(this.albumInfo.name(), Classes.titleLarge2.add()));
         this.albumInfoBox.append(infoLabel(this.albumInfo.artistName(), Classes.titleLarge3.add()));
-        this.albumInfoBox.append(infoLabel("%d songs".formatted(this.albumInfo.songCount()), Classes.labelDim.add(Classes.bodyText)));
-        this.albumInfoBox.append(infoLabel("%s playtime".formatted(formatDurationLong(this.albumInfo.totalPlayTime())), Classes.labelDim.add(Classes.bodyText)));
+        this.albumInfoBox.append(infoLabel("%d".formatted(this.albumInfo.year()), Classes.labelDim.add(Classes.bodyText)));
+        this.albumInfoBox.append(infoLabel("%d songs, %s".formatted(this.albumInfo.songCount(), formatDurationMedium(this.albumInfo.totalPlayTime())), Classes.labelDim.add(Classes.bodyText)));
+        //this.albumInfoBox.append(infoLabel("%s playtime".formatted(formatDurationMedium(this.albumInfo.totalPlayTime())), Classes.labelDim.add(Classes.bodyText)));
         this.infoContainer.append(this.albumInfoBox);
         this.infoContainer.append(list);
 

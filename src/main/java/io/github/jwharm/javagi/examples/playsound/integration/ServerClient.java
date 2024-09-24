@@ -63,6 +63,7 @@ public interface ServerClient {
             String id,
             String name,
             int songCount,
+            int year,
             String artistId,
             String artistName,
             Duration duration,
