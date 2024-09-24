@@ -64,6 +64,8 @@ public class AlbumInfoBox extends Box {
     private final Widget artistImage;
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private static final int COVER_SIZE = 300;
+    private static final CssProvider COLOR_PROVIDER = CssProvider.builder().build();
+    private static final AtomicBoolean isProviderInit = new AtomicBoolean(false);
 
     public static class AlbumSongActionRow extends ActionRow {
         private final AlbumInfo albumInfo;
@@ -222,6 +224,9 @@ public class AlbumInfoBox extends Box {
         this.thumbLoader = thumbLoader;
         this.albumInfo = albumInfo;
         this.onAction = onAction;
+        if (isProviderInit.compareAndSet(false, true)) {
+            StyleContext.addProviderForDisplay(Display.getDefault(), COLOR_PROVIDER, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
+        }
         this.artistImage = this.albumInfo.coverArt()
                 .map(coverArt -> new RoundedAlbumArt(
                         coverArt,
@@ -276,11 +281,24 @@ public class AlbumInfoBox extends Box {
         this.infoContainer.append(list);
 
         var clamp = MainViewClamp.create(infoContainer);
+        clamp.addCssClass("album-info-main");
+
         this.scroll = ScrolledWindow.builder().setChild(clamp).setHexpand(true).setVexpand(true).build();
         var mainView = new MainView(this.scroll);
         this.setHexpand(true);
         this.setVexpand(true);
         this.append(mainView);
+        this.onMap(() -> this.thumbLoader.loadPixbuf(this.albumInfo.coverArt().get(), COVER_SIZE).thenAccept(this::switchPallete));
+    }
+
+    private void switchPallete(ThumbnailCache.StoredPixbuf storedPixbuf) {
+        StringBuilder colors = new StringBuilder();
+        List<ImageUtils.ColorValue> palette = storedPixbuf.palette();
+        for (int i = 0; i < palette.size(); i++) {
+            ImageUtils.ColorValue colorValue = palette.get(i);
+            colors.append("@define-color background_color_%d %s;\n".formatted(i, colorValue.rgba().toString()));
+        }
+        COLOR_PROVIDER.loadFromString(colors.toString());
     }
 
     public void updateAppState(AppState next) {

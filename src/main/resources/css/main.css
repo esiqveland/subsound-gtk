@@ -83,3 +83,28 @@ scale slider {
   margin: 6px;
 }
 
+@define-color background_color_0 rgb(33,26,11);
+@define-color background_color_1 rgb(222,208,167);
+@define-color background_color_2 rgb(130,59,28);
+@define-color background_color_3 rgb(155,123,62);
+@define-color background_color_4 rgb(143,128,87);
+
+/*
+@define-color background_color_0 rgb(62,33,48);
+@define-color background_color_1 rgb(212,167,146);
+@define-color background_color_2 rgb(128,69,91);
+@define-color background_color_3 rgb(152,113,140);
+@define-color background_color_4 rgb(156,140,133);
+*/
+
+/*
+@define-color background_color_0 rgb(71,37,51);
+@define-color background_color_1 rgb(217,180,170);
+@define-color background_color_2 rgb(183,131,101);
+@define-color background_color_3 rgb(139,96,111);
+@define-color background_color_4 rgb(178,132,151);
+*/
+
+.album-info-main {
+  background: linear-gradient(to bottom, @background_color_0, @window_bg_color 45%);
+}
