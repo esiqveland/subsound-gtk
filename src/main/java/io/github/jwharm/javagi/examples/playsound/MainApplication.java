@@ -218,7 +218,7 @@ public class MainApplication {
                 .build();
         headerBar.packEnd(settingsButton);
 
-        var playerBar = new PlayerBar(thumbLoader, appManager, (SongInfo songInfo) -> {
+        var playerBar = new PlayerBar(appManager, (SongInfo songInfo) -> {
             appNavigation.navigateTo(new AppNavigation.AppRoute.RouteArtistInfo2(songInfo.artistId()));
         });
         bottomBar = new Box(Orientation.VERTICAL, 2);

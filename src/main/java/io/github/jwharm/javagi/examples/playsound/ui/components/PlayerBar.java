@@ -5,7 +5,6 @@ import io.github.jwharm.javagi.examples.playsound.app.state.AppManager.AppState;
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager.NowPlaying;
 import io.github.jwharm.javagi.examples.playsound.app.state.PlayerAction;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
-import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.sound.PlaybinPlayer;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.gnome.gtk.ActionBar;
@@ -35,8 +34,7 @@ import static io.github.jwharm.javagi.examples.playsound.utils.Utils.withinEpsil
 public class PlayerBar extends Box implements AppManager.StateListener, AutoCloseable {
     private static final int ARTWORK_SIZE = 64;
 
-    private final ThumbnailCache thumbLoader;
-    private final AppManager player;
+    private final AppManager appManager;
     private final Consumer<SongInfo> onOpenArtistInfo;
 
     private final ActionBar mainBar;
@@ -72,13 +70,12 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         //BUFFERING,
     }
 
-    public PlayerBar(ThumbnailCache thumbLoader, AppManager player, Consumer<SongInfo> onOpenArtistInfo) {
+    public PlayerBar(AppManager appManager, Consumer<SongInfo> onOpenArtistInfo) {
         super(Orientation.VERTICAL, 2);
-        this.thumbLoader = thumbLoader;
-        this.player = player;
+        this.appManager = appManager;
         this.onOpenArtistInfo = onOpenArtistInfo;
-        this.player.addOnStateChanged(this);
-        this.currentState = new AtomicReference<>(this.player.getState());
+        this.appManager.addOnStateChanged(this);
+        this.currentState = new AtomicReference<>(this.appManager.getState());
 
         this.starButton = new StarButton(
                 Optional.empty(),
@@ -93,7 +90,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                             );
 
                     return action
-                            .map(this.player::handleAction)
+                            .map(this.appManager::handleAction)
                             .orElseGet(() -> CompletableFuture.failedFuture(new RuntimeException("no song playing")));
                 }
         );
@@ -150,9 +147,9 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                 return;
             }
             if (this.currentState.get().player().muted()) {
-                this.player.unMute();
+                this.appManager.unMute();
             } else {
-                this.player.mute();
+                this.appManager.mute();
             }
         });
 
@@ -169,7 +166,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
             }
             var cubicVolume = this.volumeScale.getValue();
             System.out.println("volumeScale.onValueChanged: " + cubicVolume);
-            this.player.setVolume(cubicVolume);
+            this.appManager.setVolume(cubicVolume);
             this.volumeButton.setVolume(cubicVolume);
         });
         volumeScale.setIncrements(0.017, 0.23);
@@ -193,8 +190,8 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         playPauseButton.addCssClass("playerBar-playPauseButton");
         playPauseButton.setSizeRequest(48, 48);
         playPauseButton.onClicked(this::playPause);
-        updatePlayingState(toPlayingState(player.getState().player().state()));
-        playerScrubber = new PlayerScrubber(this.player::seekTo);
+        updatePlayingState(toPlayingState(appManager.getState().player().state()));
+        playerScrubber = new PlayerScrubber(this.appManager::seekTo);
 
         var playerControls = Box.builder()
                 .setSpacing(2)
@@ -219,24 +216,24 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
     }
 
     private void onPrev() {
-        this.player.prev();
+        this.appManager.prev();
     }
 
     private void onNext() {
-        this.player.next();
+        this.appManager.next();
     }
 
     private void playPause() {
         switch (playingState) {
-            case IDLE -> this.player.play();
-            case PAUSED -> this.player.play();
-            case PLAYING -> this.player.pause();
+            case IDLE -> this.appManager.play();
+            case PAUSED -> this.appManager.play();
+            case PLAYING -> this.appManager.pause();
         }
     }
 
     @Override
     public void close() throws Exception {
-        this.player.removeOnStateChanged(this);
+        this.appManager.removeOnStateChanged(this);
     }
 
     @Override
@@ -360,7 +357,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
             }
             albumArtBox.append(new RoundedAlbumArt(
                     coverArt,
-                    this.thumbLoader,
+                    this.appManager.getThumbnailCache(),
                     ARTWORK_SIZE
             ));
         });
