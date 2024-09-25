@@ -12,6 +12,8 @@ import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
 import org.gnome.gtk.Justification;
 import org.gnome.gtk.Label;
+import org.gnome.gtk.Overflow;
+import org.gnome.gtk.Overlay;
 import org.gnome.gtk.Revealer;
 import org.gnome.gtk.RevealerTransitionType;
 import org.gnome.gtk.StateFlags;
@@ -27,6 +29,7 @@ import static io.github.jwharm.javagi.examples.playsound.utils.Utils.addHover2;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.formatBytesSI;
 import static org.gnome.gtk.Align.CENTER;
+import static org.gnome.gtk.Align.END;
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
@@ -46,6 +49,8 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
     private final Box centerContent;
     private final Box subtitleBox;
     private final Box suffixBox;
+    private final Overlay trackNumberOverlay;
+    private final ListItemPlayingIcon trackNumberIcon;
     private final Label trackNumberLabel;
     private final TransparentNowPlayingOverlayIcon nowPlayingOverlayIcon;
     private final AlbumCoverHolderSmall albumCoverHolder;
@@ -130,6 +135,24 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
                 .setSpacing(8)
                 .build();
 
+        this.nowPlayingOverlayIcon = new TransparentNowPlayingOverlayIcon(48, this.albumCoverHolder);
+        this.trackNumberLabel = infoLabel("    ", Classes.labelDim.add(Classes.labelNumeric));
+        this.trackNumberLabel.setVexpand(false);
+        this.trackNumberLabel.setValign(CENTER);
+        this.trackNumberLabel.setMarginEnd(8);
+        this.trackNumberLabel.setJustify(Justification.RIGHT);
+        this.trackNumberLabel.setSingleLineMode(true);
+        this.trackNumberLabel.setWidthChars(TRACK_NUMBER_LABEL_CHARS);
+        this.trackNumberLabel.setMaxWidthChars(TRACK_NUMBER_LABEL_CHARS);
+        this.trackNumberOverlay = Overlay.builder().setChild(this.trackNumberLabel).setOverflow(Overflow.HIDDEN).build();
+        this.trackNumberIcon = new ListItemPlayingIcon(NowPlayingState.NONE, 48);
+        this.trackNumberIcon.setHalign(END);
+        this.trackNumberIcon.setValign(CENTER);
+        this.trackNumberIcon.setVisible(false);
+        this.trackNumberOverlay.addOverlay(this.trackNumberIcon);
+        prefixBox.append(trackNumberOverlay);
+        prefixBox.append(nowPlayingOverlayIcon);
+
         fileFormatLabel = Button.builder()
                 .setLabel("")
                 .setSensitive(false)
@@ -172,12 +195,18 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
                 () -> {
                     isHoverActive.set(true);
                     revealer.setRevealChild(true);
+                    this.trackNumberLabel.setVisible(false);
+                    this.trackNumberIcon.setVisible(true);
                 },
                 () -> {
                     isHoverActive.set(false);
                     var focused = this.hasFocus();
                     //System.out.println("onLeave: focused=" + focused);
                     revealer.setRevealChild(focused);
+                    if (this.playingState == NowPlayingState.NONE) {
+                        this.trackNumberLabel.setVisible(!focused);
+                        this.trackNumberIcon.setVisible(focused);
+                    }
                 }
         );
         this.onStateFlagsChanged(flags -> {
@@ -188,17 +217,6 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
             revealer.setRevealChild(hasFocus || hasHover);
         });
 
-        this.nowPlayingOverlayIcon = new TransparentNowPlayingOverlayIcon(48, this.albumCoverHolder);
-        this.trackNumberLabel = infoLabel("    ", Classes.labelDim.add(Classes.labelNumeric));
-        this.trackNumberLabel.setVexpand(false);
-        this.trackNumberLabel.setValign(CENTER);
-        this.trackNumberLabel.setMarginEnd(8);
-        this.trackNumberLabel.setJustify(Justification.RIGHT);
-        this.trackNumberLabel.setSingleLineMode(true);
-        this.trackNumberLabel.setWidthChars(TRACK_NUMBER_LABEL_CHARS);
-        this.trackNumberLabel.setMaxWidthChars(TRACK_NUMBER_LABEL_CHARS);
-        prefixBox.append(trackNumberLabel);
-        prefixBox.append(nowPlayingOverlayIcon);
 
         this.titleLabel = infoLabel("", Classes.title3.add());
         this.titleLabel.setHalign(START);
@@ -301,11 +319,20 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
         }
         this.playingState = next;
         Utils.runOnMainThread(() -> {
-            this.nowPlayingOverlayIcon.setPlayingState(this.playingState);
+            //this.nowPlayingOverlayIcon.setPlayingState(this.playingState);
+            this.nowPlayingOverlayIcon.addCssClass("darken");
+            this.trackNumberIcon.setPlayingState(this.playingState);
             switch (this.playingState) {
-                case PAUSED -> {}
-                case PLAYING -> this.titleLabel.addCssClass(Classes.colorAccent.className());
-                case NONE -> this.titleLabel.removeCssClass(Classes.colorAccent.className());
+                case LOADING, PAUSED, PLAYING -> {
+                    this.trackNumberLabel.setVisible(false);
+                    this.trackNumberIcon.setVisible(true);
+                    this.titleLabel.addCssClass(Classes.colorAccent.className());
+                }
+                case NONE -> {
+                    this.trackNumberLabel.setVisible(true);
+                    this.trackNumberIcon.setVisible(false);
+                    this.titleLabel.removeCssClass(Classes.colorAccent.className());
+                }
             }
         });
     }

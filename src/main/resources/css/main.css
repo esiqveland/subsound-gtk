@@ -26,6 +26,14 @@
     font-weight: bold;
 }
 
+.ListItemPlayingIcon {
+  /*background-color: yellow;*/
+}
+.ListItemPlayingIcon:hover {
+  color: red;
+  /*background-color: purple;*/
+}
+
 .rounded {
     border-radius: 4px;
 }
@@ -59,7 +67,7 @@ scale slider {
 
 .AlbumSongActionRow {
     min-width: 600px;
-    max-width: 900px;
+    /*max-width: 900px; Error: no such thing as max-width */
 }
 
 .transparent {

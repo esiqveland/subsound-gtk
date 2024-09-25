@@ -17,10 +17,10 @@ public class NowPlayingOverlayIcon extends Overlay {
         PAUSED,
         LOADING,
     }
-    private final Image icon;
+    private final ListItemPlayingIcon icon;
     private final Widget child;
     //private final AtomicBoolean isPlaying = new AtomicBoolean(false);
-    private AtomicReference<NowPlayingState> state = new AtomicReference<>(NowPlayingState.NONE);
+    private final AtomicReference<NowPlayingState> state = new AtomicReference<>(NowPlayingState.NONE);
     private final AtomicBoolean isHover = new AtomicBoolean(false);
 
     public NowPlayingOverlayIcon(int size, Widget child) {
@@ -31,12 +31,8 @@ public class NowPlayingOverlayIcon extends Overlay {
         super();
         this.child = child;
         this.state.set(isPlaying);
-        this.icon = Image.fromIconName(Icons.PLAY.getIconName());
-        this.icon.addCssClass("circular");
-        //this.icon.addCssClass("accent");
-        this.icon.setSizeRequest(size, size);
-        //this.icon.setVisible(this.state.get() != NowPlayingState.NONE);
-        this.icon.addCssClass("success");
+        this.icon = new ListItemPlayingIcon(NowPlayingState.NONE, size);
+
         this.addOverlay(icon);
         this.setSizeRequest(size, size);
 
@@ -56,7 +52,7 @@ public class NowPlayingOverlayIcon extends Overlay {
         this.setChild(this.child);
     }
 
-    public NowPlayingOverlayIcon setIsHover(boolean isHover) {
+    public void setIsHover(boolean isHover) {
         this.isHover.set(isHover);
 
         Utils.runOnMainThread(() -> {
@@ -82,23 +78,15 @@ public class NowPlayingOverlayIcon extends Overlay {
                 }
             }
         });
-        return this;
     }
 
-    public NowPlayingOverlayIcon setPlayingState(NowPlayingState state) {
+    public void setPlayingState(NowPlayingState state) {
         this.state.set(state);
+        this.icon.setPlayingState(state);
         switch (this.state.get()) {
-            case PAUSED -> {
-                this.icon.setFromIconName(Icons.PAUSE.getIconName());
-                this.showOverlay();
-            }
-            case PLAYING -> {
-                this.icon.setFromIconName(Icons.PLAY.getIconName());
-                this.showOverlay();
-            }
+            case PAUSED, PLAYING -> this.showOverlay();
             case NONE -> this.hideOverlay();
         }
-        return this;
     }
 
     private void showOverlay() {
