@@ -114,5 +114,6 @@ scale slider {
 */
 
 .album-info-main {
-  background: linear-gradient(to bottom, @background_color_0, @window_bg_color 45%);
+  background: linear-gradient(to bottom, @background_color_0, @window_bg_color 96%);
+}
 }
