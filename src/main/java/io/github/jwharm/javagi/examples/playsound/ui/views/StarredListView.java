@@ -67,10 +67,8 @@ public class StarredListView extends Box implements AppManager.StateListener {
         this.setValign(START);
         this.setHexpand(true);
         this.setVexpand(true);
-        log.info("StarredListView hello {}", this.data.songs().size());
-        log.info("StarredListView hello {}", this.data.songs().size());
-        log.info("StarredListView hello {}", this.data.songs().size());
-        log.info("StarredListView hello {}", this.data.songs().size());
+        log.info("StarredListView: item count={}", this.data.songs().size());
+
         var factory = new SignalListItemFactory();
         factory.onSetup(object -> {
             ListItem listitem = (ListItem) object;
@@ -108,7 +106,7 @@ public class StarredListView extends Box implements AppManager.StateListener {
             if (child == null) {
                 return;
             }
-            log.info("StarredListView.onTeardown");
+            //log.info("StarredListView.onTeardown");
             this.listeners.remove(child);
         });
         this.listModel = ListIndexModel.newInstance(data.songs().size());
