@@ -67,13 +67,13 @@ public class NowPlayingOverlayIcon extends Overlay {
 
             switch (this.state.get()) {
                 case PLAYING, PAUSED, LOADING -> {
-                    if (!this.icon.hasCssClass("success")) {
-                        this.icon.addCssClass("success");
+                    if (!this.icon.hasCssClass(Classes.colorAccent.className())) {
+                        this.icon.addCssClass(Classes.colorAccent.className());
                     }
                 }
                 case NONE -> {
-                    if (this.icon.hasCssClass("success")) {
-                        this.icon.removeCssClass("success");
+                    if (this.icon.hasCssClass(Classes.colorAccent.className())) {
+                        this.icon.removeCssClass(Classes.colorAccent.className());
                     }
                 }
             }

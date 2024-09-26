@@ -7,7 +7,6 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.Album
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.ui.components.Classes;
-import io.github.jwharm.javagi.examples.playsound.ui.components.MainView;
 import io.github.jwharm.javagi.examples.playsound.ui.components.NowPlayingOverlayIcon;
 import io.github.jwharm.javagi.examples.playsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
 import io.github.jwharm.javagi.examples.playsound.ui.components.RoundedAlbumArt;
@@ -290,10 +289,9 @@ public class AlbumInfoPage extends Box {
         this.mainContainer.append(listHolder);
 
         this.scroll = ScrolledWindow.builder().setChild(mainContainer).setHexpand(true).setVexpand(true).build();
-        var mainView = new MainView(this.scroll);
         this.setHexpand(true);
         this.setVexpand(true);
-        this.append(mainView);
+        this.append(this.scroll);
         this.onMap(() -> this.thumbLoader.loadPixbuf(this.albumInfo.coverArt().get(), COVER_SIZE).thenAccept(this::switchPallete));
     }
 
@@ -317,11 +315,13 @@ public class AlbumInfoPage extends Box {
         for (AlbumSongActionRow row : this.rows) {
             boolean isPlaying = next.nowPlaying().map(np -> np.song().id().equals(row.songInfo.id())).orElse(false);
             if (isPlaying) {
+                row.addCssClass(Classes.colorAccent.className());
                 switch (next.player().state()) {
                     case PAUSED, INIT -> row.icon.setPlayingState(NowPlayingState.PAUSED);
                     case PLAYING, BUFFERING, READY, END_OF_STREAM -> row.icon.setPlayingState(NowPlayingState.PLAYING);
                 }
             } else {
+                row.removeCssClass(Classes.colorAccent.className());
                 row.icon.setPlayingState(NowPlayingState.NONE);
             }
         }
