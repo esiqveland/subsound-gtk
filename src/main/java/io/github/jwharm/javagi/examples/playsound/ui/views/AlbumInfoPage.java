@@ -8,7 +8,6 @@ import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongI
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.ui.components.Classes;
 import io.github.jwharm.javagi.examples.playsound.ui.components.MainView;
-import io.github.jwharm.javagi.examples.playsound.ui.components.MainViewClamp;
 import io.github.jwharm.javagi.examples.playsound.ui.components.NowPlayingOverlayIcon;
 import io.github.jwharm.javagi.examples.playsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
 import io.github.jwharm.javagi.examples.playsound.ui.components.RoundedAlbumArt;
@@ -45,19 +44,22 @@ import static io.github.jwharm.javagi.examples.playsound.utils.Utils.addHover;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.formatBytesSI;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.formatDurationMedium;
+import static org.gnome.gtk.Align.BASELINE_FILL;
 import static org.gnome.gtk.Align.CENTER;
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
+import static org.gnome.gtk.Orientation.VERTICAL;
 
-public class AlbumInfoBox extends Box {
+public class AlbumInfoPage extends Box {
     private final ThumbnailCache thumbLoader;
 
     //private final ArtistInfo artistInfo;
     private final AlbumInfo albumInfo;
     private final AtomicReference<AppState> prevState = new AtomicReference<>(null);
 
+    private final Box headerBox;
     private final ScrolledWindow scroll;
-    private final Box infoContainer;
+    private final Box mainContainer;
     private final Box albumInfoBox;
     private final ListBox list;
     private final List<AlbumSongActionRow> rows;
@@ -216,7 +218,7 @@ public class AlbumInfoBox extends Box {
 
     }
 
-    public AlbumInfoBox(
+    public AlbumInfoPage(
             ThumbnailCache thumbLoader,
             AlbumInfo albumInfo,
             Function<PlayerAction, CompletableFuture<Void>> onAction
@@ -270,22 +272,24 @@ public class AlbumInfoBox extends Box {
 
         rows.forEach(this.list::append);
 
-        this.albumInfoBox = Box.builder().setHalign(CENTER).setSpacing(4).setValign(START).setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).setMarginBottom(10).build();
+        this.headerBox = Box.builder().setHalign(Align.BASELINE_FILL).setSpacing(0).setValign(START).setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).build();
+        this.headerBox.addCssClass("album-info-main");
 
-        this.infoContainer = Box.builder().setHalign(CENTER).setSpacing(8).setValign(START).setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).setMarginBottom(10).build();
-        this.infoContainer.append(this.artistImage);
+        this.mainContainer = Box.builder().setHalign(BASELINE_FILL).setSpacing(8).setValign(START).setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).setMarginBottom(10).setHomogeneous(false).build();
+        this.albumInfoBox = Box.builder().setHalign(CENTER).setSpacing(4).setValign(START).setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).setMarginBottom(10).build();
         this.albumInfoBox.append(infoLabel(this.albumInfo.name(), Classes.titleLarge2.add()));
         this.albumInfoBox.append(infoLabel(this.albumInfo.artistName(), Classes.titleLarge3.add()));
         this.albumInfoBox.append(infoLabel("%d".formatted(this.albumInfo.year()), Classes.labelDim.add(Classes.bodyText)));
         this.albumInfoBox.append(infoLabel("%d songs, %s".formatted(this.albumInfo.songCount(), formatDurationMedium(this.albumInfo.totalPlayTime())), Classes.labelDim.add(Classes.bodyText)));
         //this.albumInfoBox.append(infoLabel("%s playtime".formatted(formatDurationMedium(this.albumInfo.totalPlayTime())), Classes.labelDim.add(Classes.bodyText)));
-        this.infoContainer.append(this.albumInfoBox);
-        this.infoContainer.append(list);
+        this.headerBox.append(this.artistImage);
+        this.headerBox.append(this.albumInfoBox);
+        this.mainContainer.append(this.headerBox);
+        var listHolder = Box.builder().setOrientation(VERTICAL).setHalign(CENTER).setValign(START).build();
+        listHolder.append(list);
+        this.mainContainer.append(listHolder);
 
-        var clamp = MainViewClamp.create(infoContainer);
-        clamp.addCssClass("album-info-main");
-
-        this.scroll = ScrolledWindow.builder().setChild(clamp).setHexpand(true).setVexpand(true).build();
+        this.scroll = ScrolledWindow.builder().setChild(mainContainer).setHexpand(true).setVexpand(true).build();
         var mainView = new MainView(this.scroll);
         this.setHexpand(true);
         this.setVexpand(true);

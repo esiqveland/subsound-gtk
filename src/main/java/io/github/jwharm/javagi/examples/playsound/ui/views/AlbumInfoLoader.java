@@ -20,7 +20,7 @@ public class AlbumInfoLoader extends Box implements AutoCloseable, AppManager.St
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private final ThumbnailCache thumbLoader;
 
-    private final BoxHolder<FutureLoader<AlbumInfo, AlbumInfoBox>> viewHolder = new BoxHolder<>();
+    private final BoxHolder<FutureLoader<AlbumInfo, AlbumInfoPage>> viewHolder = new BoxHolder<>();
 
     public AlbumInfoLoader(
             ThumbnailCache thumbLoader,
@@ -62,7 +62,7 @@ public class AlbumInfoLoader extends Box implements AutoCloseable, AppManager.St
             return;
         }
 
-        var loader = new FutureLoader<>(future, albumInfo -> new AlbumInfoBox(
+        var loader = new FutureLoader<>(future, albumInfo -> new AlbumInfoPage(
                 this.thumbLoader,
                 albumInfo,
                 this.onAction
@@ -81,8 +81,8 @@ public class AlbumInfoLoader extends Box implements AutoCloseable, AppManager.St
         if (child == null) {
             return;
         }
-        child.getMainWidget().ifPresent(albumInfoBox -> {
-            albumInfoBox.updateAppState(state);
+        child.getMainWidget().ifPresent(albumInfoPage -> {
+            albumInfoPage.updateAppState(state);
         });
     }
 }

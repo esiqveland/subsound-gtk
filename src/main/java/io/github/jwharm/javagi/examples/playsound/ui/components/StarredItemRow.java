@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static io.github.jwharm.javagi.examples.playsound.ui.views.AlbumInfoBox.infoLabel;
+import static io.github.jwharm.javagi.examples.playsound.ui.views.AlbumInfoPage.infoLabel;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.addHover2;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.cssClasses;
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.formatBytesSI;

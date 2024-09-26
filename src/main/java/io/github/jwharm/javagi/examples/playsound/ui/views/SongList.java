@@ -20,7 +20,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.github.jwharm.javagi.examples.playsound.utils.Utils.*;
-import static io.github.jwharm.javagi.examples.playsound.ui.views.AlbumInfoBox.infoLabel;
+import static io.github.jwharm.javagi.examples.playsound.ui.views.AlbumInfoPage.infoLabel;
 import static org.gnome.gtk.Align.CENTER;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 
