@@ -54,7 +54,7 @@ public class ArtistInfoFlowBox extends Box {
 
         this.biographyBoxBox = borderBox(Orientation.VERTICAL, BIG_SPACING).setSpacing(BIG_SPACING/4).build();
         this.biographyBoxBox.append(Label.builder().setLabel("About").setHalign(Align.START).setCssClasses(cssClasses("title-3")).build());
-        this.biographyBoxBox.append(Label.builder().setLabel(this.artist.biography().cleaned()).setWrap(true).setWrapMode(WrapMode.WORD).setNaturalWrapMode(NaturalWrapMode.WORD).setUseMarkup(true).setHalign(Align.START).setCssClasses(cssClasses("dim-label")).build());
+        this.biographyBoxBox.append(Label.builder().setLabel(this.artist.biography().cleaned()).setWrap(true).setWrapMode(WrapMode.WORD).setNaturalWrapMode(NaturalWrapMode.WORD).setUseMarkup(false).setHalign(Align.START).setCssClasses(cssClasses("dim-label")).build());
         this.biographyBoxBox.append(Label.builder().setLabel(this.artist.biography().link()).setWrap(true).setWrapMode(WrapMode.WORD).setNaturalWrapMode(NaturalWrapMode.WORD).setUseMarkup(true).setHalign(Align.START).build());
         this.biographyBox = Box.builder().setOrientation(Orientation.VERTICAL).setHexpand(true).setCssClasses(cssClasses("card")).build();
         this.biographyBox.append(biographyBoxBox);
