@@ -62,7 +62,7 @@ dependencies {
     implementation 'com.twelvemonkeys.imageio:imageio-webp:3.11.0'
 
     testImplementation 'org.assertj:assertj-core:3.25.1'
-    testImplementation 'junit:junit:4.13.1'
+    testImplementation 'junit:junit:4.13.2'
 }
 
 // copy the Constants class and replace the version placeholder with the application version
