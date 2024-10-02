@@ -5,6 +5,7 @@ import io.github.cdimascio.dotenv.Dotenv;
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
 import io.github.jwharm.javagi.examples.playsound.configuration.Config.ConfigurationDTO.ServerConfigDTO;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.ServerType;
+import io.github.jwharm.javagi.examples.playsound.integration.platform.PortalUtils;
 import io.github.jwharm.javagi.examples.playsound.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -135,8 +136,19 @@ public class Config {
 
     private static Path defaultCacheDir() {
         {
-            var xdg = System.getenv("XDG_CACHE_HOME");
-            if (xdg != null && !xdg.isBlank()) {
+            String userDataDir = PortalUtils.getUserDataDir();
+            if (userDataDir != null && !userDataDir.isBlank()) {
+                var p = Path.of(userDataDir, "subsound-gtk").toAbsolutePath();
+                var fd = p.toFile();
+                if (!fd.exists()) {
+                    fd.mkdirs();
+                }
+                return p;
+            }
+        }
+        {
+            var xdg = Utils.firstNotBlank(System.getenv("XDG_DATA_HOME"), System.getenv("XDG_CACHE_HOME"));
+            if (!xdg.isBlank()) {
                 Path path = java.nio.file.Path.of(xdg, "subsound-gtk").toAbsolutePath();
                 var fHandle = path.toFile();
                 if (!fHandle.exists()) {
@@ -162,6 +174,16 @@ public class Config {
 
     // https://specifications.freedesktop.org/basedir-spec/latest/index.html#variables
     private static Path defaultConfigDir() {
+        var userConfigDir = PortalUtils.getUserConfigDir();
+        if (userConfigDir != null && !userConfigDir.isBlank()) {
+            Path path = Path.of(userConfigDir, "subsound-gtk").toAbsolutePath();
+            var fHandle = path.toFile();
+            if (!fHandle.exists()) {
+                fHandle.mkdirs();
+            }
+            return path;
+        }
+
         var xdg = System.getenv("XDG_CONFIG_HOME");
         if (xdg != null && !xdg.isBlank()) {
             Path path = Path.of(xdg, "subsound-gtk").toAbsolutePath();
