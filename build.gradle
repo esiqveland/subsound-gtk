@@ -1,13 +1,24 @@
+import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
+    id 'com.gradleup.shadow' version '8.3.3'
+    id 'java'
     id 'application'
+    id 'io.github.jwharm.flatpak-gradle-generator' version '1.2.0'
+    //    id 'androidx.room' version "2.7.0-alpha06" apply false
 }
 
+group = 'com.github.subsounds'
+version = '0.1.0'
+var mainClass = 'com.github.subsound.Main'
+
 repositories {
+    maven { url './offline-repository/' }
     mavenCentral()
     google()
 }
 
+def room_version = "2.7.0-alpha06"
 def recordBuilderVersion = "42"
 
 dependencies {
@@ -22,6 +33,21 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.11.0'
     implementation 'de.androidpit:color-thief:1.1.2'
 
+//    annotationProcessor "androidx.room:room-compiler:$room_version"
+//    runtimeOnly "androidx.room:room-runtime:$room_version"
+//    runtimeOnly "androidx.room:room-runtime-jvm:$room_version"
+//    runtimeOnly "androidx.room:room-common:$room_version"
+//    runtimeOnly "androidx.room:room-common-jvm:$room_version"
+//    implementation "androidx.room:room-migration:$room_version"
+//    implementation "androidx.room:room-migration-jvm:$room_version"
+    // To use Kotlin annotation processing tool (kapt)
+    //kapt "androidx.room:room-compiler:$room_version"
+    // To use Kotlin Symbol Processing (KSP)
+    //ksp "androidx.room:room-compiler:$room_version"
+    // optional - RxJava3 support for Room
+    //implementation "androidx.room:room-rxjava3:$room_version"
+    // optional - Test helpers
+    //testImplementation "androidx.room:room-testing:$room_version"
 
     annotationProcessor "io.soabase.record-builder:record-builder-processor:$recordBuilderVersion"
     compileOnly "io.soabase.record-builder:record-builder-core:$recordBuilderVersion"
@@ -39,12 +65,40 @@ dependencies {
     testImplementation 'junit:junit:4.13.1'
 }
 
+// copy the Constants class and replace the version placeholder with the application version
+tasks.register("processVersion", Copy) {
+    from("src/main/java/com/github/subsound/configuration/constants/") {
+        include("Constants.java")
+        filter(ReplaceTokens, tokens: ['version': version])
+    }
+    into layout.buildDirectory.dir("generated/sources/classes/src/java/main/com/github/subsound/configuration/constants/")
+
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+// exclude the original Constants class from the source set so gradle doesn't compile it in
+sourceSets {
+    main {
+        java {
+            exclude ("com/github/subsound/configuration/constants/Constants.java")
+        }
+    }
+}
+
+// include the new Constants class that was previously generated
+tasks.named("compileJava", JavaCompile) {
+    dependsOn("processVersion")
+    source(layout.buildDirectory.dir("generated/sources/classes/src/java/main/com/github/subsound/configuration/constants/"))
+}
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(22)
     }
 }
-
+test {
+    jvmArgs += "--enable-native-access=ALL-UNNAMED"
+}
 tasks.named('run') {
     //jvmArgs += "-XstartOnFirstThread"
     jvmArgs += "--enable-native-access=ALL-UNNAMED"
@@ -52,7 +106,21 @@ tasks.named('run') {
     //jvmArgs += "-Djava.library.path=/usr/lib64:/lib64:/lib:/usr/lib:/lib/x86_64-linux-gnu:/opt/homebrew/lib "
 }
 
+tasks.flatpakGradleGenerator {
+    outputFile = file('flatpak-sources.json')
+    downloadDirectory = './offline-repository'
+}
 application {
-    mainClass = "io.github.jwharm.javagi.examples.playsound.Main"
+    setMainClass(mainClass)
 }
 
+shadowJar {
+    archiveClassifier.set('final')
+}
+
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = mainClass;
+    }
+    dependsOn("shadowJar")
+}
