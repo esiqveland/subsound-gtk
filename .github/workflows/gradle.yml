@@ -30,6 +30,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.head_ref }}
     - uses: actions/setup-java@v4
       with:
         java-version: '22'
@@ -42,9 +44,12 @@ jobs:
     - uses: stefanzweifel/git-auto-commit-action@v5
       with:
         commit_message: "Update flatpak-sources.json"
-        branch: "dependency-file-update"
-        create_branch: true
-    
+        #branch: "dependency-file-update"
+        #create_branch: true
+        # Optional. Disable dirty check and always try to create a commit and push
+        skip_dirty_check: true
+        repository: flatpak-sources.json
+
   dependency-submission:
     runs-on: ubuntu-latest
     permissions:
