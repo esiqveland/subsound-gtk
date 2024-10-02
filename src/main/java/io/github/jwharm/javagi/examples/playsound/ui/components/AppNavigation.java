@@ -15,14 +15,13 @@ public class AppNavigation {
         boolean navigateTo(AppRoute next);
     }
 
-    public static sealed interface AppRoute {
+    public sealed interface AppRoute {
         record RouteHome() implements AppRoute {}
         record RouteStarred() implements AppRoute {}
         record SettingsPage() implements AppRoute {}
         record RouteArtistsOverview() implements AppRoute {}
         record RouteAlbumsOverview() implements AppRoute {}
         record RouteArtistInfo(String artistId) implements AppRoute {}
-        record RouteArtistInfo2(String artistId) implements AppRoute {}
         record RouteAlbumInfo(String albumId) implements AppRoute {}
     }
 

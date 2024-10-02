@@ -13,6 +13,8 @@ import org.gnome.gtk.Orientation;
 import org.gnome.gtk.PropagationLimit;
 import org.gnome.gtk.PropagationPhase;
 import org.gnome.gtk.Widget;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -238,5 +240,23 @@ public class Utils {
     }
     public static <T> String toJson(T obj) {
         return GSON.toJson(obj);
+    }
+
+    public static @Nullable String firstNotNull(String ...ss) {
+        for (String s : ss) {
+            if (s != null) {
+                return s;
+            }
+        }
+        return null;
+    }
+
+    public static @NotNull String firstNotBlank(String ...ss) {
+        for (String s : ss) {
+            if (s != null && !s.isBlank()) {
+                return s;
+            }
+        }
+        return "";
     }
 }

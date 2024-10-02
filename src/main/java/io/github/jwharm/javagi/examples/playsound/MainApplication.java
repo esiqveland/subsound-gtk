@@ -1,7 +1,6 @@
 package io.github.jwharm.javagi.examples.playsound;
 
 import io.github.jwharm.javagi.examples.playsound.app.state.AppManager;
-import io.github.jwharm.javagi.examples.playsound.integration.ServerClient;
 import io.github.jwharm.javagi.examples.playsound.integration.ServerClient.SongInfo;
 import io.github.jwharm.javagi.examples.playsound.persistence.ThumbnailCache;
 import io.github.jwharm.javagi.examples.playsound.ui.components.AppNavigation;
@@ -33,7 +32,6 @@ import org.gnome.gtk.CssProvider;
 import org.gnome.gtk.Gtk;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.StyleContext;
-import org.gnome.gtk.Widget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,40 +47,77 @@ public class MainApplication {
     private final String cssMain;
 
     private final ViewStack viewStack = ViewStack.builder().build();
-    private final NavigationView navigationView = NavigationView.builder().build();
-    private final ToastOverlay toastOverlay = ToastOverlay.builder().setChild(navigationView).build();
-    private HeaderBar headerBar;
-    private Box bottomBar;
+    private final NavigationView navigationView = NavigationView.builder().setPopOnEscape(true).setAnimateTransitions(true).build();
+    private final ToastOverlay toastOverlay = ToastOverlay.builder().setChild(this.navigationView).build();
+    private ToolbarView toolbarView;
+    private final HeaderBar headerBar;
+    private final ViewSwitcher viewSwitcher;
+
+    private final Button settingsButton;
+    private final PlayerBar playerBar;
+    private final Box bottomBar;
     private AppNavigation appNavigation;
-    private ArtistInfoLoader artistContainer;
     private CssProvider mainProvider = CssProvider.builder().build();
 
+
     public MainApplication(AppManager appManager) {
-        this.appManager = appManager.setToastOverlay(toastOverlay);
+        this.appManager = appManager;
+        this.appManager.setToastOverlay(this.toastOverlay);
         this.thumbLoader = appManager.getThumbnailCache();
         this.cssMain = mustRead(Path.of("src/main/resources/css/main.css"));
-        this.artistContainer = new ArtistInfoLoader(
-                thumbLoader,
-                this.appManager,
-                albumInfo -> this.appNavigation.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(albumInfo.id()))
-        );
-    }
-
-    public void runActivate(Application app) {
         mainProvider.loadFromString(cssMain);
         StyleContext.addProviderForDisplay(Display.getDefault(), mainProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 
+        settingsButton = Button.builder()
+                .setIconName(Icons.Settings.getIconName())
+                .setTooltipText("Settings")
+                .build();
+        settingsButton.onClicked(() -> {
+            appNavigation.navigateTo(new AppNavigation.AppRoute.SettingsPage());
+        });
+
+        viewSwitcher = ViewSwitcher.builder()
+                .setPolicy(ViewSwitcherPolicy.WIDE)
+                .setStack(viewStack)
+                .build();
+
+        headerBar = HeaderBar.builder()
+                .setHexpand(true)
+                .setTitleWidget(viewSwitcher)
+                .setShowBackButton(true)
+                .build();
+        headerBar.packEnd(settingsButton);
+
+        playerBar = new PlayerBar(appManager, (SongInfo songInfo) -> {
+            appNavigation.navigateTo(new AppNavigation.AppRoute.RouteArtistInfo(songInfo.artistId()));
+        });
+        bottomBar = new Box(Orientation.VERTICAL, 2);
+        bottomBar.append(playerBar);
+
+        toolbarView = ToolbarView.builder().build();
+        toolbarView.addTopBar(headerBar);
+        toolbarView.setContent(toastOverlay);
+        toolbarView.addBottomBar(bottomBar);
+
+        viewStack.getPages().onSelectionChanged((position, nItems) -> {
+            var visibleChild = viewStack.getVisibleChildName();
+            System.out.println("viewSwitcher.Pages.SelectionModel.onSelectionChanged.visibleChild: " + visibleChild);
+        });
+        navigationView.onPopped(page -> {
+            log.info("navigationView.pop: page={} child={}", page.getClass().getName(), page.getChild().getClass().getName());
+            //boolean canPop = navigationView.getNavigationStack().getNItems() > 1;
+            //headerBar.setShowBackButton(canPop);
+        });
+
+    }
+
+    public void runActivate(Application app) {
         this.appNavigation = new AppNavigation((appRoute) -> switch (appRoute) {
             case AppNavigation.AppRoute.RouteAlbumsOverview routeAlbumsOverview -> {
                 viewStack.setVisibleChildName("albumsPage");
                 yield true;
             }
             case AppNavigation.AppRoute.RouteArtistInfo routeArtistInfo -> {
-                artistContainer.setArtistId(routeArtistInfo.artistId());
-                viewStack.setVisibleChildName("artistInfoPage");
-                yield true;
-            }
-            case AppNavigation.AppRoute.RouteArtistInfo2 routeArtistInfo -> {
                 var content = new ArtistInfoLoader(this.thumbLoader, this.appManager, albumInfo -> {
                     appNavigation.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(albumInfo.id()));
                 });
@@ -123,7 +158,8 @@ public class MainApplication {
             case AppNavigation.AppRoute.RouteAlbumInfo route -> {
                 var viewAlbumPage = new AlbumInfoLoader(this.thumbLoader, this.appManager, appManager::handleAction)
                         .setAlbumId(route.albumId());
-                NavigationPage albumPage = NavigationPage.builder().setChild(viewAlbumPage).setTitle("%s".formatted(route.albumId())).build();
+                NavigationPage albumPage = NavigationPage.builder().setChild(viewAlbumPage).setTitle("Album").build();
+                //var albumPage = new SubsoundPage(viewAlbumPage, "Album");
                 navigationView.push(albumPage);
 
 //                albumInfoContainer.setAlbumId(route.albumId());
@@ -131,16 +167,6 @@ public class MainApplication {
                 yield true;
             }
         });
-
-
-        var settingsButton = Button.builder()
-                .setIconName(Icons.Settings.getIconName())
-                .setTooltipText("Settings")
-                .build();
-        settingsButton.onClicked(() -> {
-            appNavigation.navigateTo(new AppNavigation.AppRoute.SettingsPage());
-        });
-
 
         var searchMe = Button.withLabel("Search me");
         searchMe.onClicked(() -> {
@@ -190,12 +216,6 @@ public class MainApplication {
             artistsContainer.append(artistListBox);
             ViewStackPage artistsPage = viewStack.addTitledWithIcon(artistsContainer, "artistsPage", "Artists", Icons.Artist.getIconName());
         }
-
-        {
-            var artistId = "7bfaa1b4f3be9ef4f7275de2511da1aa";
-            artistContainer.setArtistId(artistId);
-            ViewStackPage artistsPage = viewStack.addTitledWithIcon(artistContainer, "artistInfoPage", "Artist", Icons.ARTIST_ALBUM.getIconName());
-        }
         {
             ViewStackPage searchPage = viewStack.addTitledWithIcon(searchContainer, "searchPage", "Search", Icons.Search.getIconName());
         }
@@ -203,38 +223,7 @@ public class MainApplication {
             ViewStackPage playlistPage = viewStack.addTitledWithIcon(playlistsContainer, "playlistPage", "Playlists", Icons.Playlists.getIconName());
         }
 
-        viewStack.getPages().onSelectionChanged((position, nItems) -> {
-            var visibleChild = viewStack.getVisibleChildName();
-            System.out.println("viewSwitcher.Pages.SelectionModel.onSelectionChanged.visibleChild: " + visibleChild);
-        });
-        ViewSwitcher viewSwitcher = ViewSwitcher.builder()
-                .setPolicy(ViewSwitcherPolicy.WIDE)
-                .setStack(viewStack)
-                .build();
-
-        headerBar = HeaderBar.builder()
-                .setHexpand(true)
-                .setTitleWidget(viewSwitcher)
-                .build();
-        headerBar.packEnd(settingsButton);
-
-        var playerBar = new PlayerBar(appManager, (SongInfo songInfo) -> {
-            appNavigation.navigateTo(new AppNavigation.AppRoute.RouteArtistInfo2(songInfo.artistId()));
-        });
-        bottomBar = new Box(Orientation.VERTICAL, 2);
-        bottomBar.append(playerBar);
-
-        navigationView.onPopped(page -> {
-            log.info("navigationView.pop: page={} child={}", page.getClass().getName(), page.getChild().getClass().getName());
-            //boolean canPop = navigationView.getNavigationStack().getNItems() > 1;
-            //headerBar.setShowBackButton(canPop);
-        });
-
-        ToolbarView toolbarView = ToolbarView.builder().build();
-        toolbarView.addTopBar(headerBar);
-        toolbarView.setContent(toastOverlay);
-        toolbarView.addBottomBar(bottomBar);
-
+        //viewStack.setVisibleChildName("frontPage");
         var mainPage = NavigationPage.builder().setChild(viewStack).setTag("main").build();
         navigationView.push(mainPage);
 
@@ -247,6 +236,20 @@ public class MainApplication {
 
         window.present();
     }
+
+//    public class SubsoundPage extends NavigationPage {
+//        public SubsoundPage(Widget child, String title) {
+//            super(wrap(child, headerBar, bottomBar), title);
+//        }
+//
+//        private static ToolbarView wrap(Widget child, Widget headerBar, Widget bottomBar) {
+//            ToolbarView toolbarView = ToolbarView.builder().build();
+//            toolbarView.addTopBar(headerBar);
+//            toolbarView.setContent(child);
+//            toolbarView.addBottomBar(bottomBar);
+//            return toolbarView;
+//        }
+//    }
 
     private Box.Builder<? extends Box.Builder> BoxFullsize() {
         return Box.builder()

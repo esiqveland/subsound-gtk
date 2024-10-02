@@ -232,7 +232,7 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
                 System.out.println("songInfo with null artist?");
                 return;
             }
-            var route = new AppNavigation.AppRoute.RouteArtistInfo2(this.songInfo.artistId());
+            var route = new AppNavigation.AppRoute.RouteArtistInfo(this.songInfo.artistId());
             this.onNavigate.accept(route);
         });
         this.artistNameLabel.addCssClass(Classes.labelDim.className());
