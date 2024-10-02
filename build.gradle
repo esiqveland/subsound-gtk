@@ -18,7 +18,6 @@ repositories {
     google()
 }
 
-def room_version = "2.7.0-alpha06"
 def recordBuilderVersion = "42"
 
 dependencies {
@@ -27,27 +26,10 @@ dependencies {
     implementation 'io.github.jwharm.javagi:gst:0.10.2'
 
     implementation 'net.beardbot:subsonic-client:0.5.1'
-    implementation 'io.github.cdimascio:dotenv-java:3.0.0'
     implementation "com.github.ben-manes.caffeine:caffeine:3.1.8"
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'com.google.code.gson:gson:2.11.0'
     implementation 'de.androidpit:color-thief:1.1.2'
-
-//    annotationProcessor "androidx.room:room-compiler:$room_version"
-//    runtimeOnly "androidx.room:room-runtime:$room_version"
-//    runtimeOnly "androidx.room:room-runtime-jvm:$room_version"
-//    runtimeOnly "androidx.room:room-common:$room_version"
-//    runtimeOnly "androidx.room:room-common-jvm:$room_version"
-//    implementation "androidx.room:room-migration:$room_version"
-//    implementation "androidx.room:room-migration-jvm:$room_version"
-    // To use Kotlin annotation processing tool (kapt)
-    //kapt "androidx.room:room-compiler:$room_version"
-    // To use Kotlin Symbol Processing (KSP)
-    //ksp "androidx.room:room-compiler:$room_version"
-    // optional - RxJava3 support for Room
-    //implementation "androidx.room:room-rxjava3:$room_version"
-    // optional - Test helpers
-    //testImplementation "androidx.room:room-testing:$room_version"
 
     annotationProcessor "io.soabase.record-builder:record-builder-processor:$recordBuilderVersion"
     compileOnly "io.soabase.record-builder:record-builder-core:$recordBuilderVersion"

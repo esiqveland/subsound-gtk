@@ -1,12 +1,10 @@
 package com.github.subsound.configuration;
 
-import com.google.gson.annotations.SerializedName;
-import io.github.cdimascio.dotenv.Dotenv;
-import com.github.subsound.app.state.AppManager;
 import com.github.subsound.configuration.Config.ConfigurationDTO.ServerConfigDTO;
 import com.github.subsound.integration.ServerClient.ServerType;
 import com.github.subsound.integration.platform.PortalUtils;
 import com.github.subsound.utils.Utils;
+import com.google.gson.annotations.SerializedName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +16,6 @@ import java.util.Optional;
 
 public class Config {
     private static final Logger log = LoggerFactory.getLogger(Config.class);
-    public static final Dotenv DOTENV = Dotenv.load();
 
     private final Path configFilePath;
     public Path cacheDir = defaultCacheDir();
@@ -56,23 +53,12 @@ public class Config {
             String password
     ) {}
 
-    private static ServerConfig defaultServerConfig() {
-        return new ServerConfig(
-                AppManager.SERVER_ID,
-                ServerType.SUBSONIC,
-                DOTENV.get("SERVER_URL"),
-                DOTENV.get("SERVER_USERNAME"),
-                DOTENV.get("SERVER_PASSWORD")
-        );
-    }
-
     public static Config createDefault() {
         var configDir = defaultConfigDir();
         var configFilePath = configDir.resolve("config.json");
 
         Config config = new Config(configFilePath);
         config.cacheDir = defaultCacheDir();
-        config.serverConfig = defaultServerConfig();
 
         readConfigFile(configFilePath)
                 .ifPresentOrElse(
