@@ -48,7 +48,7 @@ jobs:
         #create_branch: true
         # Optional. Disable dirty check and always try to create a commit and push
         skip_dirty_check: true
-        repository: flatpak-sources.json
+        file_pattern: flatpak-sources.json
 
   dependency-submission:
     runs-on: ubuntu-latest
