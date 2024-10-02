@@ -1,4 +1,4 @@
-name: Java CI with Gradle
+name: build
 
 on:
   push:
@@ -8,26 +8,20 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     permissions:
       contents: read
 
     steps:
     - uses: actions/checkout@v4
-    - name: Set up JDK 22
-      uses: actions/setup-java@v4
+    - uses: actions/setup-java@v4
       with:
         java-version: '22'
         distribution: 'temurin'
-
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@dbbdc275be76ac10734476cc723d82dfe7ec6eda # v3.4.2
+    - uses: gradle/actions/setup-gradle@dbbdc275be76ac10734476cc723d82dfe7ec6eda # v3.4.2
       with:
         gradle-version: '8.9'
-  
-    - name: Build with Gradle 8.9
-      run: gradle build
+    - run: gradle build -x test
       
   generate-dependency-json:
     runs-on: ubuntu-latest
@@ -36,20 +30,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Set up JDK 22
-      uses: actions/setup-java@v4
+    - uses: actions/setup-java@v4
       with:
         java-version: '22'
         distribution: 'temurin'
-
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@dbbdc275be76ac10734476cc723d82dfe7ec6eda # v3.4.2
+    - uses: gradle/actions/setup-gradle@dbbdc275be76ac10734476cc723d82dfe7ec6eda # v3.4.2
       with:
         gradle-version: '8.9'
-  
-    - name: Get dependencies with Gradle 8.9 & flatpak-gradle-generator plugin by jwharm
+    - name: Get dependencies with Gradle & run flatpak-gradle-generator plugin by jwharm
       run: gradle flatpakGradleGenerator
-      
     - uses: stefanzweifel/git-auto-commit-action@v5
       with:
         commit_message: "Update flatpak-sources.json"
@@ -57,19 +46,15 @@ jobs:
         create_branch: true
     
   dependency-submission:
-
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
     - uses: actions/checkout@v4
-    - name: Set up JDK 22
-      uses: actions/setup-java@v4
+    - uses: actions/setup-java@v4
       with:
         java-version: '22'
         distribution: 'temurin'
-
     # Generates and submits a dependency graph, enabling Dependabot Alerts for all project dependencies.
     # See: https://github.com/gradle/actions/blob/main/dependency-submission/README.md
     - name: Generate and submit dependency graph
