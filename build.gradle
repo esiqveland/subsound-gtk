@@ -18,7 +18,7 @@ repositories {
     google()
 }
 
-def recordBuilderVersion = "42"
+def recordBuilderVersion = "43"
 
 dependencies {
     implementation 'io.github.jwharm.javagi:gtk:0.10.2'
