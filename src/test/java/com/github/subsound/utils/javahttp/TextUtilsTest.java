@@ -14,7 +14,7 @@ public class TextUtilsTest {
         assertThat(parseLink(sample)).satisfies(bio -> {
             assertThat(bio.original()).isEqualTo(sample);
             assertThat(bio.cleaned()).isEqualTo("backing vocals");
-            assertThat(bio.link()).isEqualTo("<a  href=\\\"https://www.last.fm/music/The+Test+Band\\\" >Read more on Last.fm</a>");
+            assertThat(bio.link()).isEqualTo("<a  href=\"https://www.last.fm/music/The+Test+Band\" >Read more on Last.fm</a>");
         });
     }
 

@@ -80,6 +80,19 @@ java {
 }
 test {
     jvmArgs += "--enable-native-access=ALL-UNNAMED"
+    useJUnit()
+
+    // listen to events in the test execution lifecycle
+    beforeTest { descriptor ->
+        logger.lifecycle("Running test: " + descriptor)
+    }
+    afterTest { desc, result ->
+        def output = "Class name: ${desc.className}, Test name: ${desc.name},  (Test status: ${result.resultType})"
+        println( '\n' + output)
+    }
+
+    // show standard out and standard error of the test JVM(s) on the console
+    testLogging.showStandardStreams = true
 }
 tasks.named('run') {
     //jvmArgs += "-XstartOnFirstThread"
