@@ -1,4 +1,7 @@
+# Flatpak stuff
 .flatpak-builder/
+repo/
+
 build/
 
 ### Java ###
