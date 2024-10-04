@@ -43,8 +43,9 @@ modules:
         's,https\\://services.gradle.org/distributions/,file:\/run/build/subsound/,'
         gradle/wrapper/gradle-wrapper.properties
       - bash gradlew --offline build
-      - # Extract libs and bin from gradle build *.tar file to /app
-      - tar x --directory=/app --strip-components=1 --file build/distributions/*.tar
+      - ls -la build/distributions
+      # Extract libs and bin from gradle build *.tar file to /app
+      - tar x --directory=/app --strip-components=1 --file build/distributions/*shadow*.tar
       #- install -Dm755 hello.sh /app/bin/hello
     only-arches:
       - x86_64
