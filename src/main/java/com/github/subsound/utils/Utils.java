@@ -3,6 +3,8 @@ package com.github.subsound.utils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.Strictness;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.gnome.glib.GLib;
 import org.gnome.glib.SourceOnceFunc;
 import org.gnome.gtk.Align;
@@ -16,9 +18,11 @@ import org.gnome.gtk.Widget;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -26,6 +30,7 @@ import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.time.Duration;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -259,4 +264,25 @@ public class Utils {
         }
         return "";
     }
+
+//    public static File getResourceDirectory(String resource) {
+//        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+//        URL res = classLoader.getResource(resource);
+//        File fileDirectory;
+//        if ("jar".equals(res.getProtocol())) {
+//            InputStream input = classLoader.getResourceAsStream(resource);
+//            List<String> fileNames = IOUtils.readLines(input, StandardCharsets.UTF_8);
+//            fileNames.forEach(name -> {
+//                String fileResourceName = resource + File.separator + name;
+//                File tempFile = new File(fileDirectory.getPath() + File.pathSeparator + name);
+//                InputStream fileInput = classLoader.getResourceAsStream(resourceFileName);
+//                FileUtils.copyInputStreamToFile(fileInput, tempFile);
+//            });
+//            fileDirectory.deleteOnExit();
+//        } else {
+//            fileDirectory = new File(res.getFile());
+//        }
+//
+//        return fileDirectory;
+//    }
 }
