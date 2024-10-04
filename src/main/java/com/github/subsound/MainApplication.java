@@ -192,7 +192,9 @@ public class MainApplication {
         {
             if (appManager.getConfig().isTestpageEnabled) {
                 var testPlayerPage = new TestPlayerPage(this.appManager);
-                this.appManager.loadSource(testPlayerPage.knownSongs.getFirst().toSongInfo()).join();
+                if (!testPlayerPage.knownSongs.isEmpty()) {
+                    this.appManager.loadSource(testPlayerPage.knownSongs.getFirst().toSongInfo()).join();
+                }
                 ViewStackPage testPage = viewStack.addTitled(testPlayerPage, "testPage", "Testpage");
             }
         }
