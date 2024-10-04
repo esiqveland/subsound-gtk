@@ -37,11 +37,12 @@ modules:
       # We make the Gradle wrapper use our local .zip file
       # NOTA: mind the fact that expand() will reduce the backslashes in template, so double them!
       - ln --force gradle-8.9-all.zip gradle/wrapper/gradle-8.9-all.zip
+      - ls -la offline-repository
       - >-
         sed --regexp-extended --in-place
         's,https\\://services.gradle.org/distributions/,file:\/run/build/hello/,'
         gradle/wrapper/gradle-wrapper.properties
-      - bash gradlew build
+      - bash gradlew --offline build
       - install -Dm755 hello.sh /app/bin/hello
     only-arches:
       - x86_64
