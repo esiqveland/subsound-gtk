@@ -49,7 +49,7 @@ modules:
     sources:
       - type: git
         url: https://github.com/esiqveland/subsound-gtk
-        tag: v0.1.0-alpha1
+        tag: v0.1.0-alpha3
       - type: file
         url: https://services.gradle.org/distributions/gradle-8.9-all.zip
         sha256: 258e722ec21e955201e31447b0aed14201765a3bfbae296a46cf60b70e66db70
