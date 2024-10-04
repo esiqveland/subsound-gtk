@@ -98,8 +98,12 @@ A few samples of what the UI looks like:
   - perhaps there is a good android library for migrating sqlite ?
   - [ ] record what we have downloaded / want to keep offline
 - Onboarding
+  - [X] Launch without crashing on zero config
   - [ ] Detect we are first launch / have no configuration to load
-  - [ ] Send to Configuration Page on first launch
+  - [ ] Make running with no configuration a bit smoother. Should we disable pages until config is set?
+  - [ ] Send to Configuration Page on first launch when no config is loaded
+    - [ ] how to get back? :D
+  - [ ] The volume pipeline / pipewire volume thingy is named `java` in Gnome UI. Figure out how to name it Subsound.
 - Configuration Page
   - [X] Create a page
   - [X] Edit basic server settings
