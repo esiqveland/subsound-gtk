@@ -65,6 +65,9 @@ sourceSets {
         java {
             exclude ("com/github/subsound/configuration/constants/Constants.java")
         }
+        resources {
+            exclude("samples/*")
+        }
     }
 }
 
