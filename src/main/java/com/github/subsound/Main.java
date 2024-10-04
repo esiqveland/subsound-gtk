@@ -39,7 +39,7 @@ public class Main {
         this.appManager = new AppManager(this.config, player, songCache, thumbnailCache, client);
 
         try {
-            var app = new Application("com.github.subsound", ApplicationFlags.DEFAULT_FLAGS);
+            var app = new Application("com.github.Subsound", ApplicationFlags.DEFAULT_FLAGS);
             app.onActivate(() -> {
                 MainApplication mainApp = new MainApplication(appManager);
                 mainApp.runActivate(app);
