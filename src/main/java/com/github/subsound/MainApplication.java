@@ -70,7 +70,7 @@ public class MainApplication {
         this.appManager = appManager;
         this.appManager.setToastOverlay(this.toastOverlay);
         this.thumbLoader = appManager.getThumbnailCache();
-        this.cssMain = mustRead(Path.of("/css/main.css"));
+        this.cssMain = mustRead(Path.of("css/main.css"));
         mainProvider.loadFromString(cssMain);
         StyleContext.addProviderForDisplay(Display.getDefault(), mainProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 
@@ -264,16 +264,32 @@ public class MainApplication {
                 .setHexpand(true);
     }
 
-    private static String mustRead(Path cssFile) {
+    public static String mustRead(Path cssFile) {
         try {
             var relPath = cssFile.toString();
             try {
-                var localFilePath = "src/main/resources" + cssFile.toFile();
+                var localFilePath = "src/main/resources/" + relPath;
                 return Files.readString(Path.of(localFilePath), StandardCharsets.UTF_8);
             } catch (NoSuchFileException e) {
                 // assume we run in a jar:
-                InputStream inputStream = Resources.getInputStream(cssFile.toString());
+                InputStream inputStream = Resources.getInputStream(relPath);
                 return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static byte[] mustReadBytes(String resourcesFilePath) {
+        try {
+            var relPath = resourcesFilePath;
+            try {
+                var localFilePath = "src/main/resources/" + relPath;
+                return Files.readAllBytes(Path.of(localFilePath));
+            } catch (NoSuchFileException e) {
+                // assume we run in a jar:
+                InputStream inputStream = Resources.getInputStream(relPath);
+                return IOUtils.toByteArray(inputStream);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

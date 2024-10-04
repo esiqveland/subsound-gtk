@@ -7,6 +7,11 @@ import com.github.subsound.utils.Utils;
 import org.gnome.adw.Clamp;
 import org.gnome.gdk.Texture;
 import org.gnome.gdkpixbuf.Pixbuf;
+import org.gnome.gio.Cancellable;
+import org.gnome.gio.Gio;
+import org.gnome.gio.InputStream;
+import org.gnome.gio.MemoryInputStream;
+import org.gnome.glib.GLib;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.ContentFit;
@@ -19,8 +24,14 @@ import org.gnome.gtk.Widget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static com.github.subsound.MainApplication.mustRead;
+import static com.github.subsound.MainApplication.mustReadBytes;
 
 public class RoundedAlbumArt extends Box {
     private static final Logger log = LoggerFactory.getLogger(RoundedAlbumArt.class);
@@ -34,9 +45,19 @@ public class RoundedAlbumArt extends Box {
     private final AtomicBoolean isUpdating = new AtomicBoolean(false);
     private final int size;
 
+    private final static Map<Boolean, Pixbuf> placeHolderCache = new ConcurrentHashMap<>();
     public static Grid placeholderImage(int size) {
-        try {
-            Pixbuf pixbuf = Pixbuf.fromFileAtSize("src/main/resources/images/album-placeholder.png", size, size);
+            Pixbuf pixbuf = placeHolderCache.computeIfAbsent(true, (key) -> {
+                var bytes = mustReadBytes("images/album-placeholder.png");
+                var gioStream = MemoryInputStream.fromData(bytes);
+                try {
+                    //Pixbuf pixbufloader = Pixbuf.fromFileAtSize("src/main/resources/images/album-placeholder.png", size, size);
+                    var pixbufloader = Pixbuf.fromStreamAtScale(gioStream, size, size, true, new Cancellable());
+                    return pixbufloader;
+                } catch (GErrorException e) {
+                    throw new RuntimeException(e);
+                }
+            });
             Texture texture = Texture.forPixbuf(pixbuf);
             var image = Image.fromPaintable(texture);
             image.setSizeRequest(size, size);
@@ -51,9 +72,6 @@ public class RoundedAlbumArt extends Box {
             box.addCssClass("rounded");
             box.attach(image, 0, 0, 1, 1);
             return box;
-        } catch (GErrorException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public static Widget resolveCoverArt(ThumbnailCache thumbLoader, Optional<CoverArt> coverArt, int size) {
