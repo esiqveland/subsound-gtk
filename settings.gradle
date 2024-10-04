@@ -1,6 +1,7 @@
 
 pluginManagement {
     repositories {
+        maven { url './offline-repository/' }
         mavenCentral()
         google()
         gradlePluginPortal()
