@@ -8,7 +8,7 @@ sdk-extensions:
   - "org.freedesktop.Sdk.Extension.openjdk"
 build-options:
   append-path: "/usr/lib/sdk/openjdk/bin"
-command: hello
+command: /app/bin/subsound
 finish-args:
   - "--env=PATH=/app/jre/bin:/usr/bin"
   - "--socket=pulseaudio"
@@ -46,6 +46,8 @@ modules:
       - ls -la build/distributions
       # Extract libs and bin from gradle build *.tar file to /app
       - tar vx --directory=/app --strip-components=1 --file build/distributions/*shadow*.tar
+      - ls -la /app
+      - ls -la /app/bin
       #- install -Dm755 hello.sh /app/bin/hello
     only-arches:
       - x86_64
