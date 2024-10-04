@@ -45,7 +45,7 @@ modules:
       - bash gradlew --offline build
       - ls -la build/distributions
       # Extract libs and bin from gradle build *.tar file to /app
-      - tar x --directory=/app --strip-components=1 --file build/distributions/*shadow*.tar
+      - tar vx --directory=/app --strip-components=1 --file build/distributions/*shadow*.tar
       #- install -Dm755 hello.sh /app/bin/hello
     only-arches:
       - x86_64
