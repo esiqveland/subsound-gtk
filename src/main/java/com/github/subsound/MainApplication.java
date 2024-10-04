@@ -9,6 +9,7 @@ import com.github.subsound.ui.components.PlayerBar;
 import com.github.subsound.ui.components.SettingsPage;
 import com.github.subsound.ui.views.AlbumInfoLoader;
 import com.github.subsound.ui.views.ArtistInfoLoader;
+import com.github.subsound.ui.views.ArtistListLoader;
 import com.github.subsound.ui.views.ArtistsListBox;
 import com.github.subsound.ui.views.FrontpagePage;
 import com.github.subsound.ui.views.StarredLoader;
@@ -204,15 +205,13 @@ public class MainApplication {
             ));
             ViewStackPage starredPage = viewStack.addTitledWithIcon(starredPageContainer, "starredPage", "Starred", Icons.Starred.getIconName());
         }
-        var artists = this.appManager.useClient(client -> client.getArtists());
-        var artistListBox = new ArtistsListBox(
-                thumbLoader,
-                appManager,
-                artists.list(),
-                albumInfo -> this.appNavigation.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(albumInfo.id()))
-        );
         {
             var artistsContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
+            var artistListBox = new ArtistListLoader(
+                    thumbLoader,
+                    appManager,
+                    this.appNavigation::navigateTo
+            );
             artistsContainer.append(artistListBox);
             ViewStackPage artistsPage = viewStack.addTitledWithIcon(artistsContainer, "artistsPage", "Artists", Icons.Artist.getIconName());
         }
