@@ -61,7 +61,7 @@ public class SettingsPage extends Box {
         this.setValign(Align.CENTER);
         this.setHalign(Align.CENTER);
 
-        this.serverTypeInfoLabel = Label.builder().setLabel("").setCssClasses(titleLarge.add()).build();
+        this.serverTypeInfoLabel = Label.builder().setLabel("New Server").setCssClasses(titleLarge.add()).build();
         this.serverUrlEntry = EntryRow.builder().setTitle("Server URL").build();
         this.tlsSwitchEntry = SwitchRow.builder().setTitle("Accept unverified certificate").setSensitive(false).build();
         this.usernameEntry = EntryRow.builder().setTitle("Username").build();
@@ -129,7 +129,10 @@ public class SettingsPage extends Box {
     ) {
     }
 
-    public void setSettingsInfo(SettingsInfo s) {
+    public void setSettingsInfo(@Nullable SettingsInfo s) {
+        if (s == null) {
+            return;
+        }
         Utils.runOnMainThread(() -> {
             this.serverTypeInfoLabel.setLabel("%s server".formatted(capitalize(s.type.name())));
             this.serverUrlEntry.setText(s.serverUrl);
