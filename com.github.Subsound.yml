@@ -8,7 +8,7 @@ sdk-extensions:
   - "org.freedesktop.Sdk.Extension.openjdk"
 build-options:
   append-path: "/usr/lib/sdk/openjdk/bin"
-command: /app/bin/subsound
+command: /app/bin/Subsound.sh
 finish-args:
   - "--env=PATH=/app/jre/bin:/usr/bin"
   - "--env=JAVA_HOME=/app/jre"
@@ -49,13 +49,18 @@ modules:
       - tar vx --directory=/app --strip-components=1 --file build/distributions/*shadow*.tar
       - ls -la /app
       - ls -la /app/bin
-      #- install -Dm755 hello.sh /app/bin/hello
+      - install -Dm755 Subsound.sh /app/bin/Subsound.sh
     only-arches:
       - x86_64
     sources:
+      # We use the Subsound.sh script to rename the process we start, so its not just named 'java':
+      - type: script
+        dest-filename: Subsound.sh
+        commands:
+          - exec -a Subsound java $JAVA_OPTS -jar /app/lib/subsound-*.jar
       - type: git
         url: https://github.com/esiqveland/subsound-gtk
-        tag: v0.1.0-alpha4
+        tag: v0.1.0-alpha11
       - type: file
         url: https://services.gradle.org/distributions/gradle-8.9-all.zip
         sha256: 258e722ec21e955201e31447b0aed14201765a3bfbae296a46cf60b70e66db70
