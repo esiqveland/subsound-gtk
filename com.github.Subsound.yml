@@ -1,0 +1,45 @@
+id: com.github.Subsound
+runtime: org.gnome.Platform
+runtime-version: '47'
+sdk: org.gnome.Sdk
+add-extensions:
+  - "org.freedesktop.Sdk.Extension.openjdk"
+sdk-extensions:
+  - "org.freedesktop.Sdk.Extension.openjdk"
+command: hello
+finish-args:
+  - "--env=PATH=/app/jre/bin:/usr/bin"
+  - "--socket=pulseaudio"
+  - "--socket=wayland"
+  - "--socket=fallback-x11"
+  - "--share=ipc"
+  - "--share=network"
+  # Direct Rendering Interface. Necessary for GL. # TODO: Is this needed for accelerated GTK rendering?
+  - "--device=dri"
+  - "--filesystem=xdg-config:create"
+  - "--filesystem=xdg-cache:create"
+  - "--filesystem=xdg-data:create"
+  - "--env=JAVA_HOME=/app/jre"
+  #- "--talk-name=org.freedesktop.FileManager1",
+  #- "--filesystem=home:rw"
+modules:
+  - name: openjdk
+    buildsystem: 'simple'
+    build-commands:
+      - "/usr/lib/sdk/openjdk/install.sh"
+  - name: hello
+    buildsystem: simple
+    build-commands:
+      - bash gradlew build
+      - install -Dm755 hello.sh /app/bin/hello
+    sources:
+      - type: script
+        dest-filename: hello.sh
+        commands:
+          - echo "Hello world, from a sandbox"
+
+
+
+
+
+
