@@ -26,7 +26,7 @@ public class Main {
         // Initialisation Gst
         Gst.init(new Out<>(new String[]{}));
         Pixbuf.getFormats().forEach(pixbufFormat -> {
-            System.out.println("pixbufFormat: %s %s".formatted(pixbufFormat.getName(), pixbufFormat.getDescription()));
+            System.out.println("pixbufFormat supported: %s %s".formatted(pixbufFormat.getName(), pixbufFormat.getDescription()));
         });
 
         this.config = Config.createDefault();
@@ -37,7 +37,7 @@ public class Main {
         this.appManager = new AppManager(this.config, player, songCache, thumbnailCache, client);
 
         try {
-            var app = new Application("com.subsound.player", ApplicationFlags.DEFAULT_FLAGS);
+            var app = new Application("com.github.subsound", ApplicationFlags.DEFAULT_FLAGS);
             app.onActivate(() -> {
                 MainApplication mainApp = new MainApplication(appManager);
                 mainApp.runActivate(app);
