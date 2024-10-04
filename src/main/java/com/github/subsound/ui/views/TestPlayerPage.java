@@ -7,6 +7,8 @@ import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Scale;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.URI;
@@ -18,7 +20,7 @@ import java.util.stream.Stream;
 import static com.github.subsound.utils.Utils.sha256;
 
 public class TestPlayerPage extends Box {
-    // TODO: move the test player page here
+    private static final Logger log = LoggerFactory.getLogger(TestPlayerPage.class);
     public final List<Sample> knownSongs ;
     private final AppManager player;
 
@@ -149,6 +151,10 @@ public class TestPlayerPage extends Box {
 
     private static List<Sample> loadSamples(String dirPath) {
         File dir = new File(dirPath);
+        if (!dir.exists()) {
+            log.info("no samples to load from dir={}", dirPath);
+            return List.of();
+        }
         if (!dir.isDirectory()) {
             throw new IllegalStateException("must be a directory with music files: " + dirPath);
         }
