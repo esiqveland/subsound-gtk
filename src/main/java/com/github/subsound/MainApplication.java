@@ -14,6 +14,8 @@ import com.github.subsound.ui.views.ArtistsListBox;
 import com.github.subsound.ui.views.FrontpagePage;
 import com.github.subsound.ui.views.StarredLoader;
 import com.github.subsound.ui.views.TestPlayerPage;
+import org.apache.commons.codec.Resources;
+import org.apache.commons.io.IOUtils;
 import org.gnome.adw.Application;
 import org.gnome.adw.ApplicationWindow;
 import org.gnome.adw.HeaderBar;
@@ -37,8 +39,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 
 public class MainApplication {
@@ -261,7 +265,13 @@ public class MainApplication {
 
     private static String mustRead(Path cssFile) {
         try {
-            return Files.readString(cssFile, StandardCharsets.UTF_8);
+            try {
+                return Files.readString(cssFile, StandardCharsets.UTF_8);
+            } catch (NoSuchFileException e) {
+                // assume we run in a jar:
+                InputStream inputStream = Resources.getInputStream(cssFile.toString());
+                return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
