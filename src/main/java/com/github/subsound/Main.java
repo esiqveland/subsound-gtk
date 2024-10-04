@@ -13,6 +13,8 @@ import org.gnome.gdkpixbuf.Pixbuf;
 import org.gnome.gio.ApplicationFlags;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
+import java.util.Optional;
+
 public class Main {
     static {
         // Bridge/route all JUL log records to the SLF4J API.
@@ -32,7 +34,7 @@ public class Main {
         this.config = Config.createDefault();
         var songCache = new SongCache(config.cacheDir);
         var thumbnailCache = new ThumbnailCache(config.cacheDir);
-        var client = ServerClient.create(config.serverConfig);
+        var client = Optional.ofNullable(config.serverConfig).map(ServerClient::create);
         var player = new PlaybinPlayer();
         this.appManager = new AppManager(this.config, player, songCache, thumbnailCache, client);
 

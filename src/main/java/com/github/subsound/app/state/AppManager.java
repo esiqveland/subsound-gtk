@@ -57,7 +57,7 @@ public class AppManager {
             PlaybinPlayer player,
             SongCache songCache,
             ThumbnailCache thumbnailCache,
-            ServerClient client
+            Optional<ServerClient> client
     ) {
         this.config = config;
         this.player = player;
@@ -68,7 +68,8 @@ public class AppManager {
                 nextState -> this.setState(old -> old.withQueue(nextState)),
                 this::loadSource
         );
-        this.client = new AtomicReference<>(client);
+        this.client = new AtomicReference<>();
+        client.ifPresent(this.client::set);
         player.onStateChanged(next -> this.setState(old -> new AppState(
                 old.nowPlaying, next, old.queue
         )));
