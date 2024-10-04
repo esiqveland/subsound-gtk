@@ -146,7 +146,8 @@ public class MainApplication {
             }
             case AppNavigation.AppRoute.SettingsPage s -> {
                 var cfg = this.appManager.getConfig();
-                var info = new SettingsPage.SettingsInfo(
+
+                var info = cfg.serverConfig == null ? null : new SettingsPage.SettingsInfo(
                         cfg.serverConfig.type(),
                         cfg.serverConfig.url(),
                         cfg.serverConfig.username(),

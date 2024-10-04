@@ -17,6 +17,7 @@ import org.gnome.gtk.Button;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListBox;
 import org.gnome.gtk.SelectionMode;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +53,7 @@ public class SettingsPage extends Box {
     private final Button saveButton;
 
     public SettingsPage(
-            SettingsInfo settingsInfo,
+            @Nullable SettingsInfo settingsInfo,
             Function<PlayerAction, CompletableFuture<Void>> onAction
     ) {
         super(VERTICAL, 0);
