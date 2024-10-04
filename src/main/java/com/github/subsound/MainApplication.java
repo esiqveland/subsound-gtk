@@ -189,9 +189,11 @@ public class MainApplication {
         playlistsContainer.append(playlistsMe);
 
         {
-            var testPlayerPage = new TestPlayerPage(this.appManager);
-            this.appManager.loadSource(testPlayerPage.knownSongs.getFirst().toSongInfo()).join();
-            ViewStackPage testPage = viewStack.addTitled(testPlayerPage, "testPage", "Testpage");
+            if (appManager.getConfig().isTestpageEnabled) {
+                var testPlayerPage = new TestPlayerPage(this.appManager);
+                this.appManager.loadSource(testPlayerPage.knownSongs.getFirst().toSongInfo()).join();
+                ViewStackPage testPage = viewStack.addTitled(testPlayerPage, "testPage", "Testpage");
+            }
         }
         {
             var frontPageContainer = new FrontpagePage(

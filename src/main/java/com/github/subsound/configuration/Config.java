@@ -18,6 +18,7 @@ public class Config {
     private static final Logger log = LoggerFactory.getLogger(Config.class);
 
     private final Path configFilePath;
+    public final boolean isTestpageEnabled = "true".equals(System.getenv("SUBSOUND_TESTPAGE_ENABLED"));
     public Path cacheDir = defaultCacheDir();
     public ServerConfig serverConfig;
 
