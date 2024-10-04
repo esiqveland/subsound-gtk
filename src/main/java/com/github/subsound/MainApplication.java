@@ -15,6 +15,7 @@ import com.github.subsound.ui.views.FrontpagePage;
 import com.github.subsound.ui.views.StarredLoader;
 import com.github.subsound.ui.views.TestPlayerPage;
 import org.apache.commons.codec.Resources;
+import org.apache.commons.codec.binary.StringUtils;
 import org.apache.commons.io.IOUtils;
 import org.gnome.adw.Application;
 import org.gnome.adw.ApplicationWindow;
@@ -69,7 +70,7 @@ public class MainApplication {
         this.appManager = appManager;
         this.appManager.setToastOverlay(this.toastOverlay);
         this.thumbLoader = appManager.getThumbnailCache();
-        this.cssMain = mustRead(Path.of("src/main/resources/css/main.css"));
+        this.cssMain = mustRead(Path.of("/css/main.css"));
         mainProvider.loadFromString(cssMain);
         StyleContext.addProviderForDisplay(Display.getDefault(), mainProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 
@@ -265,8 +266,10 @@ public class MainApplication {
 
     private static String mustRead(Path cssFile) {
         try {
+            var relPath = cssFile.toString();
             try {
-                return Files.readString(cssFile, StandardCharsets.UTF_8);
+                var localFilePath = "src/main/resources" + cssFile.toFile();
+                return Files.readString(Path.of(localFilePath), StandardCharsets.UTF_8);
             } catch (NoSuchFileException e) {
                 // assume we run in a jar:
                 InputStream inputStream = Resources.getInputStream(cssFile.toString());
