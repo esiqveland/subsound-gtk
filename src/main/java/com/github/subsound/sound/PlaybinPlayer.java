@@ -383,7 +383,7 @@ public class PlaybinPlayer {
         loop = new MainLoop(playerContext, false);
 
         // Create gstreamer elements
-        playbinEl = ElementFactory.make("playbin", "playbin");
+        playbinEl = ElementFactory.make("playbin", "Subsound");
         if (Stream.of(playbinEl).anyMatch(Objects::isNull)) {
             GLib.printerr("playbin element could not be created. Exiting.\n");
             throw new RuntimeException("playbin element could not be created. Exiting.");
