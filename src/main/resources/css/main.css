@@ -12,7 +12,7 @@
 }
 
 .now-playing-overlay:hover {
-    color: red;
+    /*color: red;*/
 }
 .playerBar-playPauseButton {
     -gtk-icon-size: 24px;
@@ -30,7 +30,7 @@
   /*background-color: yellow;*/
 }
 .ListItemPlayingIcon:hover {
-  color: red;
+  /*color: red;*/
   /*background-color: purple;*/
 }
 
