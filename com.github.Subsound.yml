@@ -57,6 +57,7 @@ modules:
       - install --mode=0644 -D src/main/resources/icons/generated/icon-32.png  /app/share/icons/hicolor/32x32/apps/com.github.Subsound.png
       - install --mode=0644 -D src/main/resources/icons/generated/icon-24.png  /app/share/icons/hicolor/24x24/apps/com.github.Subsound.png
       - install --mode=0644 -D src/main/resources/icons/generated/icon-16.png  /app/share/icons/hicolor/16x16/apps/com.github.Subsound.png
+      - install --mode=0644 -D src/main/resources/app/com.github.Subsound.desktop  /app/share/applications/com.github.Subsound.desktop
     only-arches:
       - x86_64
     sources:
