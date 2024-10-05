@@ -32,7 +32,7 @@ modules:
       - x86_64
     build-commands:
       - "/usr/lib/sdk/openjdk/install.sh"
-  - name: subsound
+  - name: Subsound
     buildsystem: simple
     build-commands:
       # We make the Gradle wrapper use our local .zip file
@@ -50,6 +50,13 @@ modules:
       - ls -la /app
       - ls -la /app/bin
       - install -Dm755 Subsound.sh /app/bin/Subsound.sh
+      # install icons and desktop files:
+      - install --mode=0644 -D src/main/resources/icons/generated/icon-256.png /app/share/icons/hicolor/256x256/apps/com.github.Subsound.png
+      - install --mode=0644 -D src/main/resources/icons/generated/icon-64.png  /app/share/icons/hicolor/64x64/apps/com.github.Subsound.png
+      - install --mode=0644 -D src/main/resources/icons/generated/icon-48.png  /app/share/icons/hicolor/48x48/apps/com.github.Subsound.png
+      - install --mode=0644 -D src/main/resources/icons/generated/icon-32.png  /app/share/icons/hicolor/32x32/apps/com.github.Subsound.png
+      - install --mode=0644 -D src/main/resources/icons/generated/icon-24.png  /app/share/icons/hicolor/24x24/apps/com.github.Subsound.png
+      - install --mode=0644 -D src/main/resources/icons/generated/icon-16.png  /app/share/icons/hicolor/16x16/apps/com.github.Subsound.png
     only-arches:
       - x86_64
     sources:
@@ -60,7 +67,7 @@ modules:
           - exec -a Subsound java $JAVA_OPTS -jar /app/lib/subsound-*.jar
       - type: git
         url: https://github.com/esiqveland/subsound-gtk
-        tag: v0.1.0-alpha11
+        tag: v0.1.0-alpha12
       - type: file
         url: https://services.gradle.org/distributions/gradle-8.9-all.zip
         sha256: 258e722ec21e955201e31447b0aed14201765a3bfbae296a46cf60b70e66db70
