@@ -6,5 +6,5 @@ Type=Application
 Icon=com.github.Subsound
 Comment=Stream music from network streaming servers.
 Comment[en]=Stream music from network streaming servers.
-Categories=Music;Streaming;Audio
+Categories=Music;X-Streaming;Audio
 Keywords=music;audio;navidrome;subsonic;subsound
