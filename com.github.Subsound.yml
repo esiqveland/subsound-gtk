@@ -67,7 +67,7 @@ modules:
         path: src/main/resources/app/Subsound.sh
       - type: git
         url: https://github.com/esiqveland/subsound-gtk
-        tag: v0.1.0-alpha15
+        tag: v0.1.0-alpha16
       - type: file
         path: src/main/resources/app/com.github.Subsound.desktop
       - type: file
