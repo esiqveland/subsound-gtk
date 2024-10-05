@@ -69,7 +69,7 @@ modules:
           - exec -a Subsound java $JAVA_OPTS -jar /app/lib/Subsound-*.jar
       - type: git
         url: https://github.com/esiqveland/subsound-gtk
-        tag: v0.1.0-alpha14
+        tag: v0.1.0-alpha15
       - type: file
         path: src/main/resources/app/com.github.Subsound.desktop
       - type: file
