@@ -67,7 +67,7 @@ modules:
           - exec -a Subsound java $JAVA_OPTS -jar /app/lib/subsound-*.jar
       - type: git
         url: https://github.com/esiqveland/subsound-gtk
-        tag: v0.1.0-alpha12
+        tag: v0.1.0-alpha13
       - type: file
         url: https://services.gradle.org/distributions/gradle-8.9-all.zip
         sha256: 258e722ec21e955201e31447b0aed14201765a3bfbae296a46cf60b70e66db70
