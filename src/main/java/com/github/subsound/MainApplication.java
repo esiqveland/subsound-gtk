@@ -29,13 +29,21 @@ import org.gnome.adw.ViewStackPage;
 import org.gnome.adw.ViewSwitcher;
 import org.gnome.adw.ViewSwitcherPolicy;
 import org.gnome.gdk.Display;
+import org.gnome.glib.Variant;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
+import org.gnome.gtk.CallbackAction;
 import org.gnome.gtk.CssProvider;
 import org.gnome.gtk.Gtk;
 import org.gnome.gtk.Orientation;
+import org.gnome.gtk.Shortcut;
+import org.gnome.gtk.ShortcutController;
+import org.gnome.gtk.ShortcutScope;
+import org.gnome.gtk.ShortcutTrigger;
 import org.gnome.gtk.StyleContext;
+import org.gnome.gtk.Widget;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,6 +70,7 @@ public class MainApplication {
     private final Button settingsButton;
     private final PlayerBar playerBar;
     private final Box bottomBar;
+    private final Shortcut playPauseShortcut;
     private AppNavigation appNavigation;
     private CssProvider mainProvider = CssProvider.builder().build();
 
@@ -75,6 +84,19 @@ public class MainApplication {
         StyleContext.addProviderForDisplay(Display.getDefault(), mainProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         // force to dark mode as we currently look terrible in light mode:
         StyleManager.getDefault().setColorScheme(ColorScheme.FORCE_DARK);
+
+        //var playPauseTrigger = ShortcutTrigger.parseString("<Control>KP_Space");
+        var playPauseTrigger = ShortcutTrigger.parseString("<Control>p");
+        var playPauseAction = new CallbackAction((Widget widget, @Nullable Variant args) -> {
+            log.info("callback action");
+            if (this.appManager.getState().player().state().isPlaying()) {
+                this.appManager.pause();
+            } else {
+                this.appManager.play();
+            }
+            return true;
+        });
+        playPauseShortcut = Shortcut.builder().setTrigger(playPauseTrigger).setAction(playPauseAction).build();
 
         settingsButton = Button.builder()
                 .setIconName(Icons.Settings.getIconName())
@@ -238,13 +260,17 @@ public class MainApplication {
         var mainPage = NavigationPage.builder().setChild(viewStack).setTag("main").build();
         navigationView.push(mainPage);
 
+        var shortcutController = new ShortcutController();
+        shortcutController.addShortcut(playPauseShortcut);
+        shortcutController.setScope(ShortcutScope.GLOBAL);
+
         // Pack everything together, and show the window
         var window = ApplicationWindow.builder()
                 .setApplication(app)
                 .setDefaultWidth(1040).setDefaultHeight(780)
                 .setContent(toolbarView)
                 .build();
-
+        window.addController(shortcutController);
         window.present();
     }
 

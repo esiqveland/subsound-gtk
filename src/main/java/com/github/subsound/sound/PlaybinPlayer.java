@@ -88,6 +88,11 @@ public class PlaybinPlayer {
         PAUSED,
         PLAYING,
         END_OF_STREAM,
+        ;
+
+        public boolean isPlaying() {
+            return this == PLAYING;
+        }
     }
 
     private final Thread playerLoopThread;
