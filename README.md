@@ -97,6 +97,9 @@ A few samples of what the UI looks like:
 - [ ] set up a sqlite database with migrations
   - perhaps there is a good android library for migrating sqlite ?
   - [ ] record what we have downloaded / want to keep offline
+- Hotkeys
+  - [ ] space should always play/pause
+    - this looks very hard to do since spacebar is also the activation key for buttons / list items
 - Onboarding
   - [X] Launch without crashing on zero config
   - [ ] Detect we are first launch / have no configuration to load
@@ -142,7 +145,7 @@ Releasing a Flatpak:
     - [ ] find a real icon we can use
   - [X] make the icon work everywhere in gnome desktop!
   - [ ] write a metainfo.xml
-  - [ ] Lock to dark mode theme. Light mode looks kinda awful
+  - [X] Lock to dark mode theme. Light mode looks kinda awful
 
 Features:
 - [X] Local music cache
