@@ -63,10 +63,8 @@ modules:
       - x86_64
     sources:
       # We use the Subsound.sh script to rename the process we start, so its not just named 'java':
-      - type: script
-        dest-filename: Subsound.sh
-        commands:
-          - exec -a Subsound java $JAVA_OPTS -jar /app/lib/Subsound-*.jar
+      - type: file
+        path: src/main/resources/app/Subsound.sh
       - type: git
         url: https://github.com/esiqveland/subsound-gtk
         tag: v0.1.0-alpha15
