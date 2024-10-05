@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Subsound
-GenericName=Streaming music player
+GenericName=Music player
 Exec=Subsound.sh
 Type=Application
 Icon=com.github.Subsound
@@ -8,3 +8,5 @@ Comment=Stream music from network streaming servers.
 Comment[en]=Stream music from network streaming servers.
 Categories=Music;X-Streaming;Audio
 Keywords=music;audio;navidrome;subsonic;subsound
+Terminal=false
+SingleMainWindow=true
