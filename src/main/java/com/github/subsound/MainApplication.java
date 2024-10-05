@@ -10,18 +10,18 @@ import com.github.subsound.ui.components.SettingsPage;
 import com.github.subsound.ui.views.AlbumInfoLoader;
 import com.github.subsound.ui.views.ArtistInfoLoader;
 import com.github.subsound.ui.views.ArtistListLoader;
-import com.github.subsound.ui.views.ArtistsListBox;
 import com.github.subsound.ui.views.FrontpagePage;
 import com.github.subsound.ui.views.StarredLoader;
 import com.github.subsound.ui.views.TestPlayerPage;
 import org.apache.commons.codec.Resources;
-import org.apache.commons.codec.binary.StringUtils;
 import org.apache.commons.io.IOUtils;
 import org.gnome.adw.Application;
 import org.gnome.adw.ApplicationWindow;
+import org.gnome.adw.ColorScheme;
 import org.gnome.adw.HeaderBar;
 import org.gnome.adw.NavigationPage;
 import org.gnome.adw.NavigationView;
+import org.gnome.adw.StyleManager;
 import org.gnome.adw.ToastOverlay;
 import org.gnome.adw.ToolbarView;
 import org.gnome.adw.ViewStack;
@@ -73,6 +73,8 @@ public class MainApplication {
         this.cssMain = mustRead(Path.of("css/main.css"));
         mainProvider.loadFromString(cssMain);
         StyleContext.addProviderForDisplay(Display.getDefault(), mainProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+        // force to dark mode as we currently look terrible in light mode:
+        StyleManager.getDefault().setColorScheme(ColorScheme.FORCE_DARK);
 
         settingsButton = Button.builder()
                 .setIconName(Icons.Settings.getIconName())
