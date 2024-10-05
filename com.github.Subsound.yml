@@ -41,7 +41,7 @@ modules:
       - ls -la offline-repository
       - >-
         sed --regexp-extended --in-place
-        's,https\\://services.gradle.org/distributions/,file:\/run/build/subsound/,'
+        's,https\\://services.gradle.org/distributions/,file:\/run/build/Subsound/,'
         gradle/wrapper/gradle-wrapper.properties
       - bash gradlew --offline build
       - ls -la build/distributions
