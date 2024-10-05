@@ -90,7 +90,7 @@ A few samples of what the UI looks like:
   - [ ] PlayQueue: enqueue a song that will be added after the current playing song in the playqueue
   - [ ] PlayQueue: Gapless playback of queue using gstreamer soon-finished signal / message + setting next-uri property
 - Proper navigation
-  - [ ] fix the navigationview
+  - [ ] fix the navigationview. something is still wrong with app navigation...
   - [ ] fix back button in headerbar
   - AdwNavigationView ?
   - AdwLeaflet + AdwClamp? see https://gitlab.gnome.org/GNOME/gnome-music/-/blob/master/data/ui/ArtistAlbumsWidget.ui
@@ -133,24 +133,41 @@ A few samples of what the UI looks like:
     - [ ] play/pause
     - [ ] skip
 
+Releasing a Flatpak:
+  - [X] make it work (org.gnome.Platform + Java Platform + java-gi + gradle)
+  - [X] Fix processname in process list + gnome volume controls + pavucontrol listing
+    - Using: `exec -a ${PROCESS_NAME} java -jar ...`
+  - [X] write a .desktop
+  - [X] add all needed placeholder icons
+    - [ ] find a real icon we can use
+  - [X] make the icon work everywhere in gnome desktop!
+  - [ ] write a metainfo.xml
+  - [ ] Lock to dark mode theme. Light mode looks kinda awful
+
 Features:
 - [X] Local music cache
 - [X] Local artwork cache
 - [X] Transcoding music
-- [ ] Metadata cache / offline storage for song/artist metadata
-- [ ] Download manager for offline available content
+- [ ] Metadata cache / offline storage for song/artist metadata so we can browse most content offline
 - [ ] Onboarding UI
 - [X] Configuration UI
-- [ ] Scrobble plays
 - [X] Starred listing
 - [X] Browse albums
 - [X] Browse artists
 - [X] Plays any track!
+- [ ] MPRIS support
 
 Later goals:
+ - [ ] Scrobble plays
+ - [ ] Download manager for offline available content
+ - [ ] Internationalize
+
+Eventually goals:
  - [ ] support multiple server types (native Navidrome API, Jellyfish etc)
  - [ ] support the subsonic podcast features
  - [ ] support embedded image tags? https://github.com/neithern/g4music/blob/bf80b5cad448a57c635f01d0a315671fef045d14/src/gst/tag-parser.vala#L99
+ - [ ] make it look OK in light mode?
+ - [ ] Lyrics support?
 
 Non-goals:
  - Video support  
