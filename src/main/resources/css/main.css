@@ -75,12 +75,23 @@ scale slider {
   background-color: transparent;
 }
 
+.bg-red {
+  background: red;
+  background-color: red;
+}
+
 .darken {
   background-color: rgba(0, 0, 0, 0.08);
 }
 
 .blurred {
   filter: blur(6px);
+}
+
+.shadow {
+  box-shadow: 0px 1px 6px rgba(0,0,0,0.3),
+              0px 2px 12px rgba(0,0,0,0.15),
+              0px 6px 32px rgba(0,0,0,0.1);
 }
 
 .album-main-cover {
