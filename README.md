@@ -2,6 +2,8 @@
 
 Subsonic compatible player in GTK4 / Adwaita
 
+Best used with [Navidrome](https://github.com/navidrome/navidrome).
+
 Very early project still, but it works ok for basic playback and browsing.
 
 ### Screenshots
