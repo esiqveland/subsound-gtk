@@ -132,7 +132,7 @@ A few samples of what the UI looks like:
     - [X] play/pause
     - [X] skip/prev
     - [X] App name / App icon
-    - [ ] Optimize updates for when we post a new state
+    - [X] Optimize updates for when we post a new state (hopefully we don't need more optimization here)
     - [ ] Play position
 
 Releasing a Flatpak:

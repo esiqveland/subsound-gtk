@@ -152,17 +152,13 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
     @Override
     public void onStateChanged(AppManager.AppState next) {
         var prev = this.playerState.get();
-        if (prev == null) {
-            MPRISPlayerState newState = toMprisState(next);
-            this.playerState.set(newState);
-            return;
-        }
-        MPRISPlayerState old = prev;
         MPRISPlayerState newState = toMprisState(next);
-        this.playerState.set(newState);
-        Optional<PropertiesChanged> changed = newState.diff(old, true);
+        Optional<PropertiesChanged> changed = newState.diff(prev, true);
         if (changed.isPresent()) {
+            // only update the internal view of the state when we actually send any changes
+            this.playerState.set(newState);
             try {
+                log.info("posting changes: {} {}", changed.get().getPropertiesChanged().size(), changed.get().getPropertiesChanged().keySet());
                 this.dbusMessageChannel.sendOrClosed(changed.get());
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -238,26 +234,26 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
     }
 
     // See https://specifications.freedesktop.org/mpris-spec/2.2/Player_Interface.html
-    public static class MPRISPlayerState implements Properties {
+    public record MPRISPlayerState(
+        PlaybackStatus playbackStatus,
+        LoopStatus loopStatus,
+        double rate,
+        boolean shuffle,
+        MPRISMetadata metadata,
+        double volume,
+        Duration position,
+        double minimumRate,
+        double maximumRate,
+        boolean canGoNext,
+        boolean canGoPrevious,
+        boolean canPlay,
+        boolean canPause,
+        boolean canSeek,
+        boolean canControl,
+        Map<String, Variant<?>> variants
+    ) implements Properties {
         public static final String objectPath = "/org/mpris/MediaPlayer2";
         public static final String interfaceName = "org.mpris.MediaPlayer2.Player";
-
-        private final PlaybackStatus playbackStatus;
-        private final LoopStatus loopStatus;
-        private final double rate;
-        private final boolean shuffle;
-        private final MPRISMetadata metadata;
-        private final double volume;
-        private final Duration position;
-        private final double minimumRate;
-        private final double maximumRate;
-        private final boolean canGoNext;
-        private final boolean canGoPrevious;
-        private final boolean canPlay;
-        private final boolean canPause;
-        private final boolean canSeek;
-        private final boolean canControl;
-        private final Map<String, Variant<?>> variants;
 
         public MPRISPlayerState(
                 PlaybackStatus playbackStatus,
@@ -276,29 +272,59 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
                 boolean canSeek,
                 boolean canControl
         ) {
-            this.playbackStatus = playbackStatus;
-            this.loopStatus = loopStatus;
-            this.rate = rate;
-            this.shuffle = shuffle;
-            this.metadata = metadata;
-            this.volume = volume;
-            this.position = position;
-            this.minimumRate = minimumRate;
-            this.maximumRate = maximumRate;
-            this.canGoNext = canGoNext;
-            this.canGoPrevious = canGoPrevious;
-            this.canPlay = canPlay;
-            this.canPause = canPause;
-            this.canSeek = canSeek;
-            this.canControl = canControl;
-            this.variants = asVariant();
+            this(
+                    playbackStatus,
+                    loopStatus,
+                    rate,
+                    shuffle,
+                    metadata,
+                    volume,
+                    position,
+                    minimumRate,
+                    maximumRate,
+                    canGoNext,
+                    canGoPrevious,
+                    canPlay,
+                    canPause,
+                    canSeek,
+                    canControl,
+                    asVariant(
+                            playbackStatus,
+                            loopStatus,
+                            rate,
+                            shuffle,
+                            metadata,
+                            volume,
+                            position,
+                            minimumRate,
+                            maximumRate,
+                            canGoNext,
+                            canGoPrevious,
+                            canPlay,
+                            canPause,
+                            canSeek,
+                            canControl
+                    )
+            );
         }
 
-        public Map<String, Variant<?>> variant() {
-            return this.variants;
-        }
-
-        private Map<String, Variant<?>> asVariant() {
+        private static Map<String, Variant<?>> asVariant(
+                PlaybackStatus playbackStatus,
+                LoopStatus loopStatus,
+                double rate,
+                boolean shuffle,
+                MPRISMetadata metadata,
+                double volume,
+                Duration position,
+                double minimumRate,
+                double maximumRate,
+                boolean canGoNext,
+                boolean canGoPrevious,
+                boolean canPlay,
+                boolean canPause,
+                boolean canSeek,
+                boolean canControl
+        ) {
             return Map.ofEntries(
                     Map.entry("PlaybackStatus", playbackStatus.variant()),
                     Map.entry("LoopStatus", loopStatus.variant()),
@@ -316,6 +342,48 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
                     Map.entry("CanSeek", ofVariant(canSeek)),
                     Map.entry("CanControl", ofVariant(canControl))
             );
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof MPRISPlayerState that)) return false;
+
+            return playbackStatus == that.playbackStatus &&
+                    position.equals(that.position) &&
+                    metadata.equals(that.metadata) &&
+                    Double.compare(rate, that.rate) == 0 &&
+                    Double.compare(volume, that.volume) == 0 &&
+                    shuffle == that.shuffle &&
+                    canPlay == that.canPlay &&
+                    canSeek == that.canSeek &&
+                    canPause == that.canPause &&
+                    canGoNext == that.canGoNext &&
+                    Double.compare(minimumRate, that.minimumRate) == 0 &&
+                    Double.compare(maximumRate, that.maximumRate) == 0 &&
+                    canControl == that.canControl &&
+                    canGoPrevious == that.canGoPrevious &&
+                    loopStatus == that.loopStatus;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = playbackStatus.hashCode();
+            result = 31 * result + loopStatus.hashCode();
+            result = 31 * result + Double.hashCode(rate);
+            result = 31 * result + Boolean.hashCode(shuffle);
+            result = 31 * result + metadata.hashCode();
+            result = 31 * result + Double.hashCode(volume);
+            result = 31 * result + position.hashCode();
+            result = 31 * result + Double.hashCode(minimumRate);
+            result = 31 * result + Double.hashCode(maximumRate);
+            result = 31 * result + Boolean.hashCode(canGoNext);
+            result = 31 * result + Boolean.hashCode(canGoPrevious);
+            result = 31 * result + Boolean.hashCode(canPlay);
+            result = 31 * result + Boolean.hashCode(canPause);
+            result = 31 * result + Boolean.hashCode(canSeek);
+            result = 31 * result + Boolean.hashCode(canControl);
+            return result;
         }
 
         public static Variant<?> toMapVariant(@Nullable MPRISMetadata metadata) {
@@ -344,9 +412,20 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
             return position.toNanos() / 1000;
         }
 
-        public Optional<PropertiesChanged> diff(MPRISPlayerState old, boolean skipPosition) {
-            var oldVariant = old.variant();
-            var newVariant = this.variant();
+        public Optional<PropertiesChanged> diff(@Nullable MPRISPlayerState old, boolean skipPosition) {
+            if (old == null) {
+                try {
+                    var changes = new PropertiesChanged(objectPath, interfaceName, this.variants, List.of());
+                    return Optional.of(changes);
+                } catch (DBusException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            if (this.equals(old)) {
+                return Optional.empty();
+            }
+            var oldVariant = old.variants();
+            var newVariant = this.variants();
             var diffs = diff(oldVariant, newVariant);
             if (skipPosition) {
                 diffs.remove("Position");
@@ -365,14 +444,18 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
 
         // Returns the map with the entries that were added or changed
         public static Map<String, Variant<?>> diff(
-                Map<String, Variant<?>> oldVariant,
-                Map<String, Variant<?>> newVariant
+                Map<String, Variant<?>> oldMap,
+                Map<String, Variant<?>> newMap
         ) {
             var map = new HashMap<String, Variant<?>>();
-            for (Map.Entry<String, Variant<?>> newVal : newVariant.entrySet()) {
-                var oldVal = oldVariant.get(newVal.getKey());
-                if (!oldVariant.containsKey(newVal.getKey()) || !newVal.getValue().equals(oldVal.getValue())) {
-                    map.put(newVal.getKey(), newVal.getValue());
+            for (Map.Entry<String, Variant<?>> newValEntry : newMap.entrySet()) {
+                var oldVal = oldMap.get(newValEntry.getKey());
+                var newVal = newValEntry.getValue();
+                var newValue = newVal.getValue();
+                if (newValue == null) {
+                    map.put(newValEntry.getKey(), newValEntry.getValue());
+                } else if (!oldMap.containsKey(newValEntry.getKey()) || !newVal.equals(oldVal)) {
+                    map.put(newValEntry.getKey(), newValEntry.getValue());
                 }
             }
             return map;
