@@ -18,6 +18,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -103,7 +104,7 @@ public class ThumbnailCache {
 
     // TODO: since we are using Pixbuf.fromFileAtSize anyway, we dont need the blob in memory any more.
     private CompletableFuture<ThumbLoaded> loadThumbAsync(CoverArt coverArt) {
-        var cachehPath = toCachePath(coverArt);
+        var cachehPath = toCachePath(this.root, coverArt.serverId(), coverArt.coverArtId());
         var cacheAbsPath = cachehPath.cachePath().toAbsolutePath();
         var cacheFile = cacheAbsPath.toFile();
         return Utils.doAsync(() -> {
@@ -187,17 +188,16 @@ public class ThumbnailCache {
         return cacheKey;
     }
 
-    record CachehPath(
+    public record CachehPath(
             Path cachePath,
             Path tmpFilePath
     ) {
     }
 
-    private CachehPath toCachePath(CoverArt coverArt) {
-        var coverArtId = coverArt.coverArtId();
+    public static CachehPath toCachePath(Path root, String serverId, String coverArtId) {
         var key = toCacheKey(coverArtId);
         var fileName = "%s.%s".formatted(coverArtId, "jpg");
-        var cachePath = joinPath(root, coverArt.serverId(), "thumbs", key.part1, key.part2, key.part3, fileName);
+        var cachePath = joinPath(root, serverId, "thumbs", key.part1, key.part2, key.part3, fileName);
         var cachePathTmp = joinPath(cachePath.getParent(), fileName + ".tmp");
         return new CachehPath(cachePath, cachePathTmp);
     }

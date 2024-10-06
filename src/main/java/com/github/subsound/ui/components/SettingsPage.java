@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -39,6 +40,7 @@ import static org.gnome.gtk.Orientation.VERTICAL;
 public class SettingsPage extends Box {
     private static final Logger log = LoggerFactory.getLogger(SettingsPage.class);
 
+    private final Path dataDir;
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private final Clamp clamp;
     private final Box centerBox;
@@ -54,9 +56,11 @@ public class SettingsPage extends Box {
 
     public SettingsPage(
             @Nullable SettingsInfo settingsInfo,
+            Path dataDir,
             Function<PlayerAction, CompletableFuture<Void>> onAction
     ) {
         super(VERTICAL, 0);
+        this.dataDir = dataDir;
         this.onAction = onAction;
         this.setValign(Align.CENTER);
         this.setHalign(Align.CENTER);
@@ -93,6 +97,7 @@ public class SettingsPage extends Box {
         var data = getFormData();
         Utils.doAsync(() -> {
             ServerClient serverClient = ServerClient.create(new ServerConfig(
+                    this.dataDir,
                     AppManager.SERVER_ID,
                     data.type,
                     data.serverUrl,

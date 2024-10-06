@@ -7,6 +7,7 @@ import io.soabase.recordbuilder.core.RecordBuilderFull;
 import org.subsonic.restapi.AlbumID3;
 
 import java.net.URI;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -135,7 +136,9 @@ public interface ServerClient {
     record CoverArt(
             String serverId,
             String coverArtId,
-            URI coverArtLink
+            URI coverArtLink,
+            // The absolute filepath of where we expect to find our local copy of the artwork
+            Path coverArtFilePath
     ) {
     }
 

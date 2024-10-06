@@ -2,6 +2,7 @@ package com.github.subsound.integration.servers.subsonic;
 
 import com.github.subsound.configuration.Config.ServerConfig;
 import com.github.subsound.integration.ServerClient;
+import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.utils.Utils;
 import com.github.subsound.utils.javahttp.TextUtils;
 import net.beardbot.subsonic.client.Subsonic;
@@ -16,6 +17,7 @@ import org.subsonic.restapi.Starred2;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -23,13 +25,18 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static com.github.subsound.app.state.AppManager.SERVER_ID;
+import static com.github.subsound.persistence.ThumbnailCache.toCachePath;
 import static java.util.Optional.ofNullable;
 
 
 public class SubsonicClient implements ServerClient {
+    private final String serverId;
+    private final Path dataDir;
     private final Subsonic client;
 
-    public SubsonicClient(Subsonic client) {
+    public SubsonicClient(String serverId, Path dataDir, Subsonic client) {
+        this.serverId = serverId;
+        this.dataDir = dataDir;
         this.client = client;
     }
 
@@ -51,7 +58,6 @@ public class SubsonicClient implements ServerClient {
 
     @Override
     public ListArtists getArtists() {
-
         //this.client.browsing().getIndexes().get(0).getArtists();
         var res = this.client.browsing().getArtists();
         var list = res.stream()
@@ -242,7 +248,10 @@ public class SubsonicClient implements ServerClient {
     }
 
     public Optional<CoverArt> toCoverArt(String coverArtId) {
-        return ofNullable(coverArtId).map(id -> new CoverArt(SERVER_ID, id, coverArtLink(id)));
+        return ofNullable(coverArtId).map(id -> {
+            var filePath = toCachePath(this.dataDir, this.serverId, coverArtId);
+            return new CoverArt(SERVER_ID, id, coverArtLink(id), filePath.cachePath().toAbsolutePath());
+        });
     }
 
     public record TranscodeSettings(
@@ -270,10 +279,7 @@ public class SubsonicClient implements ServerClient {
         return preferences;
     }
 
-    public static SubsonicClient create(SubsonicPreferences preferences) {
-        return new SubsonicClient(new Subsonic(preferences));
-    }
     public static SubsonicClient create(ServerConfig cfg) {
-        return new SubsonicClient(new Subsonic(createSettings(cfg)));
+        return new SubsonicClient(cfg.id(), cfg.dataDir(), new Subsonic(createSettings(cfg)));
     }
 }

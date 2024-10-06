@@ -19,7 +19,7 @@ public class Config {
 
     private final Path configFilePath;
     public final boolean isTestpageEnabled = "true".equals(System.getenv("SUBSOUND_TESTPAGE_ENABLED"));
-    public Path cacheDir = defaultCacheDir();
+    public Path dataDir = defaultStorageDir();
     public ServerConfig serverConfig;
 
     public Config(Path configFilePath) {
@@ -47,6 +47,8 @@ public class Config {
     }
 
     public record ServerConfig(
+            // the root of where we store app data
+            Path dataDir,
             String id,
             ServerType type,
             String url,
@@ -59,7 +61,7 @@ public class Config {
         var configFilePath = configDir.resolve("config.json");
 
         Config config = new Config(configFilePath);
-        config.cacheDir = defaultCacheDir();
+        config.dataDir = defaultStorageDir().toAbsolutePath();
 
         readConfigFile(configFilePath)
                 .ifPresentOrElse(
@@ -67,6 +69,7 @@ public class Config {
                             log.debug("read config file at path={}", configFilePath);
                             if (cfg.server != null) {
                                 config.serverConfig = new ServerConfig(
+                                        config.dataDir,
                                         cfg.server.id,
                                         cfg.server.type,
                                         cfg.server.url,
@@ -121,7 +124,7 @@ public class Config {
         return Optional.ofNullable(cfg);
     }
 
-    private static Path defaultCacheDir() {
+    private static Path defaultStorageDir() {
         {
             String userDataDir = PortalUtils.getUserDataDir();
             if (userDataDir != null && !userDataDir.isBlank()) {

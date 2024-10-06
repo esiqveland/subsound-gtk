@@ -8,6 +8,8 @@ import org.gnome.glib.GError;
 import org.gnome.glib.GLib;
 import org.gnome.glib.MainContext;
 import org.gnome.glib.MainLoop;
+import org.mpris.MediaPlayer2.MediaPlayer2Player;
+import org.mpris.MediaPlayer2.MediaPlayer2Player.PlaybackStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,6 +94,14 @@ public class PlaybinPlayer {
 
         public boolean isPlaying() {
             return this == PLAYING;
+        }
+
+        public PlaybackStatus toMpris() {
+            return switch (this) {
+                case PAUSED -> PlaybackStatus.Paused;
+                case PLAYING, BUFFERING -> PlaybackStatus.Playing;
+                case READY, INIT, END_OF_STREAM -> PlaybackStatus.Stopped;
+            };
         }
     }
 

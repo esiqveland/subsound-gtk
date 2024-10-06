@@ -179,6 +179,7 @@ public class MainApplication {
                 );
                 var settings = new SettingsPage(
                         info,
+                        cfg.dataDir,
                         appManager::handleAction
                 );
                 NavigationPage navPage = NavigationPage.builder().setChild(settings).setTitle("Settings").build();

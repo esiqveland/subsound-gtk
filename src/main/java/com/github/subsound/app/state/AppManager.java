@@ -101,6 +101,16 @@ public class AppManager {
         return this;
     }
 
+    public void playPause() {
+        if (this.currentState.get().player.state().isPlaying()) {
+            this.pause();
+        } else {
+            if (this.currentState.get().player.source().isPresent()) {
+                this.play();
+            }
+        }
+    }
+
     public interface StateListener {
         void onStateChanged(AppState state);
     }
@@ -298,6 +308,7 @@ public class AppManager {
 
     private void saveConfig(PlayerAction.SaveConfig settings) {
         this.config.serverConfig = new Config.ServerConfig(
+                this.config.dataDir,
                 SERVER_ID,
                 settings.next().type(),
                 settings.next().serverUrl(),
