@@ -106,6 +106,41 @@
   },
   {
     "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/github/hypfvieh/dbus-java-core/5.1.0/dbus-java-core-5.1.0.jar",
+    "sha512": "690510362a968452ce137bdc63cca9a56d2102efa82146b60ed7d63b34997be460c7a893ef06d80cbf9e0c04336a0cfa81d6324bbe0365e8fbcf1b1e13fc3a8f",
+    "dest": "./offline-repository/com/github/hypfvieh/dbus-java-core/5.1.0",
+    "dest-filename": "dbus-java-core-5.1.0.jar"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/github/hypfvieh/dbus-java-core/5.1.0/dbus-java-core-5.1.0.pom",
+    "sha512": "d1a1b930fd835201426ccbe08afc2d0cc2a78096648a75658cd28f1f09f93b8be9122b3dd415394d6eed8d9cd71e345ac7ac08585da23fd9202995fe5b0086e3",
+    "dest": "./offline-repository/com/github/hypfvieh/dbus-java-core/5.1.0",
+    "dest-filename": "dbus-java-core-5.1.0.pom"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/github/hypfvieh/dbus-java-parent/5.1.0/dbus-java-parent-5.1.0.pom",
+    "sha512": "57194c09c31fbf64afc11feac88284cb6b0ce81d005d51d2720513b1ec5ed5f01ee73405a03617b1a8bae18eb6e3c0049c177dbcea67b1b3646e785ca7616dd5",
+    "dest": "./offline-repository/com/github/hypfvieh/dbus-java-parent/5.1.0",
+    "dest-filename": "dbus-java-parent-5.1.0.pom"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/github/hypfvieh/dbus-java-transport-native-unixsocket/5.1.0/dbus-java-transport-native-unixsocket-5.1.0.jar",
+    "sha512": "2f8d8467734118592cc403be48fd5a825da32b38809b4d3f9e4391d4875d9219618e5629d37a07c5e066124bdd96f5e2840bafaa5d308f2ae3c3254e70fc93bb",
+    "dest": "./offline-repository/com/github/hypfvieh/dbus-java-transport-native-unixsocket/5.1.0",
+    "dest-filename": "dbus-java-transport-native-unixsocket-5.1.0.jar"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/github/hypfvieh/dbus-java-transport-native-unixsocket/5.1.0/dbus-java-transport-native-unixsocket-5.1.0.pom",
+    "sha512": "c8a2661e04f3c2aebc1d06683084815c625299b83f172279de3a8d1e3b1d6665c67487e7f666b194e0c64f464deb2c74071a2b3067e39a4753ec16210c839f16",
+    "dest": "./offline-repository/com/github/hypfvieh/dbus-java-transport-native-unixsocket/5.1.0",
+    "dest-filename": "dbus-java-transport-native-unixsocket-5.1.0.pom"
+  },
+  {
+    "type": "file",
     "url": "https://repo.maven.apache.org/maven2/com/google/code/gson/gson-parent/2.11.0/gson-parent-2.11.0.pom",
     "sha512": "d0dc74350cb3266b77d69d17da7473cfddd73d7d824d14c40c0774b454123087e4a35bf7c3db0b5df27f75b3a89d61777e018bb948d2a5eeafecb94a0f37a5cb",
     "dest": "./offline-repository/com/google/code/gson/gson-parent/2.11.0",
@@ -173,6 +208,27 @@
     "sha512": "9cc19a95abcd695edb31421a73179ededa21368397104d45f4a1918d91754d2d19d8ef3ab2a2508e51ecad099326f4834d66c4fdad449997d792eb211b9a6185",
     "dest": "./offline-repository/com/gradleup/shadow/shadow-gradle-plugin/8.3.3",
     "dest-filename": "shadow-gradle-plugin-8.3.3.pom"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/softwaremill/jox/channels/0.3.1/channels-0.3.1.jar",
+    "sha512": "0e0ba7c7bbc54d57ccf4e4a52efe309170821433569f2dbdad0c150f6050a50858e90bf01c1df97e2e8049504ff356bdc57f0fcc1785a0668fd08194a929b86f",
+    "dest": "./offline-repository/com/softwaremill/jox/channels/0.3.1",
+    "dest-filename": "channels-0.3.1.jar"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/softwaremill/jox/channels/0.3.1/channels-0.3.1.pom",
+    "sha512": "3c702f921ace3deeb33617a06599148715192f1d3f5b817280697cb917152a06d56f0b0039c3f3265b10b193e7e94772788e47963474504496d622accaa0b711",
+    "dest": "./offline-repository/com/softwaremill/jox/channels/0.3.1",
+    "dest-filename": "channels-0.3.1.pom"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/softwaremill/jox/parent/0.3.1/parent-0.3.1.pom",
+    "sha512": "9a45e42dcde33bedf57c56b3984cf66b0943ae2eb55ae91dee69053a4a0bbd43bea8389dcd2e0e813d2651883710d8b77e106fd3ee4cced14c3afda485ac5f6c",
+    "dest": "./offline-repository/com/softwaremill/jox/parent/0.3.1",
+    "dest-filename": "parent-0.3.1.pom"
   },
   {
     "type": "file",
