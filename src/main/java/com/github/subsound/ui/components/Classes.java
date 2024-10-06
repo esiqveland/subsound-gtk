@@ -38,10 +38,14 @@ public enum Classes {
     labelNumeric("numeric"), // display label with numbers as monospace-ish
     flat("flat"),
     clickLabel("click-label"),
+    // The .background style class can be used with any widget to give it the default window background and foreground colors.
+    background("background"),
+    // The .transparent style class can be used to give the widget a transparent background color.
     transparent("transparent"),
+    blurred("blurred"),
     darken("darken"),
     rounded("rounded"),
-    ;
+    shadow("shadow");
 
     private final String className;
     Classes(String className) {
