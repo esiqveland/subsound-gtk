@@ -127,14 +127,13 @@ A few samples of what the UI looks like:
   - add song to playlist
   - remove song from playlist
   - play as playqueue
-- [ ] Mpris support
-    - https://github.com/NGMusic/mpris-java/blob/master/extensions/src/xerus/mpris/AbstractMPRISPlayer.kt
-    - https://github.com/NGMusic/moodplayer/blob/master/src/desktop/java/xerus/mpris/MPRIS.kt
-    - https://github.com/NGMusic/mpris-java/blob/master/extensions/test/xerus/mpris/MPRISPlayer.kt
-    - https://github.com/NGMusic/mpris-java/blob/master/src/main/org/mpris/MediaPlayer2/DBusPlayer.kt
-    - [ ] thumbnail
-    - [ ] play/pause
-    - [ ] skip
+- [X] Mpris support
+    - [X] thumbnail - needs to give the path to our downloaded copy on disk, or do a loooot of resizing to send it over dbus
+    - [X] play/pause
+    - [X] skip/prev
+    - [X] App name / App icon
+    - [ ] Optimize updates for when we post a new state
+    - [ ] Play position
 
 Releasing a Flatpak:
   - [X] make it work (org.gnome.Platform + Java Platform + java-gi + gradle)
@@ -146,6 +145,7 @@ Releasing a Flatpak:
   - [X] make the icon work everywhere in gnome desktop!
   - [ ] write a metainfo.xml
   - [X] Lock to dark mode theme. Light mode looks kinda awful
+  - [X] MPRIS support
 
 Features:
 - [X] Local music cache
@@ -158,7 +158,7 @@ Features:
 - [X] Browse albums
 - [X] Browse artists
 - [X] Plays any track!
-- [ ] MPRIS support
+- [X] MPRIS support
 
 Later goals:
  - [ ] Scrobble plays
