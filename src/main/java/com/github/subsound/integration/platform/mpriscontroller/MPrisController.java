@@ -2,6 +2,7 @@ package com.github.subsound.integration.platform.mpriscontroller;
 
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.integration.ServerClient;
+import com.github.subsound.utils.OsUtil;
 import com.softwaremill.jox.Channel;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder;
@@ -29,9 +30,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.github.subsound.integration.platform.mpriscontroller.MPrisController.MPRISPlayerState.interfaceName;
-import static com.github.subsound.integration.platform.mpriscontroller.MPrisController.MPRISPlayerState.toListVariant;
-import static com.github.subsound.integration.platform.mpriscontroller.MPrisController.MPRISPlayerState.toMicroseconds;
+import static com.github.subsound.integration.platform.mpriscontroller.MPrisController.MPRISPlayerState.*;
 
 public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppManager.StateListener, Properties {
     private final static Logger log = LoggerFactory.getLogger(MPrisController.class);
@@ -42,7 +41,6 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
 
     public MPrisController(AppManager appManager) {
         this.appManager = appManager;
-        this.appManager.addOnStateChanged(this);
         this.mprisApplicationProperties = new MprisApplicationProperties();
     }
 
@@ -60,6 +58,10 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
     }
 
     public void run() {
+        if (OsUtil.getOSPlatform() == OsUtil.OS.MACOS) {
+            log.info("can not start dbus on platform={}", OsUtil.getOSPlatform());
+            return;
+        }
         var builder = DBusConnectionBuilder.forSessionBus().withShared(false);
         // Set all thread handlers to single threads. See also:
         // https://github.com/hypfvieh/dbus-java/issues/220
@@ -69,6 +71,7 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
         builder.receivingThreadConfig().withMethodReturnThreadCount(1);
         builder.receivingThreadConfig().withMethodCallThreadCount(1);
         try (DBusConnection conn = builder.build()) {
+            this.appManager.addOnStateChanged(this);
             conn.exportObject("/org/mpris/MediaPlayer2", this);
             conn.requestBusName("org.mpris.MediaPlayer2.com.github.Subsound");
             while (!isShutdown.get()) {
@@ -80,6 +83,8 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
             countDownLatch.await();
         } catch (DBusException | IOException | InterruptedException e) {
             throw new RuntimeException(e);
+        } finally {
+            this.stop();
         }
     }
 
