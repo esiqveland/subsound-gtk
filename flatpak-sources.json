@@ -85,6 +85,41 @@
   },
   {
     "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/github/akarnokd/rxjava3-fiber-interop/0.0.18/rxjava3-fiber-interop-0.0.18.jar",
+    "sha512": "a02d3ce557e1213fe6e0a9b7175540993b3ae582866518159e86da6c68cfa52ab451ab929023ac14580638bb2abf68920f16cb7e4be24d080f138ea8ba3d4d2c",
+    "dest": "./offline-repository/com/github/akarnokd/rxjava3-fiber-interop/0.0.18",
+    "dest-filename": "rxjava3-fiber-interop-0.0.18.jar"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/github/akarnokd/rxjava3-fiber-interop/0.0.18/rxjava3-fiber-interop-0.0.18.module",
+    "sha512": "d344bb94777cf3deb079cd5595d32a8fb2a1c1701456cb51dbd45ab8f07f23b372a19c06356dde9b62dee2ea6d9846c89b77f3616432106cab57814b0ac98114",
+    "dest": "./offline-repository/com/github/akarnokd/rxjava3-fiber-interop/0.0.18",
+    "dest-filename": "rxjava3-fiber-interop-0.0.18.module"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/github/akarnokd/rxjava3-fiber-interop/0.0.18/rxjava3-fiber-interop-0.0.18.pom",
+    "sha512": "e65296ca44a0e31eecaec763809899ebfd79c287ac117e91015582e162b4d0b1edbeeea797c1fbdec53fb9beeead7efb0973e8424914385354565d021ff9db04",
+    "dest": "./offline-repository/com/github/akarnokd/rxjava3-fiber-interop/0.0.18",
+    "dest-filename": "rxjava3-fiber-interop-0.0.18.pom"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/github/akarnokd/rxjava3-jdk9-interop/3.0.0/rxjava3-jdk9-interop-3.0.0.jar",
+    "sha512": "0f7cae56c8442a4679d8a3a469b5d9917eebec5c2c65ade9c901f43391bddc5bf4e97b0e43bc1a0ccc5b2536b8fc0ecae4b9567d397ec70b350d5db3aa8ddfe9",
+    "dest": "./offline-repository/com/github/akarnokd/rxjava3-jdk9-interop/3.0.0",
+    "dest-filename": "rxjava3-jdk9-interop-3.0.0.jar"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/github/akarnokd/rxjava3-jdk9-interop/3.0.0/rxjava3-jdk9-interop-3.0.0.pom",
+    "sha512": "a8132d6700b4b9258059c3d3b018e798fe2a5087229e1c842e28dc6b6f3375ac1f2ca34589c2b42ad16367e6430bc68b8f04f276f9b90efc76571b2f7729550b",
+    "dest": "./offline-repository/com/github/akarnokd/rxjava3-jdk9-interop/3.0.0",
+    "dest-filename": "rxjava3-jdk9-interop-3.0.0.pom"
+  },
+  {
+    "type": "file",
     "url": "https://repo.maven.apache.org/maven2/com/github/ben-manes/caffeine/caffeine/3.1.8/caffeine-3.1.8.jar",
     "sha512": "66195ac8ec62e5425344a51ab671a136618b8658a1e91bb1d1cd1aea5a51fdc12eb7fe5131a00e18ee330d6b0cad14f6743937c23baa50fb21e40eb76d82a777",
     "dest": "./offline-repository/com/github/ben-manes/caffeine/caffeine/3.1.8",
@@ -922,6 +957,27 @@
     "sha512": "209d005989d6e4165bd8144797c9830a65c8683739aaeaf1404b3399e3dc1d60e8298659c553bc4fb2d3ac43e4d329e97fca9a1d095e3a260112dce47f0863c6",
     "dest": "./offline-repository/io/github/openfeign/parent/13.3",
     "dest-filename": "parent-13.3.pom"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/io/reactivex/rxjava3/rxjava/3.1.9/rxjava-3.1.9.jar",
+    "sha512": "fa8832f7a568a1c3cbd54fd38d062cf3519073c542dd1a0e500d696a700a70854ed532908609f5ef2384a384392b5c6f66f29d0a877e4b67483dd0d12f2152a8",
+    "dest": "./offline-repository/io/reactivex/rxjava3/rxjava/3.1.9",
+    "dest-filename": "rxjava-3.1.9.jar"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/io/reactivex/rxjava3/rxjava/3.1.9/rxjava-3.1.9.module",
+    "sha512": "4940f8efb7232d63e47dbc62d0bc15969afcd4a431f463fd878bb5052bcceda3ead0aa501cf6960f379dfe263601424aba4156ff9c6a0b2fb5aad37ecec4a80b",
+    "dest": "./offline-repository/io/reactivex/rxjava3/rxjava/3.1.9",
+    "dest-filename": "rxjava-3.1.9.module"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/io/reactivex/rxjava3/rxjava/3.1.9/rxjava-3.1.9.pom",
+    "sha512": "0d5d7d7647264a251dfa11cdf4f12354d96a5baee76ab968d402be1eb4c1256cc9e2be2d241cf21f10e0e5b9be1e55a51ef42117a6063758bc3cb85fcccb4a50",
+    "dest": "./offline-repository/io/reactivex/rxjava3/rxjava/3.1.9",
+    "dest-filename": "rxjava-3.1.9.pom"
   },
   {
     "type": "file",
@@ -1783,6 +1839,20 @@
     "sha512": "5dbdf60bace26f9dbe2610d3de178e729fae77d65f57cb8238a828d020aaf1b4cc3d3d804bbdcf4a385c141b14fbf92ff689d9caa1f9e86542b5c47b0b1e9288",
     "dest": "./offline-repository/org/ow2/ow2/1.5.1",
     "dest-filename": "ow2-1.5.1.pom"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/org/reactivestreams/reactive-streams/1.0.4/reactive-streams-1.0.4.jar",
+    "sha512": "cdab6bd156f39106cd6bbfd47df1f4b0a89dc4aa28c68c31ef12a463193c688897e415f01b8d7f0d487b0e6b5bd2f19044bf8605704b024f26d6aa1f4f9a2471",
+    "dest": "./offline-repository/org/reactivestreams/reactive-streams/1.0.4",
+    "dest-filename": "reactive-streams-1.0.4.jar"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/org/reactivestreams/reactive-streams/1.0.4/reactive-streams-1.0.4.pom",
+    "sha512": "2e41855c5928dd87aa3a07528544d59c49ac03229f0f8c8a06df5dd0e1791419353f7fcf05362ded9a41389b1c52c0e01dec8f3cfbf3c85b900f1021d90626ce",
+    "dest": "./offline-repository/org/reactivestreams/reactive-streams/1.0.4",
+    "dest-filename": "reactive-streams-1.0.4.pom"
   },
   {
     "type": "file",
