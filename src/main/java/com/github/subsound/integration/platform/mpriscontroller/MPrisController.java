@@ -4,6 +4,7 @@ import com.github.subsound.app.state.AppManager;
 import com.github.subsound.integration.ServerClient;
 import com.github.subsound.utils.OsUtil;
 import com.softwaremill.jox.Channel;
+import com.softwaremill.jox.ChannelDoneException;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -51,9 +52,13 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
         if (isShutdown.compareAndSet(false, true)) {
             // remove receiving state updates:
             this.appManager.removeOnStateChanged(this);
-            // unblocks the run() method:
-            this.countDownLatch.countDown();
             this.dbusMessageChannel.done();
+            try {
+                // wait for the run() method to exit:
+                this.countDownLatch.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -80,10 +85,15 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
                     conn.sendMessage(msg);
                 }
             }
-            countDownLatch.await();
+        } catch (ChannelDoneException e) {
+            if (!this.isShutdown.get()) {
+                throw new RuntimeException(e);
+            }
         } catch (DBusException | IOException | InterruptedException e) {
             throw new RuntimeException(e);
         } finally {
+            countDownLatch.countDown();
+            this.appManager.removeOnStateChanged(this);
             this.stop();
         }
     }
@@ -172,7 +182,7 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
     }
 
     private MPRISPlayerState toMprisState(AppManager.AppState next) {
-        var metadata = next.nowPlaying().map(np -> toMprisMetadata(np)).orElse(null);
+        var metadata = next.nowPlaying().map(this::toMprisMetadata).orElse(null);
         return new MPRISPlayerState(
                 next.player().state().toMpris(),
                 LoopStatus.None,
@@ -216,7 +226,8 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
     @Override
     public <A> A Get(String _interfaceName, String _propertyName) {
         return switch (_interfaceName) {
-            case MprisApplicationProperties.dbusInterfaceName -> this.mprisApplicationProperties.Get(_interfaceName, _propertyName);
+            case MprisApplicationProperties.dbusInterfaceName ->
+                    this.mprisApplicationProperties.Get(_interfaceName, _propertyName);
             case MPRISPlayerState.interfaceName -> this.playerState.get().Get(_interfaceName, _propertyName);
             default -> throw new IllegalArgumentException("Get: Unexpected value: " + _interfaceName);
         };
@@ -226,7 +237,7 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
     public <A> void Set(String _interfaceName, String _propertyName, A _value) {
         switch (_interfaceName) {
             case MprisApplicationProperties.dbusInterfaceName -> this.mprisApplicationProperties.Set(_interfaceName, _propertyName, _value);
-        };
+        }
     }
 
     @Override
@@ -240,22 +251,22 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
 
     // See https://specifications.freedesktop.org/mpris-spec/2.2/Player_Interface.html
     public record MPRISPlayerState(
-        PlaybackStatus playbackStatus,
-        LoopStatus loopStatus,
-        double rate,
-        boolean shuffle,
-        MPRISMetadata metadata,
-        double volume,
-        Duration position,
-        double minimumRate,
-        double maximumRate,
-        boolean canGoNext,
-        boolean canGoPrevious,
-        boolean canPlay,
-        boolean canPause,
-        boolean canSeek,
-        boolean canControl,
-        Map<String, Variant<?>> variants
+            PlaybackStatus playbackStatus,
+            LoopStatus loopStatus,
+            double rate,
+            boolean shuffle,
+            MPRISMetadata metadata,
+            double volume,
+            Duration position,
+            double minimumRate,
+            double maximumRate,
+            boolean canGoNext,
+            boolean canGoPrevious,
+            boolean canPlay,
+            boolean canPause,
+            boolean canSeek,
+            boolean canControl,
+            Map<String, Variant<?>> variants
     ) implements Properties {
         public static final String objectPath = "/org/mpris/MediaPlayer2";
         public static final String interfaceName = "org.mpris.MediaPlayer2.Player";
@@ -489,7 +500,7 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
     }
 
     // See https://specifications.freedesktop.org/mpris-spec/2.2/Track_List_Interface.html#Mapping:Metadata_Map
-    record MPRISMetadata(
+    public record MPRISMetadata(
             TrackId trackId,
             Duration length,
             List<String> artist,
