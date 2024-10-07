@@ -5,6 +5,7 @@ import org.gnome.adw.HeaderBar;
 import org.gnome.adw.ToolbarView;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
+import org.gnome.gtk.Justification;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Overlay;
@@ -17,6 +18,7 @@ public class OnboardingOverlay extends Overlay {
     private final Box settingsBox;
     private final HeaderBar headerBar;
     private final ToolbarView toolbarView;
+    private final Box contentBox;
 
     public OnboardingOverlay(SettingsPage settingsPage, Widget child) {
         super();
@@ -29,10 +31,15 @@ public class OnboardingOverlay extends Overlay {
         this.settingsBox.addCssClass(Classes.background.className());
         this.centerBox.append(this.settingsBox);
         this.headerBar = new HeaderBar();
+        this.headerBar.setTitleWidget(Label.builder().setLabel("").setCssClasses(Classes.title1.add()).build());
+        this.contentBox = Box.builder().setOrientation(Orientation.VERTICAL).setSpacing(0).build();
+        this.contentBox.append(Label.builder().setLabel("Welcome to Subsound").setJustify(Justification.CENTER).setCssClasses(Classes.titleLarge.add()).setMarginBottom(20).build());
+        this.contentBox.append(Label.builder().setLabel("Login to your Subsonic Server to get started.").setJustify(Justification.CENTER).setCssClasses(Classes.bodyText.add()).setMarginBottom(10).build());
+        this.contentBox.append(this.settingsPage);
         this.toolbarView = new ToolbarView();
-        this.headerBar.setTitleWidget(Label.builder().setLabel("Login").setCssClasses(Classes.title1.add()).build());
         this.toolbarView.addTopBar(this.headerBar);
-        this.toolbarView.setContent(this.settingsPage);
+        this.toolbarView.setContent(this.contentBox);
+
         this.settingsBox.append(this.toolbarView);
         this.addOverlay(this.centerBox);
         this.child.addCssClass(Classes.blurred.className());
