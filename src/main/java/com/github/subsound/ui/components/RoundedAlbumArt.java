@@ -30,8 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.github.subsound.MainApplication.mustRead;
-import static com.github.subsound.MainApplication.mustReadBytes;
+import static com.github.subsound.utils.Utils.mustReadBytes;
+
 
 public class RoundedAlbumArt extends Box {
     private static final Logger log = LoggerFactory.getLogger(RoundedAlbumArt.class);
