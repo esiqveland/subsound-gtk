@@ -54,6 +54,8 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 
+import static com.github.subsound.utils.Utils.mustRead;
+
 public class MainApplication {
     private static final Logger log = LoggerFactory.getLogger(MainApplication.class);
     private final AppManager appManager;
@@ -170,7 +172,6 @@ public class MainApplication {
             }
             case AppNavigation.AppRoute.SettingsPage s -> {
                 var cfg = this.appManager.getConfig();
-
                 var info = cfg.serverConfig == null ? null : new SettingsPage.SettingsInfo(
                         cfg.serverConfig.type(),
                         cfg.serverConfig.url(),
@@ -257,7 +258,6 @@ public class MainApplication {
             ViewStackPage playlistPage = viewStack.addTitledWithIcon(playlistsContainer, "playlistPage", "Playlists", Icons.Playlists.getIconName());
         }
 
-        //viewStack.setVisibleChildName("frontPage");
         var mainPage = NavigationPage.builder().setChild(viewStack).setTag("main").build();
         navigationView.push(mainPage);
 
@@ -298,35 +298,4 @@ public class MainApplication {
                 .setHexpand(true);
     }
 
-    public static String mustRead(Path cssFile) {
-        try {
-            var relPath = cssFile.toString();
-            try {
-                var localFilePath = "src/main/resources/" + relPath;
-                return Files.readString(Path.of(localFilePath), StandardCharsets.UTF_8);
-            } catch (NoSuchFileException e) {
-                // assume we run in a jar:
-                InputStream inputStream = Resources.getInputStream(relPath);
-                return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static byte[] mustReadBytes(String resourcesFilePath) {
-        try {
-            var relPath = resourcesFilePath;
-            try {
-                var localFilePath = "src/main/resources/" + relPath;
-                return Files.readAllBytes(Path.of(localFilePath));
-            } catch (NoSuchFileException e) {
-                // assume we run in a jar:
-                InputStream inputStream = Resources.getInputStream(relPath);
-                return IOUtils.toByteArray(inputStream);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }

@@ -3,6 +3,7 @@ package com.github.subsound.utils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.Strictness;
+import org.apache.commons.codec.Resources;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.gnome.glib.GLib;
@@ -24,6 +25,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.CharacterIterator;
@@ -263,6 +267,38 @@ public class Utils {
             }
         }
         return "";
+    }
+
+    public static String mustRead(Path cssFile) {
+        try {
+            var relPath = cssFile.toString();
+            try {
+                var localFilePath = "src/main/resources/" + relPath;
+                return Files.readString(Path.of(localFilePath), StandardCharsets.UTF_8);
+            } catch (NoSuchFileException e) {
+                // assume we run in a jar:
+                InputStream inputStream = Resources.getInputStream(relPath);
+                return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static byte[] mustReadBytes(String resourcesFilePath) {
+        try {
+            var relPath = resourcesFilePath;
+            try {
+                var localFilePath = "src/main/resources/" + relPath;
+                return Files.readAllBytes(Path.of(localFilePath));
+            } catch (NoSuchFileException e) {
+                // assume we run in a jar:
+                InputStream inputStream = Resources.getInputStream(relPath);
+                return IOUtils.toByteArray(inputStream);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 //    public static File getResourceDirectory(String resource) {

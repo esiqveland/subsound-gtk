@@ -19,7 +19,7 @@ import java.util.List;
 
 public class ImageUtils {
 
-    public Pixbuf readPixbuf(byte[] bytes) {
+    public static Pixbuf readPixbuf(byte[] bytes) {
         try (var stream = MemoryInputStream.fromData(bytes)) {
             return readPixbuf(stream);
         } catch (IOException e) {
@@ -38,7 +38,7 @@ public class ImageUtils {
 //    }
 
     // careful: uses a GIO InputStream:
-    public Pixbuf readPixbuf(InputStream stream) {
+    public static Pixbuf readPixbuf(InputStream stream) {
         // we will buffer pixbuf of maximum this size:
         final int PIXBUF_SIZE = 300;
         try {
