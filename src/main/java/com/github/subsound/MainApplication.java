@@ -256,7 +256,7 @@ public class MainApplication {
         }
 
         var cfg = this.appManager.getConfig();
-        if (cfg.onboarding == OnboardingState.DONE) {
+        if (cfg.onboarding != OnboardingState.DONE) {
             var onboardingOverlay = getOnboardingOverlay(this.appManager, viewStack);
             var onboardingPage = NavigationPage.builder().setChild(onboardingOverlay).setTag("onboardingOverlay").build();
             navigationView.push(onboardingPage);
@@ -272,7 +272,7 @@ public class MainApplication {
         // Pack everything together, and show the window
         var window = ApplicationWindow.builder()
                 .setApplication(app)
-                .setDefaultWidth(1040).setDefaultHeight(780)
+                .setDefaultWidth(1040).setDefaultHeight(850)
                 .setContent(toolbarView)
                 .build();
         window.addController(shortcutController);
