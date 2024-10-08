@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/subsound-gtk.main.iml" filepath="$PROJECT_DIR$/.idea/modules/subsound-gtk.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/subsound-gtk.master.iml" filepath="$PROJECT_DIR$/.idea/modules/subsound-gtk.master.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/subsound-gtk.master.main.iml" filepath="$PROJECT_DIR$/.idea/modules/subsound-gtk.master.main.iml" />
     </modules>
   </component>
 </project>
