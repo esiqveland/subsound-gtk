@@ -1,11 +1,13 @@
 package com.github.subsound.ui.components;
 
+import com.github.subsound.app.state.AppManager;
+import com.github.subsound.app.state.PlayerAction;
+import com.github.subsound.configuration.Config;
+import com.github.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
 import com.github.subsound.utils.Utils;
 import org.gnome.adw.HeaderBar;
 import org.gnome.adw.ToolbarView;
-import org.gnome.gdk.Paintable;
 import org.gnome.gdk.Texture;
-import org.gnome.gdkpixbuf.Pixbuf;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Image;
@@ -13,11 +15,10 @@ import org.gnome.gtk.Justification;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Overlay;
-import org.gnome.gtk.Picture;
-import org.gnome.gtk.Separator;
 import org.gnome.gtk.Widget;
 
 public class OnboardingOverlay extends Overlay {
+    private final AppManager appManager;
     private final SettingsPage settingsPage;
     private final Widget child;
     private final Box centerBox;
@@ -25,11 +26,12 @@ public class OnboardingOverlay extends Overlay {
     private final HeaderBar headerBar;
     private final ToolbarView toolbarView;
     private final Box contentBox;
-    private final Picture logo;
+    private final Image logo;
 
-    public OnboardingOverlay(SettingsPage settingsPage, Widget child) {
+    public OnboardingOverlay(AppManager appManager, Widget child) {
         super();
-        this.settingsPage = settingsPage;
+        this.appManager = appManager;
+        this.settingsPage = buildSettingsPage(appManager);
         this.child = child;
         this.centerBox = Utils.borderBox(Orientation.VERTICAL, 10).build();
         this.centerBox.addCssClass(Classes.transparent.className());
@@ -57,9 +59,41 @@ public class OnboardingOverlay extends Overlay {
         this.setChildVisible(true);
     }
 
-    private Picture image(ImageIcons imageIcons) {
+    private SettingsPage buildSettingsPage(AppManager appManager) {
+        var cfg = appManager.getConfig();
+        var info = cfg.serverConfig == null ? null : new SettingsPage.SettingsInfo(
+                cfg.serverConfig.type(),
+                cfg.serverConfig.url(),
+                cfg.serverConfig.username(),
+                cfg.serverConfig.password()
+        );
+        var settings = new SettingsPage(
+                info,
+                cfg.dataDir,
+                action -> appManager
+                        .handleAction(action)
+                        .thenApply(aVoid -> {
+                            if (this.appManager.getConfig().onboarding == OnboardingState.DONE) {
+                                this.setOnboardingFinished();
+                            }
+                            return null;
+                        })
+        );
+        return settings;
+    }
+
+    private void setOnboardingFinished() {
+        Utils.runOnMainThread(() -> {
+            this.removeOverlay(this.centerBox);
+            this.child.removeCssClass(Classes.blurred.className());
+            this.setChildVisible(true);
+        });
+    }
+
+    private Image image(ImageIcons imageIcons) {
         Texture texture = Texture.forPixbuf(imageIcons.getPixbuf());
-        var p = Picture.forPaintable(texture);
-        return p;
+        var image = Image.fromPaintable(texture);
+        image.setSizeRequest(100, 100);
+        return image;
     }
 }

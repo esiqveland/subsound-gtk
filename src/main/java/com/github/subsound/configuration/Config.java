@@ -1,5 +1,6 @@
 package com.github.subsound.configuration;
 
+import com.github.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
 import com.github.subsound.configuration.Config.ConfigurationDTO.ServerConfigDTO;
 import com.github.subsound.integration.ServerClient.ServerType;
 import com.github.subsound.integration.platform.PortalUtils;
@@ -21,6 +22,7 @@ public class Config {
     public final boolean isTestpageEnabled = "true".equals(System.getenv("SUBSOUND_TESTPAGE_ENABLED"));
     public Path dataDir = defaultStorageDir();
     public ServerConfig serverConfig;
+    public OnboardingState onboarding;
 
     public Config(Path configFilePath) {
         this.configFilePath = configFilePath;
@@ -36,6 +38,7 @@ public class Config {
 
     private ConfigurationDTO toFileFormat() {
         var d = new ConfigurationDTO();
+        d.onboarding = this.onboarding;
         d.server = new ServerConfigDTO(
                 this.serverConfig.id(),
                 this.serverConfig.type(),
@@ -67,7 +70,9 @@ public class Config {
                 .ifPresentOrElse(
                         cfg -> {
                             log.debug("read config file at path={}", configFilePath);
+                            config.onboarding = cfg.onboarding;
                             if (cfg.server != null) {
+                                config.onboarding = OnboardingState.DONE;
                                 config.serverConfig = new ServerConfig(
                                         config.dataDir,
                                         cfg.server.id,
@@ -95,6 +100,11 @@ public class Config {
 
         @SerializedName("server")
         public ServerConfigDTO server;
+        @SerializedName("onboarding")
+        public OnboardingState onboarding;
+        public enum OnboardingState {
+            DONE,
+        }
     }
 
     private static Optional<ConfigurationDTO> readConfigFile(Path configPath) {

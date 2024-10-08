@@ -1,10 +1,13 @@
 package com.github.subsound;
 
 import com.github.subsound.app.state.AppManager;
+import com.github.subsound.configuration.Config;
+import com.github.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.ui.components.AppNavigation;
 import com.github.subsound.ui.components.Icons;
+import com.github.subsound.ui.components.OnboardingOverlay;
 import com.github.subsound.ui.components.PlayerBar;
 import com.github.subsound.ui.components.SettingsPage;
 import com.github.subsound.ui.views.AlbumInfoLoader;
@@ -13,8 +16,6 @@ import com.github.subsound.ui.views.ArtistListLoader;
 import com.github.subsound.ui.views.FrontpagePage;
 import com.github.subsound.ui.views.StarredLoader;
 import com.github.subsound.ui.views.TestPlayerPage;
-import org.apache.commons.codec.Resources;
-import org.apache.commons.io.IOUtils;
 import org.gnome.adw.Application;
 import org.gnome.adw.ApplicationWindow;
 import org.gnome.adw.ColorScheme;
@@ -43,15 +44,11 @@ import org.gnome.gtk.ShortcutScope;
 import org.gnome.gtk.ShortcutTrigger;
 import org.gnome.gtk.StyleContext;
 import org.gnome.gtk.Widget;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 
 import static com.github.subsound.utils.Utils.mustRead;
@@ -258,8 +255,15 @@ public class MainApplication {
             ViewStackPage playlistPage = viewStack.addTitledWithIcon(playlistsContainer, "playlistPage", "Playlists", Icons.Playlists.getIconName());
         }
 
-        var mainPage = NavigationPage.builder().setChild(viewStack).setTag("main").build();
-        navigationView.push(mainPage);
+        var cfg = this.appManager.getConfig();
+        if (cfg.onboarding == OnboardingState.DONE) {
+            var onboardingOverlay = getOnboardingOverlay(this.appManager, viewStack);
+            var onboardingPage = NavigationPage.builder().setChild(onboardingOverlay).setTag("onboardingOverlay").build();
+            navigationView.push(onboardingPage);
+        } else {
+            var mainPage = NavigationPage.builder().setChild(viewStack).setTag("main").build();
+            navigationView.push(mainPage);
+        }
 
         var shortcutController = new ShortcutController();
         shortcutController.addShortcut(playPauseShortcut);
@@ -273,6 +277,11 @@ public class MainApplication {
                 .build();
         window.addController(shortcutController);
         window.present();
+    }
+
+    @NotNull
+    private OnboardingOverlay getOnboardingOverlay(AppManager appManager, ViewStack viewStack) {
+        return new OnboardingOverlay(appManager, viewStack);
     }
 
 //    public class SubsoundPage extends NavigationPage {
@@ -289,7 +298,7 @@ public class MainApplication {
 //        }
 //    }
 
-    private Box.Builder<? extends Box.Builder> BoxFullsize() {
+    public static Box.Builder<? extends Box.Builder> BoxFullsize() {
         return Box.builder()
                 .setOrientation(Orientation.VERTICAL)
                 .setValign(Align.CENTER)
