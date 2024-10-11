@@ -13,6 +13,10 @@ import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.sound.PlaybinPlayer.AudioSource;
 import com.github.subsound.sound.PlaybinPlayer.Source;
 import com.github.subsound.utils.Utils;
+import io.reactivex.rxjava3.core.Scheduler;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
+import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
 import org.gnome.adw.ToastOverlay;
 import org.slf4j.Logger;
@@ -27,6 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -48,7 +53,7 @@ public class AppManager {
     private final SongCache songCache;
     private final ThumbnailCache thumbnailCache;
     private final AtomicReference<ServerClient> client;
-    private final AtomicReference<AppState> currentState = new AtomicReference<>();
+    private final BehaviorSubject<AppState> currentState;
     private final CopyOnWriteArrayList<StateListener> listeners = new CopyOnWriteArrayList<>();
     private ToastOverlay toastOverlay;
 
@@ -73,7 +78,12 @@ public class AppManager {
         player.onStateChanged(next -> this.setState(old -> new AppState(
                 old.nowPlaying, next, old.queue
         )));
-        this.currentState.set(buildState());
+        this.currentState = BehaviorSubject.createDefault(buildState());
+        var disposable = this.currentState
+                .throttleLatest(100, TimeUnit.MILLISECONDS, true)
+                .observeOn(Schedulers.io())
+                .subscribeOn(Schedulers.io())
+                .forEach(next -> this.notifyListeners());
     }
 
     private AppState buildState() {
@@ -81,7 +91,7 @@ public class AppManager {
     }
 
     public AppState getState() {
-        return this.currentState.get();
+        return this.currentState.getValue();
     }
 
     public ThumbnailCache getThumbnailCache() {
@@ -102,10 +112,10 @@ public class AppManager {
     }
 
     public void playPause() {
-        if (this.currentState.get().player.state().isPlaying()) {
+        if (this.currentState.getValue().player.state().isPlaying()) {
             this.pause();
         } else {
-            if (this.currentState.get().player.source().isPresent()) {
+            if (this.currentState.getValue().player.source().isPresent()) {
                 this.play();
             }
         }
@@ -124,6 +134,7 @@ public class AppManager {
     }
 
     public record BufferingProgress(long total, long count) {}
+
     @RecordBuilderFull
     public record NowPlaying (
             SongInfo song,
@@ -157,7 +168,6 @@ public class AppManager {
         );
     }
 
-    @FunctionalInterface
     public interface ProgressHandler {
         interface ProgressUpdate {}
         record Start(SongInfo songInfo) implements ProgressUpdate {}
@@ -215,7 +225,7 @@ public class AppManager {
                 }
         ));
         log.info("cached: result={} id={} title={}", song.result().name(), songInfo.id(), songInfo.title());
-        AppState appState = this.currentState.get();
+        AppState appState = this.currentState.getValue();
         var currentSongId = appState.nowPlaying().map(NowPlaying::song).map(SongInfo::id).orElse("");
         if (!currentSongId.equals(songInfo.id())) {
             // we changed song while loading. Ignore this and do nothing:
@@ -353,18 +363,18 @@ public class AppManager {
     }
 
     private final Lock lock = new ReentrantLock();
+
     private void setState(Function<AppState, AppState> modifier) {
         try {
             lock.lock();
-            this.currentState.set(modifier.apply(this.currentState.get()));
+            this.currentState.onNext(modifier.apply(this.currentState.getValue()));
         } finally {
             lock.unlock();
         }
-        this.notifyListeners();
     }
 
     private void notifyListeners() {
-        var state = this.currentState.get();
+        var state = this.currentState.getValue();
         Thread.startVirtualThread(() -> {
             for (StateListener stateListener : listeners) {
                 stateListener.onStateChanged(state);
