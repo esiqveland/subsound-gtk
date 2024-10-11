@@ -104,11 +104,12 @@ A few samples of what the UI looks like:
     - this looks very hard to do since spacebar is also the activation key for buttons / list items
 - Onboarding
   - [X] Launch without crashing on zero config
-  - [ ] Detect we are first launch / have no configuration to load
-  - [ ] Make running with no configuration a bit smoother. Should we disable pages until config is set?
-  - [ ] Send to Configuration Page on first launch when no config is loaded
-    - [ ] how to get back? :D
-  - [ ] The volume pipeline / pipewire volume thingy is named `java` in Gnome UI. Figure out how to name it Subsound.
+  - [X] Detect we are first launch / have no configuration to load
+  - [X] Make running with no configuration a bit smoother. Should we disable pages until config is set?
+  - [X] Send to Configuration Page on first launch when no config is loaded
+    - [X] how to get back? :D
+      - [X] Close the overlay after save
+  - [X] The volume pipeline / pipewire volume thingy is named `java` in Gnome UI. Figure out how to name it Subsound.
 - Configuration Page
   - [X] Create a page
   - [X] Edit basic server settings
