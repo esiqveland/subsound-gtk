@@ -367,13 +367,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
     }
 
     private void placeholderCover() {
-        Utils.runOnMainThread(() -> {
-            var child = albumArtBox.getFirstChild();
-            if (child != null) {
-                albumArtBox.remove(child);
-            }
-            albumArtBox.append(placeholderAlbumArt);
-        });
+        Utils.runOnMainThread(() -> this.albumArtHolder.setChild(placeholderAlbumArt));
     }
 
     enum CoverArtDiff {
