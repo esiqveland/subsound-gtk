@@ -35,8 +35,10 @@ public class PlayerBar extends Box implements AppManager.StateListener {
 
     private final ActionBar mainBar;
 
-    // box that holds the album cover photo
+    // albumArtBox wraps the area around album art
     private final Box albumArtBox;
+    // box that holds the album cover photo
+    private final BoxHolder<Widget> albumArtHolder;
     // box that holds the song details
     private final Box songInfoBox;
     private final ClickLabel songTitle;
@@ -139,8 +141,10 @@ public class PlayerBar extends Box implements AppManager.StateListener {
                 .setHalign(Align.START)
                 .setValign(Align.CENTER)
                 .build();
-        placeholderAlbumArt = RoundedAlbumArt.placeholderImage(ARTWORK_SIZE);
-        albumArtBox.append(placeholderAlbumArt);
+        this.albumArtHolder = new BoxHolder<>();
+        this.placeholderAlbumArt = RoundedAlbumArt.placeholderImage(ARTWORK_SIZE);
+        this.albumArtBox.append(this.albumArtHolder);
+        this.albumArtHolder.setChild(placeholderAlbumArt);
 
         Box nowPlaying = Box.builder()
                 .setOrientation(Orientation.HORIZONTAL)
@@ -355,17 +359,11 @@ public class PlayerBar extends Box implements AppManager.StateListener {
     }
 
     private void replaceAlbumArt(CoverArt coverArt) {
-        Utils.runOnMainThread(() -> {
-            var child = albumArtBox.getFirstChild();
-            if (child != null) {
-                albumArtBox.remove(child);
-            }
-            albumArtBox.append(new RoundedAlbumArt(
-                    coverArt,
-                    this.appManager.getThumbnailCache(),
-                    ARTWORK_SIZE
-            ));
-        });
+        Utils.runOnMainThread(() -> this.albumArtHolder.setChild(new RoundedAlbumArt(
+                coverArt,
+                this.appManager.getThumbnailCache(),
+                ARTWORK_SIZE
+        )));
     }
 
     private void placeholderCover() {
