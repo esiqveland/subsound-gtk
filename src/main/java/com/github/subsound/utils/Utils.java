@@ -23,11 +23,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.CharacterIterator;
@@ -293,9 +295,22 @@ public class Utils {
                 return Files.readAllBytes(Path.of(localFilePath));
             } catch (NoSuchFileException e) {
                 // assume we run in a jar:
+                URL resource = Utils.class.getResource(relPath);
+                if (resource != null) {
+                    Path path = Path.of(resource.toURI());
+                    return mustReadBytes(path);
+                }
                 InputStream inputStream = Resources.getInputStream(relPath);
                 return IOUtils.toByteArray(inputStream);
             }
+        } catch (IOException | URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static byte[] mustReadBytes(Path path) {
+        try {
+            return Files.readAllBytes(path);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
