@@ -13,6 +13,7 @@ import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.sound.PlaybinPlayer.AudioSource;
 import com.github.subsound.sound.PlaybinPlayer.Source;
+import com.github.subsound.ui.components.AppNavigation;
 import com.github.subsound.utils.Utils;
 import io.reactivex.rxjava3.core.Scheduler;
 import io.reactivex.rxjava3.disposables.Disposable;
@@ -57,6 +58,7 @@ public class AppManager {
     private final BehaviorSubject<AppState> currentState;
     private final CopyOnWriteArrayList<StateListener> listeners = new CopyOnWriteArrayList<>();
     private ToastOverlay toastOverlay;
+    private AppNavigation navigator;
 
     public AppManager(
             Config config,
@@ -120,6 +122,14 @@ public class AppManager {
                 this.play();
             }
         }
+    }
+
+    public void navigateTo(AppNavigation.AppRoute route) {
+        this.navigator.navigateTo(route);
+    }
+
+    public void setNavigator(AppNavigation appNavigation) {
+        this.navigator = appNavigation;
     }
 
     public interface StateListener {

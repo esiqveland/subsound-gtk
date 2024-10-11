@@ -1,9 +1,7 @@
 package com.github.subsound;
 
 import com.github.subsound.app.state.AppManager;
-import com.github.subsound.configuration.Config;
 import com.github.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
-import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.ui.components.AppNavigation;
 import com.github.subsound.ui.components.Icons;
@@ -117,9 +115,7 @@ public class MainApplication {
                 .build();
         headerBar.packEnd(settingsButton);
 
-        playerBar = new PlayerBar(appManager, (SongInfo songInfo) -> {
-            appNavigation.navigateTo(new AppNavigation.AppRoute.RouteArtistInfo(songInfo.artistId()));
-        });
+        playerBar = new PlayerBar(appManager);
         bottomBar = new Box(Orientation.VERTICAL, 2);
         bottomBar.append(playerBar);
 
@@ -197,6 +193,7 @@ public class MainApplication {
                 yield true;
             }
         });
+        this.appManager.setNavigator(this.appNavigation);
         var cfg = this.appManager.getConfig();
 
         {

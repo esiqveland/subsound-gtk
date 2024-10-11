@@ -11,7 +11,6 @@ import org.gnome.gtk.ActionBar;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
-import org.gnome.gtk.Label;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Scale;
 import org.gnome.gtk.Widget;
@@ -22,20 +21,17 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 import static com.github.subsound.app.state.AppManager.NowPlaying.State.LOADING;
 import static com.github.subsound.integration.ServerClient.CoverArt;
 import static com.github.subsound.ui.components.PlayerBar.CoverArtDiff.CHANGED;
 import static com.github.subsound.ui.components.PlayerBar.CoverArtDiff.SAME;
-import static com.github.subsound.utils.Utils.cssClasses;
 import static com.github.subsound.utils.Utils.withinEpsilon;
 
-public class PlayerBar extends Box implements AppManager.StateListener, AutoCloseable {
+public class PlayerBar extends Box implements AppManager.StateListener {
     private static final int ARTWORK_SIZE = 64;
 
     private final AppManager appManager;
-    private final Consumer<SongInfo> onOpenArtistInfo;
 
     private final ActionBar mainBar;
 
@@ -43,7 +39,7 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
     private final Box albumArtBox;
     // box that holds the song details
     private final Box songInfoBox;
-    private final Label songTitle;
+    private final ClickLabel songTitle;
     private final ClickLabel artistTitle;
     private final Widget placeholderAlbumArt;
 
@@ -70,11 +66,11 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
         //BUFFERING,
     }
 
-    public PlayerBar(AppManager appManager, Consumer<SongInfo> onOpenArtistInfo) {
+    public PlayerBar(AppManager appManager) {
         super(Orientation.VERTICAL, 2);
         this.appManager = appManager;
-        this.onOpenArtistInfo = onOpenArtistInfo;
-        this.appManager.addOnStateChanged(this);
+        this.onMap(() -> this.appManager.addOnStateChanged(this));
+        this.onUnmap(() -> this.appManager.removeOnStateChanged(this));
         this.currentState = new AtomicReference<>(this.appManager.getState());
 
         this.starButton = new StarButton(
@@ -103,22 +99,36 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
                 .setVexpand(true)
                 .setMarginStart(8)
                 .build();
-        songTitle = Label.builder().setLabel("Song title").setHalign(Align.START).setMaxWidthChars(30).setEllipsize(EllipsizeMode.END).setCssClasses(cssClasses("heading")).build();
-        songInfoBox.append(songTitle);
-        //artistTitle = Label.builder().setLabel("Artist title").build();
+
+        //songTitle = Label.builder().setLabel("Song title").setHalign(Align.START).setMaxWidthChars(30).setEllipsize(EllipsizeMode.END).setCssClasses(cssClasses("heading")).build();
+        songTitle = new ClickLabel("Song title", () -> {
+            var state = this.currentState.get();
+            if (state == null) {
+                return;
+            }
+            state.nowPlaying().ifPresent(np -> {
+                this.appManager.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(np.song().albumId()));
+            });
+        });
+        songTitle.setHalign(Align.START);
+        songTitle.setMaxWidthChars(30);
+        songTitle.setEllipsize(EllipsizeMode.END);
+        songTitle.addCssClass(Classes.heading.className());
+
         artistTitle = new ClickLabel("Artist title", () -> {
             var state = this.currentState.get();
             if (state == null) {
                 return;
             }
             state.nowPlaying().ifPresent(np -> {
-                this.onOpenArtistInfo.accept(np.song());
+                this.appManager.navigateTo(new AppNavigation.AppRoute.RouteArtistInfo(np.song().artistId()));
             });
         });
         artistTitle.setHalign(Align.START);
         artistTitle.setMaxWidthChars(28);
         artistTitle.setEllipsize(EllipsizeMode.END);
         artistTitle.addCssClass(Classes.labelDim.className());
+        songInfoBox.append(songTitle);
         songInfoBox.append(artistTitle);
 
         this.albumArtBox = Box.builder()
@@ -229,11 +239,6 @@ public class PlayerBar extends Box implements AppManager.StateListener, AutoClos
             case PAUSED -> this.appManager.play();
             case PLAYING -> this.appManager.pause();
         }
-    }
-
-    @Override
-    public void close() throws Exception {
-        this.appManager.removeOnStateChanged(this);
     }
 
     @Override
