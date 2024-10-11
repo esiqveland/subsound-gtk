@@ -10,8 +10,8 @@ import static com.github.subsound.utils.Utils.mustReadBytes;
 // https://specifications.freedesktop.org/icon-naming-spec/latest/
 // https://gitlab.gnome.org/GNOME/adwaita-icon-theme/-/tree/master/Adwaita/symbolic?ref_type=heads
 public enum ImageIcons {
-    SubsoundLarge(Path.of("/icons/generated/icon-256.png")),
-    SubsoundSmall(Path.of("/icons/generated/icon-64.png")),
+    SubsoundLarge(Path.of("icons/generated/icon-256.png")),
+    SubsoundSmall(Path.of("icons/generated/icon-64.png")),
     ;
 
     private final Pixbuf pixbuf;
