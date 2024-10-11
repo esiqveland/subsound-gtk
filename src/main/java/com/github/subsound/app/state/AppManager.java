@@ -3,6 +3,7 @@ package com.github.subsound.app.state;
 import com.github.subsound.app.state.PlayerAction.Enqueue;
 import com.github.subsound.app.state.PlayerAction.PlayPositionInQueue;
 import com.github.subsound.configuration.Config;
+import com.github.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
 import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.persistence.SongCache;
@@ -317,6 +318,7 @@ public class AppManager {
     }
 
     private void saveConfig(PlayerAction.SaveConfig settings) {
+        this.config.onboarding = OnboardingState.DONE;
         this.config.serverConfig = new Config.ServerConfig(
                 this.config.dataDir,
                 SERVER_ID,
