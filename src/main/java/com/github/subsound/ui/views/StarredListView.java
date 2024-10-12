@@ -19,6 +19,7 @@ import org.gnome.gtk.ListView;
 import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.SignalListItemFactory;
 import org.gnome.gtk.SingleSelection;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -161,7 +162,7 @@ public class StarredListView extends Box implements AppManager.StateListener {
 
     }
 
-    private MiniState selectState(MiniState prev, AppManager.AppState state) {
+    private MiniState selectState(@Nullable MiniState prev, AppManager.AppState state) {
         var npSong = state.nowPlaying().map(AppManager.NowPlaying::song);
         var nowPlayingState = getNowPlayingState(state.player().state());
         if (prev == null) {
