@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public class StarredLoader extends Box {
@@ -42,8 +41,9 @@ public class StarredLoader extends Box {
         this.setVexpand(true);
         this.setHalign(Align.FILL);
         this.setValign(Align.FILL);
-        this.onShow(this::refresh);
-        this.onRealize(this::refresh);
+        this.onMap(this::refresh);
+        //this.onShow(this::refresh);
+        //this.onRealize(this::refresh);
         this.append(holder);
     }
 
@@ -74,9 +74,5 @@ public class StarredLoader extends Box {
         );
         this.holder.setChild(loader);
         return this;
-    }
-
-    private CompletableFuture<ListStarred> doLoadStarred() {
-        return Utils.doAsync(() -> this.appManager.useClient(ServerClient::getStarred));
     }
 }
