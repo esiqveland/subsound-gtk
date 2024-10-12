@@ -63,7 +63,7 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
     }
 
     public void run() {
-        if (OsUtil.getOSPlatform() == OsUtil.OS.MACOS) {
+        if (OsUtil.getOSPlatform() != OsUtil.OS.LINUX) {
             log.info("can not start dbus on platform={}", OsUtil.getOSPlatform());
             return;
         }
