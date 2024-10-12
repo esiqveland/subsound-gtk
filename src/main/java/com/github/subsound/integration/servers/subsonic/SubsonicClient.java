@@ -129,8 +129,9 @@ public class SubsonicClient implements ServerClient {
         return task1.thenCombine(task2, (artist, info) -> {
             var albums = artist.getAlbums().stream()
                     .map(album -> ArtistAlbumInfo.create(
-                            album,
-                            toCoverArt(album.getCoverArtId()))
+                                    album,
+                                    toCoverArt(album.getCoverArtId())
+                            )
                     )
                     .toList();
 
@@ -171,6 +172,22 @@ public class SubsonicClient implements ServerClient {
             );
         }).join();
     }
+
+    @Override
+    public ListPlaylists getPlaylists() {
+        var list = Optional.ofNullable(this.client.playlists().getPlaylists()).orElseGet(List::of)
+                .stream()
+                .map(p -> new Playlist(
+                        p.getId(),
+                        p.getName(),
+                        toCoverArt(p.getCoverArtId()),
+                        p.getSongCount(),
+                        p.getCreated().toInstant(ZoneOffset.UTC)
+                ))
+                .toList();
+        return new ListPlaylists(list);
+    }
+
     @Override
     public ServerType getServerType() {
         return ServerType.SUBSONIC;
@@ -257,16 +274,25 @@ public class SubsonicClient implements ServerClient {
     public record TranscodeSettings(
             TranscodeFormat format,
             TranscodeBitrate bitrate
-    ) {}
+    ) {
+    }
+
     enum TranscodeFormat {
         raw,
         mp3,
         opus,
     }
+
     public sealed interface TranscodeBitrate {
-        record Unlimited() implements TranscodeBitrate {}
-        record MaximumBitrate(int v) implements TranscodeBitrate {};
+        record Unlimited() implements TranscodeBitrate {
+        }
+
+        record MaximumBitrate(int v) implements TranscodeBitrate {
+        }
+
+        ;
     }
+
     public static SubsonicPreferences createSettings(ServerConfig cfg) {
         SubsonicPreferences preferences = new SubsonicPreferences(
                 cfg.url(),

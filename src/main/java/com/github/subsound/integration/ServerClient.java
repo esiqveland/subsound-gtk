@@ -23,6 +23,7 @@ public interface ServerClient {
     ListArtists getArtists();
     ArtistInfo getArtistInfo(String artistId);
     AlbumInfo getAlbumInfo(String albumId);
+    ListPlaylists getPlaylists();
     ListStarred getStarred();
     HomeOverview getHomeOverview();
     void starId(String id);
@@ -160,6 +161,20 @@ public interface ServerClient {
     @RecordBuilder
     record ListStarred(
             List<SongInfo> songs
+    ) {
+    }
+
+    @RecordBuilder
+    record Playlist(
+            String id,
+            String name,
+            Optional<CoverArt> coverArtId,
+            int songCount,
+            Instant created
+    ){}
+    @RecordBuilder
+    record ListPlaylists(
+            List<Playlist> playlists
     ) {
     }
 

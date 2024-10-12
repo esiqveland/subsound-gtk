@@ -2,6 +2,7 @@ package com.github.subsound.ui.views;
 
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.integration.ServerClient;
+import com.github.subsound.integration.ServerClient.ListPlaylists;
 import com.github.subsound.integration.ServerClient.ListStarred;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.persistence.ThumbnailCache;
@@ -24,7 +25,7 @@ public class StarredLoader extends Box {
     private final ThumbnailCache thumbLoader;
     private final Consumer<AppNavigation.AppRoute> onNavigate;
 
-    private final BoxHolder<FutureLoader<ListStarred, StarredListView>> holder;
+    private final BoxHolder<FutureLoader<PlaylistsData, StarredListView>> holder;
     private final AppManager appManager;
 
     public StarredLoader(
@@ -46,9 +47,16 @@ public class StarredLoader extends Box {
         this.append(holder);
     }
 
+    public record PlaylistsData(ListPlaylists playlistList, ListStarred starredList){}
+
     public synchronized StarredLoader refresh() {
-        CompletableFuture<ListStarred> adsf = doLoad()
-                .thenApply(listStarred -> {
+        var loadPlaylistList = Utils.doAsync(() -> this.appManager.useClient(ServerClient::getPlaylists));
+        var loadStarredList = Utils.doAsync(() -> this.appManager.useClient(ServerClient::getStarred));
+
+        var dataFuture = loadPlaylistList
+                .thenCombine(loadStarredList, PlaylistsData::new)
+                .thenApply(data -> {
+                    var listStarred = data.starredList();
                     log.info("StarredLoader hello {}", listStarred.songs().size());
 
                     int size = listStarred.songs().size();
@@ -58,17 +66,17 @@ public class StarredLoader extends Box {
                         int idx = i % size;
                         newList.add(listStarred.songs().get(idx));
                     }
-                    return new ListStarred(newList);
+                    return new PlaylistsData(data.playlistList(), new ListStarred(newList));
                 });
         var loader = new FutureLoader<>(
-                adsf,
-                starred -> new StarredListView(starred, this.thumbLoader, this.appManager, this.onNavigate)
+                dataFuture,
+                starred -> new StarredListView(starred.starredList(), this.thumbLoader, this.appManager, this.onNavigate)
         );
         this.holder.setChild(loader);
         return this;
     }
 
-    private CompletableFuture<ListStarred> doLoad() {
+    private CompletableFuture<ListStarred> doLoadStarred() {
         return Utils.doAsync(() -> this.appManager.useClient(ServerClient::getStarred));
     }
 }
