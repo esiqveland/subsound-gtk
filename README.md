@@ -171,6 +171,8 @@ Later goals:
 Eventually goals:
  - [ ] support multiple server types (native Navidrome API, Jellyfish etc)
  - [ ] support the subsonic podcast features
+ - [ ] could support chromecast
+ - [ ] consider using fanart.tv
  - [ ] support embedded image tags? https://github.com/neithern/g4music/blob/bf80b5cad448a57c635f01d0a315671fef045d14/src/gst/tag-parser.vala#L99
  - [ ] make it look OK in light mode?
  - [ ] Lyrics support?
