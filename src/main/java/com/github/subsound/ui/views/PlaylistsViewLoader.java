@@ -75,7 +75,7 @@ public class PlaylistsViewLoader extends Box {
                 })
                 .thenApply(data -> {
                     var part1 = data.playlistList().playlists().stream();
-                    ServerClient.Playlist starred = new ServerClient.Playlist(
+                    ServerClient.PlaylistSimple starred = new ServerClient.PlaylistSimple(
                             "starred",
                             "Starred",
                             PlaylistKind.STARRED,

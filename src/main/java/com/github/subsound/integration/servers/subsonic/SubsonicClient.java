@@ -2,7 +2,6 @@ package com.github.subsound.integration.servers.subsonic;
 
 import com.github.subsound.configuration.Config.ServerConfig;
 import com.github.subsound.integration.ServerClient;
-import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.utils.Utils;
 import com.github.subsound.utils.javahttp.TextUtils;
 import net.beardbot.subsonic.client.Subsonic;
@@ -13,6 +12,7 @@ import net.beardbot.subsonic.client.api.media.CoverArtParams;
 import net.beardbot.subsonic.client.base.ApiParams;
 import okhttp3.HttpUrl;
 import org.subsonic.restapi.Child;
+import org.subsonic.restapi.PlaylistWithSongs;
 import org.subsonic.restapi.Starred2;
 
 import java.net.URI;
@@ -23,6 +23,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import static com.github.subsound.app.state.AppManager.SERVER_ID;
 import static com.github.subsound.persistence.ThumbnailCache.toCachePath;
@@ -177,7 +178,7 @@ public class SubsonicClient implements ServerClient {
     public ListPlaylists getPlaylists() {
         var list = Optional.ofNullable(this.client.playlists().getPlaylists()).orElseGet(List::of)
                 .stream()
-                .map(p -> new Playlist(
+                .map(p -> new PlaylistSimple(
                         p.getId(),
                         p.getName(),
                         PlaylistKind.NORMAL,
@@ -187,6 +188,21 @@ public class SubsonicClient implements ServerClient {
                 ))
                 .toList();
         return new ListPlaylists(list);
+    }
+
+    @Override
+    public Playlist getPlaylist(String playlistId) {
+        PlaylistWithSongs playlist = this.client.playlists().getPlaylist(playlistId);
+        var songs = playlist.getEntries().stream().map(this::toSongInfo).toList();
+        return new Playlist(
+                playlist.getId(),
+                playlist.getName(),
+                PlaylistKind.NORMAL,
+                toCoverArt(playlist.getCoverArtId()),
+                songs.size(),
+                playlist.getCreated().toInstant(ZoneOffset.UTC),
+                songs
+        );
     }
 
     @Override

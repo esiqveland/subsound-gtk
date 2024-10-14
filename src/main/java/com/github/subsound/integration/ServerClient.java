@@ -24,6 +24,7 @@ public interface ServerClient {
     ArtistInfo getArtistInfo(String artistId);
     AlbumInfo getAlbumInfo(String albumId);
     ListPlaylists getPlaylists();
+    Playlist getPlaylist(String playlistId);
     ListStarred getStarred();
     HomeOverview getHomeOverview();
     void starId(String id);
@@ -167,7 +168,7 @@ public interface ServerClient {
     enum PlaylistKind {
         NORMAL, STARRED;
     }
-    record Playlist(
+    record PlaylistSimple(
             String id,
             String name,
             PlaylistKind kind,
@@ -176,9 +177,19 @@ public interface ServerClient {
             Instant created
     ) {}
 
+    record Playlist(
+            String id,
+            String name,
+            PlaylistKind kind,
+            Optional<CoverArt> coverArtId,
+            int songCount,
+            Instant created,
+            List<SongInfo> songs
+    ) {}
+
     @RecordBuilder
     record ListPlaylists(
-            List<Playlist> playlists
+            List<PlaylistSimple> playlists
     ) {}
 
     record Biography(

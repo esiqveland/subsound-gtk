@@ -1,8 +1,7 @@
 package com.github.subsound.ui.components;
 
 import com.github.subsound.app.state.AppManager;
-import com.github.subsound.integration.ServerClient;
-import com.github.subsound.integration.ServerClient.Playlist;
+import com.github.subsound.integration.ServerClient.PlaylistSimple;
 import com.github.subsound.ui.views.StarredListView;
 import com.github.subsound.ui.views.StarredLoader.PlaylistsData;
 import org.gnome.adw.ActionRow;
@@ -11,9 +10,7 @@ import org.gnome.adw.NavigationSplitView;
 import org.gnome.adw.StatusPage;
 import org.gnome.gtk.*;
 
-import java.time.Instant;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.github.subsound.utils.Utils.cssClasses;
@@ -21,7 +18,7 @@ import static com.github.subsound.utils.Utils.cssClasses;
 public class PlaylistsListView extends Box {
     private final AppManager appManager;
     private final PlaylistsData data;
-    private final Map<String, Playlist> cache;
+    private final Map<String, PlaylistSimple> cache;
     private final ListBox list;
     private final NavigationSplitView view;
     private final NavigationPage initialPage;
@@ -34,7 +31,7 @@ public class PlaylistsListView extends Box {
         this.appManager = appManager;
         this.data = data;
         this.cache = this.data.playlistList().playlists().stream()
-                .collect(Collectors.toMap(Playlist::id, a -> a));
+                .collect(Collectors.toMap(PlaylistSimple::id, a -> a));
 
         this.starredListView = new StarredListView(data.starredList(), this.appManager.getThumbnailCache(), this.appManager, this.appManager::navigateTo);
         this.contentPage = NavigationPage.builder().setTag("page-2").setChild(this.starredListView).setTitle("Starred").build();

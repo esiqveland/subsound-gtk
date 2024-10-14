@@ -29,6 +29,11 @@ public class CachingClient implements ServerClient {
     }
 
     @Override
+    public Playlist getPlaylist(String playlistId) {
+        return delegate.getPlaylist(playlistId);
+    }
+
+    @Override
     public ListStarred getStarred() {
         return delegate.getStarred();
     }
