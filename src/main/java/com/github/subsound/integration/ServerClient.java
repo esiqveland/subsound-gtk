@@ -164,19 +164,22 @@ public interface ServerClient {
     ) {
     }
 
-    @RecordBuilder
+    enum PlaylistKind {
+        NORMAL, STARRED;
+    }
     record Playlist(
             String id,
             String name,
+            PlaylistKind kind,
             Optional<CoverArt> coverArtId,
             int songCount,
             Instant created
-    ){}
+    ) {}
+
     @RecordBuilder
     record ListPlaylists(
             List<Playlist> playlists
-    ) {
-    }
+    ) {}
 
     record Biography(
             String original,

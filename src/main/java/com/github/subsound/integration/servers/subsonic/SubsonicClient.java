@@ -180,6 +180,7 @@ public class SubsonicClient implements ServerClient {
                 .map(p -> new Playlist(
                         p.getId(),
                         p.getName(),
+                        PlaylistKind.NORMAL,
                         toCoverArt(p.getCoverArtId()),
                         p.getSongCount(),
                         p.getCreated().toInstant(ZoneOffset.UTC)

@@ -12,6 +12,7 @@ import com.github.subsound.ui.views.AlbumInfoLoader;
 import com.github.subsound.ui.views.ArtistInfoLoader;
 import com.github.subsound.ui.views.ArtistListLoader;
 import com.github.subsound.ui.views.FrontpagePage;
+import com.github.subsound.ui.views.PlaylistsViewLoader;
 import com.github.subsound.ui.views.StarredLoader;
 import com.github.subsound.ui.views.TestPlayerPage;
 import org.gnome.adw.Application;
@@ -221,6 +222,15 @@ public class MainApplication {
                     appNavigation::navigateTo
             ));
             ViewStackPage starredPage = viewStack.addTitledWithIcon(starredPageContainer, "starredPage", "Starred", Icons.Starred.getIconName());
+        }
+        {
+            var playlistsContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
+            playlistsContainer.append(new PlaylistsViewLoader(
+                    thumbLoader,
+                    appManager,
+                    appNavigation::navigateTo
+            ));
+            ViewStackPage starredPage = viewStack.addTitledWithIcon(playlistsContainer, "playlistPage", "Playlists", Icons.Starred.getIconName());
         }
         {
             var artistsContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
