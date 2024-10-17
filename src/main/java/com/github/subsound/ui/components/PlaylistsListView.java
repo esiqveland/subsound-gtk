@@ -1,9 +1,11 @@
 package com.github.subsound.ui.components;
 
 import com.github.subsound.app.state.AppManager;
+import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.PlaylistSimple;
 import com.github.subsound.ui.views.StarredListView;
 import com.github.subsound.ui.views.StarredLoader.PlaylistsData;
+import com.github.subsound.utils.Utils;
 import org.gnome.adw.ActionRow;
 import org.gnome.adw.NavigationPage;
 import org.gnome.adw.NavigationSplitView;
@@ -14,6 +16,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.github.subsound.utils.Utils.cssClasses;
+import static com.github.subsound.utils.Utils.doAsync;
 
 public class PlaylistsListView extends Box {
     private final AppManager appManager;
@@ -48,7 +51,7 @@ public class PlaylistsListView extends Box {
             var playlist = this.data.playlistList().playlists().get(row.getIndex());
             System.out.println("PlaylistsListView: goto " + playlist.name());
             //this.contentPage.setTitle(playlist.name());
-            //this.setSelectedArtist(playlist.id());
+            this.setSelectedPlaylist(playlist);
         });
 
         var stringList = StringList.builder().build();
@@ -83,9 +86,26 @@ public class PlaylistsListView extends Box {
         this.view.setVexpand(true);
         this.view.setHalign(Align.FILL);
         this.view.setValign(Align.BASELINE_FILL);
-        this.view.setContent(initialPage);
+        this.view.setContent(contentPage);
         this.setHexpand(true);
         this.setVexpand(true);
         this.append(view);
+    }
+
+    private void setSelectedPlaylist(PlaylistSimple playlist) {
+        doAsync(() -> switch (playlist.kind()) {
+            case NORMAL -> this.appManager.useClient(cl -> cl.getPlaylist(playlist.id())).songs();
+            case STARRED -> this.appManager.useClient(cl -> cl.getStarred()).songs();
+        }).thenApply(data -> {
+            var next = new StarredListView(new ServerClient.ListStarred(data), appManager.getThumbnailCache(), appManager, appManager::navigateTo);
+            next.setHalign(Align.FILL);
+            next.setValign(Align.FILL);
+            var page = NavigationPage.builder().setTag("page-2").setChild(next).setTitle("Starred").setHexpand(true).build();
+            Utils.runOnMainThread(() -> {
+                this.view.setContent(page);
+            });
+            return data;
+        });
+
     }
 }
