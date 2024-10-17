@@ -65,6 +65,7 @@ public class Config {
 
         Config config = new Config(configFilePath);
         config.dataDir = defaultStorageDir().toAbsolutePath();
+        log.info("config.dataDir={}", config.dataDir);
 
         readConfigFile(configFilePath)
                 .ifPresentOrElse(
