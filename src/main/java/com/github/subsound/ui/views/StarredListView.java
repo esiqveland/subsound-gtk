@@ -12,6 +12,7 @@ import com.github.subsound.ui.components.StarredItemRow;
 import com.github.subsound.ui.views.StarredListView.UpdateListener.MiniState;
 import com.github.subsound.utils.Utils;
 import io.github.jwharm.javagi.gio.ListIndexModel;
+import org.gnome.adw.Clamp;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.ListItem;
@@ -32,6 +33,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static org.gnome.gtk.Align.CENTER;
+import static org.gnome.gtk.Align.FILL;
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.VERTICAL;
 
@@ -118,8 +120,8 @@ public class StarredListView extends Box implements AppManager.StateListener {
                 .setOrientation(VERTICAL)
                 .setHexpand(true)
                 .setVexpand(true)
-                .setHalign(START)
-                .setValign(START)
+                .setHalign(FILL)
+                .setValign(FILL)
                 .setFocusOnClick(true)
                 .setSingleClickActivate(false)
                 .setModel(new SingleSelection(this.listModel))
