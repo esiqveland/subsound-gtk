@@ -79,9 +79,9 @@ public class PlaylistsViewLoader extends Box {
                             "starred",
                             "Starred",
                             PlaylistKind.STARRED,
-                            Optional.empty(),
+                            data.starredList().songs().stream().flatMap(s -> s.coverArt().stream()).findFirst(),
                             data.starredList().songs().size(),
-                            Instant.now()
+                            data.starredList().songs().stream().flatMap(s -> s.starred().stream()).findFirst().orElseGet(Instant::now)
                     );
                     var playlists = Stream.concat(Stream.of(starred), part1).collect(Collectors.toList());
                     return new PlaylistsData(new ListPlaylists(playlists), data.starredList());
