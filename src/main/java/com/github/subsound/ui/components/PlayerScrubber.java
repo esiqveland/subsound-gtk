@@ -1,7 +1,6 @@
 package com.github.subsound.ui.components;
 
 import com.github.subsound.utils.Utils;
-import io.github.jwharm.javagi.gobject.SignalConnection;
 import org.gnome.gobject.GObject;
 import org.gnome.gtk.*;
 
@@ -53,12 +52,10 @@ public class PlayerScrubber extends Box {
         };
 
         GestureClick gestureClick = findGestureClick(scale);
-        final var signalRef = new AtomicReference<SignalConnection<Range.ValueChangedCallback>>(null);
         gestureClick.onPressed((nPress, x, y) -> {
             isPressed.set(true);
             //System.out.println("onPressed");
-            SignalConnection<Range.ValueChangedCallback> connection = scale.onValueChanged(onPressedCallback);
-            signalRef.set(connection);
+            scale.onValueChanged(onPressedCallback);
         });
         gestureClick.onStopped(() -> {
             //System.out.println("onStopped");
@@ -66,11 +63,6 @@ public class PlayerScrubber extends Box {
         gestureClick.onReleased((a, b, c) -> {
             //System.out.println("onReleased");
             try {
-                var signal = signalRef.get();
-                if (signal != null) {
-                    signal.disconnect();
-                    signalRef.set(null);
-                }
                 Duration finalPosition = Duration.ofSeconds((long) scale.getValue());
                 currentTimeLabel.setLabel(Utils.formatDurationShortest(finalPosition));
                 this.onPositionSeeked(finalPosition);

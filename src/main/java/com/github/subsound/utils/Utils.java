@@ -220,8 +220,6 @@ public class Utils {
         });
         row.addController(ec);
         row.onDestroy(() -> {
-            enterCallbackSignalConnection.disconnect();
-            leaveSignal.disconnect();
         });
         return row;
     }
