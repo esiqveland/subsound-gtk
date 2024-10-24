@@ -12,7 +12,11 @@ import com.github.subsound.ui.components.StarredItemRow;
 import com.github.subsound.ui.views.StarredListView.UpdateListener.MiniState;
 import com.github.subsound.utils.Utils;
 import io.github.jwharm.javagi.gio.ListIndexModel;
+import io.github.jwharm.javagi.gobject.types.Types;
 import org.gnome.adw.Clamp;
+import org.gnome.gio.ListStore;
+import org.gnome.glib.Type;
+import org.gnome.gobject.GObject;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.ListItem;
@@ -24,10 +28,14 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.foreign.MemorySegment;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -42,7 +50,8 @@ public class StarredListView extends Box implements AppManager.StateListener {
     private final ThumbnailCache thumbLoader;
     private final ListStarred data;
     private final ListView listView;
-    private final ListIndexModel listModel;
+    //private final ListIndexModel listModel;
+    private final ListStore<GSongInfo> listModel;
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private final ScrolledWindow scroll;
     private final AtomicReference<MiniState> prevState;
@@ -53,6 +62,35 @@ public class StarredListView extends Box implements AppManager.StateListener {
         void update(MiniState n);
     }
     private final ConcurrentHashMap<StarredItemRow, StarredItemRow> listeners = new ConcurrentHashMap<>();
+
+    public static class GSongInfo extends GObject {
+        public static final Type gtype = Types.register(GSongInfo.class);
+        private SongInfo songInfo;
+
+        /**
+         * Return the GType for the ListIndex.
+         *
+         * @return the GType
+         */
+        public static Type getType() {
+            return gtype;
+        }
+
+        /**
+         * Construct a new ListIndex Proxy instance.
+         *
+         * @param address the memory address of the native object instance
+         */
+        public GSongInfo(MemorySegment address) {
+            super(address);
+        }
+
+        public static GSongInfo newInstance(SongInfo value) {
+            GSongInfo instance = GObject.newInstance(gtype);
+            instance.songInfo = value;
+            return instance;
+        }
+    }
 
     public StarredListView(
             ListStarred data,
@@ -83,15 +121,18 @@ public class StarredListView extends Box implements AppManager.StateListener {
         });
         factory.onBind(object -> {
             ListItem listitem = (ListItem) object;
-            ListIndexModel.ListIndex item = (ListIndexModel.ListIndex) listitem.getItem();
+            //var item = (ListIndexModel.ListIndex) listitem.getItem();
+            var item = (GSongInfo) listitem.getItem();
             if (item == null) {
                 return;
             }
             // The ListIndexModel contains ListIndexItems that contain only their index in the list.
-            int index = item.getIndex();
+            //int index = item.getIndex();
+            int index = listitem.getPosition();
 
             // Retrieve the index of the item and show the entry from the ArrayList with random strings.
-            var songInfo = this.data.songs().get(index);
+            //var songInfo = this.data.songs().get(index);
+            var songInfo = item.songInfo;
             if (songInfo == null) {
                 return;
             }
@@ -100,7 +141,7 @@ public class StarredListView extends Box implements AppManager.StateListener {
                 return;
             }
             listitem.setActivatable(true);
-            log.info("factory.onBind: {} {}", index, songInfo.title());
+            log.info("factory.onBind: {} {}", songInfo.title());
             child.setSongInfo(songInfo, index, prevState.get());
         });
         factory.onTeardown(item -> {
@@ -112,7 +153,28 @@ public class StarredListView extends Box implements AppManager.StateListener {
             //log.info("StarredListView.onTeardown");
             this.listeners.remove(child);
         });
-        this.listModel = ListIndexModel.newInstance(data.songs().size());
+        AtomicBoolean cancelled = new AtomicBoolean();
+        //this.listModel = ListIndexModel.newInstance(data.songs().size());
+        this.listModel = new ListStore<>(GSongInfo.gtype);
+        data.songs().stream().map(GSongInfo::newInstance).forEach(this.listModel::append);
+        Utils.doAsync(() -> {
+            while (!cancelled.get()) {
+                try {
+                    Thread.sleep(TimeUnit.SECONDS.toMillis(10));
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                if (cancelled.get()) {
+                    return;
+                }
+                System.out.println("this.listModel.removeFirst()");
+                Utils.runOnMainThread(() -> {
+                    this.listModel.removeItem(0);
+                    //this.listModel.itemsChanged(0, 1, 0);
+                });
+            }
+        });
+
         this.listView = ListView.builder()
                 //.setCssClasses(cssClasses(Classes.richlist.className()))
                 //.setCssClasses(cssClasses("boxed-list"))
@@ -124,16 +186,17 @@ public class StarredListView extends Box implements AppManager.StateListener {
                 .setValign(FILL)
                 .setFocusOnClick(true)
                 .setSingleClickActivate(false)
-                .setModel(new SingleSelection(this.listModel))
+                .setModel(new SingleSelection<>(this.listModel))
                 .setFactory(factory)
                 .build();
         this.listView.onActivate(index -> {
-            var songInfo = this.data.songs().get(index);
+            //var songInfo = this.data.songs().get(index);
+            var songInfo = this.listModel.getItem(index).songInfo;
             if (songInfo == null) {
                 return;
             }
             List<SongInfo> songs = this.data.songs();
-            log.debug("listView.onActivate: {} {}", index, songInfo.title());
+            log.info("listView.onActivate: {} {}", index, songInfo.title());
             this.onAction.apply(new PlayerAction.PlayQueue(songs, index));
         });
         this.scroll = ScrolledWindow.builder()
@@ -144,10 +207,19 @@ public class StarredListView extends Box implements AppManager.StateListener {
                 .setPropagateNaturalWidth(true)
                 .setPropagateNaturalHeight(true)
                 .build();
+//        var clamp = Clamp.builder().setMaximumSize(800).build();
+//        clamp.setHalign(FILL);
+//        clamp.setValign(FILL);
+//        clamp.setHexpand(true);
+//        clamp.setChild(this.listView);
+//        this.scroll.setChild(clamp);
         this.scroll.setChild(this.listView);
         this.append(this.scroll);
         this.onMap(() -> appManager.addOnStateChanged(this));
-        this.onUnmap(() -> appManager.removeOnStateChanged(this));
+        this.onUnmap(() -> {
+            cancelled.set(true);
+            appManager.removeOnStateChanged(this);
+        });
     }
 
     @Override
