@@ -8,9 +8,12 @@ import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.ui.components.AppNavigation;
 import com.github.subsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
 import com.github.subsound.ui.components.StarredItemRow;
+import com.github.subsound.ui.models.GSongInfo;
 import com.github.subsound.ui.views.StarredListView.UpdateListener.MiniState;
 import com.github.subsound.utils.Utils;
-import io.github.jwharm.javagi.gio.ListIndexModel;
+import org.gnome.gio.ListStore;
+import org.gnome.glib.MainContext;
+import org.gnome.gobject.GObject;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.ListItem;
@@ -26,6 +29,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -40,11 +45,14 @@ public class StarredListView extends Box implements AppManager.StateListener {
     private final AppManager appManager;
     private final ListStarred data;
     private final ListView listView;
-    private final ListIndexModel listModel;
+    //private final ListIndexModel listModel;
+    //private final ListStore<GSongInfo> listModel;
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private final ScrolledWindow scroll;
     private final AtomicReference<MiniState> prevState;
     private final Consumer<AppNavigation.AppRoute> onNavigate;
+    private final ListStore<GSongInfo> listModel;
+    private final SingleSelection<GSongInfo> selectionModel;
 
     public interface UpdateListener {
         record MiniState(Optional<SongInfo> songInfo, NowPlayingState nowPlayingState) {}
@@ -80,15 +88,18 @@ public class StarredListView extends Box implements AppManager.StateListener {
         });
         factory.onBind(object -> {
             ListItem listitem = (ListItem) object;
-            ListIndexModel.ListIndex item = (ListIndexModel.ListIndex) listitem.getItem();
+            //var item = (ListIndexModel.ListIndex) listitem.getItem();
+            var item = (GSongInfo) listitem.getItem();
             if (item == null) {
                 return;
             }
             // The ListIndexModel contains ListIndexItems that contain only their index in the list.
-            int index = item.getIndex();
+            //int index = item.getIndex();
+            int index = listitem.getPosition();
 
             // Retrieve the index of the item and show the entry from the ArrayList with random strings.
-            var songInfo = this.data.songs().get(index);
+            //var songInfo = this.data.songs().get(index);
+            var songInfo = item.songInfo();
             if (songInfo == null) {
                 return;
             }
@@ -109,7 +120,14 @@ public class StarredListView extends Box implements AppManager.StateListener {
             //log.info("StarredListView.onTeardown");
             this.listeners.remove(child);
         });
-        this.listModel = ListIndexModel.newInstance(data.songs().size());
+        this.listModel = appManager.getStarredList();
+        Utils.runOnMainThread(() -> {
+            // this needs to run on idle thread, otherwise it segfaults:
+            this.listModel.removeAll();
+            data.songs().stream().map(GSongInfo::newInstance).forEach(this.listModel::append);
+        });
+
+        this.selectionModel = new SingleSelection<>(this.listModel);
         this.listView = ListView.builder()
                 //.setCssClasses(cssClasses(Classes.richlist.className()))
                 //.setCssClasses(cssClasses("boxed-list"))
@@ -121,16 +139,16 @@ public class StarredListView extends Box implements AppManager.StateListener {
                 .setValign(FILL)
                 .setFocusOnClick(true)
                 .setSingleClickActivate(false)
-                .setModel(new SingleSelection(this.listModel))
                 .setFactory(factory)
                 .build();
         this.listView.onActivate(index -> {
-            var songInfo = this.data.songs().get(index);
+            //var songInfo = this.data.songs().get(index);
+            var songInfo = this.listModel.getItem(index).songInfo();
             if (songInfo == null) {
                 return;
             }
-            List<SongInfo> songs = this.data.songs();
-            log.debug("listView.onActivate: {} {}", index, songInfo.title());
+            log.info("listView.onActivate: {} {}", index, songInfo.title());
+            List<SongInfo> songs = this.listModel.stream().map(GSongInfo::songInfo).toList();
             this.onAction.apply(new PlayerAction.PlayQueue(songs, index));
         });
         this.scroll = ScrolledWindow.builder()
@@ -141,10 +159,25 @@ public class StarredListView extends Box implements AppManager.StateListener {
                 .setPropagateNaturalWidth(true)
                 .setPropagateNaturalHeight(true)
                 .build();
+//        var clamp = Clamp.builder().setMaximumSize(800).build();
+//        clamp.setHalign(FILL);
+//        clamp.setValign(FILL);
+//        clamp.setHexpand(true);
+//        clamp.setChild(this.listView);
+//        this.scroll.setChild(clamp);
         this.scroll.setChild(this.listView);
         this.append(this.scroll);
-        this.onMap(() -> appManager.addOnStateChanged(this));
-        this.onUnmap(() -> appManager.removeOnStateChanged(this));
+        this.onMap(() -> {
+            this.listView.setModel(selectionModel);
+            appManager.addOnStateChanged(this);
+        });
+        this.onUnmap(() -> {
+            appManager.removeOnStateChanged(this);
+            // We have to unset the selectionModel, as it uses the global StarredList
+            // If the starredList is mapped in a different ListView without being unset first,
+            // the application segfaults.
+            this.listView.setModel(null);
+        });
     }
 
     @Override

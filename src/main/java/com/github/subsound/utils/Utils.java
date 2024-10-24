@@ -57,9 +57,17 @@ public class Utils {
         return CompletableFuture.runAsync(supplier, ASYNC_EXECUTOR);
     }
 
+    public static void runOnMainThreadNow(SourceFunc fn) {
+        // MainContext.invoke() runs directly when it is already on the main thread, and calls GLib.idleAdd() otherwise.
+        MainContext.default_().invoke(fn);
+    }
+    public static void runOnMainThreadNow(SourceOnceFunc fn) {
+        runOnMainThreadNow(() -> {
+            fn.run();
+            return true;
+        });
+    }
     public static void runOnMainThread(SourceOnceFunc fn) {
-        // Consider switching to:
-        //MainContext.default_().invoke(fn);
         GLib.idleAddOnce(fn);
     }
 

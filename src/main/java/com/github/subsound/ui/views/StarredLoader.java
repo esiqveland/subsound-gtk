@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 public class StarredLoader extends Box {
@@ -58,14 +59,8 @@ public class StarredLoader extends Box {
                 .thenApply(data -> {
                     var listStarred = data.starredList();
                     log.info("StarredLoader hello {}", listStarred.songs().size());
-
-                    int size = listStarred.songs().size();
-                    int newSize = listStarred.songs().size() * 20;
-                    var newList = new ArrayList<SongInfo>(newSize);
-                    for (int i = 0; i < newSize; i++) {
-                        int idx = i % size;
-                        newList.add(listStarred.songs().get(idx));
-                    }
+                    //var newList = enlarge(listStarred);
+                    var newList = listStarred.songs();
                     return new PlaylistsData(data.playlistList(), new ListStarred(newList));
                 });
         var loader = new FutureLoader<>(
@@ -74,5 +69,17 @@ public class StarredLoader extends Box {
         );
         this.holder.setChild(loader);
         return this;
+    }
+
+    // enlarge helps making a big fake list to test ListView scroll performance:
+    private static List<SongInfo> enlarge(ListStarred listStarred) {
+        int size = listStarred.songs().size();
+        int newSize = listStarred.songs().size() * 20;
+        var newList = new ArrayList<SongInfo>(newSize);
+        for (int i = 0; i < newSize; i++) {
+            int idx = i % size;
+            newList.add(listStarred.songs().get(idx));
+        }
+        return newList;
     }
 }

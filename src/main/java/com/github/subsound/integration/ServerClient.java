@@ -59,6 +59,15 @@ public interface ServerClient {
         public boolean isStarred() {
             return starred.isPresent();
         }
+
+        @Override
+        public String toString() {
+            return "SongInfo{" +
+                    "id='" + id + '\'' +
+                    ", artist='" + artist + '\'' +
+                    ", title='" + title + '\'' +
+                    '}';
+        }
     }
 
     @RecordBuilder

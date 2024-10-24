@@ -5,13 +5,13 @@
       <profile name="Gradle Imported" enabled="true">
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
-          <entry name="$PROJECT_DIR$/../../.gradle/caches/modules-2/files-2.1/io.soabase.record-builder/record-builder-processor/43/a3a77ec7af8498bd9dbab2086bccb9a2379e5d43/record-builder-processor-43.jar" />
+          <entry name="$PROJECT_DIR$/../../.gradle/caches/modules-2/files-2.1/io.soabase.record-builder/record-builder-processor/44/f790aa2c60440299a2fc20fb4ff32324fe76c153/record-builder-processor-44.jar" />
           <entry name="$PROJECT_DIR$/../../.gradle/caches/modules-2/files-2.1/io.soabase.java-composer/java-composer/1.0/2b6a6f0e10a6608ba06e08fbe754923de32be5cf/java-composer-1.0.jar" />
-          <entry name="$PROJECT_DIR$/../../.gradle/caches/modules-2/files-2.1/io.soabase.record-builder/record-builder-core/43/160be64a2432505765e55d585abce66a008173dd/record-builder-core-43.jar" />
+          <entry name="$PROJECT_DIR$/../../.gradle/caches/modules-2/files-2.1/io.soabase.record-builder/record-builder-core/44/7e1b9767bc504cc08f41f4c80de2dab1ef15a2e2/record-builder-core-44.jar" />
         </processorPath>
         <module name="subsound-gtk.master.main" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel target="22" />
+    <bytecodeTargetLevel target="23" />
   </component>
 </project>

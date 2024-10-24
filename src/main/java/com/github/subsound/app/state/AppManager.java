@@ -14,19 +14,20 @@ import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.sound.PlaybinPlayer.AudioSource;
 import com.github.subsound.sound.PlaybinPlayer.Source;
 import com.github.subsound.ui.components.AppNavigation;
+import com.github.subsound.ui.models.GSongInfo;
 import com.github.subsound.utils.Utils;
-import io.reactivex.rxjava3.core.Scheduler;
-import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
 import org.gnome.adw.ToastOverlay;
+import org.gnome.gio.ListStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -57,6 +58,8 @@ public class AppManager {
     private final AtomicReference<ServerClient> client;
     private final BehaviorSubject<AppState> currentState;
     private final CopyOnWriteArrayList<StateListener> listeners = new CopyOnWriteArrayList<>();
+    private final ListStore<GSongInfo> starredList = new ListStore<>(GSongInfo.gtype);
+
     private ToastOverlay toastOverlay;
     private AppNavigation navigator;
 
@@ -347,6 +350,7 @@ public class AppManager {
     }
 
     private void unstarSong(PlayerAction.Unstar a) {
+        removeStarred(a.song());
         this.client.get().unStarId(a.song().id());
         setState(appState -> appState.nowPlaying()
                 .map(nowPlaying -> {
@@ -361,7 +365,13 @@ public class AppManager {
     }
 
     private void starSong(PlayerAction.Star a) {
-        this.client.get().starId(a.song().id());
+        try {
+            this.addStarred(a);
+            this.client.get().starId(a.song().id());
+        } catch (Exception e) {
+            this.removeStarred(a.song());
+            throw e;
+        }
         setState(appState -> appState.nowPlaying()
                 .map(nowPlaying -> {
                     var song = nowPlaying.song();
@@ -372,6 +382,72 @@ public class AppManager {
                         return appState;
                     }
                 }).orElse(appState));
+    }
+
+    private final ReentrantLock starredListLock = new ReentrantLock();
+    private void removeStarred(SongInfo a) {
+        starredListLock.lock();
+        try {
+// TODO(java-gi): 0.11.2 does not implement ListIterator::remove:
+//            Utils.runOnMainThread(() -> {
+//                var count = 0;
+//                var it = this.starredList.iterator();
+//                while (it.hasNext()) {
+//                    var s = it.next();
+//                    if (s.songInfo() == a) {
+//                        it.remove();
+//                        count++;
+//                    } else if (s.songInfo().id().equals(a.id())) {
+//                        it.remove();
+//                        count++;
+//                    }
+//                }
+//                log.info("removed songId={} from {} positions", a.id(), count);
+//            });
+
+            var it = this.starredList.iterator();
+            int idx = 0;
+            var indices = new ArrayList<Integer>();
+            while (it.hasNext()) {
+                var s = it.next();
+                if (s.songInfo() == a) {
+                    indices.add(idx);
+                } else if (s.songInfo().id().equals(a.id())) {
+                    indices.add(idx);
+                }
+                idx++;
+            }
+
+            Utils.runOnMainThread(() -> {
+                int count = 0;
+                for (int pos : indices) {
+                    // when removing multiple items, we need to adjust for shift in indices:
+                    int adjustedIndex = pos - count;
+                    this.starredList.removeItem(adjustedIndex);
+                    count++;
+                }
+                log.info("removed songId={} from {} positions", a.id(), count);
+            });
+        } finally {
+            starredListLock.unlock();
+        }
+    }
+
+    private void addStarred(PlayerAction.Star a) {
+        // TODO: Consider storing the list in reverse order, and displaying it reversed order:
+        //  appending to 0th element could be slow when reaching 10k+ songs:
+        starredListLock.lock();
+        try {
+            Utils.runOnMainThread(() -> {
+                this.starredList.insert(0, GSongInfo.newInstance(a.song()));
+            });
+        } finally {
+            starredListLock.unlock();
+        }
+    }
+
+    public ListStore<GSongInfo> getStarredList() {
+        return this.starredList;
     }
 
     private final Lock lock = new ReentrantLock();
