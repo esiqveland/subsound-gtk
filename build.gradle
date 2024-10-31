@@ -13,13 +13,13 @@ version = '0.1.0'
 var mainClass = 'com.github.subsound.Main'
 
 repositories {
-    maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots' }
     maven { url './offline-repository/' }
+    maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots' }
     mavenCentral()
     google()
 }
 
-def javagiVersion = "0.11.0-SNAPSHOT"
+def javagiVersion = "0.11.0"
 def recordBuilderVersion = "43"
 
 dependencies {
