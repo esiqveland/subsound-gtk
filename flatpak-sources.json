@@ -1,38 +1,38 @@
 [
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-classic/1.5.8/logback-classic-1.5.8.jar",
-    "sha512": "fccf4b3402262f9660e95fdc49e9edf4b1ac72cd086f1facb9bb2290070867da14e4be2343787c53795dd57fb3ece44c80834dfaed332a6aa1d4be71346e4549",
-    "dest": "./offline-repository/ch/qos/logback/logback-classic/1.5.8",
-    "dest-filename": "logback-classic-1.5.8.jar"
+    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-classic/1.5.12/logback-classic-1.5.12.jar",
+    "sha512": "aed701822944b656c887b21106c1643f5af45545603896405cc985422707450c5b4ab3c3c97679a6e9b2ff3147e5c4a5a4f8e6ae0e064ded39f50a78bd8cd9dd",
+    "dest": "./offline-repository/ch/qos/logback/logback-classic/1.5.12",
+    "dest-filename": "logback-classic-1.5.12.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-classic/1.5.8/logback-classic-1.5.8.pom",
-    "sha512": "3b3288d8171afebe39248e8db38d72087787602687856a32a4cd07bdd1b1449fb444212138f4bbff83b00ac886d3016ed951303e4e5f9ed19077d07c4f58d7ea",
-    "dest": "./offline-repository/ch/qos/logback/logback-classic/1.5.8",
-    "dest-filename": "logback-classic-1.5.8.pom"
+    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-classic/1.5.12/logback-classic-1.5.12.pom",
+    "sha512": "18e688ce099a840377b563f5a13cc8ff16a640ec92d57f4370816bb0c56c160caa7020c89d519247a95307fe4c8fab6056ae709523c2212b79a80e8cddf2a99d",
+    "dest": "./offline-repository/ch/qos/logback/logback-classic/1.5.12",
+    "dest-filename": "logback-classic-1.5.12.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-core/1.5.8/logback-core-1.5.8.jar",
-    "sha512": "70bdcc80639302d72843d833d5aad32a85e449a9095233da3815fda9c774587b0aed110fce8e5d919ec40915711cbc9a8c506942ff36561e78fcfa4c7111a752",
-    "dest": "./offline-repository/ch/qos/logback/logback-core/1.5.8",
-    "dest-filename": "logback-core-1.5.8.jar"
+    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-core/1.5.12/logback-core-1.5.12.jar",
+    "sha512": "8ad1ee4e0451f7b2e96f0930928f80a3f2e7b570affef9373d80417cf8059bc50b12326586a4b3feb9ad32522a19978c59fb3865ce0f675e03b1c496907f26f4",
+    "dest": "./offline-repository/ch/qos/logback/logback-core/1.5.12",
+    "dest-filename": "logback-core-1.5.12.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-core/1.5.8/logback-core-1.5.8.pom",
-    "sha512": "61586552b77baa1a070f824f7ee6f20e937df26d7042131bbb6f7d3fec3b7f3adfd8416697053abf88e6e85ef79c7e0e48838e3e49b38fea0063c4eaa5291e6a",
-    "dest": "./offline-repository/ch/qos/logback/logback-core/1.5.8",
-    "dest-filename": "logback-core-1.5.8.pom"
+    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-core/1.5.12/logback-core-1.5.12.pom",
+    "sha512": "1be5ba29dde0f1bc83f02eba9d1318c4f84fbec3de7902b4ef2f4ddc56e26fc2b2a826c868f9d8eec1fef15c7017558730b8bc34f61adffd345df0b65cbceec6",
+    "dest": "./offline-repository/ch/qos/logback/logback-core/1.5.12",
+    "dest-filename": "logback-core-1.5.12.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-parent/1.5.8/logback-parent-1.5.8.pom",
-    "sha512": "181cce3bbcf16396b5d2e57b5da57f8bee3da91081207fd22c6ac9e1d01f76d79ef0862cf8920ab2e9008eaa1db1120ed9e0e22330767010c7844092939bd178",
-    "dest": "./offline-repository/ch/qos/logback/logback-parent/1.5.8",
-    "dest-filename": "logback-parent-1.5.8.pom"
+    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-parent/1.5.12/logback-parent-1.5.12.pom",
+    "sha512": "24fb7747c345c2d27edeb3d9ceb400bcb1ced3e7f353dfe36d2d705ae7e7e0ba8097ce814a29c1810daca85ef07fd3d59aec9c358f76d63e4bf244e509d9cff7",
+    "dest": "./offline-repository/ch/qos/logback/logback-parent/1.5.12",
+    "dest-filename": "logback-parent-1.5.12.pom"
   },
   {
     "type": "file",
