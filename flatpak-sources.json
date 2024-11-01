@@ -1128,24 +1128,24 @@
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy-parent/1.14.11/byte-buddy-parent-1.14.11.pom",
-    "sha512": "dfe840fa4b5f2637650f115a2030b6ebeb9de68287010bb07c786040a237cdccd82c415ccbd99762d155747df3688e9c15bc9117eea298be69b906303948b86c",
-    "dest": "./offline-repository/net/bytebuddy/byte-buddy-parent/1.14.11",
-    "dest-filename": "byte-buddy-parent-1.14.11.pom"
+    "url": "https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy-parent/1.14.18/byte-buddy-parent-1.14.18.pom",
+    "sha512": "82eb52fe0639a3c4142f65feef83a723c9c94159d02d5ae122796b84bf8567a23005a2e534f416e2e30bcc61e62835b1496182aecd1ddacfb7f8d49e3194aaab",
+    "dest": "./offline-repository/net/bytebuddy/byte-buddy-parent/1.14.18",
+    "dest-filename": "byte-buddy-parent-1.14.18.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy/1.14.11/byte-buddy-1.14.11.jar",
-    "sha512": "984b32c7902a0c46c855faf13857db897f6bea25a116fbaf7b0934bc2787dccdb47470c43d9e74e0506c725271265dd39c74ae197e504d6d8de3cbf0973f6b37",
-    "dest": "./offline-repository/net/bytebuddy/byte-buddy/1.14.11",
-    "dest-filename": "byte-buddy-1.14.11.jar"
+    "url": "https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy/1.14.18/byte-buddy-1.14.18.jar",
+    "sha512": "da050e5f32bc2825f04fe4f3c6c23654779c0d6b0c8126a287f7a03e9a520de55f7f0209609e672aecc75ba76a33fc555a3b485ba2ac82ad2a24c8e3f9eacffd",
+    "dest": "./offline-repository/net/bytebuddy/byte-buddy/1.14.18",
+    "dest-filename": "byte-buddy-1.14.18.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy/1.14.11/byte-buddy-1.14.11.pom",
-    "sha512": "0e7d140047aec4b64b7412e163b047fa0cba585e6d5172aa2914b1cf67c976689e39a57d781495c19f72be0fbe62b83a437da02725f6667784d1d0e0f6a623ab",
-    "dest": "./offline-repository/net/bytebuddy/byte-buddy/1.14.11",
-    "dest-filename": "byte-buddy-1.14.11.pom"
+    "url": "https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy/1.14.18/byte-buddy-1.14.18.pom",
+    "sha512": "3b532ac19976d0ecbba623506ad5c428a0f7ac0e959528025ca307363a5196aa78274dd4f36f66ef50bffd064a1d79559cf04ddcd564fabc8db7c6fb3e859e72",
+    "dest": "./offline-repository/net/bytebuddy/byte-buddy/1.14.18",
+    "dest-filename": "byte-buddy-1.14.18.pom"
   },
   {
     "type": "file",
@@ -1373,17 +1373,17 @@
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/org/assertj/assertj-core/3.25.1/assertj-core-3.25.1.jar",
-    "sha512": "3fa98db654447efb401e60b7f26d1a850c563fc612f29336eb8c82cc13e078ec64e7db6c2440d63faf360debd950eb48e8e3dd5e21aa44140d5125606f9f7d2d",
-    "dest": "./offline-repository/org/assertj/assertj-core/3.25.1",
-    "dest-filename": "assertj-core-3.25.1.jar"
+    "url": "https://repo.maven.apache.org/maven2/org/assertj/assertj-core/3.26.3/assertj-core-3.26.3.jar",
+    "sha512": "2cf7310e2079e0b694ad3e948f874faa8c6895b50f9db9e4e4829cef22788f9ab9a4fbd36c14030514e42a5b3d9529933462ace8df7862efc8a19ff1c1372325",
+    "dest": "./offline-repository/org/assertj/assertj-core/3.26.3",
+    "dest-filename": "assertj-core-3.26.3.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/org/assertj/assertj-core/3.25.1/assertj-core-3.25.1.pom",
-    "sha512": "884e947ec526161191b08e90cd44c32593706437080cfbe3653f71b92fff3e70fb6835a3221c7c5307865088e8cd35aa95644121ee3b241e4e152285154dd6d1",
-    "dest": "./offline-repository/org/assertj/assertj-core/3.25.1",
-    "dest-filename": "assertj-core-3.25.1.pom"
+    "url": "https://repo.maven.apache.org/maven2/org/assertj/assertj-core/3.26.3/assertj-core-3.26.3.pom",
+    "sha512": "a4baa08e71c7d861d288efbcb1176ce825cc5b2a2842dabd514b4a95ca052db50b16ca285bae4ebf77f62619179cbea8061aafbc1bab7dcfd6b270ff8a8c6c4d",
+    "dest": "./offline-repository/org/assertj/assertj-core/3.26.3",
+    "dest-filename": "assertj-core-3.26.3.pom"
   },
   {
     "type": "file",
