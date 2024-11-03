@@ -38,7 +38,7 @@ modules:
       # We make the Gradle wrapper use our local .zip file
       # NOTA: mind the fact that expand() will reduce the backslashes in template, so double them!
       - ls -la offline-repository
-      - ln --force gradle-8.9-all.zip gradle/wrapper/gradle-8.9-all.zip
+      - ln --force gradle-8.10-all.zip gradle/wrapper/gradle-8.10-all.zip
       - >-
         sed --regexp-extended --in-place
         's,https\\://services.gradle.org/distributions/,file:\/run/build/Subsound/,'
@@ -70,8 +70,8 @@ modules:
       - type: file
         path: src/main/resources/app/com.github.Subsound.metainfo.xml
       - type: file
-        url: https://services.gradle.org/distributions/gradle-8.9-all.zip
-        sha256: 258e722ec21e955201e31447b0aed14201765a3bfbae296a46cf60b70e66db70
+        url: https://services.gradle.org/distributions/gradle-8.10-all.zip
+        sha256: 682b4df7fe5accdca84a4d1ef6a3a6ab096b3efd5edf7de2bd8c758d95a93703
       - type: git
         url: https://github.com/esiqveland/subsound-gtk
         tag: v0.1.0-alpha22
