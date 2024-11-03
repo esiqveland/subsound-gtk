@@ -407,66 +407,66 @@
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/common/common-image/3.11.0/common-image-3.11.0.jar",
-    "sha512": "0f3ae6e2b92353c174d25ba7cd7a4851fd6bf8070a5965dea5df3212856761d698ef2f206b38a04d750dfc58943a07699e3d22ae9b28c5ca32b612f804583698",
-    "dest": "./offline-repository/com/twelvemonkeys/common/common-image/3.11.0",
-    "dest-filename": "common-image-3.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/common/common-image/3.12.0/common-image-3.12.0.jar",
+    "sha512": "dce8942885f4a13d7a71c51117e179732a16824afaa5181b2e566bd2f3b4cabbf6f0ca1032674f86a2a523dc32b5842819661ba6a4f67ca8bdbe5d533d3f9625",
+    "dest": "./offline-repository/com/twelvemonkeys/common/common-image/3.12.0",
+    "dest-filename": "common-image-3.12.0.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/common/common-image/3.11.0/common-image-3.11.0.pom",
-    "sha512": "fb6230c94ee9d0f364d084a163e3ad7351742dfd713790ae584a318509e18ee20debcd0fbc736468f098dab25f0494f4ffc3b9deac25a09a28d8f08edb97b438",
-    "dest": "./offline-repository/com/twelvemonkeys/common/common-image/3.11.0",
-    "dest-filename": "common-image-3.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/common/common-image/3.12.0/common-image-3.12.0.pom",
+    "sha512": "4ab01c01c729fd34c7f7a19b3b2ce13bacacd88025fe7b81e966feefe2f780dc4761215ab75ff97e267b7e5dc5becefd85c30fa2951fcad413f6de30e3db840d",
+    "dest": "./offline-repository/com/twelvemonkeys/common/common-image/3.12.0",
+    "dest-filename": "common-image-3.12.0.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/common/common-io/3.11.0/common-io-3.11.0.jar",
-    "sha512": "adf3714e2d05ab7c0353d9cdf1d1837389a21e0f5bcadd83172c190b6f1dc3ef18339e585e9953a58938a34b06cc941fdb11336edc549907840d9d3680d85846",
-    "dest": "./offline-repository/com/twelvemonkeys/common/common-io/3.11.0",
-    "dest-filename": "common-io-3.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/common/common-io/3.12.0/common-io-3.12.0.jar",
+    "sha512": "e789b9c6b3e6a14941722d2a81f0bad4cbe62b4d3700b85c2ef828ea5e1780b31c9ba6f28e98f4e83fd794e3ddb2db52e09a8345825157de0f0ab59246cf8364",
+    "dest": "./offline-repository/com/twelvemonkeys/common/common-io/3.12.0",
+    "dest-filename": "common-io-3.12.0.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/common/common-io/3.11.0/common-io-3.11.0.pom",
-    "sha512": "4c4bb277dc0372facb1b2a75829e9ea03967611e936ef1aca63829fe5be04b4a8db44ecaf7c6a85f230b37e7684bba53c4740234bd0591882bf4aa54d5a93b1a",
-    "dest": "./offline-repository/com/twelvemonkeys/common/common-io/3.11.0",
-    "dest-filename": "common-io-3.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/common/common-io/3.12.0/common-io-3.12.0.pom",
+    "sha512": "84536a65d31967bc57c4106eb4c9eb271112f3ecbe52ad52c8223be99c9710d1a821d8b6a1cb2f9bcf7b9979767cea0e36e710cc1d89c9c35e9d4eb69cd0dda5",
+    "dest": "./offline-repository/com/twelvemonkeys/common/common-io/3.12.0",
+    "dest-filename": "common-io-3.12.0.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/common/common-lang/3.11.0/common-lang-3.11.0.jar",
-    "sha512": "a62f9c974dbc41d28ed4e9a55e7722abe8473756b7497033990e5182035a9fb7e0ba84d5507da730a8fbaa82a098cd9832a8d1a2c1ca9e924b3669ec212a95fc",
-    "dest": "./offline-repository/com/twelvemonkeys/common/common-lang/3.11.0",
-    "dest-filename": "common-lang-3.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/common/common-lang/3.12.0/common-lang-3.12.0.jar",
+    "sha512": "8cb7f7e6a51d68d696caa63e6bd684a4c0a385d0dd7ee1703912ee48c9f360f19341847638eedc86024e8bfbf2b3f2bea70b2d76aa9b18b9767332d9957e9b22",
+    "dest": "./offline-repository/com/twelvemonkeys/common/common-lang/3.12.0",
+    "dest-filename": "common-lang-3.12.0.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/common/common-lang/3.11.0/common-lang-3.11.0.pom",
-    "sha512": "076adc878156cf583ce695a457941a271191cab0005c16ec25aef86a126fc8bc3a09cf18a1d3ddca2883abe60265039fa3a2533ddd74f2f36b2c5d7779b311f7",
-    "dest": "./offline-repository/com/twelvemonkeys/common/common-lang/3.11.0",
-    "dest-filename": "common-lang-3.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/common/common-lang/3.12.0/common-lang-3.12.0.pom",
+    "sha512": "e2240e84ebaf71038e9c7f2ac6796fa2386940e697bf6e9824c76c43871d64aace06055782aac0a93d36aa9932d04efc74a351224c797f746b475f9e38ba7403",
+    "dest": "./offline-repository/com/twelvemonkeys/common/common-lang/3.12.0",
+    "dest-filename": "common-lang-3.12.0.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/common/common/3.11.0/common-3.11.0.pom",
-    "sha512": "3c998cada96f29d56b8e5b4433fee841d5eaa2b733434d6694e38e30fb007861bc8025b010848d5ac25fadfab3728d15819082d4b4a51fe1dd35e471d0487eb8",
-    "dest": "./offline-repository/com/twelvemonkeys/common/common/3.11.0",
-    "dest-filename": "common-3.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/common/common/3.12.0/common-3.12.0.pom",
+    "sha512": "c226afedd81f6e08cb50f2cfcecf06b82fa1cec08e7851c0849f4e3f4bf7bb561225f80f6c3f22cfb5e0a3811ffb46597ee7b6b556eac057a9d29a0656f4f235",
+    "dest": "./offline-repository/com/twelvemonkeys/common/common/3.12.0",
+    "dest-filename": "common-3.12.0.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/imageio/imageio-core/3.11.0/imageio-core-3.11.0.jar",
-    "sha512": "61826cb32770861ccab8f1d5c220dd5dececb04afb9dfcf88f7b7a24e3072f8af7b57afff43c4e87f5e55fcb6ca413f22d5ebdd5fdb72c26fc78f8a1ade72d44",
-    "dest": "./offline-repository/com/twelvemonkeys/imageio/imageio-core/3.11.0",
-    "dest-filename": "imageio-core-3.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/imageio/imageio-core/3.12.0/imageio-core-3.12.0.jar",
+    "sha512": "6f76b594efe38b6511321fea5cb7f52d6b99e020367650176c73b1f956130c84eb91b275cbd4ba82ae1378f24d8569db964f1201445339bfc371746f99d243a8",
+    "dest": "./offline-repository/com/twelvemonkeys/imageio/imageio-core/3.12.0",
+    "dest-filename": "imageio-core-3.12.0.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/imageio/imageio-core/3.11.0/imageio-core-3.11.0.pom",
-    "sha512": "a66610c2f9ff38f56f8b02a05d5fc6bc4a8a08b7b208514c55f3c958f5bdf34be3add4950e1047dfa70791a9353ae7313ea39504f5a117061a79813be6d0db0e",
-    "dest": "./offline-repository/com/twelvemonkeys/imageio/imageio-core/3.11.0",
-    "dest-filename": "imageio-core-3.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/imageio/imageio-core/3.12.0/imageio-core-3.12.0.pom",
+    "sha512": "53346846f8a05a74c9b060ff03bbbd9e1df788dfd63e79b92d7d0da38876f94649fdc39f9b47e82cac0b5fbb2a58f137b7e2a14846e1a37b287ef69af5e6f919",
+    "dest": "./offline-repository/com/twelvemonkeys/imageio/imageio-core/3.12.0",
+    "dest-filename": "imageio-core-3.12.0.pom"
   },
   {
     "type": "file",
@@ -505,10 +505,24 @@
   },
   {
     "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/imageio/imageio/3.12.0/imageio-3.12.0.pom",
+    "sha512": "82aab3b9c58d72237d35d0deacf7c660f43ed611c832778704494bcb6c29105c0a5b3168f9466a382651d42dc50a0444f2c5459f99e8a1a00b273d84c8f76127",
+    "dest": "./offline-repository/com/twelvemonkeys/imageio/imageio/3.12.0",
+    "dest-filename": "imageio-3.12.0.pom"
+  },
+  {
+    "type": "file",
     "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/twelvemonkeys/3.11.0/twelvemonkeys-3.11.0.pom",
     "sha512": "8dae32f8bc36eaa6c999e035ed8c761686aa783a7b4ec027a3b1db2b1b91c3a28dd794bd458656405b6e188b499108697467849332ed1490ec0b248b856f534b",
     "dest": "./offline-repository/com/twelvemonkeys/twelvemonkeys/3.11.0",
     "dest-filename": "twelvemonkeys-3.11.0.pom"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/twelvemonkeys/3.12.0/twelvemonkeys-3.12.0.pom",
+    "sha512": "ec5053f4d46127492492a9017df1d995ddbc1776bf20e8800278fcb4a16d6e7744be125a3e602ae99bcf5f549680b0820ad5b3204fce841145b7c1b56eaa74e1",
+    "dest": "./offline-repository/com/twelvemonkeys/twelvemonkeys/3.12.0",
+    "dest-filename": "twelvemonkeys-3.12.0.pom"
   },
   {
     "type": "file",
