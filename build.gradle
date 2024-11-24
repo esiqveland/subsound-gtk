@@ -48,7 +48,7 @@ dependencies {
     implementation 'ch.qos.logback:logback-classic:1.5.12'
 
     implementation 'com.twelvemonkeys.imageio:imageio-core:3.12.0'
-    implementation 'com.twelvemonkeys.imageio:imageio-metadata:3.11.0'
+    implementation 'com.twelvemonkeys.imageio:imageio-metadata:3.12.0'
     // webp conversion support:
     implementation 'com.twelvemonkeys.imageio:imageio-webp:3.11.0'
 
