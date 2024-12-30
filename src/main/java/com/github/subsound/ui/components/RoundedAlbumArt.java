@@ -116,6 +116,11 @@ public class RoundedAlbumArt extends Box {
             log.info("%s: onMap: id=%s".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
             this.startLoad(this.image);
         });
+        addClick(
+                this,
+                () -> log.info("%s: addClick: id=%s".formatted(this.getClass().getSimpleName(), this.artwork))
+        );
+
         //var className = "now-playing-overlay-icon";
         var className = Classes.activatable.className();
         addHover2(
