@@ -1,11 +1,17 @@
 package com.github.subsound.ui.views;
 
+import com.github.subsound.app.state.AppManager;
 import com.github.subsound.integration.ServerClient.ArtistAlbumInfo;
 import com.github.subsound.integration.ServerClient.ArtistInfo;
-import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.ui.components.AlbumsFlowBox;
 import com.github.subsound.ui.components.RoundedAlbumArt;
-import org.gnome.gtk.*;
+import org.gnome.gtk.Align;
+import org.gnome.gtk.Box;
+import org.gnome.gtk.Label;
+import org.gnome.gtk.NaturalWrapMode;
+import org.gnome.gtk.Orientation;
+import org.gnome.gtk.ScrolledWindow;
+import org.gnome.gtk.Widget;
 import org.gnome.pango.WrapMode;
 
 import java.time.Duration;
@@ -24,7 +30,7 @@ public class ArtistInfoFlowBox extends Box {
     private final Map<String, ArtistAlbumInfo> artistsMap;
     private final ArtistInfo artist;
     private final Widget artistImage;
-    private final ThumbnailCache thumbLoader;
+    private final AppManager appManager;
     private final AlbumsFlowBox listView;
 
     private final Box viewBox;
@@ -33,16 +39,16 @@ public class ArtistInfoFlowBox extends Box {
     private final Box biographyBoxBox;
 
     public ArtistInfoFlowBox(
-            ThumbnailCache thumbLoader,
+            AppManager appManager,
             ArtistInfo artistInfo,
             Consumer<ArtistAlbumInfo> onAlbumSelected
     ) {
         super(Orientation.VERTICAL, 0);
-        this.thumbLoader = thumbLoader;
+        this.appManager = appManager;
         this.artist = artistInfo;
         this.onAlbumSelected = onAlbumSelected;
         this.viewBox = Box.builder().setSpacing(BIG_SPACING).setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).build();
-        this.artistImage = RoundedAlbumArt.resolveCoverArt(this.thumbLoader, this.artist.coverArt(), 300);
+        this.artistImage = RoundedAlbumArt.resolveCoverArt(this.appManager, this.artist.coverArt(), 300);
         this.infoContainer = Box.builder().setSpacing(BIG_SPACING).setOrientation(Orientation.HORIZONTAL).setHexpand(true).setVexpand(false).setCssClasses(cssClasses("card")).build();
         this.artistInfoBox = Box.builder().setSpacing(10).setMarginEnd(BIG_SPACING).setOrientation(Orientation.VERTICAL).setHexpand(true).setHalign(Align.START).setValign(Align.CENTER).build();
         this.infoContainer.append(this.artistImage);
@@ -64,7 +70,7 @@ public class ArtistInfoFlowBox extends Box {
                 a -> a
         ));
 
-        listView = new AlbumsFlowBox(thumbLoader, this.artist.albums(), (albumInfo) -> {
+        listView = new AlbumsFlowBox(this.appManager, this.artist.albums(), (albumInfo) -> {
             System.out.println("ArtistAlbum: goto " + albumInfo.name() + " (%s)".formatted(albumInfo.id()));
             var handler = this.onAlbumSelected;
             if (handler == null) {

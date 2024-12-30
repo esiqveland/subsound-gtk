@@ -70,7 +70,7 @@ public class StarredLoader extends Box {
                 });
         var loader = new FutureLoader<>(
                 dataFuture,
-                starred -> new StarredListView(starred.starredList(), this.thumbLoader, this.appManager, this.onNavigate)
+                starred -> new StarredListView(starred.starredList(), this.appManager, this.onNavigate)
         );
         this.holder.setChild(loader);
         return this;

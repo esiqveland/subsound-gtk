@@ -72,7 +72,7 @@ public class FrontpagePage extends Box {
         this.view = borderBox(Orientation.VERTICAL, BIG_SPACING).setSpacing(BIG_SPACING).setHalign(START).setValign(START).build();
         this.thumbLoader = thumbLoader;
         this.appManager = appManager;
-        this.homeView = new HomeView(thumbLoader, this.appManager, this.onAlbumSelected);
+        this.homeView = new HomeView(this.appManager, this.onAlbumSelected);
         this.onMap(() -> {
             isMapped.set(true);
             this.doLoad();
@@ -141,7 +141,6 @@ public class FrontpagePage extends Box {
     }
 
     private static class HomeView extends Box {
-        private final ThumbnailCache thumbLoader;
         private final AppManager appManager;
         private final Consumer<ArtistAlbumInfo> onAlbumSelected;
 
@@ -155,7 +154,7 @@ public class FrontpagePage extends Box {
         private final BoxHolder<HorizontalAlbumsFlowBoxV3> newList;
         private final BoxHolder<HorizontalAlbumsFlowBoxV3> mostPlayedList;
 
-        public HomeView(ThumbnailCache thumbLoader, AppManager appManager, Consumer<ArtistAlbumInfo> onAlbumSelected) {
+        public HomeView(AppManager appManager, Consumer<ArtistAlbumInfo> onAlbumSelected) {
             super(Orientation.VERTICAL, BIG_SPACING);
             this.appManager = appManager;
             this.onAlbumSelected = onAlbumSelected;
@@ -163,7 +162,6 @@ public class FrontpagePage extends Box {
             this.setVexpand(true);
             this.setHalign(START);
             this.setValign(START);
-            this.thumbLoader = thumbLoader;
             this.recentList = holder();
             this.newList = holder();
             this.mostPlayedList = holder();
@@ -206,9 +204,9 @@ public class FrontpagePage extends Box {
             private final List<ArtistAlbumInfo> albums;
             private final List<AlbumFlowBoxChild> list;
             private final Carousel carousel;
-            private final ThumbnailCache thumbLoader;
+            private final AppManager thumbLoader;
 
-            public HorizontalAlbumsFlowBoxV2(List<ArtistAlbumInfo> albums, ThumbnailCache thumbLoader) {
+            public HorizontalAlbumsFlowBoxV2(List<ArtistAlbumInfo> albums, AppManager thumbLoader) {
                 super(HORIZONTAL, 0);
                 this.albums = albums;
                 this.thumbLoader = thumbLoader;
@@ -233,14 +231,14 @@ public class FrontpagePage extends Box {
             private final List<OverviewAlbumChild> list;
             //private final List<AlbumFlowBoxChild> list;
             private final Box carousel;
-            private final ThumbnailCache thumbLoader;
+            private final AppManager thumbLoader;
             private final ScrolledWindow scroll;
             private final Function<PlayerAction, CompletableFuture<Void>> onAction;
             private final Consumer<ArtistAlbumInfo> onAlbumSelected;
 
             public HorizontalAlbumsFlowBoxV3(
                     List<ArtistAlbumInfo> albums,
-                    ThumbnailCache thumbLoader,
+                    AppManager thumbLoader,
                     Function<PlayerAction, CompletableFuture<Void>> onAction,
                     Consumer<ArtistAlbumInfo> onAlbumSelected
             ) {
@@ -282,7 +280,7 @@ public class FrontpagePage extends Box {
         }
 
         public static class HorizontalAlbumsListView extends Box {
-            private final ThumbnailCache thumbLoader;
+            private final AppManager thumbLoader;
             private final Consumer<ArtistAlbumInfo> onAlbumSelected;
             private final List<ArtistAlbumInfo> albums;
             private final ListView listView;
@@ -291,7 +289,7 @@ public class FrontpagePage extends Box {
 
             public HorizontalAlbumsListView(
                     List<ArtistAlbumInfo> albums,
-                    ThumbnailCache thumbLoader,
+                    AppManager thumbLoader,
                     Consumer<ArtistAlbumInfo> onAlbumSelected
             ) {
                 super(HORIZONTAL, 0);
@@ -353,7 +351,7 @@ public class FrontpagePage extends Box {
         }
 
         private HorizontalAlbumsFlowBoxV3 flowBox(List<ArtistAlbumInfo> list) {
-            return new HorizontalAlbumsFlowBoxV3(list, this.thumbLoader, this.appManager::handleAction, this.onAlbumSelected);
+            return new HorizontalAlbumsFlowBoxV3(list, this.appManager, this.appManager::handleAction, this.onAlbumSelected);
         }
 
         public void setData(HomeOverview homeOverview) {

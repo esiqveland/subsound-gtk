@@ -54,7 +54,7 @@ public class ArtistInfoLoader extends Box {
         }
 
         var loader = new FutureLoader<>(future, info -> new ArtistInfoFlowBox(
-                this.thumbLoader,
+                this.client,
                 info,
                 this::onAlbumSelected
         ));

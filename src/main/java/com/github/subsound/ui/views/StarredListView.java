@@ -4,7 +4,6 @@ import com.github.subsound.app.state.AppManager;
 import com.github.subsound.app.state.PlayerAction;
 import com.github.subsound.integration.ServerClient.ListStarred;
 import com.github.subsound.integration.ServerClient.SongInfo;
-import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.ui.components.AppNavigation;
 import com.github.subsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
@@ -12,7 +11,6 @@ import com.github.subsound.ui.components.StarredItemRow;
 import com.github.subsound.ui.views.StarredListView.UpdateListener.MiniState;
 import com.github.subsound.utils.Utils;
 import io.github.jwharm.javagi.gio.ListIndexModel;
-import org.gnome.adw.Clamp;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.ListItem;
@@ -39,7 +37,7 @@ import static org.gnome.gtk.Orientation.VERTICAL;
 
 public class StarredListView extends Box implements AppManager.StateListener {
     private static final Logger log = LoggerFactory.getLogger(StarredListView.class);
-    private final ThumbnailCache thumbLoader;
+    private final AppManager appManager;
     private final ListStarred data;
     private final ListView listView;
     private final ListIndexModel listModel;
@@ -56,13 +54,12 @@ public class StarredListView extends Box implements AppManager.StateListener {
 
     public StarredListView(
             ListStarred data,
-            ThumbnailCache thumbLoader,
             AppManager appManager,
             Consumer<AppNavigation.AppRoute> onNavigate
     ) {
         super(VERTICAL, 0);
         this.data = data;
-        this.thumbLoader = thumbLoader;
+        this.appManager = appManager;
         this.onAction = appManager::handleAction;
         this.prevState = new AtomicReference<>(selectState(null, appManager.getState()));
         this.onNavigate = onNavigate;
@@ -77,7 +74,7 @@ public class StarredListView extends Box implements AppManager.StateListener {
             ListItem listitem = (ListItem) object;
             listitem.setActivatable(true);
 
-            var item = new StarredItemRow(this.thumbLoader, this.onAction, this.onNavigate);
+            var item = new StarredItemRow(this.appManager, this.onAction, this.onNavigate);
             listeners.put(item, item);
             listitem.setChild(item);
         });

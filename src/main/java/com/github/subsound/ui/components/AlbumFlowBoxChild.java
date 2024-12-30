@@ -1,9 +1,14 @@
 package com.github.subsound.ui.components;
 
+import com.github.subsound.app.state.AppManager;
 import com.github.subsound.integration.ServerClient.ArtistAlbumInfo;
-import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.utils.Utils;
-import org.gnome.gtk.*;
+import org.gnome.gtk.Align;
+import org.gnome.gtk.Box;
+import org.gnome.gtk.FlowBoxChild;
+import org.gnome.gtk.Label;
+import org.gnome.gtk.Orientation;
+import org.gnome.gtk.Widget;
 import org.gnome.pango.EllipsizeMode;
 
 import static com.github.subsound.utils.Utils.addHover;
@@ -12,12 +17,12 @@ import static com.github.subsound.utils.Utils.cssClasses;
 public class AlbumFlowBoxChild extends FlowBoxChild {
     private final static int COVER_SIZE = 192;
 
-    private final ThumbnailCache thumbLoader;
+    private final AppManager thumbLoader;
     private final ArtistAlbumInfo albumInfo;
     private final Widget albumCover;
 
     public AlbumFlowBoxChild(
-            ThumbnailCache thumbLoader,
+            AppManager thumbLoader,
             ArtistAlbumInfo albumInfo
     ) {
         super();

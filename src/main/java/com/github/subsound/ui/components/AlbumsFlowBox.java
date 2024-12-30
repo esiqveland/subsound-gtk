@@ -1,7 +1,7 @@
 package com.github.subsound.ui.components;
 
+import com.github.subsound.app.state.AppManager;
 import com.github.subsound.integration.ServerClient;
-import com.github.subsound.persistence.ThumbnailCache;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.FlowBox;
 import org.gnome.gtk.Orientation;
@@ -11,12 +11,12 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class AlbumsFlowBox extends FlowBox {
-    private final ThumbnailCache thumbLoader;
+    private final AppManager appManager;
     private final List<ServerClient.ArtistAlbumInfo> albumInfo;
     private final Consumer<ServerClient.ArtistAlbumInfo> onSelected;
 
     public AlbumsFlowBox(
-            ThumbnailCache thumbLoader,
+            AppManager appManager,
             List<ServerClient.ArtistAlbumInfo> albumInfo,
             Consumer<ServerClient.ArtistAlbumInfo> onSelected
     ) {
@@ -34,7 +34,7 @@ public class AlbumsFlowBox extends FlowBox {
         setSensitive(true);
         setSelectionMode(SelectionMode.SINGLE);
 
-        this.thumbLoader = thumbLoader;
+        this.appManager = appManager;
         this.albumInfo = albumInfo;
         this.onSelected = onSelected;
 
@@ -45,7 +45,7 @@ public class AlbumsFlowBox extends FlowBox {
 
         for (var album : albumInfo) {
             var widget = new AlbumFlowBoxChild(
-                    this.thumbLoader,
+                    this.appManager,
                     album
             );
             this.append(widget);

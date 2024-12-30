@@ -361,7 +361,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
     private void replaceAlbumArt(CoverArt coverArt) {
         Utils.runOnMainThread(() -> this.albumArtHolder.setChild(new RoundedAlbumArt(
                 coverArt,
-                this.appManager.getThumbnailCache(),
+                this.appManager,
                 ARTWORK_SIZE
         )));
     }

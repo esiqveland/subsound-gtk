@@ -1,8 +1,8 @@
 package com.github.subsound.ui.components;
 
+import com.github.subsound.app.state.AppManager;
 import com.github.subsound.integration.ServerClient.ArtistAlbumInfo;
 import com.github.subsound.integration.ServerClient.CoverArt;
-import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.utils.Utils;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
@@ -22,7 +22,7 @@ import static com.github.subsound.utils.Utils.cssClasses;
 public class OverviewAlbumChild extends Box {
     private final static int COVER_SIZE = 128;
 
-    private final ThumbnailCache thumbLoader;
+    private final AppManager appManager;
     private final Label albumTitle;
     private final Label albumArtist;
     private final Label yearLabel;
@@ -46,7 +46,7 @@ public class OverviewAlbumChild extends Box {
         this.albumCoverHolder.setArtwork(albumInfo.coverArt());
     }
 
-    public OverviewAlbumChild(ThumbnailCache thumbLoader, Consumer<ArtistAlbumInfo> onAction) {
+    public OverviewAlbumChild(AppManager appManager, Consumer<ArtistAlbumInfo> onAction) {
         super(Orientation.VERTICAL, 0);
         this.onAction = onAction;
         //setCssClasses(cssClasses("card", "activatable"));
@@ -68,8 +68,8 @@ public class OverviewAlbumChild extends Box {
         });
         this.addController(gestureClick);
 
-        this.thumbLoader = thumbLoader;
-        this.albumCoverHolder = new AlbumCoverHolder(this.thumbLoader);
+        this.appManager = appManager;
+        this.albumCoverHolder = new AlbumCoverHolder(this.appManager);
         this.albumTitle = Label.builder()
                 .setLabel("")
                 .setCssClasses(cssClasses("heading"))
@@ -111,11 +111,11 @@ public class OverviewAlbumChild extends Box {
 
     public static class AlbumCoverHolder extends Box {
         private static final Widget PLACEHOLDER = RoundedAlbumArt.placeholderImage(COVER_SIZE);
-        private final ThumbnailCache thumbLoader;
+        private final AppManager thumbLoader;
         private final AtomicReference<Widget> ref = new AtomicReference<>();
         private Optional<CoverArt> artwork;
 
-        public AlbumCoverHolder(ThumbnailCache thumbLoader) {
+        public AlbumCoverHolder(AppManager thumbLoader) {
             super(Orientation.VERTICAL, 0);
             this.thumbLoader = thumbLoader;
             this.ref.set(PLACEHOLDER);
@@ -139,11 +139,11 @@ public class OverviewAlbumChild extends Box {
 
     public static class AlbumCoverHolderSmall extends Box {
         private static final Widget PLACEHOLDER = RoundedAlbumArt.placeholderImage(48);
-        private final ThumbnailCache thumbLoader;
+        private final AppManager thumbLoader;
         private final AtomicReference<Widget> ref = new AtomicReference<>();
         private Optional<CoverArt> artwork;
 
-        public AlbumCoverHolderSmall(ThumbnailCache thumbLoader) {
+        public AlbumCoverHolderSmall(AppManager thumbLoader) {
             super(Orientation.VERTICAL, 0);
             this.thumbLoader = thumbLoader;
             this.ref.set(PLACEHOLDER);

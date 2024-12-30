@@ -1,17 +1,13 @@
 package com.github.subsound.ui.components;
 
-import io.github.jwharm.javagi.base.GErrorException;
+import com.github.subsound.app.state.AppManager;
 import com.github.subsound.integration.ServerClient.CoverArt;
-import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.utils.Utils;
 import org.gnome.adw.Clamp;
 import org.gnome.gdk.Texture;
 import org.gnome.gdkpixbuf.Pixbuf;
 import org.gnome.gio.Cancellable;
-import org.gnome.gio.Gio;
-import org.gnome.gio.InputStream;
 import org.gnome.gio.MemoryInputStream;
-import org.gnome.glib.GLib;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.ContentFit;
@@ -28,15 +24,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
+import static com.github.subsound.utils.Utils.addClick;
+import static com.github.subsound.utils.Utils.addHover2;
 import static com.github.subsound.utils.Utils.mustReadBytes;
 
 
 public class RoundedAlbumArt extends Box {
     private static final Logger log = LoggerFactory.getLogger(RoundedAlbumArt.class);
 
-    private final ThumbnailCache thumbLoader;
+    private final AppManager thumbLoader;
     private final CoverArt artwork;
     private final Picture image;
     private final Grid grid;
@@ -48,13 +45,13 @@ public class RoundedAlbumArt extends Box {
     private final static Map<Boolean, Pixbuf> placeHolderCache = new ConcurrentHashMap<>();
     public static Grid placeholderImage(int size) {
             Pixbuf pixbuf = placeHolderCache.computeIfAbsent(true, (key) -> {
-                var bytes = mustReadBytes("images/album-placeholder.png");
-                var gioStream = MemoryInputStream.fromData(bytes);
                 try {
+                    var bytes = mustReadBytes("images/album-placeholder.png");
+                    var gioStream = MemoryInputStream.fromData(bytes);
                     //Pixbuf pixbufloader = Pixbuf.fromFileAtSize("src/main/resources/images/album-placeholder.png", size, size);
                     var pixbufloader = Pixbuf.fromStreamAtScale(gioStream, size, size, true, new Cancellable());
                     return pixbufloader;
-                } catch (GErrorException e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             });
@@ -74,7 +71,7 @@ public class RoundedAlbumArt extends Box {
             return box;
     }
 
-    public static Widget resolveCoverArt(ThumbnailCache thumbLoader, Optional<CoverArt> coverArt, int size) {
+    public static Widget resolveCoverArt(AppManager thumbLoader, Optional<CoverArt> coverArt, int size) {
         if (coverArt.isPresent()) {
             return new RoundedAlbumArt(coverArt.get(), thumbLoader, size);
         } else {
@@ -82,7 +79,7 @@ public class RoundedAlbumArt extends Box {
         }
     }
 
-    public RoundedAlbumArt(CoverArt artwork, ThumbnailCache thumbLoader, int size) {
+    public RoundedAlbumArt(CoverArt artwork, AppManager thumbLoader, int size) {
         super(Orientation.VERTICAL, 0);
         this.artwork = artwork;
         this.thumbLoader = thumbLoader;
@@ -119,6 +116,14 @@ public class RoundedAlbumArt extends Box {
             log.info("%s: onMap: id=%s".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
             this.startLoad(this.image);
         });
+        //var className = "now-playing-overlay-icon";
+        var className = Classes.activatable.className();
+        addHover2(
+                this,
+                () -> this.addCssClass(className),
+                () -> this.removeCssClass(className)
+        );
+
 
         this.grid.attach(image, 0, 0, 1, 1);
         var clamp = Clamp.builder().setChild(this.grid).setMaximumSize(size).build();
@@ -126,7 +131,7 @@ public class RoundedAlbumArt extends Box {
     }
 
     public void startLoad(Picture image) {
-        this.thumbLoader.loadPixbuf(this.artwork, this.size)
+        this.thumbLoader.getThumbnailCache().loadPixbuf(this.artwork, this.size)
                 .thenAccept(pixbuf -> {
                     //Texture texture = Texture.forPixbuf(pixbuf);
                     Utils.runOnMainThread(() -> {

@@ -76,7 +76,7 @@ public class ArtistsListBox extends Box {
                     .setActivatable(true)
                     .build();
             row.addPrefix(RoundedAlbumArt.resolveCoverArt(
-                    thumbLoader,
+                    this.client,
                     artist.coverArt(),
                     48
             ));

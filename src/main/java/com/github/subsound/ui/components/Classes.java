@@ -45,7 +45,8 @@ public enum Classes {
     blurred("blurred"),
     darken("darken"),
     rounded("rounded"),
-    shadow("shadow");
+    shadow("shadow"),
+    activatable("activatable");
 
     private final String className;
     Classes(String className) {

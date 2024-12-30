@@ -36,7 +36,7 @@ public class PlaylistsListView extends Box {
         this.cache = this.data.playlistList().playlists().stream()
                 .collect(Collectors.toMap(PlaylistSimple::id, a -> a));
 
-        this.starredListView = new StarredListView(data.starredList(), this.appManager.getThumbnailCache(), this.appManager, this.appManager::navigateTo);
+        this.starredListView = new StarredListView(data.starredList(), this.appManager, this.appManager::navigateTo);
         this.contentPage = NavigationPage.builder().setTag("page-2").setChild(this.starredListView).setTitle("Starred").build();
         var b = Box.builder().setValign(Align.CENTER).setHalign(Align.CENTER).build();
         b.append(Label.builder().setLabel("Select a playlist to view").setCssClasses(cssClasses("title-1")).build());
@@ -69,7 +69,7 @@ public class PlaylistsListView extends Box {
                     .setActivatable(true)
                     .build();
             row.addPrefix(RoundedAlbumArt.resolveCoverArt(
-                    appManager.getThumbnailCache(),
+                    appManager,
                     playlist.coverArtId(),
                     48
             ));
@@ -97,7 +97,7 @@ public class PlaylistsListView extends Box {
             case NORMAL -> this.appManager.useClient(cl -> cl.getPlaylist(playlist.id())).songs();
             case STARRED -> this.appManager.useClient(cl -> cl.getStarred()).songs();
         }).thenApply(data -> {
-            var next = new StarredListView(new ServerClient.ListStarred(data), appManager.getThumbnailCache(), appManager, appManager::navigateTo);
+            var next = new StarredListView(new ServerClient.ListStarred(data), appManager, appManager::navigateTo);
             next.setHalign(Align.FILL);
             next.setValign(Align.FILL);
             var page = NavigationPage.builder().setTag("page-2").setChild(next).setTitle("Starred").setHexpand(true).build();

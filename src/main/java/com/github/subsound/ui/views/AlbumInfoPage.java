@@ -1,5 +1,6 @@
 package com.github.subsound.ui.views;
 
+import com.github.subsound.app.state.AppManager;
 import com.github.subsound.app.state.AppManager.AppState;
 import com.github.subsound.app.state.AppManager.NowPlaying;
 import com.github.subsound.app.state.PlayerAction;
@@ -50,7 +51,7 @@ import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
 
 public class AlbumInfoPage extends Box {
-    private final ThumbnailCache thumbLoader;
+    private final AppManager appManager;
 
     //private final ArtistInfo artistInfo;
     private final AlbumInfo albumInfo;
@@ -218,12 +219,12 @@ public class AlbumInfoPage extends Box {
     }
 
     public AlbumInfoPage(
-            ThumbnailCache thumbLoader,
+            AppManager appManager,
             AlbumInfo albumInfo,
             Function<PlayerAction, CompletableFuture<Void>> onAction
     ) {
         super(Orientation.VERTICAL, 0);
-        this.thumbLoader = thumbLoader;
+        this.appManager = appManager;
         this.albumInfo = albumInfo;
         this.onAction = onAction;
         if (isProviderInit.compareAndSet(false, true)) {
@@ -232,7 +233,7 @@ public class AlbumInfoPage extends Box {
         this.artistImage = this.albumInfo.coverArt()
                 .map(coverArt -> new RoundedAlbumArt(
                         coverArt,
-                        this.thumbLoader,
+                        this.appManager,
                         COVER_SIZE
                 ))
                 .map(albumArt -> {
@@ -292,7 +293,7 @@ public class AlbumInfoPage extends Box {
         this.setHexpand(true);
         this.setVexpand(true);
         this.append(this.scroll);
-        this.onMap(() -> this.thumbLoader.loadPixbuf(this.albumInfo.coverArt().get(), COVER_SIZE).thenAccept(this::switchPallete));
+        this.onMap(() -> this.appManager.getThumbnailCache().loadPixbuf(this.albumInfo.coverArt().get(), COVER_SIZE).thenAccept(this::switchPallete));
     }
 
     private void switchPallete(ThumbnailCache.StoredPixbuf storedPixbuf) {

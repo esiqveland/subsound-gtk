@@ -63,7 +63,7 @@ public class AlbumInfoLoader extends Box implements AutoCloseable, AppManager.St
         }
 
         var loader = new FutureLoader<>(future, albumInfo -> new AlbumInfoPage(
-                this.thumbLoader,
+                this.appManager,
                 albumInfo,
                 this.onAction
         ));

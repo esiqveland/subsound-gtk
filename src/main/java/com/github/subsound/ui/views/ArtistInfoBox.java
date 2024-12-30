@@ -1,11 +1,19 @@
 package com.github.subsound.ui.views;
 
+import com.github.subsound.app.state.AppManager;
 import com.github.subsound.integration.ServerClient.ArtistAlbumInfo;
 import com.github.subsound.integration.ServerClient.ArtistInfo;
-import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.ui.components.RoundedAlbumArt;
 import org.gnome.adw.ActionRow;
-import org.gnome.gtk.*;
+import org.gnome.gtk.Align;
+import org.gnome.gtk.Box;
+import org.gnome.gtk.Label;
+import org.gnome.gtk.ListBox;
+import org.gnome.gtk.Orientation;
+import org.gnome.gtk.ScrolledWindow;
+import org.gnome.gtk.StringList;
+import org.gnome.gtk.StringObject;
+import org.gnome.gtk.Widget;
 
 import java.time.Duration;
 import java.util.Map;
@@ -13,6 +21,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class ArtistInfoBox extends Box {
+    private final AppManager thumbLoader;
     private final Consumer<ArtistAlbumInfo> onAlbumSelected;
     private final ScrolledWindow scroll;
     private final Box infoContainer;
@@ -20,10 +29,9 @@ public class ArtistInfoBox extends Box {
     private final Map<String, ArtistAlbumInfo> artistsMap;
     private final ArtistInfo artist;
     private final Widget artistImage;
-    private final ThumbnailCache thumbLoader;
 
     public ArtistInfoBox(
-            ThumbnailCache thumbLoader,
+            AppManager thumbLoader,
             ArtistInfo artistInfo,
             Consumer<ArtistAlbumInfo> onAlbumSelected
     ) {

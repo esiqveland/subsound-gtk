@@ -1,14 +1,22 @@
 package com.github.subsound.ui.views;
 
+import com.github.subsound.app.state.AppManager;
 import com.github.subsound.app.state.PlayerAction;
 import com.github.subsound.integration.ServerClient.SongInfo;
-import com.github.subsound.persistence.ThumbnailCache;
-import com.github.subsound.utils.Utils;
 import com.github.subsound.ui.components.NowPlayingOverlayIcon;
 import com.github.subsound.ui.components.RoundedAlbumArt;
 import com.github.subsound.ui.components.StarButton;
+import com.github.subsound.utils.Utils;
 import org.gnome.adw.ActionRow;
-import org.gnome.gtk.*;
+import org.gnome.gtk.Align;
+import org.gnome.gtk.Box;
+import org.gnome.gtk.Button;
+import org.gnome.gtk.ListBox;
+import org.gnome.gtk.Revealer;
+import org.gnome.gtk.RevealerTransitionType;
+import org.gnome.gtk.StateFlags;
+import org.gnome.gtk.StringList;
+import org.gnome.gtk.StringObject;
 
 import java.util.List;
 import java.util.Map;
@@ -19,26 +27,28 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.github.subsound.utils.Utils.*;
 import static com.github.subsound.ui.views.AlbumInfoPage.infoLabel;
+import static com.github.subsound.utils.Utils.addHover;
+import static com.github.subsound.utils.Utils.cssClasses;
+import static com.github.subsound.utils.Utils.formatBytesSI;
 import static org.gnome.gtk.Align.CENTER;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 
 public class SongList extends ListBox {
-    private final ThumbnailCache thumbLoader;
+    private final AppManager appManager;
     private final List<SongInfo> songs;
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private final Consumer<SongInfo> onSongSelected;
     private final Map<String, SongInfo> songIdMap;
 
     public SongList(
-            ThumbnailCache thumbLoader,
+            AppManager appManager,
             List<SongInfo> songs,
             Function<PlayerAction, CompletableFuture<Void>> onAction,
             Consumer<SongInfo> onSongSelected
     ) {
         super();
-        this.thumbLoader = thumbLoader;
+        this.appManager = appManager;
         this.songs = songs;
         this.onAction = onAction;
         this.onSongSelected = onSongSelected;
@@ -172,7 +182,7 @@ public class SongList extends ListBox {
             });
 
             var albumIcon = RoundedAlbumArt.resolveCoverArt(
-                    this.thumbLoader,
+                    this.appManager,
                     songInfo.coverArt(),
                     48
             );

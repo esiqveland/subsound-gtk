@@ -1,8 +1,8 @@
 package com.github.subsound.ui.components;
 
+import com.github.subsound.app.state.AppManager;
 import com.github.subsound.app.state.PlayerAction;
 import com.github.subsound.integration.ServerClient.SongInfo;
-import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
 import com.github.subsound.ui.components.OverviewAlbumChild.AlbumCoverHolderSmall;
 import com.github.subsound.ui.views.StarredListView;
@@ -37,7 +37,7 @@ import static org.gnome.gtk.Orientation.VERTICAL;
 public class StarredItemRow extends Box implements StarredListView.UpdateListener {
     private static final int TRACK_NUMBER_LABEL_CHARS = 4;
 
-    private final ThumbnailCache thumbLoader;
+    private final AppManager appManager;
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private final Consumer<AppNavigation.AppRoute> onNavigate;
 
@@ -67,12 +67,12 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
     private final Label bitRateLabel;
 
     public StarredItemRow(
-            ThumbnailCache thumbLoader,
+            AppManager appManager,
             Function<PlayerAction, CompletableFuture<Void>> onAction,
             Consumer<AppNavigation.AppRoute> onNavigate
     ) {
         super(HORIZONTAL, 0);
-        this.thumbLoader = thumbLoader;
+        this.appManager = appManager;
         this.onAction = onAction;
         this.onNavigate = onNavigate;
 
@@ -81,7 +81,7 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
         this.setMarginStart(2);
         this.setMarginEnd(2);
 
-        albumCoverHolder = new AlbumCoverHolderSmall(this.thumbLoader);
+        albumCoverHolder = new AlbumCoverHolderSmall(this.appManager);
         prefixBox = Box.builder()
                 .setOrientation(HORIZONTAL)
                 .setHalign(START)
