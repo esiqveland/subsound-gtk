@@ -4,13 +4,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.Strictness;
 import org.apache.commons.codec.Resources;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.gnome.glib.GLib;
 import org.gnome.glib.SourceOnceFunc;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.EventControllerMotion;
+import org.gnome.gtk.GestureClick;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.PropagationLimit;
@@ -19,7 +19,6 @@ import org.gnome.gtk.Widget;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -29,14 +28,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.time.Duration;
 import java.util.HexFormat;
-import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -196,6 +193,17 @@ public class Utils {
 
     public static String[] cssClasses(String... clazz) {
         return clazz;
+    }
+
+    public static <T extends Widget> T addClick(T row, Runnable onClick) {
+        var gestureClick = GestureClick.builder().build();
+        row.addController(gestureClick);
+        gestureClick.onReleased((int nPress, double x, double y) -> {
+            System.out.println("addClick.gestureClick.onReleased: " + nPress);
+            onClick.run();
+        });
+
+        return row;
     }
 
     public static <T extends Widget> T addHover(T row, Runnable onEnter, Runnable onLeave) {
