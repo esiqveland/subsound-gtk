@@ -160,6 +160,10 @@ public class MainApplication {
                 viewStack.setVisibleChildName("testPage");
                 yield false;
             }
+            case AppNavigation.AppRoute.RoutePlaylistsOverview route -> {
+                viewStack.setVisibleChildName("playlistPage");
+                yield false;
+            }
             case AppNavigation.AppRoute.RouteStarred starred -> {
                 viewStack.setVisibleChildName("starredPage");
                 yield false;

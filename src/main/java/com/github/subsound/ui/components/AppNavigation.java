@@ -1,6 +1,7 @@
 package com.github.subsound.ui.components;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class AppNavigation {
@@ -18,6 +19,7 @@ public class AppNavigation {
     public sealed interface AppRoute {
         record RouteHome() implements AppRoute {}
         record RouteStarred() implements AppRoute {}
+        record RoutePlaylistsOverview(Optional<String> preselectedIdentifier) implements AppRoute {}
         record SettingsPage() implements AppRoute {}
         record RouteArtistsOverview() implements AppRoute {}
         record RouteAlbumsOverview() implements AppRoute {}

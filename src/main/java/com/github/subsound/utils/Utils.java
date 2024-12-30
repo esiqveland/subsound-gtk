@@ -199,7 +199,7 @@ public class Utils {
         var gestureClick = GestureClick.builder().build();
         row.addController(gestureClick);
         gestureClick.onReleased((int nPress, double x, double y) -> {
-            System.out.println("addClick.gestureClick.onReleased: " + nPress);
+            //System.out.println("addClick.gestureClick.onReleased: " + nPress);
             onClick.run();
         });
 

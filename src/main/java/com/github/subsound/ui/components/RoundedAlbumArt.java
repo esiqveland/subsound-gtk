@@ -2,6 +2,13 @@ package com.github.subsound.ui.components;
 
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.integration.ServerClient.CoverArt;
+import com.github.subsound.integration.ServerClient.ObjectIdentifier.AlbumIdentifier;
+import com.github.subsound.integration.ServerClient.ObjectIdentifier.ArtistIdentifier;
+import com.github.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier;
+import com.github.subsound.ui.components.AppNavigation.AppRoute;
+import com.github.subsound.ui.components.AppNavigation.AppRoute.RouteAlbumInfo;
+import com.github.subsound.ui.components.AppNavigation.AppRoute.RouteArtistInfo;
+import com.github.subsound.ui.components.AppNavigation.AppRoute.RoutePlaylistsOverview;
 import com.github.subsound.utils.Utils;
 import org.gnome.adw.Clamp;
 import org.gnome.gdk.Texture;
@@ -118,7 +125,18 @@ public class RoundedAlbumArt extends Box {
         });
         addClick(
                 this,
-                () -> log.info("%s: addClick: id=%s".formatted(this.getClass().getSimpleName(), this.artwork))
+                () -> {
+                    log.info("%s: addClick: id=%s".formatted(this.getClass().getSimpleName(), this.artwork));
+                    AppRoute route = switch (this.artwork.identifier().orElse(null)) {
+                        case AlbumIdentifier a -> new RouteAlbumInfo(a.albumId());
+                        case ArtistIdentifier a -> new RouteArtistInfo(a.artistId());
+                        case PlaylistIdentifier p -> new RoutePlaylistsOverview(Optional.of(p.playlistId()));
+                        case null -> null;
+                    };
+                    if (route != null) {
+                        this.thumbLoader.navigateTo(route);
+                    }
+                }
         );
 
         //var className = "now-playing-overlay-icon";
