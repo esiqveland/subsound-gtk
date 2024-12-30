@@ -19,7 +19,7 @@ repositories {
     google()
 }
 
-def javagiVersion = "0.11.0"
+def javagiVersion = "0.11.1"
 def recordBuilderVersion = "43"
 
 dependencies {
@@ -90,6 +90,7 @@ java {
         languageVersion = JavaLanguageVersion.of(23)
     }
 }
+
 test {
     jvmArgs += "--enable-native-access=ALL-UNNAMED"
     useJUnit()
@@ -106,6 +107,7 @@ test {
     // show standard out and standard error of the test JVM(s) on the console
     testLogging.showStandardStreams = true
 }
+
 tasks.named('run') {
     //jvmArgs += "-XstartOnFirstThread"
     jvmArgs += "--enable-native-access=ALL-UNNAMED"
