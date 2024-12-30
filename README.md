@@ -101,7 +101,7 @@ A few samples of what the UI looks like:
   - [ ] record what we have downloaded / want to keep offline
 - Hotkeys
   - [ ] space should always play/pause
-    - this looks very hard to do since spacebar is also the activation key for buttons / list items
+    - this looks very hard to do since spacebar is also the activation key for buttons / list items in GTK4
 - Onboarding
   - [X] Launch without crashing on zero config
   - [X] Detect we are first launch / have no configuration to load

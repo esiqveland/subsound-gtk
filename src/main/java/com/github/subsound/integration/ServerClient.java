@@ -83,6 +83,13 @@ public interface ServerClient {
         }
     }
 
+    sealed interface ObjectIdentifier {
+        record ArtistIdentifier(String artistId) implements ObjectIdentifier {}
+        record AlbumIdentifier(String albumId) implements ObjectIdentifier {}
+        record PlaylistIdentifier(String playlistId) implements ObjectIdentifier {}
+    }
+
+
     @RecordBuilder
     record ArtistInfo(
             String id,
@@ -140,7 +147,9 @@ public interface ServerClient {
             String coverArtId,
             URI coverArtLink,
             // The absolute filepath of where we expect to find our local copy of the artwork
-            Path coverArtFilePath
+            Path coverArtFilePath,
+            // identifier is used to possibly connect this CoverArt with some entity, such as a artist or album
+            Optional<ObjectIdentifier> identifier
     ) {
     }
 

@@ -2,6 +2,9 @@ package com.github.subsound.integration.servers.subsonic;
 
 import com.github.subsound.configuration.Config.ServerConfig;
 import com.github.subsound.integration.ServerClient;
+import com.github.subsound.integration.ServerClient.ObjectIdentifier.AlbumIdentifier;
+import com.github.subsound.integration.ServerClient.ObjectIdentifier.ArtistIdentifier;
+import com.github.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier;
 import com.github.subsound.utils.Utils;
 import com.github.subsound.utils.javahttp.TextUtils;
 import net.beardbot.subsonic.client.Subsonic;
@@ -23,7 +26,6 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 import static com.github.subsound.app.state.AppManager.SERVER_ID;
 import static com.github.subsound.persistence.ThumbnailCache.toCachePath;
@@ -67,7 +69,7 @@ public class SubsonicClient implements ServerClient {
                         artist.getId(),
                         artist.getName(),
                         artist.getAlbumCount(),
-                        toCoverArt(artist.getCoverArtId())
+                        toCoverArt(artist.getCoverArtId(), new ArtistIdentifier(artist.getId()))
                 )).toList();
         return new ListArtists(list);
     }
@@ -110,7 +112,7 @@ public class SubsonicClient implements ServerClient {
     private List<ArtistAlbumInfo> loadAlbumList(AlbumListType albumListType) {
         var albums = this.client.lists().getAlbumList2(listParams(albumListType)).getAlbums();
         return albums.stream()
-                .map(album -> ArtistAlbumInfo.create(album, toCoverArt(album.getCoverArtId())))
+                .map(album -> ArtistAlbumInfo.create(album, toCoverArt(album.getCoverArtId(), new AlbumIdentifier(album.getId()))))
                 .toList();
     }
 
@@ -131,7 +133,7 @@ public class SubsonicClient implements ServerClient {
             var albums = artist.getAlbums().stream()
                     .map(album -> ArtistAlbumInfo.create(
                                     album,
-                                    toCoverArt(album.getCoverArtId())
+                                    toCoverArt(album.getCoverArtId(), new AlbumIdentifier(album.getId()))
                             )
                     )
                     .toList();
@@ -145,7 +147,7 @@ public class SubsonicClient implements ServerClient {
                     artist.getName(),
                     artist.getAlbumCount(),
                     ofNullable(artist.getStarred()).map(d -> d.toInstant(ZoneOffset.UTC)),
-                    toCoverArt(artist.getCoverArtId()),
+                    toCoverArt(artist.getCoverArtId(), new ArtistIdentifier(artist.getId())),
                     albums,
                     biography
             );
@@ -168,7 +170,7 @@ public class SubsonicClient implements ServerClient {
                     album.getArtist(),
                     Duration.ofSeconds(album.getDuration()),
                     ofNullable(album.getStarred()).map(d -> d.toInstant(ZoneOffset.UTC)),
-                    toCoverArt(album.getCoverArtId()),
+                    toCoverArt(album.getCoverArtId(), new AlbumIdentifier(album.getId())),
                     toSongInfo(album.getSongs())
             );
         }).join();
@@ -182,7 +184,7 @@ public class SubsonicClient implements ServerClient {
                         p.getId(),
                         p.getName(),
                         PlaylistKind.NORMAL,
-                        toCoverArt(p.getCoverArtId()),
+                        toCoverArt(p.getCoverArtId(), new PlaylistIdentifier(p.getId())),
                         p.getSongCount(),
                         p.getCreated().toInstant(ZoneOffset.UTC)
                 ))
@@ -198,7 +200,7 @@ public class SubsonicClient implements ServerClient {
                 playlist.getId(),
                 playlist.getName(),
                 PlaylistKind.NORMAL,
-                toCoverArt(playlist.getCoverArtId()),
+                toCoverArt(playlist.getCoverArtId(), new PlaylistIdentifier(playlist.getId())),
                 songs.size(),
                 playlist.getCreated().toInstant(ZoneOffset.UTC),
                 songs
@@ -242,7 +244,7 @@ public class SubsonicClient implements ServerClient {
                     song.getAlbum(),
                     Duration.ofSeconds(song.getDuration()),
                     ofNullable(song.getStarred()).map(d -> d.toInstant(ZoneOffset.UTC)),
-                    toCoverArt(song.getCoverArtId()),
+                    toCoverArt(song.getCoverArtId(), new AlbumIdentifier(song.getAlbumId())),
                     song.getSuffix(),
                     streamSuffix,
                     downloadUri,
@@ -281,10 +283,10 @@ public class SubsonicClient implements ServerClient {
                 .map(this::toSongInfo).toList();
     }
 
-    public Optional<CoverArt> toCoverArt(String coverArtId) {
+    public Optional<CoverArt> toCoverArt(String coverArtId, ObjectIdentifier identifier) {
         return ofNullable(coverArtId).map(id -> {
             var filePath = toCachePath(this.dataDir, this.serverId, coverArtId);
-            return new CoverArt(SERVER_ID, id, coverArtLink(id), filePath.cachePath().toAbsolutePath());
+            return new CoverArt(SERVER_ID, id, coverArtLink(id), filePath.cachePath().toAbsolutePath(), Optional.of(identifier));
         });
     }
 
