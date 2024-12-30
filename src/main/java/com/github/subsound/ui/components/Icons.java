@@ -7,6 +7,8 @@ public enum Icons {
     GoHomeSymbolic("go-home-symbolic"),
     UserHome("user-home"),
     UserHomeSymbolic("user-home-symbolic"),
+    ContentLoading("content-loading"),
+    ContentLoadingSymbolic("content-loading-symbolic"),
     Starred("starred"),
     StarredSymbolic("starred-symbolic"),
     AddStar("star-new"),
