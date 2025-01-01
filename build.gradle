@@ -27,7 +27,7 @@ dependencies {
     implementation "io.github.jwharm.javagi:adw:$javagiVersion"
     implementation "io.github.jwharm.javagi:gst:$javagiVersion"
 
-    implementation 'net.beardbot:subsonic-client:0.5.1'
+    implementation 'net.beardbot:subsonic-client:0.6.0'
     implementation "com.github.ben-manes.caffeine:caffeine:3.1.8"
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'com.google.code.gson:gson:2.11.0'
