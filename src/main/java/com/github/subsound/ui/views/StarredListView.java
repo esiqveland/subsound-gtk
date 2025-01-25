@@ -97,7 +97,7 @@ public class StarredListView extends Box implements AppManager.StateListener {
                 return;
             }
             listitem.setActivatable(true);
-            log.info("factory.onBind: {} {}", index, songInfo.title());
+            log.info("factory.onBind: {} {}", songInfo.id(), songInfo.title());
             child.setSongInfo(songInfo, index, prevState.get());
         });
         factory.onTeardown(item -> {

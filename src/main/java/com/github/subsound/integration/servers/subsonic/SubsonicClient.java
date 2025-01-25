@@ -12,6 +12,7 @@ import net.beardbot.subsonic.client.SubsonicPreferences;
 import net.beardbot.subsonic.client.api.lists.AlbumListParams;
 import net.beardbot.subsonic.client.api.lists.AlbumListType;
 import net.beardbot.subsonic.client.api.media.CoverArtParams;
+import net.beardbot.subsonic.client.api.media.StreamParams;
 import net.beardbot.subsonic.client.base.ApiParams;
 import okhttp3.HttpUrl;
 import org.subsonic.restapi.Child;
@@ -45,7 +46,7 @@ public class SubsonicClient implements ServerClient {
 
     public URI coverArtLink(String coverArtId) {
         try {
-            return this.client.media().getCoverArtUrl(coverArtId, CoverArtParams.create()).toURI();
+            return this.client.media().getCoverArt(coverArtId, CoverArtParams.create()).getUrl().toURI();
         } catch (URISyntaxException e) {
             throw new RuntimeException("generated bad uri from coverArtId=" + coverArtId, e);
         }
@@ -53,7 +54,7 @@ public class SubsonicClient implements ServerClient {
 
     public URI coverArtLink(String coverArtId, int size) {
         try {
-            return this.client.media().getCoverArtUrl(coverArtId, CoverArtParams.create().size(size)).toURI();
+            return this.client.media().getCoverArt(coverArtId, CoverArtParams.create().size(size)).getUrl().toURI();
         } catch (URISyntaxException e) {
             throw new RuntimeException("generated bad uri from coverArtId=" + coverArtId, e);
         }
@@ -221,11 +222,10 @@ public class SubsonicClient implements ServerClient {
         try {
             URI downloadUri = toDownloadUri(client, song);
             String streamSuffix = this.client.getPreferences().getStreamFormat();
-            URI streamUri = this.client.media().streamUrl(song.getId()).toURI();
-            streamUri = HttpUrl.get(streamUri).newBuilder()
-                    .setQueryParameter("estimateContentLength", "true")
-                    .build()
-                    .uri();
+            var params = StreamParams.create().estimateContentLength(true).format(this.client.getPreferences().getStreamFormat());
+            URI streamUri = this.client.media()
+                    .stream(song.getId(), params)
+                    .getUrl().toURI();
 
             return new SongInfo(
                     song.getId(),
