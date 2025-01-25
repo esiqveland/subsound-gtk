@@ -19,7 +19,7 @@ repositories {
     google()
 }
 
-def javagiVersion = "0.11.1"
+def javagiVersion = "0.11.2"
 def recordBuilderVersion = "44"
 
 dependencies {
