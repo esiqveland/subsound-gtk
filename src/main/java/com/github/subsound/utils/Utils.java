@@ -6,6 +6,8 @@ import com.google.gson.Strictness;
 import org.apache.commons.codec.Resources;
 import org.apache.commons.io.IOUtils;
 import org.gnome.glib.GLib;
+import org.gnome.glib.MainContext;
+import org.gnome.glib.SourceFunc;
 import org.gnome.glib.SourceOnceFunc;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
@@ -56,6 +58,8 @@ public class Utils {
     }
 
     public static void runOnMainThread(SourceOnceFunc fn) {
+        // Consider switching to:
+        //MainContext.default_().invoke(fn);
         GLib.idleAddOnce(fn);
     }
 
