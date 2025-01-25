@@ -139,6 +139,10 @@ public class SongCache {
                 ph.progress(expectedSize, count);
             }
 
+            // When transcoding, Content-Length is only an estimate.
+            // Make sure we finish the progressbar by flushing with the final size before exiting:
+            var finalSize = Math.max(expectedSize, count);
+            ph.progress(finalSize, finalSize);
             return count;
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
