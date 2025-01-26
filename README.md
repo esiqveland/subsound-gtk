@@ -24,6 +24,11 @@ A few samples of what the UI looks like:
 - [X] songlist: Hover-shows-play ?
   - [ ] songlist: hover play icon is not tab-able for focus when row is selected, only when hover...
 - [X] Starred page
+  - [ ] Bug: Removing a song from the ListView when its scrolled and a row below is selected, the viewport jumps to the top of the list
+  - [ ] add a reload button 
+  - [X] keep starred list up-to-date in the app at least
+    - [X] Keep internal in memory list up to date
+    - [X] Reloads starred from server on load
   - [X] remove the track number
     - [X] Add list item number as the first element in the prefix field
   - [X] display artist
@@ -33,10 +38,9 @@ A few samples of what the UI looks like:
   - [X] Fix focus on propagating to child of the ListItem in the listview (ActionRow does not get `focused` state when row is selected / focused)
   - [X] Make cover art be prettier in the ActionRow
   - [X] Fix blinking when hover/unhover
-  - [ ] add a reload button or keep starred list up-to-date in the app at least
   - [X] goto artist when clicking artist name
   - [X] goto album when clicking album name
-  - [ ] goto album when clicking on album artwork
+  - [X] goto album when clicking on album artwork
     - [ ] add hover / glow / overlay icon when hovering over artwork?
   - [ ] display whole albums / artist that have been starred in addition to individual songs?
 - [X] cache thumbnails on disk
