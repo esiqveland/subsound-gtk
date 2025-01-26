@@ -129,7 +129,7 @@ public class OverviewAlbumChild extends Box {
                 this.remove(prev);
             }
             Widget next = this.artwork
-                    .map(coverArt -> new RoundedAlbumArt(coverArt, this.thumbLoader, COVER_SIZE))
+                    .map(coverArt -> new RoundedAlbumArt(coverArt, this.thumbLoader, COVER_SIZE).setClickable(false))
                     .map(a -> (Widget) a)
                     .orElse(PLACEHOLDER);
             this.ref.set(next);

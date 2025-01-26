@@ -39,7 +39,7 @@ public class ArtistInfoBox extends Box {
         this.thumbLoader = thumbLoader;
         this.artist = artistInfo;
         this.onAlbumSelected = onAlbumSelected;
-        this.artistImage = RoundedAlbumArt.resolveCoverArt(this.thumbLoader, this.artist.coverArt(), 300);
+        this.artistImage = RoundedAlbumArt.resolveCoverArt(this.thumbLoader, this.artist.coverArt(), 300, false);
         this.infoContainer = Box.builder().setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).build();
         this.infoContainer.append(this.artistImage);
         this.infoContainer.append(new Label(this.artist.name()));
@@ -81,7 +81,7 @@ public class ArtistInfoBox extends Box {
                     .setActivatable(true)
                     .build();
 
-            row.addPrefix(RoundedAlbumArt.resolveCoverArt(thumbLoader, albumInfo.coverArt(), 48));
+            row.addPrefix(RoundedAlbumArt.resolveCoverArt(thumbLoader, albumInfo.coverArt(), 48, false));
             return row;
         });
 

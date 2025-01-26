@@ -71,7 +71,8 @@ public class PlaylistsListView extends Box {
             row.addPrefix(RoundedAlbumArt.resolveCoverArt(
                     appManager,
                     playlist.coverArtId(),
-                    48
+                    48,
+                    true
             ));
             return row;
         });

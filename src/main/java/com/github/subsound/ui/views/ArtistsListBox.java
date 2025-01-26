@@ -78,7 +78,8 @@ public class ArtistsListBox extends Box {
             row.addPrefix(RoundedAlbumArt.resolveCoverArt(
                     this.client,
                     artist.coverArt(),
-                    48
+                    48,
+                    false
             ));
             return row;
         });

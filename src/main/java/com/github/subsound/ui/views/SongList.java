@@ -184,7 +184,8 @@ public class SongList extends ListBox {
             var albumIcon = RoundedAlbumArt.resolveCoverArt(
                     this.appManager,
                     songInfo.coverArt(),
-                    48
+                    48,
+                    false
             );
             var icon = new NowPlayingOverlayIcon(48, albumIcon);
             row.addPrefix(icon);

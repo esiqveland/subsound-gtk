@@ -48,6 +48,7 @@ public class RoundedAlbumArt extends Box {
     private final AtomicBoolean isLoading = new AtomicBoolean(false);
     private final AtomicBoolean isUpdating = new AtomicBoolean(false);
     private final int size;
+    private final AtomicBoolean clickable = new AtomicBoolean(true);
 
     private final static Map<Boolean, Pixbuf> placeHolderCache = new ConcurrentHashMap<>();
     public static Grid placeholderImage(int size) {
@@ -78,9 +79,9 @@ public class RoundedAlbumArt extends Box {
             return box;
     }
 
-    public static Widget resolveCoverArt(AppManager thumbLoader, Optional<CoverArt> coverArt, int size) {
+    public static Widget resolveCoverArt(AppManager thumbLoader, Optional<CoverArt> coverArt, int size, boolean clickable) {
         if (coverArt.isPresent()) {
-            return new RoundedAlbumArt(coverArt.get(), thumbLoader, size);
+            return new RoundedAlbumArt(coverArt.get(), thumbLoader, size).setClickable(clickable);
         } else {
             return placeholderImage(size);
         }
@@ -126,7 +127,10 @@ public class RoundedAlbumArt extends Box {
         addClick(
                 this,
                 () -> {
-                    log.info("%s: addClick: id=%s".formatted(this.getClass().getSimpleName(), this.artwork));
+                    log.info("{}: addClick: enabled={} id={}", this.getClass().getSimpleName(), clickable.get(), this.artwork.coverArtId());
+                    if (!clickable.get()) {
+                        return;
+                    }
                     AppRoute route = switch (this.artwork.identifier().orElse(null)) {
                         case AlbumIdentifier a -> new RouteAlbumInfo(a.albumId());
                         case ArtistIdentifier a -> new RouteArtistInfo(a.artistId());
@@ -151,6 +155,11 @@ public class RoundedAlbumArt extends Box {
         this.grid.attach(image, 0, 0, 1, 1);
         var clamp = Clamp.builder().setChild(this.grid).setMaximumSize(size).build();
         this.append(clamp);
+    }
+
+    public RoundedAlbumArt setClickable(boolean clickable) {
+        this.clickable.set(clickable);
+        return this;
     }
 
     public void startLoad(Picture image) {
