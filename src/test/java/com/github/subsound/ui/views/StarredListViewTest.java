@@ -11,8 +11,8 @@ public class StarredListViewTest {
         var list = new ListStore<>(GObject.getType());
         // add a single item so its no longer empty:
         list.add(GObject.builder().build());
-        list.clear(); // throws UnsupportedOperationException
-        //list.removeAll(); // removeAll works
+        //list.clear(); // throws UnsupportedOperationException
+        list.removeAll(); // removeAll works
     }
 
 }
