@@ -279,7 +279,7 @@ public class AlbumInfoPage extends Box {
         this.albumInfoBox = Box.builder().setHalign(CENTER).setSpacing(4).setValign(START).setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).setMarginBottom(10).build();
         this.albumInfoBox.append(infoLabel(this.albumInfo.name(), Classes.titleLarge2.add()));
         this.albumInfoBox.append(infoLabel(this.albumInfo.artistName(), Classes.titleLarge3.add()));
-        this.albumInfoBox.append(infoLabel("%d".formatted(this.albumInfo.year()), Classes.labelDim.add(Classes.bodyText)));
+        this.albumInfoBox.append(infoLabel(this.albumInfo.year().map(String::valueOf).orElse(""), Classes.labelDim.add(Classes.bodyText)));
         this.albumInfoBox.append(infoLabel("%d songs, %s".formatted(this.albumInfo.songCount(), formatDurationMedium(this.albumInfo.totalPlayTime())), Classes.labelDim.add(Classes.bodyText)));
         //this.albumInfoBox.append(infoLabel("%s playtime".formatted(formatDurationMedium(this.albumInfo.totalPlayTime())), Classes.labelDim.add(Classes.bodyText)));
         this.headerBox.append(this.artistImage);

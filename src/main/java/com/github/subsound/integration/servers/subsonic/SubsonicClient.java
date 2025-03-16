@@ -166,7 +166,7 @@ public class SubsonicClient implements ServerClient {
                     album.getId(),
                     album.getName(),
                     album.getSongCount(),
-                    album.getYear(),
+                    ofNullable(album.getYear()),
                     album.getArtistId(),
                     album.getArtist(),
                     Duration.ofSeconds(album.getDuration()),
