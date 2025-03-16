@@ -1,38 +1,38 @@
 [
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-classic/1.5.12/logback-classic-1.5.12.jar",
-    "sha512": "aed701822944b656c887b21106c1643f5af45545603896405cc985422707450c5b4ab3c3c97679a6e9b2ff3147e5c4a5a4f8e6ae0e064ded39f50a78bd8cd9dd",
-    "dest": "./offline-repository/ch/qos/logback/logback-classic/1.5.12",
-    "dest-filename": "logback-classic-1.5.12.jar"
+    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-classic/1.5.15/logback-classic-1.5.15.jar",
+    "sha512": "1727bc65a45324560f015515ff7738770e77ab46e6af9213c69c438fa8fd7fad0589c934fc862d2ed23dac3c4226f387a78098eea745b826cd59a99883f0bf5e",
+    "dest": "./offline-repository/ch/qos/logback/logback-classic/1.5.15",
+    "dest-filename": "logback-classic-1.5.15.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-classic/1.5.12/logback-classic-1.5.12.pom",
-    "sha512": "18e688ce099a840377b563f5a13cc8ff16a640ec92d57f4370816bb0c56c160caa7020c89d519247a95307fe4c8fab6056ae709523c2212b79a80e8cddf2a99d",
-    "dest": "./offline-repository/ch/qos/logback/logback-classic/1.5.12",
-    "dest-filename": "logback-classic-1.5.12.pom"
+    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-classic/1.5.15/logback-classic-1.5.15.pom",
+    "sha512": "9d695c3c2e655ed7658a9306ba7f7662ee67a7a73bf5b8d8d2fa7b8f53eb6dc25747406309bb6b59674bf9b45ad36130f8a67c21a6212ef29f52783546947263",
+    "dest": "./offline-repository/ch/qos/logback/logback-classic/1.5.15",
+    "dest-filename": "logback-classic-1.5.15.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-core/1.5.12/logback-core-1.5.12.jar",
-    "sha512": "8ad1ee4e0451f7b2e96f0930928f80a3f2e7b570affef9373d80417cf8059bc50b12326586a4b3feb9ad32522a19978c59fb3865ce0f675e03b1c496907f26f4",
-    "dest": "./offline-repository/ch/qos/logback/logback-core/1.5.12",
-    "dest-filename": "logback-core-1.5.12.jar"
+    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-core/1.5.15/logback-core-1.5.15.jar",
+    "sha512": "b3b8ad446bb0d781dbabeef01d7c17c21db7208809cba7ea6f2ca90be53d6e091f3ad3fcc7c7cddcd99d970e8b49cd05a974bc2ceab5b45719f02e5f07e85831",
+    "dest": "./offline-repository/ch/qos/logback/logback-core/1.5.15",
+    "dest-filename": "logback-core-1.5.15.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-core/1.5.12/logback-core-1.5.12.pom",
-    "sha512": "1be5ba29dde0f1bc83f02eba9d1318c4f84fbec3de7902b4ef2f4ddc56e26fc2b2a826c868f9d8eec1fef15c7017558730b8bc34f61adffd345df0b65cbceec6",
-    "dest": "./offline-repository/ch/qos/logback/logback-core/1.5.12",
-    "dest-filename": "logback-core-1.5.12.pom"
+    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-core/1.5.15/logback-core-1.5.15.pom",
+    "sha512": "8e5a7f9faef46195555d49fd02262476d45e46849b7b68cdb9b557d997ab537bbcf7455075ec62eaa9d24dff94ac31ae46ccbfbc97daac3b64f555fd9079354c",
+    "dest": "./offline-repository/ch/qos/logback/logback-core/1.5.15",
+    "dest-filename": "logback-core-1.5.15.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-parent/1.5.12/logback-parent-1.5.12.pom",
-    "sha512": "24fb7747c345c2d27edeb3d9ceb400bcb1ced3e7f353dfe36d2d705ae7e7e0ba8097ce814a29c1810daca85ef07fd3d59aec9c358f76d63e4bf244e509d9cff7",
-    "dest": "./offline-repository/ch/qos/logback/logback-parent/1.5.12",
-    "dest-filename": "logback-parent-1.5.12.pom"
+    "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-parent/1.5.15/logback-parent-1.5.15.pom",
+    "sha512": "459b9311f4c3210c2151d3cfc0f4ee3111afc5bf48dbcba1b12c01f935d62127fa1eed7579a5711ca4fdb732be894713fc408c9c8647cf51d2ff342fe89e0316",
+    "dest": "./offline-repository/ch/qos/logback/logback-parent/1.5.15",
+    "dest-filename": "logback-parent-1.5.15.pom"
   },
   {
     "type": "file",
@@ -106,17 +106,24 @@
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/github/akarnokd/rxjava3-jdk9-interop/3.0.0/rxjava3-jdk9-interop-3.0.0.jar",
-    "sha512": "0f7cae56c8442a4679d8a3a469b5d9917eebec5c2c65ade9c901f43391bddc5bf4e97b0e43bc1a0ccc5b2536b8fc0ecae4b9567d397ec70b350d5db3aa8ddfe9",
-    "dest": "./offline-repository/com/github/akarnokd/rxjava3-jdk9-interop/3.0.0",
-    "dest-filename": "rxjava3-jdk9-interop-3.0.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/com/github/akarnokd/rxjava3-jdk9-interop/3.0.1/rxjava3-jdk9-interop-3.0.1.jar",
+    "sha512": "7e638f20ac93e698cd22dd3f0574d90a42f63faf171e715249d08144de2615d0112d46f105cb204f31cf08a12326ccae0f0899cc795338293914fca30c716d2d",
+    "dest": "./offline-repository/com/github/akarnokd/rxjava3-jdk9-interop/3.0.1",
+    "dest-filename": "rxjava3-jdk9-interop-3.0.1.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/github/akarnokd/rxjava3-jdk9-interop/3.0.0/rxjava3-jdk9-interop-3.0.0.pom",
-    "sha512": "a8132d6700b4b9258059c3d3b018e798fe2a5087229e1c842e28dc6b6f3375ac1f2ca34589c2b42ad16367e6430bc68b8f04f276f9b90efc76571b2f7729550b",
-    "dest": "./offline-repository/com/github/akarnokd/rxjava3-jdk9-interop/3.0.0",
-    "dest-filename": "rxjava3-jdk9-interop-3.0.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/com/github/akarnokd/rxjava3-jdk9-interop/3.0.1/rxjava3-jdk9-interop-3.0.1.module",
+    "sha512": "da5fb91d852df2a21afc08a3a0e09c4f45147ec74294eac75242a5ea34743e0b5197b6bc7da96f7a62a08ace7e59f154e8f1a29c32cbc22450a7f897932237b5",
+    "dest": "./offline-repository/com/github/akarnokd/rxjava3-jdk9-interop/3.0.1",
+    "dest-filename": "rxjava3-jdk9-interop-3.0.1.module"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/github/akarnokd/rxjava3-jdk9-interop/3.0.1/rxjava3-jdk9-interop-3.0.1.pom",
+    "sha512": "1f16e5480fa9d4c63d51e434cfd88a4052089aa2faedd15456e3108d843617fd5461baa6f8172b2420b6629bacaa2c3a14692ce4406ef80001d89adc0c4bdcfb",
+    "dest": "./offline-repository/com/github/akarnokd/rxjava3-jdk9-interop/3.0.1",
+    "dest-filename": "rxjava3-jdk9-interop-3.0.1.pom"
   },
   {
     "type": "file",
@@ -183,6 +190,13 @@
   },
   {
     "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/google/code/gson/gson-parent/2.12.1/gson-parent-2.12.1.pom",
+    "sha512": "e099a89999f863e95465baceeba2490fec16032a4eedf0955e3ec230ede9d5e2e6658a3f527a34a651ff3f3121713148e4afd4a03a97f8b0e145f152dae199b7",
+    "dest": "./offline-repository/com/google/code/gson/gson-parent/2.12.1",
+    "dest-filename": "gson-parent-2.12.1.pom"
+  },
+  {
+    "type": "file",
     "url": "https://repo.maven.apache.org/maven2/com/google/code/gson/gson/2.11.0/gson-2.11.0.jar",
     "sha512": "b8c91426a8275b42ea5c55b104308ffbe656ae3354bc661f62173352e53a4818a009e4dd82bc6cf518c77fda5a4d2eab0d3ad832581a8f0d87966ef04e6c025a",
     "dest": "./offline-repository/com/google/code/gson/gson/2.11.0",
@@ -194,6 +208,20 @@
     "sha512": "239e09568793adf46ee24c5fa28d01a98e8034eb17928b9a9d22f070081785a681215d120c933f5c561354ba91ecac1464b4000956f698fe7ddabd3475a465ca",
     "dest": "./offline-repository/com/google/code/gson/gson/2.11.0",
     "dest-filename": "gson-2.11.0.pom"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/google/code/gson/gson/2.12.1/gson-2.12.1.jar",
+    "sha512": "fafc369544e2d4a89f32c353dcbd012410a64a315a3cae9165d4ead6f8960aef5f77ced84c374d6a09af117748adca571b0426eb0e2864f584debb59707ebc03",
+    "dest": "./offline-repository/com/google/code/gson/gson/2.12.1",
+    "dest-filename": "gson-2.12.1.jar"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/google/code/gson/gson/2.12.1/gson-2.12.1.pom",
+    "sha512": "49aca8b17b4b4377dd358a356aec85d2105b5c8fca2a88fd4f5b5454a7f7e952980e0754e070adfa7136d01b9442c6efacc989c8a25d9928267c9fe3e869c61f",
+    "dest": "./offline-repository/com/google/code/gson/gson/2.12.1",
+    "dest-filename": "gson-2.12.1.pom"
   },
   {
     "type": "file",
@@ -211,6 +239,20 @@
   },
   {
     "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/google/errorprone/error_prone_annotations/2.36.0/error_prone_annotations-2.36.0.jar",
+    "sha512": "bd6f5650902526d3db06aa1cc7bd36723658166acfabb823aca27d0b2c3814e83ae24a8217ce915c3e194c2c696a102580b4c21ef5dba61f7610bcb8d580f566",
+    "dest": "./offline-repository/com/google/errorprone/error_prone_annotations/2.36.0",
+    "dest-filename": "error_prone_annotations-2.36.0.jar"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/google/errorprone/error_prone_annotations/2.36.0/error_prone_annotations-2.36.0.pom",
+    "sha512": "0c1d663f70a1bec083cdd007b1ee673df144bbfbd4d065c7cad0edba8410bcd1f578902133155a534a1506a82d6a6aa211b4e6c907c4df25b0da4c781caa9008",
+    "dest": "./offline-repository/com/google/errorprone/error_prone_annotations/2.36.0",
+    "dest-filename": "error_prone_annotations-2.36.0.pom"
+  },
+  {
+    "type": "file",
     "url": "https://repo.maven.apache.org/maven2/com/google/errorprone/error_prone_parent/2.27.0/error_prone_parent-2.27.0.pom",
     "sha512": "7b96228ab69845b1bd9b5dc2bb61b7da2b76d157b6e2ce1b3b052c35cdbacce2acf21a09cd1cf24721ac3129519088d8ddd72b60caf082af48eac30c0ff53601",
     "dest": "./offline-repository/com/google/errorprone/error_prone_parent/2.27.0",
@@ -218,31 +260,38 @@
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/gradleup/shadow/com.gradleup.shadow.gradle.plugin/8.3.3/com.gradleup.shadow.gradle.plugin-8.3.3.pom",
-    "sha512": "711ea8898d2914f2afc1f536f5703bdeb6243473756d3c12b400b365edc4bfd872ea1a00562c5e5ff39d1e6356259d0103d5d4e9220d6c187ec2e5e4c140c1b2",
-    "dest": "./offline-repository/com/gradleup/shadow/com.gradleup.shadow.gradle.plugin/8.3.3",
-    "dest-filename": "com.gradleup.shadow.gradle.plugin-8.3.3.pom"
+    "url": "https://repo.maven.apache.org/maven2/com/google/errorprone/error_prone_parent/2.36.0/error_prone_parent-2.36.0.pom",
+    "sha512": "8157ba706ab6932cb428ebd295693477491a7439341c95994f492a10cc3b3222b30a3777e61a9f208fcd1623fc613a3a7fd3cc22c95c56c64e3dbb9d3ca5aeed",
+    "dest": "./offline-repository/com/google/errorprone/error_prone_parent/2.36.0",
+    "dest-filename": "error_prone_parent-2.36.0.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/gradleup/shadow/shadow-gradle-plugin/8.3.3/shadow-gradle-plugin-8.3.3.jar",
-    "sha512": "572463aed009f2f15d323c62f3f1b360294b1fa3990fdbb264f0306b3a1c805d44ca9edb7ed70ded8579af965cc9c2fc740b2a4325b8e8ff5ab083b88f90f493",
-    "dest": "./offline-repository/com/gradleup/shadow/shadow-gradle-plugin/8.3.3",
-    "dest-filename": "shadow-gradle-plugin-8.3.3.jar"
+    "url": "https://repo.maven.apache.org/maven2/com/gradleup/shadow/com.gradleup.shadow.gradle.plugin/8.3.5/com.gradleup.shadow.gradle.plugin-8.3.5.pom",
+    "sha512": "5b9c5fe135f060456c1f61d25bc68ee24cf7a9bab623587c8990e997f6832b8b6109bb29fda784cb2bbf94212b132e41df2b55d48225dd9460e6e6c8468a4369",
+    "dest": "./offline-repository/com/gradleup/shadow/com.gradleup.shadow.gradle.plugin/8.3.5",
+    "dest-filename": "com.gradleup.shadow.gradle.plugin-8.3.5.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/gradleup/shadow/shadow-gradle-plugin/8.3.3/shadow-gradle-plugin-8.3.3.module",
-    "sha512": "7de73b6512e67fca266159b8fa959dd1eeb6d4e36f157baf7638f2f2ee909f2e106345edc6a72021ba186d0152efd9a23cdd35f4e6569c3509f90f5aa2ef9352",
-    "dest": "./offline-repository/com/gradleup/shadow/shadow-gradle-plugin/8.3.3",
-    "dest-filename": "shadow-gradle-plugin-8.3.3.module"
+    "url": "https://repo.maven.apache.org/maven2/com/gradleup/shadow/shadow-gradle-plugin/8.3.5/shadow-gradle-plugin-8.3.5.jar",
+    "sha512": "d1037e5c49aa54bdbefa65f7adc83e65f33e3fa557b4c1d7f0635e7b2c91be72ae6852d229f5db81fff888a2ff1e0fd76ffeee5017af20dc8673cbeae7ba403a",
+    "dest": "./offline-repository/com/gradleup/shadow/shadow-gradle-plugin/8.3.5",
+    "dest-filename": "shadow-gradle-plugin-8.3.5.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/gradleup/shadow/shadow-gradle-plugin/8.3.3/shadow-gradle-plugin-8.3.3.pom",
-    "sha512": "9cc19a95abcd695edb31421a73179ededa21368397104d45f4a1918d91754d2d19d8ef3ab2a2508e51ecad099326f4834d66c4fdad449997d792eb211b9a6185",
-    "dest": "./offline-repository/com/gradleup/shadow/shadow-gradle-plugin/8.3.3",
-    "dest-filename": "shadow-gradle-plugin-8.3.3.pom"
+    "url": "https://repo.maven.apache.org/maven2/com/gradleup/shadow/shadow-gradle-plugin/8.3.5/shadow-gradle-plugin-8.3.5.module",
+    "sha512": "b982de89cd42dafc05fe790a972af0e33c6aaa7c419003c1656d4d72548d48d0fc66205bd936b692ea45f7263317effd93e32d9176bee32ea6df24f2a610dbf4",
+    "dest": "./offline-repository/com/gradleup/shadow/shadow-gradle-plugin/8.3.5",
+    "dest-filename": "shadow-gradle-plugin-8.3.5.module"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/gradleup/shadow/shadow-gradle-plugin/8.3.5/shadow-gradle-plugin-8.3.5.pom",
+    "sha512": "0dd194326d2ccc5c1aefa11416e831982cf0e8ede56866b3305c438a1cee4bd9d8cf7065300646af06b1c502e6b9d261af1aa88ad692e6f14f8093acdbf23d01",
+    "dest": "./offline-repository/com/gradleup/shadow/shadow-gradle-plugin/8.3.5",
+    "dest-filename": "shadow-gradle-plugin-8.3.5.pom"
   },
   {
     "type": "file",
@@ -470,38 +519,31 @@
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/imageio/imageio-metadata/3.11.0/imageio-metadata-3.11.0.jar",
-    "sha512": "f12c1afc1dbdcdeabf0d0b3efe85278d106bc43e014491256a2848b53327dae58964eba3f5664aa4597ef6e6f0fb375843d4dfa878cc1518aaaa4d46eed224cc",
-    "dest": "./offline-repository/com/twelvemonkeys/imageio/imageio-metadata/3.11.0",
-    "dest-filename": "imageio-metadata-3.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/imageio/imageio-metadata/3.12.0/imageio-metadata-3.12.0.jar",
+    "sha512": "c5f23f0d3cbea5c57b43f96bf8706fc20183ad8be9f5a4a04138285e777d811da252910eaee53289e96724b564a489d48d15c2dab83193b64ee81a85b1614a1c",
+    "dest": "./offline-repository/com/twelvemonkeys/imageio/imageio-metadata/3.12.0",
+    "dest-filename": "imageio-metadata-3.12.0.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/imageio/imageio-metadata/3.11.0/imageio-metadata-3.11.0.pom",
-    "sha512": "042f85c98521ce1ee3dac4b03a035960bc82fd6172c91c9e09020b02b5f453c404140bd25b5c84434a84be743825912d0604a991a91058a84b21c0fa7a7e170f",
-    "dest": "./offline-repository/com/twelvemonkeys/imageio/imageio-metadata/3.11.0",
-    "dest-filename": "imageio-metadata-3.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/imageio/imageio-metadata/3.12.0/imageio-metadata-3.12.0.pom",
+    "sha512": "a492c5708f2eec88a51e844e3ad32750db9a746fd8de634b38ea0d8aa5a506ee7873e785c0d1e58ecb5b0ab7e139681612e5cb18a88bcf5cc01538b45e3aacff",
+    "dest": "./offline-repository/com/twelvemonkeys/imageio/imageio-metadata/3.12.0",
+    "dest-filename": "imageio-metadata-3.12.0.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/imageio/imageio-webp/3.11.0/imageio-webp-3.11.0.jar",
-    "sha512": "045aca23992ef42a906f015006dcab1497fc18f2e5a91b70e948987d156ff2212ea82e475cc58199ed1fec0f87ee6e2e4e42c168303fb30b1dadc7704156cea2",
-    "dest": "./offline-repository/com/twelvemonkeys/imageio/imageio-webp/3.11.0",
-    "dest-filename": "imageio-webp-3.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/imageio/imageio-webp/3.12.0/imageio-webp-3.12.0.jar",
+    "sha512": "bdfb1e4da1d0211ff5f0f39aa643bb3a98dbc7690b28ef593bde1e8c8bf535f7c94c16b23b47e1076002a6736446dfba0fb18ff525f83260dcd6f377600e4064",
+    "dest": "./offline-repository/com/twelvemonkeys/imageio/imageio-webp/3.12.0",
+    "dest-filename": "imageio-webp-3.12.0.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/imageio/imageio-webp/3.11.0/imageio-webp-3.11.0.pom",
-    "sha512": "f3d2e1478c3404298d241c343256d545a30248f7202a19e16f51087f1ef6ef8c8240faed96ae12cfc06ab9cc2cef26a046da7f264a1ee7b1dc7e5e26dbd3e485",
-    "dest": "./offline-repository/com/twelvemonkeys/imageio/imageio-webp/3.11.0",
-    "dest-filename": "imageio-webp-3.11.0.pom"
-  },
-  {
-    "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/imageio/imageio/3.11.0/imageio-3.11.0.pom",
-    "sha512": "fb188402d28763c1d8893d671f36dbecc97921f7def0840908824ee740e6b5a76c24a31478fff38e2f1a62c657b2f066d872f4b72d62d6897a3ce09c71740e46",
-    "dest": "./offline-repository/com/twelvemonkeys/imageio/imageio/3.11.0",
-    "dest-filename": "imageio-3.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/imageio/imageio-webp/3.12.0/imageio-webp-3.12.0.pom",
+    "sha512": "8f7b03a628d5a3034d76172ecb169dccbffb05072b1a57758a088879b80b194cbd6adc5a7e3c073ca2a2c594ea084ef339d74caee18f4307ce1a82821b57cfe6",
+    "dest": "./offline-repository/com/twelvemonkeys/imageio/imageio-webp/3.12.0",
+    "dest-filename": "imageio-webp-3.12.0.pom"
   },
   {
     "type": "file",
@@ -509,13 +551,6 @@
     "sha512": "82aab3b9c58d72237d35d0deacf7c660f43ed611c832778704494bcb6c29105c0a5b3168f9466a382651d42dc50a0444f2c5459f99e8a1a00b273d84c8f76127",
     "dest": "./offline-repository/com/twelvemonkeys/imageio/imageio/3.12.0",
     "dest-filename": "imageio-3.12.0.pom"
-  },
-  {
-    "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/twelvemonkeys/twelvemonkeys/3.11.0/twelvemonkeys-3.11.0.pom",
-    "sha512": "8dae32f8bc36eaa6c999e035ed8c761686aa783a7b4ec027a3b1db2b1b91c3a28dd794bd458656405b6e188b499108697467849332ed1490ec0b248b856f534b",
-    "dest": "./offline-repository/com/twelvemonkeys/twelvemonkeys/3.11.0",
-    "dest-filename": "twelvemonkeys-3.11.0.pom"
   },
   {
     "type": "file",
@@ -603,325 +638,325 @@
   },
   {
     "type": "file",
-    "url": "https://plugins.gradle.org/m2/io/github/jwharm/flatpak-gradle-generator/io.github.jwharm.flatpak-gradle-generator.gradle.plugin/1.2.0/io.github.jwharm.flatpak-gradle-generator.gradle.plugin-1.2.0.pom",
-    "sha512": "1a3ad9dc661034057f386cd85d10899f5b6b6229194dc64f1a98b9a85692da06256ef5203ca03ce01d1f07e3f4c3a5df1d17759dd1018b23c865f6ae90180930",
-    "dest": "./offline-repository/io/github/jwharm/flatpak-gradle-generator/io.github.jwharm.flatpak-gradle-generator.gradle.plugin/1.2.0",
-    "dest-filename": "io.github.jwharm.flatpak-gradle-generator.gradle.plugin-1.2.0.pom"
+    "url": "https://plugins.gradle.org/m2/io/github/jwharm/flatpak-gradle-generator/io.github.jwharm.flatpak-gradle-generator.gradle.plugin/1.4.0/io.github.jwharm.flatpak-gradle-generator.gradle.plugin-1.4.0.pom",
+    "sha512": "a46603dc9e732ceb458c815d1701d32787dd9d4ed444fee59700d702faf11f1e5b009ea626cbd67e3b683b9e461a812998e0e2b67c0576ef1e347a33c3556b49",
+    "dest": "./offline-repository/io/github/jwharm/flatpak-gradle-generator/io.github.jwharm.flatpak-gradle-generator.gradle.plugin/1.4.0",
+    "dest-filename": "io.github.jwharm.flatpak-gradle-generator.gradle.plugin-1.4.0.pom"
   },
   {
     "type": "file",
-    "url": "https://plugins.gradle.org/m2/io/github/jwharm/flatpak-gradle-generator/plugin/1.2.0/plugin-1.2.0.jar",
-    "sha512": "4cbf6b0a367b3483f8fdeb4563b3c716e47a6e3f695c55b808f14828064eb974d7318b27aa760bce0a8bf18eccd1b6e0eceffc15d1088668f3f1b629df8cb396",
-    "dest": "./offline-repository/io/github/jwharm/flatpak-gradle-generator/plugin/1.2.0",
-    "dest-filename": "plugin-1.2.0.jar"
+    "url": "https://plugins.gradle.org/m2/io/github/jwharm/flatpak-gradle-generator/plugin/1.4.0/plugin-1.4.0.jar",
+    "sha512": "70b0426ac9f3b0a3a2efefc810a73288fcf31658b0065e5c18367bbbea154e27273f5f8a7c42403315543707a1c99bfd491a25f369c8de812fcff2e3da6b50ba",
+    "dest": "./offline-repository/io/github/jwharm/flatpak-gradle-generator/plugin/1.4.0",
+    "dest-filename": "plugin-1.4.0.jar"
   },
   {
     "type": "file",
-    "url": "https://plugins.gradle.org/m2/io/github/jwharm/flatpak-gradle-generator/plugin/1.2.0/plugin-1.2.0.module",
-    "sha512": "c107410e0adde38940bcaad53ef4fb15adeaa3690b6b36eedda33d9f47777ab79a905f6046ec431eb60c89e01d420429d9c4b5d3efe4fc2f16c0f6e8060f9988",
-    "dest": "./offline-repository/io/github/jwharm/flatpak-gradle-generator/plugin/1.2.0",
-    "dest-filename": "plugin-1.2.0.module"
+    "url": "https://plugins.gradle.org/m2/io/github/jwharm/flatpak-gradle-generator/plugin/1.4.0/plugin-1.4.0.module",
+    "sha512": "c96d11f6718786b7595d6b216cd429d453514fb563d5f55f561c90c8aed00088d9e60cbbe9ddcd72584f7c7e005e75bad09f8e50a6ce2f4be7eefaf0ccf310c3",
+    "dest": "./offline-repository/io/github/jwharm/flatpak-gradle-generator/plugin/1.4.0",
+    "dest-filename": "plugin-1.4.0.module"
   },
   {
     "type": "file",
-    "url": "https://plugins.gradle.org/m2/io/github/jwharm/flatpak-gradle-generator/plugin/1.2.0/plugin-1.2.0.pom",
-    "sha512": "35ed9ce4f79352f48ac021e9bc4f3006fdc520a1baf80a437b21c0112e2c862c9c3bfd3de6e94bbf12f99a2fb7ecb55e9a812648d2d0b899ecef4c56fe628118",
-    "dest": "./offline-repository/io/github/jwharm/flatpak-gradle-generator/plugin/1.2.0",
-    "dest-filename": "plugin-1.2.0.pom"
+    "url": "https://plugins.gradle.org/m2/io/github/jwharm/flatpak-gradle-generator/plugin/1.4.0/plugin-1.4.0.pom",
+    "sha512": "a63f51ee9dd77c3dc3d7d91083a23605523d1e338f7ae5ceb2ce3a5eb7a3f952033dcc8bfaaecffb3fea00dd45d8b45b9f06376b92abd6530eae96394118f2d6",
+    "dest": "./offline-repository/io/github/jwharm/flatpak-gradle-generator/plugin/1.4.0",
+    "dest-filename": "plugin-1.4.0.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/adw/0.11.0/adw-0.11.0.jar",
-    "sha512": "d8266e7d54fd4757f019498f6e31926ece6d4823e6fb98451c698b279aabbed147c29aef7be0b7135eda830e56e1ec23ca8a218122964a90236bb081ab87e78c",
-    "dest": "./offline-repository/io/github/jwharm/javagi/adw/0.11.0",
-    "dest-filename": "adw-0.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/adw/0.11.2/adw-0.11.2.jar",
+    "sha512": "70f28124fcb1b06489568f4987172fa5fd2c8888cb9701e302ec2092ef3d55e645d229a32d2d6c6690f1231b14d7d4df5aee52dd24f574d1259d37b89a44794a",
+    "dest": "./offline-repository/io/github/jwharm/javagi/adw/0.11.2",
+    "dest-filename": "adw-0.11.2.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/adw/0.11.0/adw-0.11.0.module",
-    "sha512": "f4d5107513f568cf9693104e646dceb3b4a411ae4899023c981efd7c5c014556660b756c5928dd8f184efe1a201b381513e56484d420b96e99dc3e5d7c9b768e",
-    "dest": "./offline-repository/io/github/jwharm/javagi/adw/0.11.0",
-    "dest-filename": "adw-0.11.0.module"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/adw/0.11.2/adw-0.11.2.module",
+    "sha512": "a4b878d10276a14981e864e7323396061a1c93a84a2eb92124a4abd20df7252f9b8fdff8c12114fee95b2085bac953c440f6faf0cada66af64c31cb3602c597b",
+    "dest": "./offline-repository/io/github/jwharm/javagi/adw/0.11.2",
+    "dest-filename": "adw-0.11.2.module"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/adw/0.11.0/adw-0.11.0.pom",
-    "sha512": "b1ebd05d02f0e3b2ef3e2b6c34a5129171ca694c7bad9a8b4d5cf5eaeddaedfc7fc7081ff473ebea9b1bf02dff72621427a74ffd5c97d16ec821e67e3f1ff8d3",
-    "dest": "./offline-repository/io/github/jwharm/javagi/adw/0.11.0",
-    "dest-filename": "adw-0.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/adw/0.11.2/adw-0.11.2.pom",
+    "sha512": "03bda6f646d9354d395d3c8366da6c2a406446c82df29ca0a5064c48fccaf4616fefe4b772f139c0aef5544457539c96c7858f11682378ac151d4ef42ef4660c",
+    "dest": "./offline-repository/io/github/jwharm/javagi/adw/0.11.2",
+    "dest-filename": "adw-0.11.2.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gdk/0.11.0/gdk-0.11.0.jar",
-    "sha512": "32392fe7076437c56c0bb5f754831fac374d14845b8749a153f9cba601a2d2aa7e93aed38de3824fa5d9aa1e97830498896f71942d5738674ab192b4a35d01a4",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gdk/0.11.0",
-    "dest-filename": "gdk-0.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gdk/0.11.2/gdk-0.11.2.jar",
+    "sha512": "e3721e88b1f7ab75556314c9eeca8c8fe6d7a11390f5afe7cac641a755a1c9c3a3649371f4a765aac74f0aa2790c8d3f67c286565fbbf4dee70287adab6d742f",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gdk/0.11.2",
+    "dest-filename": "gdk-0.11.2.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gdk/0.11.0/gdk-0.11.0.module",
-    "sha512": "a67a4ffdacc0b85e343d6c1541b40c63545b2ce7d6169688a86e83605d35282c0473d0d8bd23cb42e4fe0a4e772352c56b1ed5c41ab9acf6533571f745054d96",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gdk/0.11.0",
-    "dest-filename": "gdk-0.11.0.module"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gdk/0.11.2/gdk-0.11.2.module",
+    "sha512": "33207ba453a073e887380a60a989bd898ddac531a17717348b12f835dcbaa4e25c9bc2a0c7934ac810f467bae08035e584444288052da42aac6c8fe6b0a4c7cb",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gdk/0.11.2",
+    "dest-filename": "gdk-0.11.2.module"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gdk/0.11.0/gdk-0.11.0.pom",
-    "sha512": "a66578fdd669bf109c2523c87d04044e4d0786f58f2cd4c0a98b08f108923d97a8bbe63c265d7569bd5828e3d6752f7fe08263d603823d2c0bd41af70f594107",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gdk/0.11.0",
-    "dest-filename": "gdk-0.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gdk/0.11.2/gdk-0.11.2.pom",
+    "sha512": "699e80c1cea3cf336176e210fecb73d2ce7201c5f901a33a5a5ccc4a6053fbc484793db2a7d19eea934cf883f13ace86dc2a667bb860d765d14f66e69facfa37",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gdk/0.11.2",
+    "dest-filename": "gdk-0.11.2.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gdkpixbuf/0.11.0/gdkpixbuf-0.11.0.jar",
-    "sha512": "9533cd6826e579846ac95fbb6522059cded6662f9da12dde5c69726ead1deb07b755cdf6d393ab8ad849b4426fadbe78b6bda903547ac3815d98827bb527eaa8",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gdkpixbuf/0.11.0",
-    "dest-filename": "gdkpixbuf-0.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gdkpixbuf/0.11.2/gdkpixbuf-0.11.2.jar",
+    "sha512": "9ca52925dff12e14b6aa5f9ee0ee26802d88e50491cf6e42d5034ee1e1a5a989ee863d481dde83b1dff9dbd0ab2e95e40f031eb109077bd8bcb704247a3a040f",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gdkpixbuf/0.11.2",
+    "dest-filename": "gdkpixbuf-0.11.2.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gdkpixbuf/0.11.0/gdkpixbuf-0.11.0.module",
-    "sha512": "31d6194eb3355700267c0e35dd5a890de28a17f3dbb58706c00cc22e3c99c39152fa2d3c7cd6209a2a95d3eadc456e9c147839785a8d658f7adcf48bc3563582",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gdkpixbuf/0.11.0",
-    "dest-filename": "gdkpixbuf-0.11.0.module"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gdkpixbuf/0.11.2/gdkpixbuf-0.11.2.module",
+    "sha512": "9d0e76f9d0b17555e7ae873fbf08f5d83a2200d5f166a4ed4a7dd93d36ad1e3675707a4aedee09710e0fcba549cb44ddbc537ad1763c71d3cacd8f15e5a1650f",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gdkpixbuf/0.11.2",
+    "dest-filename": "gdkpixbuf-0.11.2.module"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gdkpixbuf/0.11.0/gdkpixbuf-0.11.0.pom",
-    "sha512": "8261710a0297792d8b1fbe5a593b512af3365c50eba9c50bf05b4ec4b085037b14fe9fde77e1d1b260de49c0a7f0d7d72fc75f356e1dc44c9f3880b5c103572a",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gdkpixbuf/0.11.0",
-    "dest-filename": "gdkpixbuf-0.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gdkpixbuf/0.11.2/gdkpixbuf-0.11.2.pom",
+    "sha512": "191b543d527b858bca425e4d5e2ff3f428badbae82253ad5ac44c157d35ed1f746344698ba475813c786a6be223ea087fce6e90442df90c6d843001345308944",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gdkpixbuf/0.11.2",
+    "dest-filename": "gdkpixbuf-0.11.2.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gio/0.11.0/gio-0.11.0.jar",
-    "sha512": "5b95d5067dd9672b758f5ebd9053f75addbcfcb34664098a32eea463f99074bf20ee23448086849223b56912fc64e11a103ec8d8874fd49010229f5b50352bf1",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gio/0.11.0",
-    "dest-filename": "gio-0.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gio/0.11.2/gio-0.11.2.jar",
+    "sha512": "104668dc15fdfe2728648fd55d026acff41e73785f70bd7a9b8e83c571c3a431f918d42e4c4454691a0db65ad9a52d51090f4edde0058659dc426a4dd3be053a",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gio/0.11.2",
+    "dest-filename": "gio-0.11.2.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gio/0.11.0/gio-0.11.0.module",
-    "sha512": "37dd3ff68d2388b220fddef217e679eb78861c0fa95edcf9b56f73cd08b745ac1e379e05e8ee71a3799cb3131fb675a0d3f8450bff15145f2084da80a5b6b0dc",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gio/0.11.0",
-    "dest-filename": "gio-0.11.0.module"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gio/0.11.2/gio-0.11.2.module",
+    "sha512": "691ad1321ef94fdd02f2399bc0cb59b27d47a9ecb2fb2088362a400f471dca54a8079c5fe6e3e5638af750a8387193a5a6ce3885fc3ab82586169c513a2b2473",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gio/0.11.2",
+    "dest-filename": "gio-0.11.2.module"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gio/0.11.0/gio-0.11.0.pom",
-    "sha512": "60942f1fbfa53891d1d437cc44193963aee526a35ba10283ecb7619493bfc2e69482e1509125ec17c6ec260e963bd9ca756efa37a58ceb627ae78612cd8df8ce",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gio/0.11.0",
-    "dest-filename": "gio-0.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gio/0.11.2/gio-0.11.2.pom",
+    "sha512": "30de4dee4305c133840422d3a3cce2b634c2f80902d031562ca07288b0a028f07c6bb87488403dd76c95ed7416c57cf4f7cb0ca458762cccdb54a8aa9b2dcd8a",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gio/0.11.2",
+    "dest-filename": "gio-0.11.2.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/glib/0.11.0/glib-0.11.0.jar",
-    "sha512": "a53fed8510bcbf3dc129b2d3fda41acec830ab8fb6d30181dc77aea9f84467380d8d9576819ee58619e04a6874f0289000cc3e8ff2084562023cbdffa9715327",
-    "dest": "./offline-repository/io/github/jwharm/javagi/glib/0.11.0",
-    "dest-filename": "glib-0.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/glib/0.11.2/glib-0.11.2.jar",
+    "sha512": "736b423a1a9b49782659a844c7c97dedf0e6be3a91b4a5eedf7ff828a04c9b8cba6ca3ff86b97327f352e48168c8bb10bb9be96f531e5320fd2651b500962b25",
+    "dest": "./offline-repository/io/github/jwharm/javagi/glib/0.11.2",
+    "dest-filename": "glib-0.11.2.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/glib/0.11.0/glib-0.11.0.module",
-    "sha512": "89a883d06626c1ae3da7940af6c78a7fd72049ebb17eeb98625140f3ef018d0264882cabc6ebee961af52fada0906d604f90e8b50547202b94bead293749094f",
-    "dest": "./offline-repository/io/github/jwharm/javagi/glib/0.11.0",
-    "dest-filename": "glib-0.11.0.module"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/glib/0.11.2/glib-0.11.2.module",
+    "sha512": "07dec99f821e8ec124ac26b1811c5f4578f165e546a550b61a061093886aea266e74e840891597fdc012155ef0c256370fdb6500647e13a15576caf3f2a05fd1",
+    "dest": "./offline-repository/io/github/jwharm/javagi/glib/0.11.2",
+    "dest-filename": "glib-0.11.2.module"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/glib/0.11.0/glib-0.11.0.pom",
-    "sha512": "0b96c87f8859be310597808db4420c248a83f28fb2aaf938cbac37e149e378b8455382d12ca2a9b42c57a6e4a8949164ef8d67a064da7b9a3263c3a8dc0671a8",
-    "dest": "./offline-repository/io/github/jwharm/javagi/glib/0.11.0",
-    "dest-filename": "glib-0.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/glib/0.11.2/glib-0.11.2.pom",
+    "sha512": "771891d17d6c676cfffbfdd7afd5ef7acc972b07088ac3938aa543c85de7e480e4656d927e5948778b6eb61608bfdda4058dd0c20151a5ddf941495a80ade2b9",
+    "dest": "./offline-repository/io/github/jwharm/javagi/glib/0.11.2",
+    "dest-filename": "glib-0.11.2.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gmodule/0.11.0/gmodule-0.11.0.jar",
-    "sha512": "9bb8e2853c9df0219de536d80a2c5c51f25f3a228bf5cdb850b60e48d973fd50a8c1a4354ecb63bcf0db6dae663cf56c036e4cf737f460b2342bd4d09ad0f882",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gmodule/0.11.0",
-    "dest-filename": "gmodule-0.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gmodule/0.11.2/gmodule-0.11.2.jar",
+    "sha512": "6b4e8ac7a47cfc18ec06eb25266cf424a18a6fd47d4c871ab95bb62fd13233d11552930de6a4db8abeda5282d51d5afa40237b9ff484614ce8a7ab4c1a46f28d",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gmodule/0.11.2",
+    "dest-filename": "gmodule-0.11.2.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gmodule/0.11.0/gmodule-0.11.0.module",
-    "sha512": "5b666594c71c5710a46e0a72c643998254dd87592cda58fb491435e1e418713bbf928e06005e60f6a3c9e86747ba640eff338835ae1e82f1b267b953e52bfd8f",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gmodule/0.11.0",
-    "dest-filename": "gmodule-0.11.0.module"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gmodule/0.11.2/gmodule-0.11.2.module",
+    "sha512": "59d46fbf1606689e958de5a9e5fbd2a5092f4de0623c8bf63e5c7e2697f82db18997a93acd2bcd379e416f38b902a4c9e92728de14da2ea7b5ef5aef03bd5bcc",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gmodule/0.11.2",
+    "dest-filename": "gmodule-0.11.2.module"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gmodule/0.11.0/gmodule-0.11.0.pom",
-    "sha512": "be011e3102d211b53b81d5ea184ed7903f386825286681755af87db1096399cd62c5179d4da22ecb7cefce9a4099fc87af9ab164089427f542e1271e6753d4bd",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gmodule/0.11.0",
-    "dest-filename": "gmodule-0.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gmodule/0.11.2/gmodule-0.11.2.pom",
+    "sha512": "629a110ae3c0ae8ad5f6f6b723ca5a9ee80aa4367abe1b549cfad610fe514fc6db8f90ede3c2bd58cdccf797e1b0c8670f9c87f2a21a5e56dc464dee2ce7c228",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gmodule/0.11.2",
+    "dest-filename": "gmodule-0.11.2.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gobject/0.11.0/gobject-0.11.0.jar",
-    "sha512": "e354c5b621d2a46825115b0f644e7c99e8b4ba51d8f34497ba3d3d6a49a153757236f833761644d2fb56e9a56db62ac317255c2eefa4f59efbaff24f0215a2a3",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gobject/0.11.0",
-    "dest-filename": "gobject-0.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gobject/0.11.2/gobject-0.11.2.jar",
+    "sha512": "5ab69957164636ad0ad0431ee8f34942917ec907dc4140c6f3a1310421dd0b1247c13ca04f0e106976134d943f5bb09b0714cfebd6d38522e0fda2d34bb55391",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gobject/0.11.2",
+    "dest-filename": "gobject-0.11.2.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gobject/0.11.0/gobject-0.11.0.module",
-    "sha512": "0484515e659d7049d202baca2b9e499dc5303bd2d24796b356aec097fc01561ddf314406a2fbecff203d28283c43db586e10848762d5374d438da7d7170f7424",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gobject/0.11.0",
-    "dest-filename": "gobject-0.11.0.module"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gobject/0.11.2/gobject-0.11.2.module",
+    "sha512": "cfa7e4b69d1fab374ee533f1e3fa1d68f43500ecfca33002d611cbef58f091509f542730f65b286f13aeceddedffc482cb615c48fb74c77a023f978b4b608a17",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gobject/0.11.2",
+    "dest-filename": "gobject-0.11.2.module"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gobject/0.11.0/gobject-0.11.0.pom",
-    "sha512": "a1db4455765f3f3249ddb0a637880b6c05702fd018bb421c0f6e92ae5e3ea9b97fdf5af56f08a107880fbc5f9f99f0fd67f1e88bbc797b58a85e28e9c801988e",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gobject/0.11.0",
-    "dest-filename": "gobject-0.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gobject/0.11.2/gobject-0.11.2.pom",
+    "sha512": "67f28c57bcdbf03feaee3c8e110b49ed9526003ca7d5362ec4ac94a5107a4af36b110a1d5bc02ccbf57bb068229ef4b8ee1916d63979b47457a2aac683f1799b",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gobject/0.11.2",
+    "dest-filename": "gobject-0.11.2.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/graphene/0.11.0/graphene-0.11.0.jar",
-    "sha512": "d9555f400d434a661a19ac0801b7dabbee09b433566742501fe160ed3c28b52e53f528814d053a6d68dbee6c27c7c5352e927461068aaab2824fedaef48c459d",
-    "dest": "./offline-repository/io/github/jwharm/javagi/graphene/0.11.0",
-    "dest-filename": "graphene-0.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/graphene/0.11.2/graphene-0.11.2.jar",
+    "sha512": "f88aa56aee87e556455ce7f020b91de5bfc9efd3cbd82de54f87158d1982befdcfc13b6fe8df7fc33305251137e53c02f971fb0b47e43c6c803f7e352fd1ffb0",
+    "dest": "./offline-repository/io/github/jwharm/javagi/graphene/0.11.2",
+    "dest-filename": "graphene-0.11.2.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/graphene/0.11.0/graphene-0.11.0.module",
-    "sha512": "7b0f9efff3955627143ffdfdc26a463601c9ff3a4bbd9af3db6c4e2e3ef89ac918e319f3ee2ab6869114a8acb296404cc84a5b235ee28c6c17b3aba65af28fd8",
-    "dest": "./offline-repository/io/github/jwharm/javagi/graphene/0.11.0",
-    "dest-filename": "graphene-0.11.0.module"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/graphene/0.11.2/graphene-0.11.2.module",
+    "sha512": "77d7c57423f34fe58e9aa098be572c56f99b7d848eaa46bc189b29b9136e3a0ace09319f745ab46e46350711f45531f62fba58210383da3728293bd271c853ce",
+    "dest": "./offline-repository/io/github/jwharm/javagi/graphene/0.11.2",
+    "dest-filename": "graphene-0.11.2.module"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/graphene/0.11.0/graphene-0.11.0.pom",
-    "sha512": "6021fef1cd247fc4ecda95ae6c9740332ceda75961e7576f97547569b67ae7da508ffd687e60b03563171c60fe1cd24cb683ff78d3aae9960425edd39c842ee8",
-    "dest": "./offline-repository/io/github/jwharm/javagi/graphene/0.11.0",
-    "dest-filename": "graphene-0.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/graphene/0.11.2/graphene-0.11.2.pom",
+    "sha512": "36b59c1903b273869a98c232ac3ec29915f2aa798555a500d38efabc068c22d26a7115cbb8e595afd273430fbe1788a0daba3758c77f4e62ba969d5a1b857b01",
+    "dest": "./offline-repository/io/github/jwharm/javagi/graphene/0.11.2",
+    "dest-filename": "graphene-0.11.2.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gsk/0.11.0/gsk-0.11.0.jar",
-    "sha512": "7a43692fbda7bc9a0c9113e21ec66fab81a120a1c0788601b0cf269f45da5695c9635ceaef1979ba14a2125bf12901f620b77d1a58487f55cd872bcbf2291f16",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gsk/0.11.0",
-    "dest-filename": "gsk-0.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gsk/0.11.2/gsk-0.11.2.jar",
+    "sha512": "f0370f82f3f2eec7d1424866872a4401ea03698c3a72a14999d36b43628d083a07b6e11d1cec8df8c6717cab7aa7528ed28548dee06099f15315c0fbbd22bdff",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gsk/0.11.2",
+    "dest-filename": "gsk-0.11.2.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gsk/0.11.0/gsk-0.11.0.module",
-    "sha512": "43eccb26921ba48858e116a6ad04aba25a8806c8c78b1b01422590f0c5a40c074f36c51f729b067400da7b72a1d007753867fd5aeb8b2d687c7a1c461fa0947e",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gsk/0.11.0",
-    "dest-filename": "gsk-0.11.0.module"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gsk/0.11.2/gsk-0.11.2.module",
+    "sha512": "23641cf07875aef8f42e4f38e1bca5bfe4bb1d8d46189d8f769a10c236fe76dcfd1299b274c0d75d41a50575be69f835664816c216b8674d172e6ccc92c2c8b4",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gsk/0.11.2",
+    "dest-filename": "gsk-0.11.2.module"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gsk/0.11.0/gsk-0.11.0.pom",
-    "sha512": "d8341508a097f12c8145db74ff3dd75bdd4e815d44abc726d4cbcdf72d2e6bc83035d454162e4a86a1a89c7f84f7ba842cfb98aeccf5b57fbbb6b997395d18e4",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gsk/0.11.0",
-    "dest-filename": "gsk-0.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gsk/0.11.2/gsk-0.11.2.pom",
+    "sha512": "cdc6548f7be554b4d2ef3bde882e43b3e8925f2c50d757a606538f9663fc2e4a72ee5009c71eba8ea147e7188468b31a938ceb519fdc2a435d9b157b8377a0e5",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gsk/0.11.2",
+    "dest-filename": "gsk-0.11.2.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gst/0.11.0/gst-0.11.0.jar",
-    "sha512": "303c42da8d38274bc08bfff3d9d4d7437f6f55878020301d46a0aadbaaf15afd1eccc01aca248e1d65ff228f0a69895f41bbbebf63a1ebd86195ac2c1af40c87",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gst/0.11.0",
-    "dest-filename": "gst-0.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gst/0.11.2/gst-0.11.2.jar",
+    "sha512": "1f88b5ab085abef388011b7f37fc254536e99d151f5c056c8061097bb7edad742ad6b834418f54711caade2c37043c268b9aaf184bbca38b34bcf763dd6c0647",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gst/0.11.2",
+    "dest-filename": "gst-0.11.2.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gst/0.11.0/gst-0.11.0.module",
-    "sha512": "b905e8f4d23c2d979c0e274a05c6f7157e5ade267579ec235f3bbae7cd78a264e89ebaf2fb44a983d982a4c0f68e447b42add1192beb7e818e2edaa69bb1a37a",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gst/0.11.0",
-    "dest-filename": "gst-0.11.0.module"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gst/0.11.2/gst-0.11.2.module",
+    "sha512": "eeeae235b65fbacef1c0fe4b072cb9c2b2e08e244d31a8fa30d63b4ca0d4c6fbf88c974d684c15e2376241df30ab2f23f199c4980e0b28d22dfca9e1ad3a7a4a",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gst/0.11.2",
+    "dest-filename": "gst-0.11.2.module"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gst/0.11.0/gst-0.11.0.pom",
-    "sha512": "a9202193feaa13e20218c2496aa00120df77ad5c558f6690a4e9f7198798144bb2eada29933d75ba6ae4a1e2a8594f5fe0e125b3fed366a3b113e352354b5c45",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gst/0.11.0",
-    "dest-filename": "gst-0.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gst/0.11.2/gst-0.11.2.pom",
+    "sha512": "7aa4d5a19e0149383b721788cf733363a4f6c3bfe38c0dcf7efd59814577691e7f54ef68b54eed48b45261a544f34bc7205f4a3e0d8653320f96c25746805560",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gst/0.11.2",
+    "dest-filename": "gst-0.11.2.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gtk/0.11.0/gtk-0.11.0.jar",
-    "sha512": "c2db8e165a2b00aa16548c64794825e44f70a3df5790a3638e0b72ff3c27a6493988512aaaa509a4067abe9efbb169dd6cdb17785bf7e145e03cf052c7cae315",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gtk/0.11.0",
-    "dest-filename": "gtk-0.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gtk/0.11.2/gtk-0.11.2.jar",
+    "sha512": "d5f3e380e5107fab31fd001caa955b8231671b80ccd5b19aa6e4b20a0e0639efddb811d7c6cff870d25ca728533fa29b9915a5e1d32ef51a24b06d3fb4d69846",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gtk/0.11.2",
+    "dest-filename": "gtk-0.11.2.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gtk/0.11.0/gtk-0.11.0.module",
-    "sha512": "635ebcfb1c9384b1269af4250895d79ef3399144b15655261de2ca89ea362ac7ef48e99a363e5a4b8ee7d25ab183633b3ec39fe4e43d5c966bf695bbbb0b2383",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gtk/0.11.0",
-    "dest-filename": "gtk-0.11.0.module"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gtk/0.11.2/gtk-0.11.2.module",
+    "sha512": "23d643e3737b9ca61e8e69f4d30b3c00fe327eb2f8d919e692a0565f9cf3d43dc52abf0c23e59da3264d9501304fcf96145ede3b1231f4efd3b66c658027ee14",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gtk/0.11.2",
+    "dest-filename": "gtk-0.11.2.module"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gtk/0.11.0/gtk-0.11.0.pom",
-    "sha512": "5d93359a68830dd94a3d050c4ae753e315ae1f3d51195cef35f87e9376ed511b81797922664cc0e73faf5bfefedd4a5048fe27dffce10686f16a24b1c3c01b99",
-    "dest": "./offline-repository/io/github/jwharm/javagi/gtk/0.11.0",
-    "dest-filename": "gtk-0.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/gtk/0.11.2/gtk-0.11.2.pom",
+    "sha512": "4c47670ef7f809f136e8058ea564ccfe15ae368dfa949dfe89027b8c7108f0871bc3d6a4a3f33b84052d40a8060258c86ee49e88b1b3ef4e8febe1002e8a6b09",
+    "dest": "./offline-repository/io/github/jwharm/javagi/gtk/0.11.2",
+    "dest-filename": "gtk-0.11.2.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/harfbuzz/0.11.0/harfbuzz-0.11.0.jar",
-    "sha512": "b9f1df9244d99f97f2065b497b1b17aa00209fe198639813af67312ed3cab69c480c5396b200172e1cf9fc530448124465560ffe32de344127e626b425a2e700",
-    "dest": "./offline-repository/io/github/jwharm/javagi/harfbuzz/0.11.0",
-    "dest-filename": "harfbuzz-0.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/harfbuzz/0.11.2/harfbuzz-0.11.2.jar",
+    "sha512": "206ed24e6a8b37b2adeb1de1be13f48a8f31ea8b6617f447d565f8bd2e1281f2db89a027ff1363991a7ca247f9e3beac35a30d903c0ad81a535eeb19e510244b",
+    "dest": "./offline-repository/io/github/jwharm/javagi/harfbuzz/0.11.2",
+    "dest-filename": "harfbuzz-0.11.2.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/harfbuzz/0.11.0/harfbuzz-0.11.0.module",
-    "sha512": "bf45812799c7e54b106008f3cc7bbf588e4b0b4b9140bf935e5c60e9f43cc2f94ba256935ce18dc3605785a4f7c9e716172229ca5308c8c574017845f1d342f3",
-    "dest": "./offline-repository/io/github/jwharm/javagi/harfbuzz/0.11.0",
-    "dest-filename": "harfbuzz-0.11.0.module"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/harfbuzz/0.11.2/harfbuzz-0.11.2.module",
+    "sha512": "2c176e1485f92a8fc7c6e51b4affbd4967ee2d49702ba1fd77d9800f842b07285c930816f21717ff96c373801bdd27ab469eeae85021bf2c013cbc24adac1317",
+    "dest": "./offline-repository/io/github/jwharm/javagi/harfbuzz/0.11.2",
+    "dest-filename": "harfbuzz-0.11.2.module"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/harfbuzz/0.11.0/harfbuzz-0.11.0.pom",
-    "sha512": "7418a9dd9e59de0c3d1e007008e272dea64c289a31373f089c902c6189714a0a3da2be5b43d0d8de34aa0b1c43aba6940acf7f7fb4b3265a3ae5eddba264dd1c",
-    "dest": "./offline-repository/io/github/jwharm/javagi/harfbuzz/0.11.0",
-    "dest-filename": "harfbuzz-0.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/harfbuzz/0.11.2/harfbuzz-0.11.2.pom",
+    "sha512": "b7b9c21f3789e04ccc033d7e1a0e384966a097f98762bf4a23ed82b9aeeb0a1ab2e97ec395a88445cce71ba65fabc719eff58ee361c43410f8da9f9b0f731489",
+    "dest": "./offline-repository/io/github/jwharm/javagi/harfbuzz/0.11.2",
+    "dest-filename": "harfbuzz-0.11.2.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/pango/0.11.0/pango-0.11.0.jar",
-    "sha512": "55daff4b2b3186da6bc25ef110b25c8cfbbc97439d2b3252f457e18e08fe36e46a3f69e790414387272133fb535dec604e2f6a9050f6c4e4cc54c40a4605c3f8",
-    "dest": "./offline-repository/io/github/jwharm/javagi/pango/0.11.0",
-    "dest-filename": "pango-0.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/pango/0.11.2/pango-0.11.2.jar",
+    "sha512": "10c7bdae6f6d1bc7701d1c5fbd28e637415974adf55bb1fa342ac1126246bf43068185ba65248df6b26285cc4136a697d5891e5d5a0b0fd4f8ec5f873db7696d",
+    "dest": "./offline-repository/io/github/jwharm/javagi/pango/0.11.2",
+    "dest-filename": "pango-0.11.2.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/pango/0.11.0/pango-0.11.0.module",
-    "sha512": "0ff4905ddeb618e06e93b6f799e5b6e736d2559ef705c87ca72706399f1980d72f8d416318431911a495404bc38336e73f14705cfaa7915d114d078ceecbcb5b",
-    "dest": "./offline-repository/io/github/jwharm/javagi/pango/0.11.0",
-    "dest-filename": "pango-0.11.0.module"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/pango/0.11.2/pango-0.11.2.module",
+    "sha512": "0bdb2fe6c5480ff43cb461d12cc103739590c8b9e5474411edc19df913d665c2038b5ba33c6e9e87425bf78fc57e4a918bcdab416d8e6c9079db1d521b686323",
+    "dest": "./offline-repository/io/github/jwharm/javagi/pango/0.11.2",
+    "dest-filename": "pango-0.11.2.module"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/pango/0.11.0/pango-0.11.0.pom",
-    "sha512": "a6a01f050082cbb600f505d63a31e6e7ea64be9aa419ae75c645c90a714175a4003915af486630655edd8dd347a77d3c69420e2bca8b1414a02a57e20e93a249",
-    "dest": "./offline-repository/io/github/jwharm/javagi/pango/0.11.0",
-    "dest-filename": "pango-0.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/pango/0.11.2/pango-0.11.2.pom",
+    "sha512": "e10c7360c154c971416a11f1383124f439bf4f413e77207f572e19376e33659fa9a9c4159e01337dbe5ed96045dbca342291f3de06ece0446f43a32ecad0dd6a",
+    "dest": "./offline-repository/io/github/jwharm/javagi/pango/0.11.2",
+    "dest-filename": "pango-0.11.2.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/pangocairo/0.11.0/pangocairo-0.11.0.jar",
-    "sha512": "c061cf8c393501fb59dfc42f9ce07a465343f621802c62bbe0b6dbdb9e3fed7de2dc25eb88f08ea7a79c0fa984e5e74c527309591fbb077a5fa8ad9b6a17a056",
-    "dest": "./offline-repository/io/github/jwharm/javagi/pangocairo/0.11.0",
-    "dest-filename": "pangocairo-0.11.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/pangocairo/0.11.2/pangocairo-0.11.2.jar",
+    "sha512": "462956b06c40a61ac28175ac8470de37503098593a875abb3788660fbf1568210eb265c4bbf890e715855ce3f16be7dd9aabcb7d6a0e42df935db61530869d51",
+    "dest": "./offline-repository/io/github/jwharm/javagi/pangocairo/0.11.2",
+    "dest-filename": "pangocairo-0.11.2.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/pangocairo/0.11.0/pangocairo-0.11.0.module",
-    "sha512": "8fe98d97a435ba87cb5c916e2e008e5af3b45c2a35dc8f48e79bbfddeff9e683bdb0618d7ed3635bbdb94f299bb9eceb47153f484cc7b50fdf1aac657e04e0fc",
-    "dest": "./offline-repository/io/github/jwharm/javagi/pangocairo/0.11.0",
-    "dest-filename": "pangocairo-0.11.0.module"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/pangocairo/0.11.2/pangocairo-0.11.2.module",
+    "sha512": "cb2b59a36f7ce39f6dd3788f3fbf9f23b86281ed8a5c3a9d234e8a781264f5a6da62cd15cf6d3c109c735ef47d10fa9122042a1b2b3e365e9ef244756617be94",
+    "dest": "./offline-repository/io/github/jwharm/javagi/pangocairo/0.11.2",
+    "dest-filename": "pangocairo-0.11.2.module"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/pangocairo/0.11.0/pangocairo-0.11.0.pom",
-    "sha512": "11f340e5ebf29da61df42151d1193469e44e8df1d01ea4bd323e6ea24155b67effaba426821b786ce8131854e0b6d481f7348ad31e9467627c88a17cf7e7478e",
-    "dest": "./offline-repository/io/github/jwharm/javagi/pangocairo/0.11.0",
-    "dest-filename": "pangocairo-0.11.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/github/jwharm/javagi/pangocairo/0.11.2/pangocairo-0.11.2.pom",
+    "sha512": "100742aa315f477b299d1078f87cd45e95919e6a0547fdf6655aa37b02b55edbcdc023ff203f7bf2163519dad54686d65cb32550ac89ef0430a98fb0926e4c53",
+    "dest": "./offline-repository/io/github/jwharm/javagi/pangocairo/0.11.2",
+    "dest-filename": "pangocairo-0.11.2.pom"
   },
   {
     "type": "file",
@@ -974,24 +1009,24 @@
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/reactivex/rxjava3/rxjava/3.1.9/rxjava-3.1.9.jar",
-    "sha512": "fa8832f7a568a1c3cbd54fd38d062cf3519073c542dd1a0e500d696a700a70854ed532908609f5ef2384a384392b5c6f66f29d0a877e4b67483dd0d12f2152a8",
-    "dest": "./offline-repository/io/reactivex/rxjava3/rxjava/3.1.9",
-    "dest-filename": "rxjava-3.1.9.jar"
+    "url": "https://repo.maven.apache.org/maven2/io/reactivex/rxjava3/rxjava/3.1.10/rxjava-3.1.10.jar",
+    "sha512": "c495dfd8e4dc51d34d221c80245fd61b56e9a6a6f104d15edb5a39a14a6e947a85f5f9d156aa658ebd1451018cdba10ab0fdfb9214a18423ccb29458f4fed512",
+    "dest": "./offline-repository/io/reactivex/rxjava3/rxjava/3.1.10",
+    "dest-filename": "rxjava-3.1.10.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/reactivex/rxjava3/rxjava/3.1.9/rxjava-3.1.9.module",
-    "sha512": "4940f8efb7232d63e47dbc62d0bc15969afcd4a431f463fd878bb5052bcceda3ead0aa501cf6960f379dfe263601424aba4156ff9c6a0b2fb5aad37ecec4a80b",
-    "dest": "./offline-repository/io/reactivex/rxjava3/rxjava/3.1.9",
-    "dest-filename": "rxjava-3.1.9.module"
+    "url": "https://repo.maven.apache.org/maven2/io/reactivex/rxjava3/rxjava/3.1.10/rxjava-3.1.10.module",
+    "sha512": "86cea127d1ad20c63f896aff96c4b25298d6a7abadbfe80064332ca138cd694ff81eca4b75fd571730ea21e0f606630f5a41ddc591d4ea4b86aff43e4570b6e2",
+    "dest": "./offline-repository/io/reactivex/rxjava3/rxjava/3.1.10",
+    "dest-filename": "rxjava-3.1.10.module"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/reactivex/rxjava3/rxjava/3.1.9/rxjava-3.1.9.pom",
-    "sha512": "0d5d7d7647264a251dfa11cdf4f12354d96a5baee76ab968d402be1eb4c1256cc9e2be2d241cf21f10e0e5b9be1e55a51ef42117a6063758bc3cb85fcccb4a50",
-    "dest": "./offline-repository/io/reactivex/rxjava3/rxjava/3.1.9",
-    "dest-filename": "rxjava-3.1.9.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/reactivex/rxjava3/rxjava/3.1.10/rxjava-3.1.10.pom",
+    "sha512": "16be8f6f979598257c5fb29a620fd6b16e106e84a0012cfc8cb131979b4f8645bad13fb9fe6d5029bd35f410a8a517a2a6509fbb10f3aa15531eeca92c434600",
+    "dest": "./offline-repository/io/reactivex/rxjava3/rxjava/3.1.10",
+    "dest-filename": "rxjava-3.1.10.pom"
   },
   {
     "type": "file",
@@ -1009,38 +1044,38 @@
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder-core/43/record-builder-core-43.jar",
-    "sha512": "eda8679fa9a81d8b601776f739b570a26a99240ef57ebe65970bacb1cd50e316da48b1970d13861aacf573f56c5ecbd4d458bc04d09bf1ec8212ff8353c74a75",
-    "dest": "./offline-repository/io/soabase/record-builder/record-builder-core/43",
-    "dest-filename": "record-builder-core-43.jar"
+    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder-core/44/record-builder-core-44.jar",
+    "sha512": "277dc6744368a9d3f39846f3d6ddc9aa6fca2726c0a72ec1c264d8d23f704d33561bd806aa0e6873543d3ff4600f95b284f711f35430f9f0c0415719f763ae8d",
+    "dest": "./offline-repository/io/soabase/record-builder/record-builder-core/44",
+    "dest-filename": "record-builder-core-44.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder-core/43/record-builder-core-43.pom",
-    "sha512": "0f6b907aa64394940a25c1fc39432126c46d2c654f745a0ebd6bf3b626fc03f3d77131c055de003600cec54e5b2a222497533ddd3af013896fe74aa6bf062289",
-    "dest": "./offline-repository/io/soabase/record-builder/record-builder-core/43",
-    "dest-filename": "record-builder-core-43.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder-core/44/record-builder-core-44.pom",
+    "sha512": "3bdd13dee6378c039b8c80d32e79228584becf73d70b28c8231b1cc04bec9bd98a7831052aeb114116fd74b9f2a55d012cc14ed3d089f2324c6f56f1ed1e75a4",
+    "dest": "./offline-repository/io/soabase/record-builder/record-builder-core/44",
+    "dest-filename": "record-builder-core-44.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder-processor/43/record-builder-processor-43.jar",
-    "sha512": "8cc4be560dd45dd1215a83099ff027b611ba063ebda9ab5f8900e65a53d553483f60a430a10508a06eb9d76d4d7c54050622d1d0508bca6cabf8b41218d20d0f",
-    "dest": "./offline-repository/io/soabase/record-builder/record-builder-processor/43",
-    "dest-filename": "record-builder-processor-43.jar"
+    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder-processor/44/record-builder-processor-44.jar",
+    "sha512": "e8507a3cc0f3cccf6f16d51b2093b497b7e76e759d55ea907906f5bd8be7b290535f63ff356974910204f1382ecbe41a883405c3b8b0b36bdc1ddd2652eb0588",
+    "dest": "./offline-repository/io/soabase/record-builder/record-builder-processor/44",
+    "dest-filename": "record-builder-processor-44.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder-processor/43/record-builder-processor-43.pom",
-    "sha512": "886e4a92598562ed0231a07453bc905c6af1be30de648c7bb2d6f3397058b17f4f2dbb3c040d4d4e426fd2c82e4cb774e98837877ea6f72a240eade2c78179da",
-    "dest": "./offline-repository/io/soabase/record-builder/record-builder-processor/43",
-    "dest-filename": "record-builder-processor-43.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder-processor/44/record-builder-processor-44.pom",
+    "sha512": "3f5ecb164f273f3df35adc328585aa48b73d93fe46b8f1ee7cc535119bd31ba592f950f9ed9326eb4ea304c6a1b5572bef6b5a17aad1a198dfc7fcd68b9ab328",
+    "dest": "./offline-repository/io/soabase/record-builder/record-builder-processor/44",
+    "dest-filename": "record-builder-processor-44.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder/43/record-builder-43.pom",
-    "sha512": "31394a37a373d0e952d950151675c66fade63dfe370f900e5e6b118356d585a014db1405c9d5cc997f61da530dd080febe3caf05c84c060e5339406e8c465419",
-    "dest": "./offline-repository/io/soabase/record-builder/record-builder/43",
-    "dest-filename": "record-builder-43.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder/44/record-builder-44.pom",
+    "sha512": "8a87fc1034f6ba8aa628ae23ab0378cb2a55e7fee5d3d9d83c773bb9c2e89f0ab2915cfdb9f7f743921224933dbf9efd4b7409b02144b4add48d52128acc6ade",
+    "dest": "./offline-repository/io/soabase/record-builder/record-builder/44",
+    "dest-filename": "record-builder-44.pom"
   },
   {
     "type": "file",
@@ -1128,38 +1163,38 @@
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/net/beardbot/subsonic-client/0.5.1/subsonic-client-0.5.1.jar",
-    "sha512": "d795581b92f2679a9d7cbfd2f17a6e0d8491822df1d39c312d1d5f9a0da7386f193848ceeea0ff6e5fb3d2d846b03c2f1653245fae500865285ed98b79ec010d",
-    "dest": "./offline-repository/net/beardbot/subsonic-client/0.5.1",
-    "dest-filename": "subsonic-client-0.5.1.jar"
+    "url": "https://repo.maven.apache.org/maven2/net/beardbot/subsonic-client/0.6.0/subsonic-client-0.6.0.jar",
+    "sha512": "2a54ac8ef82ae96d766aaf82d4d05a03107f9cb97434bba527f3987b54e2e647c2c64761d825e327aef69fd536ac66046161009ddbf39d5417a63862c9d95c5f",
+    "dest": "./offline-repository/net/beardbot/subsonic-client/0.6.0",
+    "dest-filename": "subsonic-client-0.6.0.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/net/beardbot/subsonic-client/0.5.1/subsonic-client-0.5.1.pom",
-    "sha512": "7570dee545d6fc48dfdc31d26c7337c0b21cc8e6d6bfd344913d1dd2df17d9551ffb2069774bb3c3fe71bb857f434d29627ce7736501f5095d8378147cddd564",
-    "dest": "./offline-repository/net/beardbot/subsonic-client/0.5.1",
-    "dest-filename": "subsonic-client-0.5.1.pom"
+    "url": "https://repo.maven.apache.org/maven2/net/beardbot/subsonic-client/0.6.0/subsonic-client-0.6.0.pom",
+    "sha512": "d58f8dd208a56ba603844fdd9bbd2b12119a45873b337b9ae3d8d26fb0d97672ff27b1b2ef4b02812179f981c36e1580d5bfa2cb97f1dfc840b2a30de6129b00",
+    "dest": "./offline-repository/net/beardbot/subsonic-client/0.6.0",
+    "dest-filename": "subsonic-client-0.6.0.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy-parent/1.14.18/byte-buddy-parent-1.14.18.pom",
-    "sha512": "82eb52fe0639a3c4142f65feef83a723c9c94159d02d5ae122796b84bf8567a23005a2e534f416e2e30bcc61e62835b1496182aecd1ddacfb7f8d49e3194aaab",
-    "dest": "./offline-repository/net/bytebuddy/byte-buddy-parent/1.14.18",
-    "dest-filename": "byte-buddy-parent-1.14.18.pom"
+    "url": "https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy-parent/1.15.11/byte-buddy-parent-1.15.11.pom",
+    "sha512": "49fad568617a3301bfc3a7610848e3b2fce448e88f142503f299e2c5c5c3fccbda3c2cc15460ca3cba25f8c7659f0d9681007f683b60fe345015ed132b61ce82",
+    "dest": "./offline-repository/net/bytebuddy/byte-buddy-parent/1.15.11",
+    "dest-filename": "byte-buddy-parent-1.15.11.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy/1.14.18/byte-buddy-1.14.18.jar",
-    "sha512": "da050e5f32bc2825f04fe4f3c6c23654779c0d6b0c8126a287f7a03e9a520de55f7f0209609e672aecc75ba76a33fc555a3b485ba2ac82ad2a24c8e3f9eacffd",
-    "dest": "./offline-repository/net/bytebuddy/byte-buddy/1.14.18",
-    "dest-filename": "byte-buddy-1.14.18.jar"
+    "url": "https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy/1.15.11/byte-buddy-1.15.11.jar",
+    "sha512": "61a75caa9f9ad14e8f837c296dca12df9aa1cfbf1e6cd25a8344ae9d4a468ee25944c867dc82487b9247383d0695a425b5578620fc6e1132dd24cebc4d6eafcf",
+    "dest": "./offline-repository/net/bytebuddy/byte-buddy/1.15.11",
+    "dest-filename": "byte-buddy-1.15.11.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy/1.14.18/byte-buddy-1.14.18.pom",
-    "sha512": "3b532ac19976d0ecbba623506ad5c428a0f7ac0e959528025ca307363a5196aa78274dd4f36f66ef50bffd064a1d79559cf04ddcd564fabc8db7c6fb3e859e72",
-    "dest": "./offline-repository/net/bytebuddy/byte-buddy/1.14.18",
-    "dest-filename": "byte-buddy-1.14.18.pom"
+    "url": "https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy/1.15.11/byte-buddy-1.15.11.pom",
+    "sha512": "71e3850554253c113ab6f75bbf818997c8f3fe6a1e1682348d1f19f528bc8fc5e9a2a8c5390aed0b37375832d633acf04406d73cc22b5585992c4699b05a04ba",
+    "dest": "./offline-repository/net/bytebuddy/byte-buddy/1.15.11",
+    "dest-filename": "byte-buddy-1.15.11.pom"
   },
   {
     "type": "file",
@@ -1387,17 +1422,17 @@
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/org/assertj/assertj-core/3.26.3/assertj-core-3.26.3.jar",
-    "sha512": "2cf7310e2079e0b694ad3e948f874faa8c6895b50f9db9e4e4829cef22788f9ab9a4fbd36c14030514e42a5b3d9529933462ace8df7862efc8a19ff1c1372325",
-    "dest": "./offline-repository/org/assertj/assertj-core/3.26.3",
-    "dest-filename": "assertj-core-3.26.3.jar"
+    "url": "https://repo.maven.apache.org/maven2/org/assertj/assertj-core/3.27.0/assertj-core-3.27.0.jar",
+    "sha512": "df36045e93e56928751202439845a0ca2077be5e5f132daadc64a4267c683d85933d52cab575527bdffc2f818f69c125dcc359cff0e7e12603fcfc765a4bd44c",
+    "dest": "./offline-repository/org/assertj/assertj-core/3.27.0",
+    "dest-filename": "assertj-core-3.27.0.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/org/assertj/assertj-core/3.26.3/assertj-core-3.26.3.pom",
-    "sha512": "a4baa08e71c7d861d288efbcb1176ce825cc5b2a2842dabd514b4a95ca052db50b16ca285bae4ebf77f62619179cbea8061aafbc1bab7dcfd6b270ff8a8c6c4d",
-    "dest": "./offline-repository/org/assertj/assertj-core/3.26.3",
-    "dest-filename": "assertj-core-3.26.3.pom"
+    "url": "https://repo.maven.apache.org/maven2/org/assertj/assertj-core/3.27.0/assertj-core-3.27.0.pom",
+    "sha512": "4c17ef7b10b53e0401909aab4b7759690d2d79a6154be513cedc727e93d03f9c4657a6776ab0ba51b8e290dd6b1b8e42b462494c8b884a4d1b09dc213fad07fc",
+    "dest": "./offline-repository/org/assertj/assertj-core/3.27.0",
+    "dest-filename": "assertj-core-3.27.0.pom"
   },
   {
     "type": "file",
@@ -1807,45 +1842,45 @@
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/org/ow2/asm/asm-commons/9.7/asm-commons-9.7.jar",
-    "sha512": "64544d7515aa4582ebf40e9a5ec32cbcee3ef0e3e15448bd56e6adb583d4ff764a34bba866816e4415298da939b029384a6ccf887c70b5fe98ac23589e626f79",
-    "dest": "./offline-repository/org/ow2/asm/asm-commons/9.7",
-    "dest-filename": "asm-commons-9.7.jar"
+    "url": "https://repo.maven.apache.org/maven2/org/ow2/asm/asm-commons/9.7.1/asm-commons-9.7.1.jar",
+    "sha512": "81daf5765e387e6aeec5d45c4b9e4e1b471fb4f350931e5a214845c7c657a2142768f6902765e49c0ce2c595962e5d008883cba2e4a40c4bdce8f2e92518d2db",
+    "dest": "./offline-repository/org/ow2/asm/asm-commons/9.7.1",
+    "dest-filename": "asm-commons-9.7.1.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/org/ow2/asm/asm-commons/9.7/asm-commons-9.7.pom",
-    "sha512": "da65aada200175f2d910a82c6334f07390571542cdf43493b081cb71dea5e1a6bc6ad877a0e232914029c11bfbd3ac22476482e5bf5e9b59a5f457c567806637",
-    "dest": "./offline-repository/org/ow2/asm/asm-commons/9.7",
-    "dest-filename": "asm-commons-9.7.pom"
+    "url": "https://repo.maven.apache.org/maven2/org/ow2/asm/asm-commons/9.7.1/asm-commons-9.7.1.pom",
+    "sha512": "d4bd178cfde200ed04915e581dd1e7009b1960ef40c86e9c22d88ef141d4a32c7e6131ee2e48f92eba45d523006799c8be53312dc50c67ed7b8bb8b90175e480",
+    "dest": "./offline-repository/org/ow2/asm/asm-commons/9.7.1",
+    "dest-filename": "asm-commons-9.7.1.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/org/ow2/asm/asm-tree/9.7/asm-tree-9.7.jar",
-    "sha512": "60c548f80af02ea8da5866104921ca818a8de846504faebac5cf016becba6b277a33bf594a7fd783443856310864b2ffc99aa11cd6f4e439c086734923ef823b",
-    "dest": "./offline-repository/org/ow2/asm/asm-tree/9.7",
-    "dest-filename": "asm-tree-9.7.jar"
+    "url": "https://repo.maven.apache.org/maven2/org/ow2/asm/asm-tree/9.7.1/asm-tree-9.7.1.jar",
+    "sha512": "e55008c392fdd35e95d3404766b12dd4b46e13d5c362fcd0ab42a65751a82737eaf0ebc857691d1916190d34407adfde4437615d69c278785416fd911e00978d",
+    "dest": "./offline-repository/org/ow2/asm/asm-tree/9.7.1",
+    "dest-filename": "asm-tree-9.7.1.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/org/ow2/asm/asm-tree/9.7/asm-tree-9.7.pom",
-    "sha512": "85c7f7dcf732956a5a2a23cc239361c82671dbce34111aea7a323f00590617622a9ada704fea7b2d50afb52adf4e99daa1a2b794e0f1cc7562b508bb8e727a50",
-    "dest": "./offline-repository/org/ow2/asm/asm-tree/9.7",
-    "dest-filename": "asm-tree-9.7.pom"
+    "url": "https://repo.maven.apache.org/maven2/org/ow2/asm/asm-tree/9.7.1/asm-tree-9.7.1.pom",
+    "sha512": "f66d75d0897916d0e3a7ffe4dedd2ca4a363cba0430cc464a358e71be19e8413ba9f26b313f6eb7c0fcc631487e5a420f7bcf6af63c07e3d9880e8adc83922b7",
+    "dest": "./offline-repository/org/ow2/asm/asm-tree/9.7.1",
+    "dest-filename": "asm-tree-9.7.1.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/org/ow2/asm/asm/9.7/asm-9.7.jar",
-    "sha512": "ada37fcc95884a4d2cbc64495f5f67556c847e7724e26ccfbb15cc42a476436fa54b5d4fd4d9ed340241d848999d415e1cff07045d9e97d451c16aeed4911045",
-    "dest": "./offline-repository/org/ow2/asm/asm/9.7",
-    "dest-filename": "asm-9.7.jar"
+    "url": "https://repo.maven.apache.org/maven2/org/ow2/asm/asm/9.7.1/asm-9.7.1.jar",
+    "sha512": "4767b01603dad5c79cc1e2b5f3722f72b1059d928f184f446ba11badeb1b381b3a3a9a801cc43d25d396df950b09d19597c73173c411b1da890de808b94f1f50",
+    "dest": "./offline-repository/org/ow2/asm/asm/9.7.1",
+    "dest-filename": "asm-9.7.1.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/org/ow2/asm/asm/9.7/asm-9.7.pom",
-    "sha512": "d9f4743ff9cb8233051658cc32ed8eb271b6085fe3e58a60bea01358b5e9b67d2c39c3f063ef5d554a07195ab8c80c9f66d5ede7d09de75b0c842ddc54dfc0c3",
-    "dest": "./offline-repository/org/ow2/asm/asm/9.7",
-    "dest-filename": "asm-9.7.pom"
+    "url": "https://repo.maven.apache.org/maven2/org/ow2/asm/asm/9.7.1/asm-9.7.1.pom",
+    "sha512": "9d69abaf9c15b97d37484246c951acc55d4a944496ab47079dc600b3cd90353090b4a3579f1f7eb2e6d778e6900a5e1427f1690a4459253f3b9270c01713f54d",
+    "dest": "./offline-repository/org/ow2/asm/asm/9.7.1",
+    "dest-filename": "asm-9.7.1.pom"
   },
   {
     "type": "file",
