@@ -52,7 +52,7 @@ dependencies {
     // webp conversion support:
     implementation 'com.twelvemonkeys.imageio:imageio-webp:3.12.0'
 
-    testImplementation 'org.assertj:assertj-core:3.27.0'
+    testImplementation 'org.assertj:assertj-core:3.27.3'
     testImplementation 'junit:junit:4.13.2'
 }
 
