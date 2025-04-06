@@ -220,12 +220,29 @@ public class SubsonicClient implements ServerClient {
 
     private SongInfo toSongInfo(Child song) {
         try {
-            URI downloadUri = toDownloadUri(client, song);
-            String streamSuffix = this.client.getPreferences().getStreamFormat();
-            var params = StreamParams.create().estimateContentLength(true).format(this.client.getPreferences().getStreamFormat());
+            var duration = Duration.ofSeconds(song.getDuration());
+            var downloadUri = toDownloadUri(client, song);
+            var streamBitrate = this.client.getPreferences().getStreamBitRate();
+            var streamFormat = this.client.getPreferences().getStreamFormat();
+            var params = StreamParams.create()
+                    // estimateContentLength breaks java httpclient when the content-length
+                    // is shorter than the file ends up being ie. the server has over-estimated the final file size.
+                    // So instead we use a custom way to estimate some content size after transcoding based on the
+                    // wanted bitrate and duration.
+                    //.estimateContentLength(true)
+                    .maxBitRate(streamBitrate)
+                    .format(streamFormat);
             URI streamUri = this.client.media()
                     .stream(song.getId(), params)
                     .getUrl().toURI();
+
+            var transcodeInfo = new TranscodeInfo(
+                    ofNullable(song.getBitRate()),
+                    streamBitrate,
+                    duration,
+                    streamFormat,
+                    streamUri
+            );
 
             return new SongInfo(
                     song.getId(),
@@ -242,13 +259,12 @@ public class SubsonicClient implements ServerClient {
                     song.getArtist(),
                     song.getAlbumId(),
                     song.getAlbum(),
-                    Duration.ofSeconds(song.getDuration()),
+                    duration,
                     ofNullable(song.getStarred()).map(d -> d.toInstant(ZoneOffset.UTC)),
                     toCoverArt(song.getCoverArtId(), new AlbumIdentifier(song.getAlbumId())),
                     song.getSuffix(),
-                    streamSuffix,
-                    downloadUri,
-                    streamUri
+                    transcodeInfo,
+                    downloadUri
             );
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);

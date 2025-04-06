@@ -87,6 +87,7 @@ public class AppManager {
         this.currentState = BehaviorSubject.createDefault(buildState());
         var disposable = this.currentState
                 .throttleLatest(100, TimeUnit.MILLISECONDS, true)
+                //.throttleLatest(50, TimeUnit.MILLISECONDS, true)
                 .observeOn(Schedulers.io())
                 .subscribeOn(Schedulers.io())
                 .forEach(next -> this.notifyListeners());
@@ -203,7 +204,7 @@ public class AppManager {
                         Optional.empty()
                 )))
                 .player(old.player.withSource(Optional.of(new Source(
-                        songInfo.streamUri(),
+                        songInfo.transcodeInfo().streamUri(),
                         Optional.of(Duration.ZERO),
                         Optional.of(songInfo.duration())
                 ))))
@@ -213,9 +214,8 @@ public class AppManager {
         LoadSongResult song = songCache.getSong(new CacheSong(
                 SERVER_ID,
                 songInfo.id(),
-                songInfo.streamUri(),
+                songInfo.transcodeInfo(),
                 songInfo.suffix(),
-                songInfo.streamSuffix(),
                 songInfo.size(),
                 (total, count) -> {
                     if (isCancelled.get()) {

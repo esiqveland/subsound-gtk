@@ -1,5 +1,6 @@
 package com.github.subsound.persistence;
 
+import com.github.subsound.integration.ServerClient.TranscodeInfo;
 import com.github.subsound.utils.javahttp.LoggingHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,11 +37,9 @@ public class SongCache {
     public record CacheSong(
             String serverId,
             String songId,
-            URI streamUri,
+            TranscodeInfo transcodeInfo,
             // originalFileSuffix is the original file format originalFileSuffix
             String originalFileSuffix,
-            // the stream originalFileSuffix is the format we will receive when loading streamUri
-            String streamSuffix,
             // original size
             long originalSize,
             DownloadProgressHandler progressHandler
@@ -58,7 +57,7 @@ public class SongCache {
     }
 
     public LoadSongResult getSong(CacheSong songData) {
-        var streamUri = songData.streamUri();
+        var streamUri = songData.transcodeInfo.streamUri();
         switch (streamUri.getScheme()) {
             case "http", "https":
                 break;
@@ -91,10 +90,12 @@ public class SongCache {
         }
 
         try {
+            long estimatedContentSize = songData.transcodeInfo.estimateContentSize();
             long downloadSize = downloadTo(
-                    songData.streamUri(),
+                    songData.transcodeInfo.streamUri(),
                     new FileOutputStream(cacheTmpFile),
                     songData.originalSize,
+                    estimatedContentSize,
                     songData.progressHandler
             );
             if (downloadSize != songData.originalSize) {
@@ -111,7 +112,14 @@ public class SongCache {
     public interface DownloadProgressHandler {
         void progress(long total, long count);
     }
-    private long downloadTo(URI uri, OutputStream output, long originalSize, DownloadProgressHandler ph) {
+
+    private long downloadTo(
+            URI uri,
+            OutputStream output,
+            long originalSize,
+            long estimatedContentSize,
+            DownloadProgressHandler ph
+    ) {
         var req = HttpRequest.newBuilder().uri(uri).GET().build();
         try {
             HttpResponse<InputStream> res = this.client.send(req, HttpResponse.BodyHandlers.ofInputStream());
@@ -124,26 +132,38 @@ public class SongCache {
                 // response does not look like binary music data...
                 throw new RuntimeException("error: statusCode=%d uri=%s contentType=%s".formatted(res.statusCode(), uri.toString(), contentType));
             }
-            long expectedSize = res.headers().firstValueAsLong("Content-Length").orElse(originalSize);
 
-            var stream = res.body();
-            byte[] buffer = new byte[8192];
-            long count = 0L;
-            int n;
-            while(-1 != (n = stream.read(buffer))) {
-                output.write(buffer, 0, n);
-                count += n;
-                if (count > expectedSize) {
-                    expectedSize = count;
+            long estimatedSizeBytes = estimatedContentSize;
+//            long estimatedSizeBytes = res.headers()
+// X-Content-Duration is set by navidrome on HEAD and GET requests to the /rest/stream endpoint:
+//                    .firstValue("X-Content-Duration")
+//                    .map(Double::parseDouble)
+//                    .map(durationSeconds -> estimateContentLength(durationSeconds, bitRate))
+//                    .orElse(originalSize);
+            long expectedSize = res.headers().firstValueAsLong("Content-Length").orElse(estimatedSizeBytes);
+
+            log.info("estimateContentLength: originalSize={} expectedSize={}", originalSize, expectedSize);
+
+            try (var stream = res.body()) {
+                byte[] buffer = new byte[8192];
+                long sum = 0L;
+                int n;
+                while(-1 != (n = stream.read(buffer))) {
+                    output.write(buffer, 0, n);
+                    sum += n;
+                    if (sum > expectedSize) {
+                        expectedSize = sum;
+                    }
+                    ph.progress(expectedSize, sum);
                 }
-                ph.progress(expectedSize, count);
-            }
 
-            // When transcoding, Content-Length is only an estimate.
-            // Make sure we finish the progressbar by flushing with the final size before exiting:
-            var finalSize = Math.max(expectedSize, count);
-            ph.progress(finalSize, finalSize);
-            return count;
+                // When transcoding, Content-Length is only an estimate.
+                // Make sure we finish the progressbar by flushing with the final size before exiting:
+                var finalSize = Math.max(expectedSize, sum);
+                log.info("sending final flush: originalSize={} expectedSize={} estimatedSizeBytes={} finalSize={}", originalSize, expectedSize, estimatedSizeBytes, finalSize);
+                ph.progress(finalSize, finalSize);
+                return sum;
+            }
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -157,12 +177,11 @@ public class SongCache {
         // and this is even more weird for live transcoded streams.
         // So instead we take a hash of the songId as this will probably also give a uniform distribution into our buckets:
         String shasum = sha256(songId);
-        var cacheKey = new CacheKey(
+        return new CacheKey(
                 shasum.substring(0, 2),
                 shasum.substring(2, 4),
                 shasum.substring(4, 6)
         );
-        return cacheKey;
     }
 
     record CachehPath(
@@ -174,7 +193,7 @@ public class SongCache {
     private CachehPath cachePath(CacheSong songData) {
         var songId = songData.songId;
         var key = toCacheKey(songId);
-        var fileName = "%s.%s".formatted(songId, songData.streamSuffix);
+        var fileName = "%s.%s".formatted(songId, songData.transcodeInfo.streamFormat());
         var cachePath = joinPath(root, songData.serverId, "songs", key.part1, key.part2, key.part3, fileName);
         var cachePathTmp = joinPath(cachePath.getParent(), fileName + ".tmp");
         return new CachehPath(cachePath, cachePathTmp);

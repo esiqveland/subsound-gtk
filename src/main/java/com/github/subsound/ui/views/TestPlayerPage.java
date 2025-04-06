@@ -1,6 +1,7 @@
 package com.github.subsound.ui.views;
 
 import com.github.subsound.app.state.AppManager;
+import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
@@ -17,11 +18,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static com.github.subsound.integration.ServerClient.*;
 import static com.github.subsound.utils.Utils.sha256;
 
 public class TestPlayerPage extends Box {
     private static final Logger log = LoggerFactory.getLogger(TestPlayerPage.class);
-    public final List<Sample> knownSongs ;
+    public final List<Sample> knownSongs;
     private final AppManager player;
 
     public TestPlayerPage(AppManager player) {
@@ -121,7 +123,7 @@ public class TestPlayerPage extends Box {
             URI uri,
             long size,
             String suffix
-    ){
+    ) {
         public SongInfo toSongInfo() {
             return new SongInfo(
                     id,
@@ -142,8 +144,13 @@ public class TestPlayerPage extends Box {
                     Optional.empty(),
                     Optional.empty(),
                     suffix,
-                    suffix,
-                    uri,
+                    new TranscodeInfo(
+                            Optional.of(192),
+                            192,
+                            Duration.ofSeconds(121),
+                            suffix,
+                            uri
+                    ),
                     uri
             );
         }

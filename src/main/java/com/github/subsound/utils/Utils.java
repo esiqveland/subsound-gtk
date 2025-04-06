@@ -336,6 +336,11 @@ public class Utils {
         }
     }
 
+    public static long estimateContentLength(double durationSeconds, double bitRate) {
+        var estimatedBytes = durationSeconds * bitRate / 8.0 * 1024.0;
+        return (long) estimatedBytes;
+    }
+
 //    public static File getResourceDirectory(String resource) {
 //        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 //        URL res = classLoader.getResource(resource);

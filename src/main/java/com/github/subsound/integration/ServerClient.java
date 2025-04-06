@@ -2,6 +2,7 @@ package com.github.subsound.integration;
 
 import com.github.subsound.configuration.Config.ServerConfig;
 import com.github.subsound.integration.servers.subsonic.SubsonicClient;
+import com.github.subsound.utils.Utils;
 import io.soabase.recordbuilder.core.RecordBuilder;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
 import org.subsonic.restapi.AlbumID3;
@@ -32,6 +33,21 @@ public interface ServerClient {
     ServerType getServerType();
     boolean testConnection();
 
+
+    record TranscodeInfo(
+            Optional<Integer> originalBitRate,
+            int estimatedBitRate,
+            Duration duration,
+            // the streamFormat is the format we will receive when loading streamUri
+            // "mp3" | "ogg"
+            String streamFormat,
+            URI streamUri
+    ) {
+        public long estimateContentSize() {
+            return Utils.estimateContentLength(duration.getSeconds(), estimatedBitRate);
+        }
+    }
+
     @RecordBuilderFull
     record SongInfo(
             String id,
@@ -52,9 +68,8 @@ public interface ServerClient {
             Optional<Instant> starred,
             Optional<CoverArt> coverArt,
             String suffix,
-            String streamSuffix,
-            URI downloadUri,
-            URI streamUri
+            TranscodeInfo transcodeInfo,
+            URI downloadUri
     ) implements ServerClientSongInfoBuilder.With {
         public boolean isStarred() {
             return starred.isPresent();
