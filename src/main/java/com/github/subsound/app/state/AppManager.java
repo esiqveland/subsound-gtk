@@ -455,7 +455,14 @@ public class AppManager {
     private void setState(Function<AppState, AppState> modifier) {
         try {
             lock.lock();
-            this.currentState.onNext(modifier.apply(this.currentState.getValue()));
+            var start = System.nanoTime();
+            var nextState = modifier.apply(this.currentState.getValue());
+            this.currentState.onNext(nextState);
+            var elapsedNanos = System.nanoTime() - start;
+            var elapsedMillis = TimeUnit.NANOSECONDS.toMillis(elapsedNanos);
+            if (elapsedMillis > 10) {
+                log.warn("long running update took {}ms for state={}", elapsedMillis, nextState);
+            }
         } finally {
             lock.unlock();
         }
