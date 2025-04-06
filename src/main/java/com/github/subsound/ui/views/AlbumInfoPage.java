@@ -183,7 +183,7 @@ public class AlbumInfoPage extends Box {
                     .setEllipsize(EllipsizeMode.START)
                     .setCssClasses(cssClasses("dim-label", "numeric"))
                     .build();
-            icon = new NowPlayingOverlayIcon(16, songNumberLabel);
+            icon = new NowPlayingOverlayIcon(24, songNumberLabel);
             var isHoverActive = new AtomicBoolean(false);
 
             addHover(
