@@ -156,11 +156,11 @@ public class PlayerScrubber extends Box {
     private final AtomicInteger counter = new AtomicInteger();
     public void setFill(long total, long count) {
         int i = counter.addAndGet(1);
-        if (i % 25 != 0) {
-            if (total != count) {
-                return;
-            }
-        }
+//        if (i % 25 != 0) {
+//            if (total != count) {
+//                return;
+//            }
+//        }
         this.scale.setShowFillLevel(true);
         //this.scale.setRestrictToFillLevel(true);
         double fill = (double) count / (double) total;
