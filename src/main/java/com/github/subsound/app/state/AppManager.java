@@ -81,9 +81,9 @@ public class AppManager {
         );
         this.client = new AtomicReference<>();
         client.ifPresent(this.client::set);
-        player.onStateChanged(next -> this.setState(old -> new AppState(
-                old.nowPlaying, next, old.queue
-        )));
+        player.onStateChanged(next -> {
+            this.setState(old -> old.withPlayer(next));
+        });
         this.currentState = BehaviorSubject.createDefault(buildState());
         var disposable = this.currentState
                 .throttleLatest(100, TimeUnit.MILLISECONDS, true)
