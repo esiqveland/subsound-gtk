@@ -68,7 +68,14 @@ public class Utils {
         });
     }
     public static void runOnMainThread(SourceOnceFunc fn) {
-        GLib.idleAddOnce(fn);
+        // Have to add a return GLib.SOURCE_REMOVE at the end of the callback to make sure it only runs once.
+        // GLib.idleAdd calls g_idle_add_full which has proper memory management with a DestroyNotify callback.
+        // Java-GI uses that to free the upcall allocation.
+        GLib.idleAdd(GLib.PRIORITY_DEFAULT_IDLE, () -> {
+            fn.run();
+            return GLib.SOURCE_REMOVE;
+        });
+//        GLib.idleAddOnce(fn);
     }
 
     public static String sha256(String value) {
