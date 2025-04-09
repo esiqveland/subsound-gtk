@@ -1,5 +1,6 @@
 package com.github.subsound.ui.components;
 
+import com.github.subsound.utils.Utils;
 import org.gnome.glib.GLib;
 import org.gnome.gtk.Button;
 
@@ -51,7 +52,7 @@ public class VolumeButton extends Button {
         if (next != currentIcon) {
             System.out.printf("VolumeIcon: old icon=%s next=%s%n", currentIcon.getIconName(), next.getIconName());
             currentIcon = next;
-            GLib.idleAddOnce(() -> {
+            Utils.runOnMainThread(() -> {
                 this.setIconName(next.getIconName());
             });
         }
