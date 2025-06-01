@@ -20,7 +20,7 @@ repositories {
 }
 
 def javagiVersion = "0.12.2"
-def recordBuilderVersion = "44"
+def recordBuilderVersion = "47"
 
 dependencies {
     implementation "io.github.jwharm.javagi:gtk:$javagiVersion"
