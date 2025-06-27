@@ -36,8 +36,8 @@ dependencies {
     implementation 'com.github.akarnokd:rxjava3-fiber-interop:0.0.18'
     compileOnly 'com.github.akarnokd:rxjava3-jdk9-interop:3.0.1'
     implementation 'com.softwaremill.jox:channels:1.0.0'
-    implementation 'com.github.hypfvieh:dbus-java-core:5.1.0'
-    implementation 'com.github.hypfvieh:dbus-java-transport-native-unixsocket:5.1.0'
+    implementation 'com.github.hypfvieh:dbus-java-core:5.1.1'
+    implementation 'com.github.hypfvieh:dbus-java-transport-native-unixsocket:5.1.1'
 
     annotationProcessor "io.soabase.record-builder:record-builder-processor:$recordBuilderVersion"
     compileOnly "io.soabase.record-builder:record-builder-core:$recordBuilderVersion"
