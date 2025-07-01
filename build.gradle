@@ -1,7 +1,7 @@
 import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
-    id 'com.gradleup.shadow' version '8.3.5'
+    id 'com.gradleup.shadow' version '8.3.8'
     id 'java'
     id 'application'
     id 'io.github.jwharm.flatpak-gradle-generator' version '1.5.0'
