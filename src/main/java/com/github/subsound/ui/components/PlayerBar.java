@@ -301,8 +301,6 @@ public class PlayerBar extends Box implements AppManager.StateListener {
                 if (!withinEpsilon(cubicVolume, volumeScale.getValue(), 0.01)) {
                     System.out.printf("volume is outdated: %.2f%n", cubicVolume);
                     this.volumeButton.setVolume(cubicVolume);
-                }
-                if (!withinEpsilon(cubicVolume, volumeScale.getValue(), 0.01)) {
                     this.volumeScale.setValue(cubicVolume);
                 }
                 if (nextPlayingState != playingState) {
