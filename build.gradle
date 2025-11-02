@@ -26,6 +26,7 @@ dependencies {
     implementation "io.github.jwharm.javagi:gtk:$javagiVersion"
     implementation "io.github.jwharm.javagi:adw:$javagiVersion"
     implementation "io.github.jwharm.javagi:gst:$javagiVersion"
+    implementation("org.xerial:sqlite-jdbc:3.50.3.0")
 
     implementation 'net.beardbot:subsonic-client:0.6.0'
     implementation "com.github.ben-manes.caffeine:caffeine:3.2.0"
