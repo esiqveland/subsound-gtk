@@ -51,6 +51,8 @@ public class StarredLoader extends Box {
     public record PlaylistsData(ListPlaylists playlistList, ListStarred starredList){}
 
     public synchronized StarredLoader refresh() {
+        // TODO: probably need to keep this in AppState,
+        //  so we can always have actions for AddToPlaylist and View/Edit Starred list:
         var loadPlaylistList = Utils.doAsync(() -> this.appManager.useClient(ServerClient::getPlaylists));
         var loadStarredList = Utils.doAsync(() -> this.appManager.useClient(ServerClient::getStarred));
 
