@@ -36,7 +36,7 @@ import static com.github.subsound.integration.platform.mpriscontroller.MPrisCont
 public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppManager.StateListener, Properties {
     private final static Logger log = LoggerFactory.getLogger(MPrisController.class);
     private final AppManager appManager;
-    private final Channel<PropertiesChanged> dbusMessageChannel = new Channel<>();
+    private final Channel<PropertiesChanged> dbusMessageChannel = Channel.newBufferedDefaultChannel();
     private final MprisApplicationProperties mprisApplicationProperties;
     private final AtomicReference<MPRISPlayerState> playerState = new AtomicReference<>();
 
