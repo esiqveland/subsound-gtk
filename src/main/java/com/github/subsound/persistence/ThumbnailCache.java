@@ -8,6 +8,7 @@ import com.github.subsound.utils.ImageUtils;
 import com.github.subsound.utils.ImageUtils.ColorValue;
 import com.github.subsound.utils.Utils;
 import com.github.subsound.utils.javahttp.LoggingHttpClient;
+import org.gnome.gdk.Texture;
 import org.gnome.gdkpixbuf.Pixbuf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +47,7 @@ public class ThumbnailCache {
     private final Semaphore semaphore = new Semaphore(2);
     // A separate semaphore for querying the cache, so downloading new content does not block us from loading content we already have stored
     private final Semaphore semaphorePixbuf = new Semaphore(2);
-    private final Cache<PixbufCacheKey, StoredPixbuf> pixbufCache = Caffeine.newBuilder().maximumSize(500).build();
+    private final Cache<PixbufCacheKey, StoredPixbuf> pixbufCache = Caffeine.newBuilder().maximumSize(2000).build();
 
     record PixbufCacheKey(
             CoverArt coverArt,
