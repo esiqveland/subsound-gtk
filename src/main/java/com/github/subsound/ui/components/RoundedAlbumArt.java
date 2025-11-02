@@ -17,12 +17,10 @@ import org.gnome.gio.Cancellable;
 import org.gnome.gio.MemoryInputStream;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
-import org.gnome.gtk.ContentFit;
 import org.gnome.gtk.Grid;
 import org.gnome.gtk.Image;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Overflow;
-import org.gnome.gtk.Picture;
 import org.gnome.gtk.Widget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +40,7 @@ public class RoundedAlbumArt extends Box {
 
     private final AppManager thumbLoader;
     private final CoverArt artwork;
-    private final Picture image;
+    private final Image image;
     private final Grid grid;
     private final AtomicBoolean hasLoaded = new AtomicBoolean(false);
     private final AtomicBoolean isLoading = new AtomicBoolean(false);
@@ -51,6 +49,7 @@ public class RoundedAlbumArt extends Box {
     private final AtomicBoolean clickable = new AtomicBoolean(true);
 
     private final static Map<Boolean, Pixbuf> placeHolderCache = new ConcurrentHashMap<>();
+
     public static Grid placeholderImage(int size) {
             Pixbuf pixbuf = placeHolderCache.computeIfAbsent(true, (key) -> {
                 try {
@@ -66,12 +65,12 @@ public class RoundedAlbumArt extends Box {
             Texture texture = Texture.forPixbuf(pixbuf);
             var image = Image.fromPaintable(texture);
             image.setSizeRequest(size, size);
-            var box = Grid.builder()
-                    .setHexpand(false)
-                    .setVexpand(true)
-                    .setHalign(Align.CENTER)
-                    .setValign(Align.CENTER)
-                    .build();
+
+            var box = new Grid();
+            box.setHexpand(false);
+            box.setVexpand(true);
+            box.setHalign(Align.CENTER);
+            box.setValign(Align.CENTER);
             box.setSizeRequest(size, size);
             box.setOverflow(Overflow.HIDDEN);
             box.addCssClass("rounded");
@@ -101,24 +100,19 @@ public class RoundedAlbumArt extends Box {
         this.setOverflow(Overflow.HIDDEN);
 //        this.addCssClass("rounded");
 
-        this.grid = Grid.builder()
-                .setHexpand(false)
-                .setVexpand(true)
-                .setHalign(Align.CENTER)
-                .setValign(Align.CENTER)
-                .build();
+        this.grid = new Grid();
+        this.grid.setHexpand(false);
+        this.grid.setVexpand(true);
+        this.grid.setHalign(Align.CENTER);
+        this.grid.setValign(Align.CENTER);
         this.grid.setSizeRequest(size, size);
         this.grid.setOverflow(Overflow.HIDDEN);
         this.grid.addCssClass("rounded");
 
-        // See: https://docs.gtk.org/gdk-pixbuf/class.Picture.html
-        this.image = Picture.builder()
-                .setCanShrink(true)
-                .setContentFit(ContentFit.COVER)
-                .setWidthRequest(size)
-                .setHeightRequest(size)
-                .build();
+        // See: https://docs.gtk.org/gtk4/class.Image.html
+        this.image = new Image();
         this.image.setSizeRequest(size, size);
+        this.image.setPixelSize(size);
 
         this.onMap(() -> {
             log.info("%s: onMap: id=%s".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
@@ -153,7 +147,9 @@ public class RoundedAlbumArt extends Box {
 
 
         this.grid.attach(image, 0, 0, 1, 1);
-        var clamp = Clamp.builder().setChild(this.grid).setMaximumSize(size).build();
+        var clamp = new Clamp();
+        clamp.setChild(this.grid);
+        clamp.setMaximumSize(size);
         this.append(clamp);
     }
 
@@ -162,14 +158,14 @@ public class RoundedAlbumArt extends Box {
         return this;
     }
 
-    public void startLoad(Picture image) {
+    public void startLoad(Image image) {
         this.thumbLoader.getThumbnailCache().loadPixbuf(this.artwork, this.size)
-                .thenAccept(pixbuf -> {
+                .thenAccept(storedImage -> {
+                    log.info("startLoad: size={} id={}", storedImage.pixbuf().getWidth(), this.artwork.coverArtId());
                     //Texture texture = Texture.forPixbuf(pixbuf);
                     Utils.runOnMainThread(() -> {
                         //image.setPaintable(texture);
-                        image.setPixbuf(pixbuf.pixbuf());
-                        image.setSizeRequest(size, size);
+                        image.setFromPixbuf(storedImage.pixbuf());
                     });
                 });
     }
