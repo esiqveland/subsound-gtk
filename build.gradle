@@ -1,7 +1,7 @@
 import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
-    id 'com.gradleup.shadow' version '8.3.5'
+    id 'com.gradleup.shadow' version '9.2.2'
     id 'java'
     id 'application'
     id 'io.github.jwharm.flatpak-gradle-generator' version '1.5.0'
@@ -10,7 +10,7 @@ plugins {
 
 group = 'com.github.subsounds'
 version = '0.1.0'
-var mainClass = 'com.github.subsound.Main'
+def mainClass = 'com.github.subsound.Main'
 
 repositories {
     maven { url './offline-repository/' }
@@ -120,6 +120,7 @@ tasks.flatpakGradleGenerator {
     outputFile = file('flatpak-sources.json')
     downloadDirectory = './offline-repository'
 }
+
 application {
     setMainClass(mainClass)
 }
