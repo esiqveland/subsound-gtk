@@ -21,10 +21,12 @@ import org.gnome.gtk.ListView;
 import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.SignalListItemFactory;
 import org.gnome.gtk.SingleSelection;
+import org.gnome.gtk.Text;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -97,7 +99,6 @@ public class StarredListView extends Box implements AppManager.StateListener {
             //int index = item.getIndex();
             int index = listitem.getPosition();
 
-            // Retrieve the index of the item and show the entry from the ArrayList with random strings.
             //var songInfo = this.data.songs().get(index);
             var songInfo = item.songInfo();
             if (songInfo == null) {
@@ -108,7 +109,6 @@ public class StarredListView extends Box implements AppManager.StateListener {
                 return;
             }
             listitem.setActivatable(true);
-            log.info("factory.onBind: {} {}", songInfo.id(), songInfo.title());
             child.setSongInfo(songInfo, index, prevState.get());
         });
         factory.onTeardown(item -> {
