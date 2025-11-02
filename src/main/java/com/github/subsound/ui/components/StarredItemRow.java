@@ -82,58 +82,40 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
         this.setMarginEnd(2);
 
         albumCoverHolder = new AlbumCoverHolderSmall(this.appManager);
-        prefixBox = Box.builder()
-                .setOrientation(HORIZONTAL)
-                .setHalign(START)
-                .setValign(CENTER)
-                .setVexpand(true)
-                .setSpacing(0)
-                .setHomogeneous(true)
-                .build();
+        prefixBox = new Box(HORIZONTAL, 0);
+        prefixBox.setHalign(START);
+        prefixBox.setValign(CENTER);
+        prefixBox.setVexpand(true);
+        prefixBox.setHomogeneous(true);
 
-        centerBox = Box.builder()
-                .setOrientation(HORIZONTAL)
-                .setHalign(START)
-                .setValign(CENTER)
-                .setVexpand(true)
-                .setHexpand(true)
-                .setSpacing(0)
-                .setMarginStart(8)
-                .setMarginEnd(8)
-                .build();
+        centerBox = new Box(HORIZONTAL, 0);
+        centerBox.setHalign(START);
+        centerBox.setValign(CENTER);
+        centerBox.setVexpand(true);
+        centerBox.setHexpand(true);
+        centerBox.setMarginStart(8);
+        centerBox.setMarginEnd(8);
 
-        centerContent = Box.builder()
-                .setOrientation(VERTICAL)
-                .setHalign(START)
-                .setValign(CENTER)
-                .setVexpand(true)
-                .setHexpand(true)
-                .setSpacing(4)
-                .build();
+        centerContent = new Box(VERTICAL, 4);
+        centerContent.setHalign(START);
+        centerContent.setValign(CENTER);
+        centerContent.setVexpand(true);
+        centerContent.setHexpand(true);
 
-        subtitleBox = Box.builder()
-                .setOrientation(HORIZONTAL)
-                .setHalign(START)
-                .setValign(CENTER)
-                .setVexpand(true)
-                .setHexpand(true)
-                .setSpacing(2)
-                .build();
+        subtitleBox = new Box(HORIZONTAL, 2);
+        subtitleBox.setHalign(START);
+        subtitleBox.setValign(CENTER);
+        subtitleBox.setVexpand(true);
+        subtitleBox.setHexpand(true);
 
-        suffixBox = Box.builder()
-                .setOrientation(HORIZONTAL)
-                .setHalign(Align.END)
-                .setValign(CENTER)
-                .setVexpand(true)
-                .setSpacing(8)
-                .build();
+        suffixBox = new Box(HORIZONTAL, 8);
+        suffixBox.setHalign(Align.END);
+        suffixBox.setValign(CENTER);
+        suffixBox.setVexpand(true);
 
-        hoverBox = Box.builder()
-                .setOrientation(HORIZONTAL)
-                .setHalign(Align.END)
-                .setValign(CENTER)
-                .setSpacing(8)
-                .build();
+        hoverBox = new Box(HORIZONTAL, 8);
+        hoverBox.setHalign(Align.END);
+        hoverBox.setValign(CENTER);
 
         this.nowPlayingOverlayIcon = new TransparentNowPlayingOverlayIcon(48, this.albumCoverHolder);
         this.trackNumberLabel = infoLabel("    ", Classes.labelDim.add(Classes.labelNumeric));
