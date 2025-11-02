@@ -303,7 +303,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
                     this.volumeButton.setVolume(cubicVolume);
                 }
                 if (!withinEpsilon(cubicVolume, volumeScale.getValue(), 0.01)) {
-                    volumeScale.setValue(cubicVolume);
+                    this.volumeScale.setValue(cubicVolume);
                 }
                 if (nextPlayingState != playingState) {
                     this.updatePlayingState(nextPlayingState);
@@ -336,7 +336,6 @@ public class PlayerBar extends Box implements AppManager.StateListener {
             isStateChanging.set(false);
             currentState.set(state);
         }
-
     }
 
     private void updatePlayingState(PlayingState nextPlayingState) {
