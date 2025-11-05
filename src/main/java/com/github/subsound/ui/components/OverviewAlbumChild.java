@@ -110,9 +110,9 @@ public class OverviewAlbumChild extends Box {
 
 
     public static class AlbumCoverHolder extends Box {
-        private static final Widget PLACEHOLDER = RoundedAlbumArt.placeholderImage(COVER_SIZE);
         private final AppManager thumbLoader;
         private final AtomicReference<Widget> ref = new AtomicReference<>();
+        private final Widget PLACEHOLDER = RoundedAlbumArt.placeholderImage(COVER_SIZE);
         private Optional<CoverArt> artwork;
 
         public AlbumCoverHolder(AppManager thumbLoader) {
@@ -138,7 +138,7 @@ public class OverviewAlbumChild extends Box {
     }
 
     public static class AlbumCoverHolderSmall extends Box {
-        private static final Widget PLACEHOLDER = RoundedAlbumArt.placeholderImage(48);
+        private final Widget PLACEHOLDER = RoundedAlbumArt.placeholderImage(48);
         private final AppManager thumbLoader;
         private final AtomicReference<Widget> ref = new AtomicReference<>();
         private Optional<CoverArt> artwork;

@@ -48,21 +48,20 @@ public class RoundedAlbumArt extends Box {
     private final int size;
     private final AtomicBoolean clickable = new AtomicBoolean(true);
 
-    private final static Map<Boolean, Pixbuf> placeHolderCache = new ConcurrentHashMap<>();
+    private final static Map<Boolean, Texture> placeHolderCache = new ConcurrentHashMap<>();
 
     public static Grid placeholderImage(int size) {
-            Pixbuf pixbuf = placeHolderCache.computeIfAbsent(true, (key) -> {
+            var texture = placeHolderCache.computeIfAbsent(true, (key) -> {
                 try {
                     var bytes = mustReadBytes("images/album-placeholder.png");
                     var gioStream = MemoryInputStream.fromData(bytes);
                     //Pixbuf pixbufloader = Pixbuf.fromFileAtSize("src/main/resources/images/album-placeholder.png", size, size);
-                    var pixbufloader = Pixbuf.fromStreamAtScale(gioStream, size, size, true, new Cancellable());
-                    return pixbufloader;
+                    var pixbuf = Pixbuf.fromStreamAtScale(gioStream, size, size, true, new Cancellable());
+                    return Texture.forPixbuf(pixbuf);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             });
-            Texture texture = Texture.forPixbuf(pixbuf);
             var image = Image.fromPaintable(texture);
             image.setSizeRequest(size, size);
 
