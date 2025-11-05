@@ -16,7 +16,6 @@ import com.github.subsound.utils.ImageUtils;
 import com.github.subsound.utils.Utils;
 import org.gnome.adw.ActionRow;
 import org.gnome.gdk.Display;
-import org.gnome.gdk.Gdk;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
@@ -30,7 +29,6 @@ import org.gnome.gtk.Revealer;
 import org.gnome.gtk.RevealerTransitionType;
 import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.StateFlags;
-import org.gnome.gtk.StyleContext;
 import org.gnome.gtk.Widget;
 import org.gnome.pango.EllipsizeMode;
 
@@ -297,9 +295,9 @@ public class AlbumInfoPage extends Box {
         this.onMap(() -> this.appManager.getThumbnailCache().loadPixbuf(this.albumInfo.coverArt().get(), COVER_SIZE).thenAccept(this::switchPallete));
     }
 
-    private void switchPallete(ThumbnailCache.StoredPixbuf storedPixbuf) {
+    private void switchPallete(ThumbnailCache.CachedTexture cachedTexture) {
         StringBuilder colors = new StringBuilder();
-        List<ImageUtils.ColorValue> palette = storedPixbuf.palette();
+        List<ImageUtils.ColorValue> palette = cachedTexture.palette();
         for (int i = 0; i < palette.size(); i++) {
             ImageUtils.ColorValue colorValue = palette.get(i);
             colors.append("@define-color background_color_%d %s;\n".formatted(i, colorValue.rgba().toString()));

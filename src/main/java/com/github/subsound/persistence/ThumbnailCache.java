@@ -19,7 +19,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -47,7 +46,7 @@ public class ThumbnailCache {
     private final Semaphore semaphore = new Semaphore(2);
     // A separate semaphore for querying the cache, so downloading new content does not block us from loading content we already have stored
     private final Semaphore semaphorePixbuf = new Semaphore(2);
-    private final Cache<PixbufCacheKey, StoredPixbuf> pixbufCache = Caffeine.newBuilder().maximumSize(2000).build();
+    private final Cache<PixbufCacheKey, CachedTexture> pixbufCache = Caffeine.newBuilder().maximumSize(2000).build();
 
     record PixbufCacheKey(
             CoverArt coverArt,
@@ -60,12 +59,12 @@ public class ThumbnailCache {
         this.root = root;
     }
 
-    public record StoredPixbuf(
-            Pixbuf pixbuf,
+    public record CachedTexture(
+            Texture texture,
             List<ColorValue> palette
     ) {}
 
-    public CompletableFuture<StoredPixbuf> loadPixbuf(CoverArt coverArt, int size) {
+    public CompletableFuture<CachedTexture> loadPixbuf(CoverArt coverArt, int size) {
         return Utils.doAsync(() -> {
             try {
                 semaphorePixbuf.acquire(1);
@@ -83,7 +82,8 @@ public class ThumbnailCache {
                             throw new RuntimeException("halp");
                         }
                         var palette = ImageUtils.getPalette(scaledOut.get());
-                        return new StoredPixbuf(p, palette);
+                        var texture = Texture.forPixbuf(p);
+                        return new CachedTexture(texture, palette);
                     } catch (Throwable e) {
                         throw new RuntimeException("unable to create pixbuf from path='%s'".formatted(path), e);
                     }

@@ -12,15 +12,18 @@ import com.github.subsound.ui.components.AppNavigation.AppRoute.RoutePlaylistsOv
 import com.github.subsound.utils.Utils;
 import org.gnome.adw.Clamp;
 import org.gnome.gdk.Texture;
+import org.gnome.gdkpixbuf.InterpType;
 import org.gnome.gdkpixbuf.Pixbuf;
 import org.gnome.gio.Cancellable;
 import org.gnome.gio.MemoryInputStream;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
+import org.gnome.gtk.ContentFit;
 import org.gnome.gtk.Grid;
 import org.gnome.gtk.Image;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Overflow;
+import org.gnome.gtk.Picture;
 import org.gnome.gtk.Widget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,11 +43,8 @@ public class RoundedAlbumArt extends Box {
 
     private final AppManager thumbLoader;
     private final CoverArt artwork;
-    private final Image image;
+    private final Picture image;
     private final Grid grid;
-    private final AtomicBoolean hasLoaded = new AtomicBoolean(false);
-    private final AtomicBoolean isLoading = new AtomicBoolean(false);
-    private final AtomicBoolean isUpdating = new AtomicBoolean(false);
     private final int size;
     private final AtomicBoolean clickable = new AtomicBoolean(true);
 
@@ -91,7 +91,6 @@ public class RoundedAlbumArt extends Box {
         this.thumbLoader = thumbLoader;
         this.size = size;
 
-        //this.setSizeRequest(size, size);
         this.setHexpand(false);
         this.setVexpand(true);
         this.setHalign(Align.CENTER);
@@ -108,10 +107,10 @@ public class RoundedAlbumArt extends Box {
         this.grid.setOverflow(Overflow.HIDDEN);
         this.grid.addCssClass("rounded");
 
-        // See: https://docs.gtk.org/gtk4/class.Image.html
-        this.image = new Image();
+        // See: https://docs.gtk.org/gtk4/class.Picture.html
+        this.image = new Picture();
         this.image.setSizeRequest(size, size);
-        this.image.setPixelSize(size);
+        this.image.setContentFit(ContentFit.COVER);
 
         this.onMap(() -> {
             log.info("%s: onMap: id=%s".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
@@ -157,14 +156,13 @@ public class RoundedAlbumArt extends Box {
         return this;
     }
 
-    public void startLoad(Image image) {
+    public void startLoad(Picture image) {
         this.thumbLoader.getThumbnailCache().loadPixbuf(this.artwork, this.size)
                 .thenAccept(storedImage -> {
-                    log.info("startLoad: size={} id={}", storedImage.pixbuf().getWidth(), this.artwork.coverArtId());
-                    //Texture texture = Texture.forPixbuf(pixbuf);
+                    //log.info("startLoad: size={} id={}", storedImage.texture().getWidth(), this.artwork.coverArtId());
+                    var texture = storedImage.texture();
                     Utils.runOnMainThread(() -> {
-                        //image.setPaintable(texture);
-                        image.setFromPixbuf(storedImage.pixbuf());
+                        image.setPaintable(texture);
                     });
                 });
     }
