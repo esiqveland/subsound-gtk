@@ -12,7 +12,6 @@ import com.github.subsound.ui.components.AppNavigation.AppRoute.RoutePlaylistsOv
 import com.github.subsound.utils.Utils;
 import org.gnome.adw.Clamp;
 import org.gnome.gdk.Texture;
-import org.gnome.gdkpixbuf.InterpType;
 import org.gnome.gdkpixbuf.Pixbuf;
 import org.gnome.gio.Cancellable;
 import org.gnome.gio.MemoryInputStream;
@@ -56,7 +55,10 @@ public class RoundedAlbumArt extends Box {
                     var bytes = mustReadBytes("images/album-placeholder.png");
                     var gioStream = MemoryInputStream.fromData(bytes);
                     //Pixbuf pixbufloader = Pixbuf.fromFileAtSize("src/main/resources/images/album-placeholder.png", size, size);
-                    var pixbuf = Pixbuf.fromStreamAtScale(gioStream, size, size, true, new Cancellable());
+                    // load at twice the requested size, as the texture for some reason looks very bad in some situations
+                    // at the requested size.
+                    var loadSize = 2 * size;
+                    var pixbuf = Pixbuf.fromStreamAtScale(gioStream, loadSize, loadSize, true, new Cancellable());
                     return Texture.forPixbuf(pixbuf);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -109,8 +111,8 @@ public class RoundedAlbumArt extends Box {
 
         // See: https://docs.gtk.org/gtk4/class.Picture.html
         this.image = new Picture();
-        this.image.setSizeRequest(size, size);
         this.image.setContentFit(ContentFit.COVER);
+        this.image.setSizeRequest(size, size);
 
         this.onMap(() -> {
             log.info("%s: onMap: id=%s".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
@@ -163,6 +165,7 @@ public class RoundedAlbumArt extends Box {
                     var texture = storedImage.texture();
                     Utils.runOnMainThread(() -> {
                         image.setPaintable(texture);
+                        image.setSizeRequest(size, size);
                     });
                 });
     }

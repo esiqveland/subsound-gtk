@@ -75,7 +75,10 @@ public class ThumbnailCache {
                     ThumbLoaded loaded = loadThumbAsync(k.coverArt).join();
                     String path = loaded.path().cachePath().toAbsolutePath().toString();
                     try {
-                        var p = Pixbuf.fromFileAtSize(path, k.size, k.size);
+                        // load at twice the requested size, as the texture for some reason looks very bad in some situations
+                        // at the requested size.
+                        var loadSize = 2 * k.size;
+                        var p = Pixbuf.fromFileAtSize(path, loadSize, loadSize);
                         var scaledOut = new Out<byte[]>();
                         boolean success = p.saveToBufferv(scaledOut, "jpeg", null, null);
                         if (!success) {
