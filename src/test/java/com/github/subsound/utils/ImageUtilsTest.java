@@ -1,7 +1,7 @@
 package com.github.subsound.utils;
 
-import io.github.jwharm.javagi.base.GErrorException;
-import io.github.jwharm.javagi.base.Out;
+import org.javagi.base.GErrorException;
+import org.javagi.base.Out;
 import org.gnome.gdkpixbuf.Pixbuf;
 import org.gnome.glib.GError;
 import org.junit.Test;

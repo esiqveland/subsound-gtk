@@ -79,7 +79,7 @@ public class MainApplication {
         this.thumbLoader = appManager.getThumbnailCache();
         this.cssMain = mustRead(Path.of("css/main.css"));
         mainProvider.loadFromString(cssMain);
-        StyleContext.addProviderForDisplay(Display.getDefault(), mainProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+        Gtk.styleContextAddProviderForDisplay(Display.getDefault(), mainProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         // force to dark mode as we currently look terrible in light mode:
         StyleManager.getDefault().setColorScheme(ColorScheme.FORCE_DARK);
 

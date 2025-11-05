@@ -3,7 +3,7 @@ package com.github.subsound.utils;
 import de.androidpit.colorthief.ColorThief;
 import de.androidpit.colorthief.MMCQ.CMap;
 import de.androidpit.colorthief.MMCQ.VBox;
-import io.github.jwharm.javagi.base.GErrorException;
+import org.javagi.base.GErrorException;
 import org.gnome.gdk.RGBA;
 import org.gnome.gdkpixbuf.InterpType;
 import org.gnome.gdkpixbuf.Pixbuf;

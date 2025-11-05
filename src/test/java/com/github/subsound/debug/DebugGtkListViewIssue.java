@@ -1,6 +1,6 @@
 package com.github.subsound.debug;
 
-import io.github.jwharm.javagi.gio.ListIndexModel;
+import org.javagi.gio.ListIndexModel;
 import org.gnome.gio.ApplicationFlags;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Application;

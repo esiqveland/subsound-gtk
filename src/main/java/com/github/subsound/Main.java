@@ -3,7 +3,7 @@ package com.github.subsound;
 import com.github.subsound.integration.platform.mpriscontroller.MPrisController;
 import com.github.subsound.utils.LogUtils;
 import com.github.subsound.utils.Utils;
-import io.github.jwharm.javagi.base.Out;
+import org.javagi.base.Out;
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.configuration.Config;
 import com.github.subsound.integration.ServerClient;

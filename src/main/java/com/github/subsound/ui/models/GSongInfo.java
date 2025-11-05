@@ -2,7 +2,7 @@ package com.github.subsound.ui.models;
 
 import com.github.subsound.integration.ServerClient;
 import com.github.subsound.ui.views.StarredListView;
-import io.github.jwharm.javagi.gobject.types.Types;
+import org.javagi.gobject.types.Types;
 import org.gnome.glib.Type;
 import org.gnome.gobject.GObject;
 

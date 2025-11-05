@@ -1,6 +1,6 @@
 package com.github.subsound.sound;
 
-import io.github.jwharm.javagi.base.Out;
+import org.javagi.base.Out;
 import com.github.subsound.utils.OsUtil;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
 import org.freedesktop.gstreamer.gst.*;

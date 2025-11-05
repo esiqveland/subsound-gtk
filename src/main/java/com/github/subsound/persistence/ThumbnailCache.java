@@ -2,7 +2,7 @@ package com.github.subsound.persistence;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import io.github.jwharm.javagi.base.Out;
+import org.javagi.base.Out;
 import com.github.subsound.integration.ServerClient.CoverArt;
 import com.github.subsound.utils.ImageUtils;
 import com.github.subsound.utils.ImageUtils.ColorValue;

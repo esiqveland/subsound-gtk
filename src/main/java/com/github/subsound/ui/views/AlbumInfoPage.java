@@ -16,6 +16,7 @@ import com.github.subsound.utils.ImageUtils;
 import com.github.subsound.utils.Utils;
 import org.gnome.adw.ActionRow;
 import org.gnome.gdk.Display;
+import org.gnome.gdk.Gdk;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
@@ -228,7 +229,7 @@ public class AlbumInfoPage extends Box {
         this.albumInfo = albumInfo;
         this.onAction = onAction;
         if (isProviderInit.compareAndSet(false, true)) {
-            StyleContext.addProviderForDisplay(Display.getDefault(), COLOR_PROVIDER, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
+            Gtk.styleContextAddProviderForDisplay(Display.getDefault(), COLOR_PROVIDER, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
         }
         this.artistImage = this.albumInfo.coverArt()
                 .map(coverArt -> new RoundedAlbumArt(

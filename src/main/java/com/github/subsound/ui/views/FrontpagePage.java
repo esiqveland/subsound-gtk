@@ -14,7 +14,7 @@ import com.github.subsound.ui.components.LoadingSpinner;
 import com.github.subsound.ui.components.OverviewAlbumChild;
 import com.github.subsound.ui.views.FrontpagePage.FrontpagePageState.Loading;
 import com.github.subsound.utils.Utils;
-import io.github.jwharm.javagi.gio.ListIndexModel;
+import org.javagi.gio.ListIndexModel;
 import org.gnome.adw.Carousel;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Label;
