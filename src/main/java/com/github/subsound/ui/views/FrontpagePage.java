@@ -14,6 +14,7 @@ import com.github.subsound.ui.components.LoadingSpinner;
 import com.github.subsound.ui.components.OverviewAlbumChild;
 import com.github.subsound.ui.views.FrontpagePage.FrontpagePageState.Loading;
 import com.github.subsound.utils.Utils;
+import org.gnome.gtk.Button;
 import org.javagi.gio.ListIndexModel;
 import org.gnome.adw.Carousel;
 import org.gnome.gtk.Box;
@@ -26,6 +27,8 @@ import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.SignalListItemFactory;
 import org.gnome.gtk.SingleSelection;
 import org.gnome.gtk.Stack;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -42,6 +45,8 @@ import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
 
 public class FrontpagePage extends Box {
+    private static final Logger log = LoggerFactory.getLogger(FrontpagePage.class);
+
     sealed interface FrontpagePageState {
         record Loading() implements FrontpagePageState {}
         record Ready(HomeOverview data) implements FrontpagePageState {}
@@ -74,10 +79,17 @@ public class FrontpagePage extends Box {
         this.appManager = appManager;
         this.homeView = new HomeView(this.appManager, this.onAlbumSelected);
         this.onMap(() -> {
+            if (this.isMapped.get()) {
+                return;
+            }
+            log.info("FrontpagePage: onMap doLoad");
             isMapped.set(true);
             this.doLoad();
         });
-        this.onUnmap(() -> isMapped.set(false));
+        this.onUnmap(() -> {
+            log.info("FrontpagePage: onUnmap");
+            //isMapped.set(false);
+        });
         //this.onRealize(() -> this.doLoad());
 
         this.viewStack = Stack.builder().setHhomogeneous(false).setHexpand(true).setVexpand(true).build();
@@ -88,6 +100,11 @@ public class FrontpagePage extends Box {
         this.viewStack.addNamed(errorLabel, "error");
         this.viewStack.addNamed(homeView, "home");
         this.view.append(Label.builder().setLabel("Home").setHalign(START).setCssClasses(Classes.titleLarge.add()).build());
+        var refreshBox = borderBox(HORIZONTAL, 0).build();
+        var reloadButton = Button.builder().setLabel("Refresh").setCssClasses(Classes.suggestedAction.add()).build();
+        reloadButton.onClicked(this::doLoad);
+        refreshBox.append(reloadButton);
+        this.view.append(refreshBox);
         this.view.append(viewStack);
         this.scroll = ScrolledWindow.builder()
                 .setVexpand(true)
