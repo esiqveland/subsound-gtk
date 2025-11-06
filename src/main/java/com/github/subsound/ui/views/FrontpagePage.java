@@ -10,10 +10,12 @@ import com.github.subsound.ui.components.AlbumFlowBoxChild;
 import com.github.subsound.ui.components.AlbumsFlowBox;
 import com.github.subsound.ui.components.BoxHolder;
 import com.github.subsound.ui.components.Classes;
+import com.github.subsound.ui.components.Icons;
 import com.github.subsound.ui.components.LoadingSpinner;
 import com.github.subsound.ui.components.OverviewAlbumChild;
 import com.github.subsound.ui.views.FrontpagePage.FrontpagePageState.Loading;
 import com.github.subsound.utils.Utils;
+import org.gnome.gtk.Align;
 import org.gnome.gtk.Button;
 import org.javagi.gio.ListIndexModel;
 import org.gnome.adw.Carousel;
@@ -40,6 +42,8 @@ import java.util.function.Function;
 import static com.github.subsound.ui.views.ArtistInfoFlowBox.BIG_SPACING;
 import static com.github.subsound.utils.Utils.borderBox;
 import static com.github.subsound.utils.Utils.heading1;
+import static org.gnome.gtk.Align.CENTER;
+import static org.gnome.gtk.Align.END;
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
@@ -99,12 +103,18 @@ public class FrontpagePage extends Box {
         this.errorLabel = Label.builder().build();
         this.viewStack.addNamed(errorLabel, "error");
         this.viewStack.addNamed(homeView, "home");
-        this.view.append(Label.builder().setLabel("Home").setHalign(START).setCssClasses(Classes.titleLarge.add()).build());
-        var refreshBox = borderBox(HORIZONTAL, 0).build();
-        var reloadButton = Button.builder().setLabel("Refresh").setCssClasses(Classes.suggestedAction.add()).build();
+
+        var homeBox = borderBox(HORIZONTAL, 0).build();
+        homeBox.setHalign(Align.FILL);
+        var homeLabel = Label.builder().setLabel("Home").setHalign(START).setCssClasses(Classes.titleLarge.add()).build();
+        var reloadButton = Button.builder().setLabel("Refresh").setIconName(Icons.RefreshView.getIconName()).setHalign(END).setTooltipText("Refresh").build();
         reloadButton.onClicked(this::doLoad);
-        refreshBox.append(reloadButton);
-        this.view.append(refreshBox);
+        reloadButton.setHexpand(true);
+        reloadButton.setVexpand(true);
+        reloadButton.setValign(CENTER);
+        homeBox.append(homeLabel);
+        homeBox.append(reloadButton);
+        this.view.append(homeBox);
         this.view.append(viewStack);
         this.scroll = ScrolledWindow.builder()
                 .setVexpand(true)
