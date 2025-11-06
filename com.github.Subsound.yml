@@ -3,11 +3,11 @@ runtime: org.gnome.Platform
 runtime-version: '48'
 sdk: org.gnome.Sdk
 add-extensions:
-  org.freedesktop.Sdk.Extension.openjdk:
-    version: '24.08'
+  org.freedesktop.Sdk.Extension.openjdk25:
+    version: '25.08'
 sdk-extensions:
-  org.freedesktop.Sdk.Extension.openjdk:
-    version: '24.08'
+  org.freedesktop.Sdk.Extension.openjdk25:
+    version: '25.08'
 build-options:
   append-path: "/usr/lib/sdk/openjdk/bin"
 command: /app/bin/Subsound.sh
