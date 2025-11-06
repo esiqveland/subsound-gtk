@@ -24,11 +24,19 @@ A few samples of what the UI looks like:
 - [X] songlist: Hover-shows-play ?
   - [ ] songlist: hover play icon is not tab-able for focus when row is selected, only when hover...
 - [X] Starred page
+  - [X] reuse the ListView + StarredItemRow items on the page, so a new page doesn't need to be created every time
+  - [ ] make each StarredItemRow faster to create. its around 4ms per item right now. 
   - [ ] Bug: Removing a song from the ListView when its scrolled and a row below is selected, the viewport jumps to the top of the list
   - [ ] add a reload button 
+  - [ ] rewrite is-playing state to use GObject signal/property
+  - [ ] rewrite is-starred state to use GObject signal/property 
   - [X] keep starred list up-to-date in the app at least
     - [X] Keep internal in memory list up to date
-    - [X] Reloads starred from server on load
+    - [X] Make internal in memory list synced to the listview as a ListStore<>
+    - [X] Loads starred from server on load
+    - [ ] We usually load the starred list from the server on load, but we could also load it from a local cache on startup 
+    - [ ] Maybe have a separate thread that periodically syncs the starred list from the server?
+- [X] Songlist:
   - [X] remove the track number
     - [X] Add list item number as the first element in the prefix field
   - [X] display artist
@@ -44,7 +52,7 @@ A few samples of what the UI looks like:
     - [ ] add hover / glow / overlay icon when hovering over artwork?
   - [ ] display whole albums / artist that have been starred in addition to individual songs?
 - [X] cache thumbnails on disk
-  - [ ] use a Texture / Paintable instead ? pixbuf is deprecated it looks like
+  - [X] use a Texture / Paintable instead ? pixbuf is deprecated it looks like
   - [X] switch load directly from cached file?
   - [X] reuse the pixbuf for albumart (in memory cache)
   - [X] make resize retain aspect ratio
@@ -66,11 +74,13 @@ A few samples of what the UI looks like:
     - [ ] show loading state as a overlay icon and switch to paused?
   - [ ] add rating button to the right?
   - [X] goto artist when clicking artist name
-  - [ ] goto album when clicking on album artwork
+  - [X] goto album when clicking on album artwork
 - [X] Icons for top bar pages
     - [X] icon for Home page
     - [X] icon for starred page
 - HomePage
+  - [X] Reuse between page views so we dont lose state
+  - [X] Refresh using button
   - [X] Newly added: https://subsonic.org/pages/api.jsp#getAlbumList2 type=newest
   - [X] recently played: https://subsonic.org/pages/api.jsp#getAlbumList2 type=recent
   - [X] Most played: https://subsonic.org/pages/api.jsp#getAlbumList2 type=frequent
@@ -96,6 +106,7 @@ A few samples of what the UI looks like:
   - [ ] PlayQueue: enqueue a song that will be added after the current playing song in the playqueue
   - [ ] PlayQueue: Gapless playback of queue using gstreamer soon-finished signal / message + setting next-uri property
 - Proper navigation
+  - [ ] fix back button in albumview
   - [ ] fix the navigationview. something is still wrong with app navigation...
   - [ ] fix back button in headerbar
   - AdwNavigationView ?
