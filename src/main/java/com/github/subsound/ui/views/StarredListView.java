@@ -176,7 +176,7 @@ public class StarredListView extends Box implements AppManager.StateListener {
             // We have to unset the selectionModel, as it uses the global StarredList
             // If the starredList is mapped in a different ListView without being unset first,
             // the application segfaults.
-            this.listView.setModel(null);
+            //this.listView.setModel(null);
         });
     }
 

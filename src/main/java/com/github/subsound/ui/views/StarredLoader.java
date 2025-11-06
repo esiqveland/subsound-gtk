@@ -10,6 +10,7 @@ import com.github.subsound.ui.components.AppNavigation;
 import com.github.subsound.ui.components.BoxHolder;
 import com.github.subsound.ui.components.FutureLoader;
 import com.github.subsound.utils.Utils;
+import org.gnome.gio.ListStore;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Orientation;
@@ -18,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 public class StarredLoader extends Box {
@@ -27,6 +29,7 @@ public class StarredLoader extends Box {
 
     private final BoxHolder<FutureLoader<PlaylistsData, StarredListView>> holder;
     private final AppManager appManager;
+    private final AtomicBoolean isLoaded = new AtomicBoolean(false);
 
     public StarredLoader(
             ThumbnailCache thumbLoader,
@@ -42,7 +45,12 @@ public class StarredLoader extends Box {
         this.setVexpand(true);
         this.setHalign(Align.FILL);
         this.setValign(Align.FILL);
-        this.onMap(this::refresh);
+        this.onMap(() -> {
+            if (this.isLoaded.get()) {
+                return;
+            }
+            this.refresh();
+        });
         //this.onShow(this::refresh);
         //this.onRealize(this::refresh);
         this.append(holder);
@@ -67,7 +75,10 @@ public class StarredLoader extends Box {
                 });
         var loader = new FutureLoader<>(
                 dataFuture,
-                starred -> new StarredListView(starred.starredList(), this.appManager, this.onNavigate)
+                starred -> {
+                    this.isLoaded.set(true);
+                    return new StarredListView(starred.starredList(), this.appManager, this.onNavigate);
+                }
         );
         this.holder.setChild(loader);
         return this;

@@ -423,7 +423,7 @@ public class AppManager {
                 for (int pos : indices) {
                     // when removing multiple items, we need to adjust for shift in indices:
                     int adjustedIndex = pos - count;
-                    this.starredList.removeItem(adjustedIndex);
+                    this.starredList.removeAt(adjustedIndex);
                     count++;
                 }
                 log.info("removed songId={} from {} positions", a.id(), count);
