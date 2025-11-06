@@ -5,6 +5,7 @@ import com.github.subsound.app.state.PlayerAction;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
 import com.github.subsound.ui.components.OverviewAlbumChild.AlbumCoverHolderSmall;
+import com.github.subsound.ui.models.GSongInfo;
 import com.github.subsound.ui.views.StarredListView;
 import com.github.subsound.utils.Utils;
 import org.gnome.gtk.Align;
@@ -12,15 +13,19 @@ import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
 import org.gnome.gtk.Justification;
 import org.gnome.gtk.Label;
+import org.gnome.gtk.ListItem;
 import org.gnome.gtk.Overflow;
 import org.gnome.gtk.Overlay;
 import org.gnome.gtk.Revealer;
 import org.gnome.gtk.RevealerTransitionType;
 import org.gnome.gtk.StateFlags;
+import org.javagi.gobject.SignalConnection;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -41,8 +46,8 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private final Consumer<AppNavigation.AppRoute> onNavigate;
 
+    private GSongInfo gSongInfo;
     private SongInfo songInfo;
-    private int index;
 
     private final Box prefixBox;
     private final Box centerBox;
@@ -65,6 +70,9 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
     private final Button fileFormatLabel;
     private final Label fileSizeLabel;
     private final Label bitRateLabel;
+    private final AtomicReference<SignalConnection<?>> signal1 = new AtomicReference<>();
+    private final AtomicReference<SignalConnection<?>> signal2 = new AtomicReference<>();
+    private final AtomicInteger index = new AtomicInteger(0);
 
     public StarredItemRow(
             AppManager appManager,
@@ -252,11 +260,43 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
         return l;
     }
 
-    public void setSongInfo(SongInfo songInfo, int index, MiniState miniState) {
-        this.songInfo = songInfo;
-        this.index = index;
+    public void setSongInfo(GSongInfo songInfo, ListItem listItem, MiniState miniState) {
+        this.gSongInfo = songInfo;
+        this.songInfo = songInfo.songInfo();
+        var connection = this.gSongInfo.onNotify(
+                GSongInfo.Signal.IS_PLAYING.getId(),
+                _ -> this.update(miniState)
+        );
+        var old = this.signal1.getAndSet(connection);
+        if (old != null) {
+            old.disconnect();
+        }
+        // Listen for position changes
+        var positionConnection = listItem.onNotify("position", param -> {
+            int pos = listItem.getPosition();
+            this.index.set(pos);
+            int trackNumber = pos + 1;
+            this.trackNumberLabel.setLabel("%d".formatted(trackNumber));
+        });
+        var old2 = this.signal2.getAndSet(positionConnection);
+        if (old2 != null) {
+            old2.disconnect();
+        }
+
+        this.index.set(listItem.getPosition());
         this.updateView();
         this.update(miniState);
+    }
+
+    public void unbind() {
+        var sig1 = this.signal1.getAndSet(null);
+        if (sig1 != null) {
+            sig1.disconnect();
+        }
+        var sig2 = this.signal2.getAndSet(null);
+        if (sig2 != null) {
+            sig2.disconnect();
+        }
     }
 
     private void updateView() {
@@ -273,7 +313,7 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
         this.durationLabel.setLabel(durationString);
         this.artistNameLabel.setLabel(songInfo.artist());
         this.albumNameLabel.setLabel(songInfo.album());
-        int trackNumber = this.index + 1;
+        int trackNumber = this.index.get() + 1;
         this.trackNumberLabel.setLabel("%d".formatted(trackNumber));
 
         var fileSuffixText = Optional.ofNullable(songInfo.suffix())
