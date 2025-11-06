@@ -6,8 +6,6 @@ import com.google.gson.Strictness;
 import org.apache.commons.codec.Resources;
 import org.apache.commons.io.IOUtils;
 import org.gnome.glib.GLib;
-import org.gnome.glib.MainContext;
-import org.gnome.glib.SourceFunc;
 import org.gnome.glib.SourceOnceFunc;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
@@ -57,16 +55,6 @@ public class Utils {
         return CompletableFuture.runAsync(supplier, ASYNC_EXECUTOR);
     }
 
-    public static void runOnMainThreadNow(SourceFunc fn) {
-        // MainContext.invoke() runs directly when it is already on the main thread, and calls GLib.idleAdd() otherwise.
-        MainContext.default_().invoke(fn);
-    }
-    public static void runOnMainThreadNow(SourceOnceFunc fn) {
-        runOnMainThreadNow(() -> {
-            fn.run();
-            return true;
-        });
-    }
     public static void runOnMainThread(SourceOnceFunc fn) {
         // Have to add a return GLib.SOURCE_REMOVE at the end of the callback to make sure it only runs once.
         // GLib.idleAdd calls g_idle_add_full which has proper memory management with a DestroyNotify callback.
@@ -75,7 +63,6 @@ public class Utils {
             fn.run();
             return GLib.SOURCE_REMOVE;
         });
-//        GLib.idleAddOnce(fn);
     }
 
     public static String sha256(String value) {
