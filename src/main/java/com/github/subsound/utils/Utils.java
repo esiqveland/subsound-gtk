@@ -5,17 +5,22 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.Strictness;
 import org.apache.commons.codec.Resources;
 import org.apache.commons.io.IOUtils;
+import org.gnome.gio.File;
 import org.gnome.glib.GLib;
 import org.gnome.glib.SourceOnceFunc;
+import org.gnome.gobject.GObject;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.EventControllerMotion;
+import org.gnome.gtk.FileDialog;
 import org.gnome.gtk.GestureClick;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.PropagationLimit;
 import org.gnome.gtk.PropagationPhase;
 import org.gnome.gtk.Widget;
+import org.gnome.gtk.Window;
+import org.javagi.base.GErrorException;
 import org.javagi.gobject.SignalConnection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -347,6 +352,24 @@ public class Utils {
     public static long estimateContentLength(double durationSeconds, double bitRate) {
         var estimatedBytes = durationSeconds * bitRate / 8.0 * 1024.0;
         return (long) estimatedBytes;
+    }
+
+    public record FileDialogResult(String path) {}
+
+    public static CompletableFuture<FileDialogResult> selectFolder(Window parentWindow) {
+        var result = new CompletableFuture<FileDialogResult>();
+
+        FileDialog fileDialog = new FileDialog();
+        fileDialog.selectFolder(parentWindow, null, (dialog, asyncResult, _) -> {
+            try {
+                File file = fileDialog.selectFolderFinish(asyncResult);
+                var path = file.getPath();
+                result.complete(new FileDialogResult(path));
+            } catch (Exception e) {
+                result.completeExceptionally(e);
+            }
+        });
+        return result;
     }
 
 //    public static File getResourceDirectory(String resource) {
