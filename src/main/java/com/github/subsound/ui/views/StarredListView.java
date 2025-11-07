@@ -22,6 +22,7 @@ import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.SignalListItemFactory;
 import org.gnome.gtk.SingleSelection;
 import org.gnome.gtk.Text;
+import org.javagi.gobject.SignalConnection;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -162,7 +163,7 @@ public class StarredListView extends Box implements AppManager.StateListener {
                 .setSingleClickActivate(false)
                 .setFactory(factory)
                 .build();
-        this.listView.onActivate(index -> {
+        var activateSignal = this.listView.onActivate(index -> {
             //var songInfo = this.data.songs().get(index);
             var songInfo = this.listModel.getItem(index).songInfo();
             if (songInfo == null) {
@@ -172,6 +173,22 @@ public class StarredListView extends Box implements AppManager.StateListener {
             List<SongInfo> songs = this.listModel.stream().map(GSongInfo::songInfo).toList();
             this.onAction.apply(new PlayerAction.PlayQueue(songs, index));
         });
+
+        var mapSignal = this.onMap(() -> {
+            this.listView.setModel(selectionModel);
+            appManager.addOnStateChanged(this);
+        });
+        this.onDestroy(() -> {
+            log.info("StarredListView: onDestroy");
+            appManager.removeOnStateChanged(this);
+            // We have to unset the selectionModel, as it uses the global StarredList
+            // If the starredList is mapped in a different ListView without being unset first,
+            // the application segfaults.
+            this.listView.setModel(null);
+            mapSignal.disconnect();
+            activateSignal.disconnect();
+        });
+
         this.scroll = ScrolledWindow.builder()
                 .setVexpand(true)
                 .setHexpand(true)
@@ -188,17 +205,6 @@ public class StarredListView extends Box implements AppManager.StateListener {
 //        this.scroll.setChild(clamp);
         this.scroll.setChild(this.listView);
         this.append(this.scroll);
-        this.onMap(() -> {
-            this.listView.setModel(selectionModel);
-            appManager.addOnStateChanged(this);
-        });
-        this.onUnmap(() -> {
-            appManager.removeOnStateChanged(this);
-            // We have to unset the selectionModel, as it uses the global StarredList
-            // If the starredList is mapped in a different ListView without being unset first,
-            // the application segfaults.
-            //this.listView.setModel(null);
-        });
     }
 
     @Override

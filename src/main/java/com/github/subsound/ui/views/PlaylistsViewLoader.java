@@ -16,12 +16,14 @@ import com.github.subsound.utils.Utils;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Orientation;
+import org.javagi.gobject.SignalConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -30,6 +32,7 @@ public class PlaylistsViewLoader extends Box {
     private static final Logger log = LoggerFactory.getLogger(PlaylistsViewLoader.class);
     private final ThumbnailCache thumbLoader;
     private final Consumer<AppNavigation.AppRoute> onNavigate;
+    private final AtomicBoolean isLoaded = new AtomicBoolean(false);
 
     private final BoxHolder<FutureLoader<PlaylistsData, PlaylistsListView>> holder;
     private final AppManager appManager;
@@ -48,13 +51,18 @@ public class PlaylistsViewLoader extends Box {
         this.setVexpand(true);
         this.setHalign(Align.FILL);
         this.setValign(Align.FILL);
-        this.onMap(this::refresh);
-        //this.onShow(this::refresh);
-        //this.onRealize(this::refresh);
+        var signal = this.onMap(() -> {
+            if (this.isLoaded.get()) {
+                return;
+            }
+            refresh().thenAccept(_ -> this.isLoaded.set(true));
+        });
+        this.onDestroy(() -> signal.disconnect());
+
         this.append(holder);
     }
 
-    public synchronized PlaylistsViewLoader refresh() {
+    public synchronized CompletableFuture<PlaylistsData> refresh() {
         var loadPlaylistList = Utils.doAsync(() -> this.appManager.useClient(ServerClient::getPlaylists));
         var loadStarredList = Utils.doAsync(() -> this.appManager.useClient(ServerClient::getStarred));
 
@@ -91,6 +99,6 @@ public class PlaylistsViewLoader extends Box {
                 starred -> new PlaylistsListView(appManager, starred)
         );
         this.holder.setChild(loader);
-        return this;
+        return dataFuture;
     }
 }

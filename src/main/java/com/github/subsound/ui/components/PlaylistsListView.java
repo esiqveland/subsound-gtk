@@ -11,6 +11,7 @@ import org.gnome.adw.NavigationPage;
 import org.gnome.adw.NavigationSplitView;
 import org.gnome.adw.StatusPage;
 import org.gnome.gtk.*;
+import org.javagi.gobject.SignalConnection;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -35,8 +36,12 @@ public class PlaylistsListView extends Box {
         this.data = data;
         this.cache = this.data.playlistList().playlists().stream()
                 .collect(Collectors.toMap(PlaylistSimple::id, a -> a));
+        this.starredListView = new StarredListView(
+                data.starredList(),
+                this.appManager,
+                this.appManager::navigateTo
+        );
 
-        this.starredListView = new StarredListView(data.starredList(), this.appManager, this.appManager::navigateTo);
         this.contentPage = NavigationPage.builder().setTag("page-2").setChild(this.starredListView).setTitle("Starred").build();
         var b = Box.builder().setValign(Align.CENTER).setHalign(Align.CENTER).build();
         b.append(Label.builder().setLabel("Select a playlist to view").setCssClasses(cssClasses("title-1")).build());
@@ -47,7 +52,7 @@ public class PlaylistsListView extends Box {
 
         list = ListBox.builder().setValign(Align.START).setVexpand(true).build();
         list.addCssClass(Classes.boxedList.className());
-        list.onRowActivated(row -> {
+        var signal1 = list.onRowActivated(row -> {
             var playlist = this.data.playlistList().playlists().get(row.getIndex());
             System.out.println("PlaylistsListView: goto " + playlist.name());
             //this.contentPage.setTitle(playlist.name());
@@ -75,6 +80,10 @@ public class PlaylistsListView extends Box {
                     true
             ));
             return row;
+        });
+
+        this.onDestroy(() -> {
+            signal1.disconnect();
         });
 
         var playlistView = ScrolledWindow.builder().setChild(list).setHexpand(true).setVexpand(true).build();

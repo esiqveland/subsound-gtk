@@ -27,9 +27,9 @@ A few samples of what the UI looks like:
   - [X] reuse the ListView + StarredItemRow items on the page, so a new page doesn't need to be created every time
   - [ ] make each StarredItemRow faster to create. its around 4ms per item right now. 
   - [ ] Bug: Removing a song from the ListView when its scrolled and a row below is selected, the viewport jumps to the top of the list
-  - [ ] add a reload button 
-  - [ ] rewrite is-playing state to use GObject signal/property
-  - [ ] rewrite is-starred state to use GObject signal/property 
+  - [ ] add a reload button - but where to put it? 
+  - [ ] rewrite is-playing state to use GObject signal/property?
+  - [ ] rewrite is-starred state to use GObject signal/property? 
   - [X] keep starred list up-to-date in the app at least
     - [X] Keep internal in memory list up to date
     - [X] Make internal in memory list synced to the listview as a ListStore<>
@@ -138,11 +138,11 @@ A few samples of what the UI looks like:
 - [X] Create a persistent store for server settings / authentication
   - [ ] store authentication in platform password storage / libsecret ?
 - [X] Implement star/unstar
-  - [ ] Optimistically update the local copy of Starred list based on star / unstar actions
+  - [X] Optimistically update the local copy of Starred list based on star / unstar actions
 - [ ] Playlist support
-  - [ ] move Starred as a fake playlist under the playlists view ?
-  - browsing playlists
-  - add song to playlist
+  - [X] move Starred as a fake playlist under the playlists view
+  - [X] browsing playlists
+  - add song to a playlist
   - remove song from playlist
   - play as playqueue
 - [X] Mpris support
