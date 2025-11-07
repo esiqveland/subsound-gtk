@@ -13,14 +13,14 @@ public class ClickLabel extends Label {
         this.onClick = onClick;
         //this.addCssClass(Classes.card.className());
         this.addCssClass(Classes.clickLabel.className());
-        this.gestureClick = GestureClick.builder().build();
+        this.gestureClick = new GestureClick();
         this.addController(gestureClick);
-        this.onMap(() -> {
-            gestureClick.onReleased((int nPress, double x, double y) -> {
-                System.out.println("gestureClick.onReleased: " + nPress);
-                this.onClick.run();
-            });
+        var signal = gestureClick.onReleased((int nPress, double x, double y) -> {
+            System.out.println("ClickLabel.gestureClick.onReleased: " + nPress);
+            this.onClick.run();
         });
-        this.onUnmap(() -> {});
+        this.onDestroy(() -> {
+            signal.disconnect();
+        });
     }
 }
