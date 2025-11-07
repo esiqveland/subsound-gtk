@@ -90,26 +90,23 @@ public class StarredListView extends Box implements AppManager.StateListener {
         });
         factory.onBind(object -> {
             ListItem listitem = (ListItem) object;
-            //var item = (ListIndexModel.ListIndex) listitem.getItem();
             var item = (GSongInfo) listitem.getItem();
             if (item == null) {
                 return;
             }
-            // The ListIndexModel contains ListIndexItems that contain only their index in the list.
-            //int index = item.getIndex();
-            int index = listitem.getPosition();
 
-            //var songInfo = this.data.songs().get(index);
             var songInfo = item.songInfo();
             if (songInfo == null) {
                 return;
             }
-            var child = (StarredItemRow) listitem.getChild();
+            var child = listitem.getChild();
             if (child == null) {
                 return;
             }
+            if (child instanceof StarredItemRow row) {
+                row.setSongInfo(item, listitem, prevState.get());
+            }
             listitem.setActivatable(true);
-            child.setSongInfo(songInfo, index, prevState.get());
         });
         factory.onTeardown(item -> {
             ListItem listitem = (ListItem) item;
