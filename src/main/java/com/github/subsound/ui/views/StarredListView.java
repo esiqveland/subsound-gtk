@@ -81,14 +81,19 @@ public class StarredListView extends Box implements AppManager.StateListener {
 
         var factory = new SignalListItemFactory();
         factory.onSetup(object -> {
+            var start = System.nanoTime();
             ListItem listitem = (ListItem) object;
             listitem.setActivatable(true);
 
             var item = new StarredItemRow(this.appManager, this.onAction, this.onNavigate);
             listeners.put(item, item);
             listitem.setChild(item);
+            var elapsed = Duration.ofNanos(System.nanoTime() - start).toMillis();
+            log.info("factory.onSetup: {} elapsed={}", listeners.size(), elapsed);
         });
+
         factory.onBind(object -> {
+            var start = System.nanoTime();
             ListItem listitem = (ListItem) object;
             var item = (GSongInfo) listitem.getItem();
             if (item == null) {
@@ -107,6 +112,25 @@ public class StarredListView extends Box implements AppManager.StateListener {
                 row.setSongInfo(item, listitem, prevState.get());
             }
             listitem.setActivatable(true);
+            var elapsed = Duration.ofNanos(System.nanoTime() - start).toMillis();
+            log.info("factory.onBind: {} {} elapsed={}", songInfo.id(), songInfo.title(), elapsed);
+        });
+        factory.onUnbind(object -> {
+            ListItem listitem = (ListItem) object;
+            var item = (GSongInfo) listitem.getItem();
+            if (item == null) {
+                return;
+            }
+            var child = listitem.getChild();
+            if (child == null) {
+                return;
+            }
+            if (child instanceof StarredItemRow row) {
+                row.unbind();
+            } else {
+                log.warn("StarredListView.onUnbind: unexpected child type: {}", child.getClass().getName());
+            }
+            listitem.setChild(null);
         });
         factory.onTeardown(item -> {
             ListItem listitem = (ListItem) item;

@@ -16,6 +16,7 @@ import org.gnome.gtk.Orientation;
 import org.gnome.gtk.PropagationLimit;
 import org.gnome.gtk.PropagationPhase;
 import org.gnome.gtk.Widget;
+import org.javagi.gobject.SignalConnection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -201,15 +202,20 @@ public class Utils {
         return clazz;
     }
 
-    public static <T extends Widget> T addClick(T row, Runnable onClick) {
-        var gestureClick = GestureClick.builder().build();
+    public record SignalWidget<T extends Widget>(
+            T widget,
+            SignalConnection<?> signalConnection
+    ) {}
+
+    public static <T extends Widget> SignalWidget<T> addClick(T row, Runnable onClick) {
+        var gestureClick = new GestureClick();
         row.addController(gestureClick);
-        gestureClick.onReleased((int nPress, double x, double y) -> {
+        var signal = gestureClick.onReleased((int nPress, double x, double y) -> {
             //System.out.println("addClick.gestureClick.onReleased: " + nPress);
             onClick.run();
         });
 
-        return row;
+        return new SignalWidget<>(row, signal);
     }
 
     public static <T extends Widget> T addHover(T row, Runnable onEnter, Runnable onLeave) {
@@ -224,20 +230,28 @@ public class Utils {
         return row;
     }
 
-    public static <T extends Widget> T addHover2(T row, Runnable onEnter, Runnable onLeave) {
-        var ec = EventControllerMotion.builder().setPropagationPhase(PropagationPhase.CAPTURE).setPropagationLimit(PropagationLimit.NONE).build();
+    public record HoverController(
+            EventControllerMotion eventController,
+            SignalConnection<?> enterSignal,
+            SignalConnection<?> leaveSignal
+    ){
+        public void disconnect() {
+            enterSignal.disconnect();
+            leaveSignal.disconnect();
+        }
+    }
+
+    public static HoverController addHover2(Runnable onEnter, Runnable onLeave) {
+        var ec = new EventControllerMotion();
+        ec.setPropagationPhase(PropagationPhase.CAPTURE);
+        ec.setPropagationLimit(PropagationLimit.NONE);
         var enterCallbackSignalConnection = ec.onEnter((x, y) -> {
             onEnter.run();
         });
         var leaveSignal = ec.onLeave(() -> {
             onLeave.run();
         });
-        row.addController(ec);
-        row.onDestroy(() -> {
-            enterCallbackSignalConnection.disconnect();
-            leaveSignal.disconnect();
-        });
-        return row;
+        return new HoverController(ec, enterCallbackSignalConnection, leaveSignal);
     }
 
     public static boolean withinEpsilon(double value1, double value2, double epsilon) {

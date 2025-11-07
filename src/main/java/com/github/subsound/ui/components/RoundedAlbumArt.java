@@ -24,13 +24,16 @@ import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Overflow;
 import org.gnome.gtk.Picture;
 import org.gnome.gtk.Widget;
+import org.javagi.gobject.SignalConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.github.subsound.utils.Utils.addClick;
 import static com.github.subsound.utils.Utils.addHover2;
@@ -46,6 +49,7 @@ public class RoundedAlbumArt extends Box {
     private final Grid grid;
     private final int size;
     private final AtomicBoolean clickable = new AtomicBoolean(true);
+    private final AtomicBoolean isLoaded = new AtomicBoolean(false);
 
     private final static Map<Boolean, Texture> placeHolderCache = new ConcurrentHashMap<>();
 
@@ -114,18 +118,15 @@ public class RoundedAlbumArt extends Box {
         this.image.setContentFit(ContentFit.COVER);
         this.image.setSizeRequest(size, size);
 
-        this.onMap(() -> {
-            log.info("%s: onMap: id=%s".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
-            this.startLoad(this.image);
-        });
-        addClick(
+        var click = addClick(
                 this,
                 () -> {
                     log.info("{}: addClick: enabled={} id={}", this.getClass().getSimpleName(), clickable.get(), this.artwork.coverArtId());
                     if (!clickable.get()) {
                         return;
                     }
-                    AppRoute route = switch (this.artwork.identifier().orElse(null)) {
+                    var currentArtwork = this.artwork;
+                    AppRoute route = switch (currentArtwork.identifier().orElse(null)) {
                         case AlbumIdentifier a -> new RouteAlbumInfo(a.albumId());
                         case ArtistIdentifier a -> new RouteArtistInfo(a.artistId());
                         case PlaylistIdentifier p -> new RoutePlaylistsOverview(Optional.of(p.playlistId()));
@@ -139,12 +140,28 @@ public class RoundedAlbumArt extends Box {
 
         //var className = "now-playing-overlay-icon";
         var className = Classes.activatable.className();
-        addHover2(
-                this,
+        var hoverC = addHover2(
                 () -> this.addCssClass(className),
                 () -> this.removeCssClass(className)
         );
+        this.addController(hoverC.eventController());
+        this.onDestroy(() -> {
+            var signal = click.signalConnection();
+            if (signal != null) {
+                signal.disconnect();
+            }
+            hoverC.disconnect();
+            this.removeController(hoverC.eventController());
+        });
 
+        // wait with loading until we actually get mapped:
+        this.onMap(() -> {
+            if (isLoaded.get()) {
+                return;
+            }
+            log.info("%s: onMap: id=%s".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
+            this.startLoad(this.image).thenAccept(_ -> isLoaded.set(true));
+        });
 
         this.grid.attach(image, 0, 0, 1, 1);
         var clamp = new Clamp();
@@ -158,8 +175,8 @@ public class RoundedAlbumArt extends Box {
         return this;
     }
 
-    public void startLoad(Picture image) {
-        this.thumbLoader.getThumbnailCache().loadPixbuf(this.artwork, this.size)
+    public CompletableFuture<Void> startLoad(Picture image) {
+        return this.thumbLoader.getThumbnailCache().loadPixbuf(this.artwork, this.size)
                 .thenAccept(storedImage -> {
                     //log.info("startLoad: size={} id={}", storedImage.texture().getWidth(), this.artwork.coverArtId());
                     var texture = storedImage.texture();

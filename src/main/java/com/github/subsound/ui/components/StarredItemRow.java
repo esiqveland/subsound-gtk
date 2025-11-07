@@ -180,8 +180,7 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
         suffixBox.append(revealer);
 
         var isHoverActive = new AtomicBoolean(false);
-        addHover2(
-                this,
+        var hoverC = addHover2(
                 () -> {
                     isHoverActive.set(true);
                     revealer.setRevealChild(true);
@@ -199,14 +198,21 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
                     }
                 }
         );
-        this.onStateFlagsChanged(flags -> {
+        this.addController(hoverC.eventController());
+
+        var stateFlagsChangedCallbackSignalConnection = this.onStateFlagsChanged(flags -> {
             var hasFocus = flags.contains(StateFlags.FOCUSED) || flags.contains(StateFlags.FOCUS_WITHIN) || flags.contains(StateFlags.FOCUS_VISIBLE);
             var hasHover = isHoverActive.get();
             //System.out.println("onStateFlagsChanged: " + String.join(", ", flags.stream().map(s -> s.name()).toList()) + " hasHover=" + hasHover + " hasFocus=" + hasFocus);
             //playButton.setVisible(hasFocus || hasHover);
             revealer.setRevealChild(hasFocus || hasHover);
         });
-
+        this.onDestroy(() -> {
+            stateFlagsChangedCallbackSignalConnection.disconnect();
+            hoverC.disconnect();
+            this.removeController(hoverC.eventController());
+            this.unbind();
+        });
 
         this.titleLabel = infoLabel("", Classes.title3.add());
         this.titleLabel.setHalign(START);
@@ -217,12 +223,15 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
         this.titleLabel.setSingleLineMode(true);
         this.artistNameLabel = new ClickLabel("", () -> {
             var songInfo = this.songInfo;
-            var artistId = this.songInfo.artistId();
+            if (songInfo == null) {
+                return;
+            }
+            var artistId = songInfo.artistId();
             if (artistId == null) {
                 System.out.println("songInfo with null artist?");
                 return;
             }
-            var route = new AppNavigation.AppRoute.RouteArtistInfo(this.songInfo.artistId());
+            var route = new AppNavigation.AppRoute.RouteArtistInfo(songInfo.artistId());
             this.onNavigate.accept(route);
         });
         this.artistNameLabel.addCssClass(Classes.labelDim.className());
