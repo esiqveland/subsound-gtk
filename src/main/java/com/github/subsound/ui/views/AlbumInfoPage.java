@@ -236,6 +236,7 @@ public class AlbumInfoPage extends Box {
                         COVER_SIZE
                 ))
                 .map(albumArt -> {
+                    albumArt.setClickable(false);
                     albumArt.addCssClass("album-main-cover");
                     return albumArt;
                 })
