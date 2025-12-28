@@ -240,6 +240,13 @@ public interface ServerClient {
 
     enum ServerType {
         SUBSONIC,
+        ;
+
+        public String value() {
+            return switch (this) {
+                case SUBSONIC -> "SUBSONIC";
+            };
+        }
     }
 
     static ServerClient create(ServerConfig cfg) {
