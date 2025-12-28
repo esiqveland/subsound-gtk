@@ -1,5 +1,6 @@
 package com.github.subsound.persistence.database;
 
+import com.github.subsound.persistence.database.Artist.Biography;
 import org.assertj.core.api.Assertions;
 import org.junit.Rule;
 import org.junit.Test;
@@ -34,7 +35,7 @@ public class DatabaseServerServiceTest {
                 5,
                 Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS)),
                 Optional.of("cover-1"),
-                Optional.of("Bio 1".getBytes())
+                Optional.of(new Biography("Long bio", "Short bio", "http://link"))
         );
 
         Artist artist2 = new Artist(
@@ -54,7 +55,7 @@ public class DatabaseServerServiceTest {
                 2,
                 Optional.empty(),
                 Optional.of("cover-3"),
-                Optional.empty()
+                Optional.of(new Biography("Long bio", null, null))
         );
 
         // Test insert
