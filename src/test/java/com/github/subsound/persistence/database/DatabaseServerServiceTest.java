@@ -35,7 +35,7 @@ public class DatabaseServerServiceTest {
                 5,
                 Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS)),
                 Optional.of("cover-1"),
-                Optional.of(new Biography("Long bio", "Short bio", "http://link"))
+                Optional.of(new Biography("Long bio"))
         );
 
         Artist artist2 = new Artist(
@@ -55,7 +55,7 @@ public class DatabaseServerServiceTest {
                 2,
                 Optional.empty(),
                 Optional.of("cover-3"),
-                Optional.of(new Biography("Long bio", null, null))
+                Optional.of(new Biography("Long bio"))
         );
 
         // Test insert

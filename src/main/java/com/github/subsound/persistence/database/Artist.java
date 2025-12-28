@@ -15,8 +15,6 @@ public record Artist(
 ) {
 
     record Biography(
-            String original,
-            String cleaned,
-            String link
+            String original
     ) {}
 }
