@@ -117,8 +117,8 @@ public class DatabaseTest {
         try (Connection conn = db.openConnection();
              Statement stmt = conn.createStatement()) {
             stmt.executeUpdate(String.format(
-                "INSERT INTO servers (id, server_type, server_url, username) VALUES ('%s', '%s', '%s', '%s')",
-                id, type, serverUrl, username
+                "INSERT INTO servers (id, is_primary, server_type, server_url, username) VALUES ('%s', %d, '%s', '%s', '%s')",
+                id, 1, type, serverUrl, username
             ));
         }
 

@@ -106,6 +106,7 @@ public class Database {
                 stmt.execute("""
                     CREATE TABLE IF NOT EXISTS servers (
                         id TEXT PRIMARY KEY,
+                        is_primary BOOL NOT NULL,
                         server_type TEXT NOT NULL,
                         server_url TEXT NOT NULL,
                         username TEXT NOT NULL
