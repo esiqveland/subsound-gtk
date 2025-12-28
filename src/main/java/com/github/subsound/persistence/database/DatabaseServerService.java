@@ -19,9 +19,11 @@ import java.util.UUID;
 
 public class DatabaseServerService {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseServerService.class);
+    private final UUID serverId;
     private final Database database;
 
-    public DatabaseServerService(Database database) {
+    public DatabaseServerService(UUID serverId, Database database) {
+        this.serverId = serverId;
         this.database = database;
     }
 
@@ -58,10 +60,11 @@ public class DatabaseServerService {
     }
 
     public Optional<Artist> getArtistById(String id) {
-        String sql = "SELECT id, server_id, name, album_count, starred_at, cover_art_id, biography FROM artists WHERE id = ?";
+        String sql = "SELECT id, server_id, name, album_count, starred_at, cover_art_id, biography FROM artists WHERE server_id = ? AND  id = ?";
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, id);
+            pstmt.setString(1, this.serverId.toString());
+            pstmt.setString(2, id);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     return Optional.of(mapResultSetToArtist(rs));
@@ -74,12 +77,11 @@ public class DatabaseServerService {
         return Optional.empty();
     }
 
-    public List<Artist> listArtists(UUID serverId) {
+    public List<Artist> listArtists() {
         List<Artist> artists = new ArrayList<>();
         String sql = "SELECT id, server_id, name, album_count, starred_at, cover_art_id, biography FROM artists WHERE server_id = ?";
-        try (Connection conn = database.openConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, serverId.toString());
+        try (Connection conn = database.openConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     artists.add(mapResultSetToArtist(rs));

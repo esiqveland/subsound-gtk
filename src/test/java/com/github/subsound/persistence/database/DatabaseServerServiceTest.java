@@ -23,10 +23,11 @@ public class DatabaseServerServiceTest {
         File dbFile = folder.newFile("test_artist_service.db");
         String url = "jdbc:sqlite:" + dbFile.getAbsolutePath();
         Database db = new Database(url);
-        DatabaseServerService service = new DatabaseServerService(db);
 
         UUID serverId1 = UUID.randomUUID();
         UUID serverId2 = UUID.randomUUID();
+        DatabaseServerService service = new DatabaseServerService(serverId1, db);
+        DatabaseServerService service2 = new DatabaseServerService(serverId2, db);
 
         Artist artist1 = new Artist(
                 "artist-1",
@@ -38,7 +39,7 @@ public class DatabaseServerServiceTest {
                 Optional.of(new Biography("Long bio"))
         );
 
-        Artist artist2 = new Artist(
+        var artist2 = new Artist(
                 "artist-2",
                 serverId1,
                 "Artist Two",
@@ -48,7 +49,7 @@ public class DatabaseServerServiceTest {
                 Optional.empty()
         );
 
-        Artist artist3 = new Artist(
+        var artist3 = new Artist(
                 "artist-3",
                 serverId2,
                 "Artist Three",
@@ -64,21 +65,21 @@ public class DatabaseServerServiceTest {
         service.insert(artist3);
 
         // Test listArtists for serverId1
-        List<Artist> artistsServer1 = service.listArtists(serverId1);
+        var artistsServer1 = service.listArtists();
         Assertions.assertThat(artistsServer1).hasSize(2);
         Assertions.assertThat(artistsServer1)
                 .usingRecursiveFieldByFieldElementComparator()
                 .containsExactlyInAnyOrder(artist1, artist2);
 
         // Test listArtists for serverId2
-        List<Artist> artistsServer2 = service.listArtists(serverId2);
+        var artistsServer2 = service2.listArtists();
         Assertions.assertThat(artistsServer2).hasSize(1);
         Assertions.assertThat(artistsServer2)
                 .usingRecursiveFieldByFieldElementComparator()
                 .containsExactly(artist3);
 
         // Test getArtistById
-        Optional<Artist> foundArtist = service.getArtistById("artist-1");
+        var foundArtist = service.getArtistById("artist-1");
         Assertions.assertThat(foundArtist).isPresent();
         Assertions.assertThat(foundArtist.get())
                 .usingRecursiveComparison()
