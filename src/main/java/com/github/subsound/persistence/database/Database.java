@@ -85,6 +85,7 @@ public class Database {
     private List<Migration> getMigrations() {
         List<Migration> migrations = new ArrayList<>();
         migrations.add(new MigrationV1());
+        migrations.add(new MigrationV2());
         return migrations;
     }
 
@@ -108,6 +109,30 @@ public class Database {
                         server_type TEXT NOT NULL,
                         server_url TEXT NOT NULL,
                         username TEXT NOT NULL
+                    )
+                """);
+            }
+        }
+    }
+
+    private static class MigrationV2 implements Migration {
+        @Override
+        public int version() {
+            return 2;
+        }
+
+        @Override
+        public void apply(Connection conn) throws SQLException {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS artists (
+                        id TEXT PRIMARY KEY,
+                        server_id TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        album_count INTEGER NOT NULL,
+                        starred_at INTEGER,
+                        cover_art_id TEXT,
+                        biography TEXT
                     )
                 """);
             }

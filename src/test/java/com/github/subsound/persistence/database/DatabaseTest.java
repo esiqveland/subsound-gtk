@@ -40,8 +40,66 @@ public class DatabaseTest {
             // Check version
             try (ResultSet rs = stmt.executeQuery("SELECT MAX(version) FROM schema_version")) {
                 Assertions.assertThat(rs.next()).isTrue();
-                Assertions.assertThat(rs.getInt(1)).isEqualTo(1);
+                Assertions.assertThat(rs.getInt(1)).isEqualTo(2);
             }
+
+            // Check if artists table exists
+            try (ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='artists'")) {
+                Assertions.assertThat(rs.next()).isTrue();
+            }
+
+            // Verify columns in artists table
+            try (ResultSet rs = stmt.executeQuery("PRAGMA table_info(artists)")) {
+                boolean hasServerId = false;
+                boolean starredAtIsInteger = false;
+                while (rs.next()) {
+                    String name = rs.getString("name");
+                    String type = rs.getString("type");
+                    if ("server_id".equals(name)) {
+                        hasServerId = true;
+                    }
+                    if ("starred_at".equals(name) && "INTEGER".equals(type)) {
+                        starredAtIsInteger = true;
+                    }
+                }
+                Assertions.assertThat(hasServerId).isTrue();
+                Assertions.assertThat(starredAtIsInteger).isTrue();
+            }
+        }
+    }
+
+    @Test
+    public void testInsertAndRetrieveArtist() throws Exception {
+        File dbFile = folder.newFile("test_artist.db");
+        String url = "jdbc:sqlite:" + dbFile.getAbsolutePath();
+        Database db = new Database(url);
+
+        String id = "artist-1";
+        String serverId = "server-1";
+        String name = "The Artist";
+        int albumCount = 5;
+        long starredAt = System.currentTimeMillis();
+        String coverArtId = "cover-1";
+        String biography = "{\"original\":\"Long bio\",\"cleaned\":\"Short bio\",\"link\":\"http://link\"}";
+
+        try (Connection conn = db.openConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate(String.format(
+                "INSERT INTO artists (id, server_id, name, album_count, starred_at, cover_art_id, biography) VALUES ('%s', '%s', '%s', %d, %d, '%s', '%s')",
+                id, serverId, name, albumCount, starredAt, coverArtId, biography
+            ));
+        }
+
+        try (Connection conn = db.openConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM artists WHERE id = '" + id + "'")) {
+            Assertions.assertThat(rs.next()).isTrue();
+            Assertions.assertThat(rs.getString("server_id")).isEqualTo(serverId);
+            Assertions.assertThat(rs.getString("name")).isEqualTo(name);
+            Assertions.assertThat(rs.getInt("album_count")).isEqualTo(albumCount);
+            Assertions.assertThat(rs.getLong("starred_at")).isEqualTo(starredAt);
+            Assertions.assertThat(rs.getString("cover_art_id")).isEqualTo(coverArtId);
+            Assertions.assertThat(rs.getString("biography")).isEqualTo(biography);
         }
     }
 
