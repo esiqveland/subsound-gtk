@@ -132,7 +132,7 @@ public class Database {
                         album_count INTEGER NOT NULL,
                         starred_at INTEGER,
                         cover_art_id TEXT,
-                        biography TEXT
+                        biography BLOB
                     )
                 """);
             }
