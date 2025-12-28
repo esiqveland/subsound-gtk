@@ -86,6 +86,7 @@ public class Database {
         List<Migration> migrations = new ArrayList<>();
         migrations.add(new MigrationV1());
         migrations.add(new MigrationV2());
+        migrations.add(new MigrationV3());
         return migrations;
     }
 
@@ -109,7 +110,8 @@ public class Database {
                         is_primary BOOL NOT NULL,
                         server_type TEXT NOT NULL,
                         server_url TEXT NOT NULL,
-                        username TEXT NOT NULL
+                        username TEXT NOT NULL,
+                        created_at INTEGER DEFAULT (strftime('%s', 'now'))
                     )
                 """);
             }
@@ -133,7 +135,38 @@ public class Database {
                         album_count INTEGER NOT NULL,
                         starred_at INTEGER,
                         cover_art_id TEXT,
-                        biography BLOB
+                        biography BLOB,
+                        created_at INTEGER DEFAULT (strftime('%s', 'now'))
+                    )
+                """);
+            }
+        }
+    }
+
+    private static class MigrationV3 implements Migration {
+        @Override
+        public int version() {
+            return 3;
+        }
+
+        @Override
+        public void apply(Connection conn) throws SQLException {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS albums (
+                        id TEXT,
+                        server_id TEXT NOT NULL,
+                        artist_id TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        song_count INTEGER,
+                        year INTEGER,
+                        artist_name TEXT NOT NULL,
+                        duration_ms INTEGER,
+                        starred_at_ms INTEGER,
+                        cover_art_id TEXT,
+                        added_at_ms INTEGER NOT NULL,
+                        created_at INTEGER DEFAULT (strftime('%s', 'now')),
+                        PRIMARY KEY (id, server_id)
                     )
                 """);
             }

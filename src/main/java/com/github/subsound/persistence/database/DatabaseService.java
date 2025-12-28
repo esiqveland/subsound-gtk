@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -22,7 +23,7 @@ public class DatabaseService {
     }
 
     public void insert(Server server) {
-        String sql = "INSERT INTO servers (id, is_primary, server_type, server_url, username) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO servers (id, is_primary, server_type, server_url, username, created_at) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, server.id().toString());
@@ -30,6 +31,7 @@ public class DatabaseService {
             pstmt.setString(3, server.serverType().name());
             pstmt.setString(4, server.serverUrl());
             pstmt.setString(5, server.username());
+            pstmt.setLong(6, server.createdAt().toEpochMilli());
             pstmt.executeUpdate();
         } catch (SQLException e) {
             logger.error("Failed to insert server", e);
@@ -38,7 +40,7 @@ public class DatabaseService {
     }
 
     public Optional<Server> getDefaultServer() {
-        String sql = "SELECT id, is_primary, server_type, server_url, username FROM servers WHERE is_primary = 1 LIMIT 1";
+        String sql = "SELECT id, is_primary, server_type, server_url, username, created_at FROM servers WHERE is_primary = 1 LIMIT 1";
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
@@ -53,7 +55,7 @@ public class DatabaseService {
     }
 
     public Optional<Server> getServerById(String id) {
-        String sql = "SELECT id, is_primary, server_type, server_url, username FROM servers WHERE id = ?";
+        String sql = "SELECT id, is_primary, server_type, server_url, username, created_at FROM servers WHERE id = ?";
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, id);
@@ -71,7 +73,7 @@ public class DatabaseService {
 
     public List<Server> listServers() {
         List<Server> servers = new ArrayList<>();
-        String sql = "SELECT id, is_primary, server_type, server_url, username FROM servers";
+        String sql = "SELECT id, is_primary, server_type, server_url, username, created_at FROM servers";
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
@@ -91,7 +93,8 @@ public class DatabaseService {
                 rs.getBoolean("is_primary"),
                 ServerType.valueOf(rs.getString("server_type")),
                 rs.getString("server_url"),
-                rs.getString("username")
+                rs.getString("username"),
+                Instant.ofEpochMilli(rs.getLong("created_at"))
         );
     }
 }

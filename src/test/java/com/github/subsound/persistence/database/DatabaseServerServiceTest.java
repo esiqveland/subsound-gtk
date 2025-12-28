@@ -7,6 +7,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -17,6 +18,79 @@ public class DatabaseServerServiceTest {
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
+
+    @Test
+    public void testAlbumOperations() throws Exception {
+        File dbFile = folder.newFile("test_album_service.db");
+        String url = "jdbc:sqlite:" + dbFile.getAbsolutePath();
+        Database db = new Database(url);
+
+        UUID serverId = UUID.randomUUID();
+        DatabaseServerService service = new DatabaseServerService(serverId, db);
+
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+        Album album1 = new Album(
+                "album-1",
+                serverId,
+                "artist-1",
+                "Album One",
+                10,
+                Optional.of(2020),
+                "Artist Name",
+                Duration.ofMinutes(45),
+                Optional.of(now),
+                Optional.of("cover-1"),
+                now.minus(1, ChronoUnit.DAYS)
+        );
+
+        Album album2 = new Album(
+                "album-2",
+                serverId,
+                "artist-1",
+                "Album Two",
+                12,
+                Optional.empty(),
+                "Artist Name",
+                Duration.ofMinutes(50),
+                Optional.empty(),
+                Optional.empty(),
+                now
+        );
+
+        Album album3 = new Album(
+                "album-3",
+                serverId,
+                "artist-2",
+                "Album Three",
+                8,
+                Optional.of(2022),
+                "Other Artist",
+                Duration.ofMinutes(30),
+                Optional.empty(),
+                Optional.of("cover-3"),
+                now.minus(2, ChronoUnit.DAYS)
+        );
+
+        // Test insert
+        service.insert(album1);
+        service.insert(album2);
+        service.insert(album3);
+
+        // Test getAlbumById
+        Optional<Album> found = service.getAlbumById("album-1");
+        Assertions.assertThat(found).isPresent();
+        Assertions.assertThat(found.get()).usingRecursiveComparison().isEqualTo(album1);
+
+        // Test listAlbumsByArtist
+        List<Album> artist1Albums = service.listAlbumsByArtist("artist-1");
+        Assertions.assertThat(artist1Albums).hasSize(2);
+        Assertions.assertThat(artist1Albums).usingRecursiveFieldByFieldElementComparator().containsExactlyInAnyOrder(album1, album2);
+
+        // Test listAlbumsByAddedAt (should be descending)
+        List<Album> albumsByAddedAt = service.listAlbumsByAddedAt();
+        Assertions.assertThat(albumsByAddedAt).hasSize(3);
+        Assertions.assertThat(albumsByAddedAt).usingRecursiveFieldByFieldElementComparator().containsExactly(album2, album1, album3);
+    }
 
     @Test
     public void testArtistOperations() throws Exception {

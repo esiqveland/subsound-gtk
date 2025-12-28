@@ -7,6 +7,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,7 +29,8 @@ public class DatabaseServiceTest {
                 true,
                 ServerType.SUBSONIC,
                 "http://server1.com",
-                "user1"
+                "user1",
+                Instant.now()
         );
 
         Server server2 = new Server(
@@ -36,7 +38,8 @@ public class DatabaseServiceTest {
                 false,
                 ServerType.SUBSONIC,
                 "http://server2.com",
-                "user2"
+                "user2",
+                Instant.now()
         );
 
         // Test insert
