@@ -163,4 +163,77 @@ public class DatabaseServerServiceTest {
         Optional<Artist> notFoundArtist = service.getArtistById("non-existent");
         Assertions.assertThat(notFoundArtist).isEmpty();
     }
+
+    @Test
+    public void testSongOperations() throws Exception {
+        File dbFile = folder.newFile("test_song_service.db");
+        String url = "jdbc:sqlite:" + dbFile.getAbsolutePath();
+        Database db = new Database(url);
+
+        UUID serverId = UUID.randomUUID();
+        DatabaseServerService service = new DatabaseServerService(serverId, db);
+
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+        Song song1 = new Song(
+                "song-1",
+                serverId,
+                "album-1",
+                "Song One",
+                Optional.of(2020),
+                "artist-1",
+                "Artist Name",
+                Duration.ofMinutes(3),
+                Optional.of(now),
+                Optional.of("cover-1"),
+                now
+        );
+
+        Song song2 = new Song(
+                "song-2",
+                serverId,
+                "album-1",
+                "Song Two",
+                Optional.empty(),
+                "artist-1",
+                "Artist Name",
+                Duration.ofMinutes(4),
+                Optional.empty(),
+                Optional.empty(),
+                now
+        );
+
+        Song song3 = new Song(
+                "song-3",
+                serverId,
+                "album-2",
+                "Song Three",
+                Optional.of(2022),
+                "artist-2",
+                "Other Artist",
+                Duration.ofMinutes(5),
+                Optional.of(now.minus(1, ChronoUnit.HOURS)),
+                Optional.of("cover-3"),
+                now
+        );
+
+        // Test insert
+        service.insert(song1);
+        service.insert(song2);
+        service.insert(song3);
+
+        // Test getSongById
+        Optional<Song> found = service.getSongById("song-1");
+        Assertions.assertThat(found).isPresent();
+        Assertions.assertThat(found.get()).usingRecursiveComparison().isEqualTo(song1);
+
+        // Test listSongsByAlbumId
+        List<Song> album1Songs = service.listSongsByAlbumId("album-1");
+        Assertions.assertThat(album1Songs).hasSize(2);
+        Assertions.assertThat(album1Songs).usingRecursiveFieldByFieldElementComparator().containsExactlyInAnyOrder(song1, song2);
+
+        // Test listSongsByStarredAt (should be descending)
+        List<Song> starredSongs = service.listSongsByStarredAt();
+        Assertions.assertThat(starredSongs).hasSize(2);
+        Assertions.assertThat(starredSongs).usingRecursiveFieldByFieldElementComparator().containsExactly(song1, song3);
+    }
 }

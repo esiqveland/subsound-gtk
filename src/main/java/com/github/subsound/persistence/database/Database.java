@@ -87,6 +87,7 @@ public class Database {
         migrations.add(new MigrationV1());
         migrations.add(new MigrationV2());
         migrations.add(new MigrationV3());
+        migrations.add(new MigrationV4());
         return migrations;
     }
 
@@ -166,6 +167,35 @@ public class Database {
                         cover_art_id TEXT,
                         added_at_ms INTEGER NOT NULL,
                         created_at INTEGER DEFAULT (strftime('%s', 'now')),
+                        PRIMARY KEY (id, server_id)
+                    )
+                """);
+            }
+        }
+    }
+
+    private static class MigrationV4 implements Migration {
+        @Override
+        public int version() {
+            return 4;
+        }
+
+        @Override
+        public void apply(Connection conn) throws SQLException {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS songs (
+                        id TEXT,
+                        server_id TEXT NOT NULL,
+                        album_id TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        year INTEGER,
+                        artist_id TEXT NOT NULL,
+                        artist_name TEXT NOT NULL,
+                        duration_ms INTEGER,
+                        starred_at_ms INTEGER,
+                        cover_art_id TEXT,
+                        created_at_ms INTEGER NOT NULL,
                         PRIMARY KEY (id, server_id)
                     )
                 """);

@@ -40,12 +40,29 @@ public class DatabaseTest {
             // Check version
             try (ResultSet rs = stmt.executeQuery("SELECT MAX(version) FROM schema_version")) {
                 Assertions.assertThat(rs.next()).isTrue();
-                Assertions.assertThat(rs.getInt(1)).isEqualTo(3);
+                Assertions.assertThat(rs.getInt(1)).isEqualTo(4);
             }
 
             // Check if artists table exists
             try (ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='artists'")) {
                 Assertions.assertThat(rs.next()).isTrue();
+            }
+
+            // Check if songs table exists
+            try (ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='songs'")) {
+                Assertions.assertThat(rs.next()).isTrue();
+            }
+
+            // Verify columns in songs table
+            try (ResultSet rs = stmt.executeQuery("PRAGMA table_info(songs)")) {
+                boolean hasCreatedAtMs = false;
+                while (rs.next()) {
+                    String name = rs.getString("name");
+                    if ("created_at_ms".equals(name)) {
+                        hasCreatedAtMs = true;
+                    }
+                }
+                Assertions.assertThat(hasCreatedAtMs).isTrue();
             }
 
             // Verify columns in artists table

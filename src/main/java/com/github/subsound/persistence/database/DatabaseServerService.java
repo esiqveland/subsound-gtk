@@ -236,4 +236,121 @@ public class DatabaseServerService {
                 biographyOptional
         );
     }
+
+    public void insert(Song song) {
+        String sql = """
+                INSERT INTO songs (id, server_id, album_id, name, year, artist_id, artist_name, duration_ms, starred_at_ms, cover_art_id, created_at_ms)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, song.id());
+            pstmt.setString(2, song.serverId().toString());
+            pstmt.setString(3, song.albumId());
+            pstmt.setString(4, song.name());
+            if (song.year().isPresent()) {
+                pstmt.setInt(5, song.year().get());
+            } else {
+                pstmt.setNull(5, Types.INTEGER);
+            }
+            pstmt.setString(6, song.artistId());
+            pstmt.setString(7, song.artistName());
+            pstmt.setLong(8, song.duration().toMillis());
+            if (song.starredAt().isPresent()) {
+                pstmt.setLong(9, song.starredAt().get().toEpochMilli());
+            } else {
+                pstmt.setNull(9, Types.INTEGER);
+            }
+            if (song.coverArtId().isPresent()) {
+                pstmt.setString(10, song.coverArtId().get());
+            } else {
+                pstmt.setNull(10, Types.VARCHAR);
+            }
+            pstmt.setLong(11, song.createdAt().toEpochMilli());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Failed to insert song", e);
+            throw new RuntimeException("Failed to insert song", e);
+        }
+    }
+
+    public List<Song> listSongsByAlbumId(String albumId) {
+        List<Song> songs = new ArrayList<>();
+        String sql = "SELECT * FROM songs WHERE server_id = ? AND album_id = ?";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            pstmt.setString(2, albumId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    songs.add(mapResultSetToSong(rs));
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to list songs for album: {}", albumId, e);
+            throw new RuntimeException("Failed to list songs by album_id", e);
+        }
+        return songs;
+    }
+
+    public List<Song> listSongsByStarredAt() {
+        List<Song> songs = new ArrayList<>();
+        String sql = "SELECT * FROM songs WHERE server_id = ? AND starred_at_ms IS NOT NULL ORDER BY starred_at_ms DESC";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    songs.add(mapResultSetToSong(rs));
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to list starred songs for server: {}", serverId, e);
+            throw new RuntimeException("Failed to list starred songs", e);
+        }
+        return songs;
+    }
+
+    public Optional<Song> getSongById(String songId) {
+        String sql = "SELECT * FROM songs WHERE server_id = ? AND id = ?";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            pstmt.setString(2, songId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapResultSetToSong(rs));
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to get song by id: {}", songId, e);
+            throw new RuntimeException("Failed to get song by id", e);
+        }
+        return Optional.empty();
+    }
+
+    private Song mapResultSetToSong(ResultSet rs) throws SQLException {
+        int year = rs.getInt("year");
+        Optional<Integer> yearOptional = rs.wasNull() ? Optional.empty() : Optional.of(year);
+
+        long starredAt = rs.getLong("starred_at_ms");
+        Optional<Instant> starredAtInstant = rs.wasNull() ? Optional.empty() : Optional.of(Instant.ofEpochMilli(starredAt));
+
+        String coverArtId = rs.getString("cover_art_id");
+        Optional<String> coverArtIdOptional = Optional.ofNullable(coverArtId);
+
+        return new Song(
+                rs.getString("id"),
+                UUID.fromString(rs.getString("server_id")),
+                rs.getString("album_id"),
+                rs.getString("name"),
+                yearOptional,
+                rs.getString("artist_id"),
+                rs.getString("artist_name"),
+                Duration.ofMillis(rs.getLong("duration_ms")),
+                starredAtInstant,
+                coverArtIdOptional,
+                Instant.ofEpochMilli(rs.getLong("created_at_ms"))
+        );
+    }
 }
