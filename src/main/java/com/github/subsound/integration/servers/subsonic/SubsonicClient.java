@@ -9,13 +9,16 @@ import com.github.subsound.utils.Utils;
 import com.github.subsound.utils.javahttp.TextUtils;
 import net.beardbot.subsonic.client.Subsonic;
 import net.beardbot.subsonic.client.SubsonicPreferences;
+import net.beardbot.subsonic.client.api.browsing.IndexParams;
 import net.beardbot.subsonic.client.api.lists.AlbumListParams;
 import net.beardbot.subsonic.client.api.lists.AlbumListType;
 import net.beardbot.subsonic.client.api.media.CoverArtParams;
 import net.beardbot.subsonic.client.api.media.StreamParams;
 import net.beardbot.subsonic.client.base.ApiParams;
 import okhttp3.HttpUrl;
+import org.subsonic.restapi.Artist;
 import org.subsonic.restapi.Child;
+import org.subsonic.restapi.Index;
 import org.subsonic.restapi.PlaylistWithSongs;
 import org.subsonic.restapi.Starred2;
 
