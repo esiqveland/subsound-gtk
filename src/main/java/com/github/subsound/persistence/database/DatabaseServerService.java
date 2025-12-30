@@ -1,11 +1,14 @@
 package com.github.subsound.persistence.database;
 
 import com.github.subsound.persistence.database.Artist.Biography;
+import com.github.subsound.integration.ServerClient.SongInfo;
+import com.github.subsound.persistence.database.DownloadQueueItem.DownloadStatus;
 import com.github.subsound.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -352,5 +355,106 @@ public class DatabaseServerService {
                 coverArtIdOptional,
                 Instant.ofEpochMilli(rs.getLong("created_at_ms"))
         );
+    }
+
+    public void addToDownloadQueue(SongInfo songInfo) {
+        String sql = "INSERT OR IGNORE INTO download_queue (song_id, server_id, status, stream_uri, stream_format, original_size, original_bitrate, estimated_bitrate, duration_seconds) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, songInfo.id());
+            pstmt.setString(2, this.serverId.toString());
+            pstmt.setString(3, DownloadQueueItem.DownloadStatus.PENDING.name());
+            pstmt.setString(4, songInfo.transcodeInfo().streamUri().toString());
+            pstmt.setString(5, songInfo.transcodeInfo().streamFormat());
+            pstmt.setLong(6, songInfo.size());
+            if (songInfo.transcodeInfo().originalBitRate().isPresent()) {
+                pstmt.setInt(7, songInfo.transcodeInfo().originalBitRate().get());
+            } else {
+                pstmt.setNull(7, Types.INTEGER);
+            }
+            pstmt.setInt(8, songInfo.transcodeInfo().estimatedBitRate());
+            pstmt.setLong(9, songInfo.transcodeInfo().duration().toSeconds());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Failed to add song to download queue: {}", songInfo.id(), e);
+            throw new RuntimeException("Failed to add song to download queue", e);
+        }
+    }
+
+    public List<DownloadQueueItem> listDownloadQueue() {
+        return listDownloadQueue(List.of(
+                DownloadStatus.PENDING,
+                DownloadStatus.DOWNLOADING,
+                DownloadStatus.FAILED
+        ));
+    }
+    public List<DownloadQueueItem> listDownloadQueue(List<DownloadStatus> statuses) {
+        List<DownloadQueueItem> items = new ArrayList<>();
+        String placeholders = String.join(",", statuses.stream().map(s -> "?").toList());
+        String sql = "SELECT * FROM download_queue WHERE server_id = ? AND status IN (" + placeholders + ")";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            for (int i = 0; i < statuses.size(); i++) {
+                pstmt.setString(i + 2, statuses.get(i).name());
+            }
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    int originalBitRate = rs.getInt("original_bitrate");
+                    Optional<Integer> originalBitRateOpt = rs.wasNull() ? Optional.empty() : Optional.of(originalBitRate);
+
+                    items.add(new DownloadQueueItem(
+                            rs.getString("song_id"),
+                            UUID.fromString(rs.getString("server_id")),
+                            DownloadQueueItem.DownloadStatus.valueOf(rs.getString("status")),
+                            rs.getDouble("progress"),
+                            rs.getString("error_message"),
+                            rs.getString("stream_uri"),
+                            rs.getString("stream_format"),
+                            rs.getLong("original_size"),
+                            originalBitRateOpt,
+                            rs.getInt("estimated_bitrate"),
+                            rs.getLong("duration_seconds"),
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to list download queue for server: {}", serverId, e);
+            throw new RuntimeException("Failed to list download queue", e);
+        }
+        return items;
+    }
+
+    public void updateDownloadProgress(String songId, DownloadQueueItem.DownloadStatus status, double progress, String errorMessage) {
+        updateDownloadProgress(songId, status, progress, errorMessage, null);
+    }
+
+    public void updateDownloadProgress(String songId, DownloadQueueItem.DownloadStatus status, double progress, String errorMessage, String checksum) {
+        String sql = "UPDATE download_queue SET status = ?, progress = ?, error_message = ?, checksum = ? WHERE song_id = ? AND server_id = ?";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, status.name());
+            pstmt.setDouble(2, progress);
+            pstmt.setString(3, errorMessage);
+            pstmt.setString(5, songId);
+            pstmt.setString(6, this.serverId.toString());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Failed to update download progress for song: {}", songId, e);
+            throw new RuntimeException("Failed to update download progress", e);
+        }
+    }
+
+    public void removeFromDownloadQueue(String songId) {
+        String sql = "DELETE FROM download_queue WHERE song_id = ? AND server_id = ?";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, songId);
+            pstmt.setString(2, this.serverId.toString());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Failed to remove song from download queue: {}", songId, e);
+            throw new RuntimeException("Failed to remove song from download queue", e);
+        }
     }
 }

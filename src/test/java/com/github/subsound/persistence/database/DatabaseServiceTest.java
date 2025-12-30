@@ -8,6 +8,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,13 +25,14 @@ public class DatabaseServiceTest {
         Database db = new Database(url);
         DatabaseService service = new DatabaseService(db);
 
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         Server server1 = new Server(
                 UUID.randomUUID(),
                 true,
                 ServerType.SUBSONIC,
                 "http://server1.com",
                 "user1",
-                Instant.now()
+                now
         );
 
         Server server2 = new Server(
@@ -39,7 +41,7 @@ public class DatabaseServiceTest {
                 ServerType.SUBSONIC,
                 "http://server2.com",
                 "user2",
-                Instant.now()
+                now
         );
 
         // Test insert

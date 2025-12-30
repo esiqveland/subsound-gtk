@@ -72,9 +72,28 @@ public class Utils {
     }
 
     public static String sha256(String value) {
+        return sha256(value.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public static String sha256(byte[] data) {
         try {
             var md = MessageDigest.getInstance("SHA-256");
-            md.update(value.getBytes(StandardCharsets.UTF_8));
+            md.update(data);
+            byte[] digest = md.digest();
+            return HEX.formatHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String sha256(InputStream is) throws IOException {
+        try {
+            var md = MessageDigest.getInstance("SHA-256");
+            byte[] buffer = new byte[8192];
+            int n;
+            while (-1 != (n = is.read(buffer))) {
+                md.update(buffer, 0, n);
+            }
             byte[] digest = md.digest();
             return HEX.formatHex(digest);
         } catch (NoSuchAlgorithmException e) {

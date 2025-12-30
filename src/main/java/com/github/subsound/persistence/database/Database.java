@@ -4,9 +4,10 @@ import com.github.subsound.integration.platform.PortalUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
+import org.sqlite.SQLiteDataSource;
 import java.io.File;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -16,7 +17,7 @@ import java.util.List;
 public class Database {
     private static final Logger logger = LoggerFactory.getLogger(Database.class);
     private static final String DB_NAME = "subsound.db";
-    private final String url;
+    private final DataSource dataSource;
 
     public Database() {
         String dataDir = PortalUtils.getUserDataDir();
@@ -25,19 +26,26 @@ public class Database {
             subsoundDir.mkdirs();
         }
         File dbFile = new File(subsoundDir, DB_NAME);
-        this.url = "jdbc:sqlite:" + dbFile.getAbsolutePath();
+        String url = "jdbc:sqlite:" + dbFile.getAbsolutePath();
         logger.info("Database URL: {}", url);
+        this.dataSource = createDataSource(url);
         initialize();
     }
 
     // Constructor for testing
     public Database(String url) {
-        this.url = url;
+        this.dataSource = createDataSource(url);
         initialize();
     }
 
+    private DataSource createDataSource(String url) {
+        SQLiteDataSource ds = new SQLiteDataSource();
+        ds.setUrl(url);
+        return ds;
+    }
+
     private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(url);
+        return dataSource.getConnection();
     }
 
     private void initialize() {
@@ -88,6 +96,8 @@ public class Database {
         migrations.add(new MigrationV2());
         migrations.add(new MigrationV3());
         migrations.add(new MigrationV4());
+        migrations.add(new MigrationV5());
+        migrations.add(new MigrationV6());
         return migrations;
     }
 
@@ -199,6 +209,50 @@ public class Database {
                         PRIMARY KEY (id, server_id)
                     )
                 """);
+            }
+        }
+    }
+
+    private static class MigrationV5 implements Migration {
+        @Override
+        public int version() {
+            return 5;
+        }
+
+        @Override
+        public void apply(Connection conn) throws SQLException {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS download_queue (
+                        song_id TEXT,
+                        server_id TEXT NOT NULL,
+                        status TEXT NOT NULL, -- PENDING, DOWNLOADING, COMPLETED, FAILED
+                        progress REAL DEFAULT 0.0,
+                        added_at INTEGER DEFAULT (strftime('%s', 'now')),
+                        error_message TEXT,
+                        stream_uri TEXT,
+                        stream_format TEXT,
+                        original_size INTEGER,
+                        original_bitrate INTEGER,
+                        estimated_bitrate INTEGER,
+                        duration_seconds INTEGER,
+                        PRIMARY KEY (song_id, server_id)
+                    )
+                """);
+            }
+        }
+    }
+
+    private static class MigrationV6 implements Migration {
+        @Override
+        public int version() {
+            return 6;
+        }
+
+        @Override
+        public void apply(Connection conn) throws SQLException {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("ALTER TABLE download_queue ADD COLUMN checksum TEXT");
             }
         }
     }
