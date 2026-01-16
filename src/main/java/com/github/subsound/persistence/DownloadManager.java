@@ -27,6 +27,7 @@ public class DownloadManager {
     public DownloadManager(DatabaseServerService dbService, SongCache songCache) {
         this.dbService = dbService;
         this.songCache = songCache;
+        //startQueueProcessor();
     }
 
     private void startQueueProcessor() {
