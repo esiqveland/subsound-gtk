@@ -40,7 +40,7 @@ public class DatabaseTest {
             // Check version
             try (ResultSet rs = stmt.executeQuery("SELECT MAX(version) FROM schema_version")) {
                 Assertions.assertThat(rs.next()).isTrue();
-                Assertions.assertThat(rs.getInt(1)).isEqualTo(5);
+                Assertions.assertThat(rs.getInt(1)).isEqualTo(6);
             }
 
             // Check if artists table exists
@@ -63,6 +63,18 @@ public class DatabaseTest {
                     }
                 }
                 Assertions.assertThat(hasCreatedAtMs).isTrue();
+            }
+
+            // Verify columns in download_queue table
+            try (ResultSet rs = stmt.executeQuery("PRAGMA table_info(download_queue)")) {
+                boolean hasChecksum = false;
+                while (rs.next()) {
+                    String name = rs.getString("name");
+                    if ("checksum".equals(name)) {
+                        hasChecksum = true;
+                    }
+                }
+                Assertions.assertThat(hasChecksum).isTrue();
             }
 
             // Verify columns in artists table

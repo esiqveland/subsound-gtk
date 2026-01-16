@@ -1,6 +1,9 @@
 package com.github.subsound.persistence.database;
 
 import com.github.subsound.persistence.database.Artist.Biography;
+import com.github.subsound.integration.ServerClient.SongInfo;
+import com.github.subsound.integration.ServerClient.TranscodeInfo;
+import com.github.subsound.integration.ServerClientSongInfoBuilder;
 import org.assertj.core.api.Assertions;
 import org.junit.Rule;
 import org.junit.Test;
@@ -235,5 +238,57 @@ public class DatabaseServerServiceTest {
         List<Song> starredSongs = service.listSongsByStarredAt();
         Assertions.assertThat(starredSongs).hasSize(2);
         Assertions.assertThat(starredSongs).usingRecursiveFieldByFieldElementComparator().containsExactly(song1, song3);
+    }
+
+    @Test
+    public void testDownloadQueueOperations() throws Exception {
+        File dbFile = folder.newFile("test_download_service.db");
+        String url = "jdbc:sqlite:" + dbFile.getAbsolutePath();
+        Database db = new Database(url);
+
+        UUID serverId = UUID.randomUUID();
+        DatabaseServerService service = new DatabaseServerService(serverId, db);
+
+        SongInfo songInfo = ServerClientSongInfoBuilder.builder()
+                .id("song-1")
+                .title("Song One")
+                .artistId("artist-1")
+                .artist("Artist Name")
+                .albumId("album-1")
+                .album("Album Name")
+                .duration(Duration.ofMinutes(3))
+                .size(1000L)
+                .suffix("mp3")
+                .transcodeInfo(new TranscodeInfo(
+                        Optional.of(320),
+                        128,
+                        Duration.ofMinutes(3),
+                        "mp3",
+                        java.net.URI.create("http://example.com/stream")
+                ))
+                .downloadUri(java.net.URI.create("http://example.com/download"))
+                .build();
+
+        // Test addToDownloadQueue
+        service.addToDownloadQueue(songInfo);
+
+        // Test listDownloadQueue
+        List<DownloadQueueItem> queue = service.listDownloadQueue();
+        Assertions.assertThat(queue).hasSize(1);
+        DownloadQueueItem item = queue.get(0);
+        Assertions.assertThat(item.songId()).isEqualTo("song-1");
+        Assertions.assertThat(item.status()).isEqualTo(DownloadQueueItem.DownloadStatus.PENDING);
+        Assertions.assertThat(item.streamUri()).isEqualTo("http://example.com/stream");
+
+        // Test updateDownloadProgress
+        service.updateDownloadProgress("song-1", DownloadQueueItem.DownloadStatus.DOWNLOADING, 0.5, null);
+        queue = service.listDownloadQueue();
+        Assertions.assertThat(queue.get(0).status()).isEqualTo(DownloadQueueItem.DownloadStatus.DOWNLOADING);
+        Assertions.assertThat(queue.get(0).progress()).isEqualTo(0.5);
+
+        // Test removeFromDownloadQueue
+        service.removeFromDownloadQueue("song-1");
+        queue = service.listDownloadQueue();
+        Assertions.assertThat(queue).isEmpty();
     }
 }

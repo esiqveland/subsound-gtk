@@ -15,6 +15,7 @@ public record DownloadQueueItem(
         Optional<Integer> originalBitRate,
         int estimatedBitRate,
         long durationSeconds,
+        Optional<String> checksum
 ) {
     public enum DownloadStatus {
         PENDING, DOWNLOADING, COMPLETED, FAILED

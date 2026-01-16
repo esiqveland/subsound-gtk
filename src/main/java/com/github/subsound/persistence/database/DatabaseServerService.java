@@ -415,6 +415,7 @@ public class DatabaseServerService {
                             originalBitRateOpt,
                             rs.getInt("estimated_bitrate"),
                             rs.getLong("duration_seconds"),
+                            Optional.ofNullable(rs.getString("checksum"))
                     ));
                 }
             }
@@ -436,6 +437,7 @@ public class DatabaseServerService {
             pstmt.setString(1, status.name());
             pstmt.setDouble(2, progress);
             pstmt.setString(3, errorMessage);
+            pstmt.setString(4, checksum);
             pstmt.setString(5, songId);
             pstmt.setString(6, this.serverId.toString());
             pstmt.executeUpdate();
