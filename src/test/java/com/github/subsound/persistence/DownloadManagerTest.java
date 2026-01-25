@@ -27,7 +27,6 @@ public class DownloadManagerTest {
     public TemporaryFolder folder = new TemporaryFolder();
 
     @Test
-    @Ignore
     public void testDownloadQueueFlow() throws Exception {
         File dataDir = folder.newFolder("data");
         File dbFile = new File(dataDir, "test.db");

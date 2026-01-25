@@ -6,10 +6,13 @@ import com.github.subsound.configuration.Config;
 import com.github.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
 import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.SongInfo;
+import com.github.subsound.persistence.DownloadManager;
 import com.github.subsound.persistence.SongCache;
 import com.github.subsound.persistence.SongCache.CacheSong;
 import com.github.subsound.persistence.SongCache.LoadSongResult;
 import com.github.subsound.persistence.ThumbnailCache;
+import com.github.subsound.persistence.database.Database;
+import com.github.subsound.persistence.database.DatabaseServerService;
 import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.sound.PlaybinPlayer.AudioSource;
 import com.github.subsound.sound.PlaybinPlayer.Source;
@@ -50,7 +53,7 @@ public class AppManager {
     private static final Logger log = LoggerFactory.getLogger(AppManager.class);
 
     public static final Executor ASYNC_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
-    public static final String SERVER_ID = "123";
+    public static final String SERVER_ID = "8034888b-5544-4dbe-b9ec-be5ad02831cd";
 
     private final Config config;
     private final PlaybinPlayer player;
@@ -62,6 +65,9 @@ public class AppManager {
     private final CopyOnWriteArrayList<StateListener> listeners = new CopyOnWriteArrayList<>();
     private final ListStore<GSongInfo> starredList = new ListStore<>(GSongInfo.gtype);
     private final ScheduledExecutorService preferenceSaveScheduler = Executors.newSingleThreadScheduledExecutor();
+    private final Database database;
+    private final DatabaseServerService dbService;
+    private final DownloadManager downloadManager;
     private volatile ScheduledFuture<?> pendingPreferenceSave;
 
     private ToastOverlay toastOverlay;
@@ -85,6 +91,13 @@ public class AppManager {
         );
         this.client = new AtomicReference<>();
         client.ifPresent(this.client::set);
+
+        this.database = new Database();
+        this.dbService = new DatabaseServerService(
+                UUID.nameUUIDFromBytes(SERVER_ID.getBytes()),
+                this.database
+        );
+
         player.onStateChanged(next -> {
             this.setState(old -> old.withPlayer(next));
         });
@@ -102,6 +115,10 @@ public class AppManager {
         var playerPrefs = config.playerPreferences;
         this.player.setVolume(playerPrefs.volume());
         this.player.setMute(playerPrefs.muted());
+        this.downloadManager = new DownloadManager(
+                dbService,
+                songCache
+        );
     }
 
     private AppState buildState() {
@@ -155,6 +172,7 @@ public class AppManager {
             saveTask.cancel(false);
         }
         this.preferenceSaveScheduler.shutdown();
+        this.downloadManager.stop();
         var elapsed = System.currentTimeMillis() - start;
         log.info("AppManager shutdown completed in %dms".formatted(elapsed));
     }
