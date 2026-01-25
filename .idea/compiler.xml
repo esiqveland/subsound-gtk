@@ -12,6 +12,6 @@
         <module name="subsound-gtk.master.main" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel target="23" />
+    <bytecodeTargetLevel target="25" />
   </component>
 </project>
