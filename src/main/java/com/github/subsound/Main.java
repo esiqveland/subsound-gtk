@@ -63,6 +63,7 @@ public class Main {
             app.onShutdown(() -> {
                 mprisController.stop();
                 player.quit();
+                appManager.shutdown();
             });
             app.run(args);
         } finally {

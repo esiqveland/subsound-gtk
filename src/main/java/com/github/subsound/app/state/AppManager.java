@@ -34,6 +34,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -59,6 +61,8 @@ public class AppManager {
     private final BehaviorSubject<AppState> currentState;
     private final CopyOnWriteArrayList<StateListener> listeners = new CopyOnWriteArrayList<>();
     private final ListStore<GSongInfo> starredList = new ListStore<>(GSongInfo.gtype);
+    private final ScheduledExecutorService preferenceSaveScheduler = Executors.newSingleThreadScheduledExecutor();
+    private volatile ScheduledFuture<?> pendingPreferenceSave;
 
     private ToastOverlay toastOverlay;
     private AppNavigation navigator;
@@ -140,6 +144,18 @@ public class AppManager {
 
     public void setNavigator(AppNavigation appNavigation) {
         this.navigator = appNavigation;
+    }
+
+    public void shutdown() {
+        var start = System.currentTimeMillis();
+        saveCurrentPlayerPreferencesImmediately();
+        var saveTask = this.pendingPreferenceSave;
+        if (saveTask != null) {
+            saveTask.cancel(false);
+        }
+        this.preferenceSaveScheduler.shutdown();
+        var elapsed = System.currentTimeMillis() - start;
+        log.info("AppManager shutdown completed in %dms".formatted(elapsed));
     }
 
     public interface StateListener {
@@ -275,10 +291,12 @@ public class AppManager {
 
     public void mute() {
         this.player.setMute(true);
+        saveCurrentPlayerPreferences();
     }
 
     public void unMute() {
         this.player.setMute(false);
+        saveCurrentPlayerPreferences();
     }
 
     public void seekTo(Duration position) {
@@ -287,6 +305,7 @@ public class AppManager {
 
     public void setVolume(double linearVolume) {
         this.player.setVolume(linearVolume);
+        saveCurrentPlayerPreferences();
     }
 
     public void next() {
@@ -367,6 +386,49 @@ public class AppManager {
         } catch (IOException e) {
             log.error("failed to save player preferences", e);
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Saves player preferences with debouncing (500ms delay).
+     * If called multiple times within the delay, only the last call will actually save.
+     */
+    public void saveCurrentPlayerPreferences() {
+        // Cancel any pending save
+        var ref = pendingPreferenceSave;
+        if (ref != null) {
+            ref.cancel(false);
+            pendingPreferenceSave = null;
+        }
+        // Schedule a new save after 500ms
+        pendingPreferenceSave = preferenceSaveScheduler.schedule(
+                this::saveCurrentPlayerPreferencesImmediately,
+                2000,
+                TimeUnit.MILLISECONDS
+        );
+    }
+
+    /**
+     * Saves player preferences immediately without debouncing.
+     * Use this for shutdown or when immediate save is required.
+     */
+    public void saveCurrentPlayerPreferencesImmediately() {
+        // Cancel any pending debounced save
+        var ref = pendingPreferenceSave;
+        if (ref != null) {
+            ref.cancel(false);
+            pendingPreferenceSave = null;
+        }
+        var state = this.player.getState();
+        this.config.playerPreferences = new Config.PlayerPreferences(
+                state.volume(),
+                state.muted()
+        );
+        try {
+            this.config.saveToFile();
+            log.info("saveCurrentPlayerPreferencesImmediately: saved player preferences: volume={}, muted={}", state.volume(), state.muted());
+        } catch (IOException e) {
+            log.error("failed to save player preferences", e);
         }
     }
 
