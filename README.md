@@ -139,6 +139,7 @@ A few samples of what the UI looks like:
   - [ ] support for tlsNoVerify
 - [X] Create a persistent store for server settings / authentication
   - [ ] store authentication in platform password storage / libsecret ?
+  - [ ] convert from custom json storage to store app preferences in glib settings
 - [X] Implement star/unstar
   - [X] Optimistically update the local copy of Starred list based on star / unstar actions
 - [ ] Playlist support
