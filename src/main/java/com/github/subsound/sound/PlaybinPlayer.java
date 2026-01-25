@@ -159,9 +159,15 @@ public class PlaybinPlayer {
         // the user wants to play a different track, playbin3 should be set back to READY or NULL state,
         // then the uri property should be set to the new location and then playbin3 be set to PLAYING state again.
         System.out.println("Player: Change source to src=" + fileUri);
+        // Save volume before state change (GStreamer may reset it)
+        double savedVolume = this.currentVolume;
+        boolean savedMute = this.muteState.get();
         var ready = this.playbinEl.setState(State.READY);
         System.out.println("Player: Change source to src=" + fileUri + ": READY=" + ready.name());
         this.playbinEl.set("uri", fileUri, null);
+        // Restore volume after state change
+        this.playbinEl.set("volume", savedVolume, null);
+        this.playbinEl.set("mute", savedMute, null);
         if (startPlaying) {
             var playing = this.playbinEl.setState(State.PLAYING);
             System.out.println("Player: Change source to src=" + fileUri + ": PLAYING=" + playing.name());
