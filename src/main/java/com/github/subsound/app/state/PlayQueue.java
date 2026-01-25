@@ -1,5 +1,6 @@
 package com.github.subsound.app.state;
 
+import com.github.subsound.sound.Player;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.sound.PlaybinPlayer.Source;
@@ -21,7 +22,7 @@ import static com.github.subsound.sound.PlaybinPlayer.PlayerStates.END_OF_STREAM
 public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     private static final Logger log = LoggerFactory.getLogger(PlayQueue.class);
 
-    private final PlaybinPlayer player;
+    private final Player player;
     private final Consumer<PlayQueueState> onStateChanged;
     private final Consumer<SongInfo> onPlay;
     private final CopyOnWriteArrayList<SongInfo> playQueue = new CopyOnWriteArrayList<>();
@@ -29,7 +30,7 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     private Optional<Integer> position = Optional.empty();
 
     public PlayQueue(
-            PlaybinPlayer player,
+            Player player,
             Consumer<PlayQueueState> onStateChanged,
             Consumer<SongInfo> onPlay
     ) {

@@ -31,7 +31,7 @@ import static com.github.subsound.utils.OsUtil.OS.MACOS;
 //
 // GstSink:
 // gconfaudiosink vs autoaudiosink
-public class PlaybinPlayer {
+public class PlaybinPlayer implements Player {
     private static final Logger log = LoggerFactory.getLogger(PlaybinPlayer.class);
 
     private static final int GST_PLAY_FLAG_AUDIO = 2;
