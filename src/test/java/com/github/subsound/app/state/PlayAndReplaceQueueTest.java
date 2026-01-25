@@ -18,7 +18,7 @@ import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class PlayQueueTest {
+public class PlayAndReplaceQueueTest {
 
     private StubPlayer player;
     private PlayQueueStateRecorder stateChangedRecorder;

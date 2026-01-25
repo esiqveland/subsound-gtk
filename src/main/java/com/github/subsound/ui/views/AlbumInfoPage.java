@@ -135,7 +135,7 @@ public class AlbumInfoPage extends Box {
             playMenuItem.onClicked(() -> {
                 menuPopover.popdown();
                 var idx = getIdx(songInfo.id(), this.albumInfo.songs());
-                this.onAction.apply(new PlayerAction.PlayQueue(
+                this.onAction.apply(new PlayerAction.PlayAndReplaceQueue(
                         this.albumInfo.songs(),
                         idx
                 ));
@@ -320,7 +320,7 @@ public class AlbumInfoPage extends Box {
         this.list.onRowActivated(row -> {
             var songInfo = this.albumInfo.songs().get(row.getIndex());
             System.out.println("AlbumInfoBox: play " + songInfo.title() + " (%s)".formatted(songInfo.id()));
-            this.onAction.apply(new PlayerAction.PlayQueue(
+            this.onAction.apply(new PlayerAction.PlayAndReplaceQueue(
                     this.albumInfo.songs(),
                     row.getIndex()
             ));

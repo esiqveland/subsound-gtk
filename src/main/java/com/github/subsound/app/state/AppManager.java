@@ -349,7 +349,7 @@ public class AppManager {
                 case Enqueue a -> this.playQueue.enqueue(a.song());
                 case PlayerAction.EnqueueLast a -> this.playQueue.enqueueLast(a.song());
                 case PlayPositionInQueue a -> this.playQueue.playPosition(a.position());
-                case PlayerAction.PlayQueue a -> {
+                case PlayerAction.PlayAndReplaceQueue a -> {
                     this.playQueue.replaceQueue(a.queue(), a.position());
                     this.playQueue.playPosition(a.position());
                 }

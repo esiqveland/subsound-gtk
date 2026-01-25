@@ -12,8 +12,6 @@ import com.github.subsound.ui.models.GSongInfo;
 import com.github.subsound.ui.views.StarredListView.UpdateListener.MiniState;
 import com.github.subsound.utils.Utils;
 import org.gnome.gio.ListStore;
-import org.gnome.glib.MainContext;
-import org.gnome.gobject.GObject;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.ListItem;
@@ -21,8 +19,6 @@ import org.gnome.gtk.ListView;
 import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.SignalListItemFactory;
 import org.gnome.gtk.SingleSelection;
-import org.gnome.gtk.Text;
-import org.javagi.gobject.SignalConnection;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,8 +28,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -171,7 +165,7 @@ public class StarredListView extends Box implements AppManager.StateListener {
             }
             log.info("listView.onActivate: {} {}", index, songInfo.title());
             List<SongInfo> songs = this.listModel.stream().map(GSongInfo::songInfo).toList();
-            this.onAction.apply(new PlayerAction.PlayQueue(songs, index));
+            this.onAction.apply(new PlayerAction.PlayAndReplaceQueue(songs, index));
         });
 
         var mapSignal = this.onMap(() -> {

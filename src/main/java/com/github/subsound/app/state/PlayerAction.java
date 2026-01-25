@@ -12,7 +12,7 @@ public sealed interface PlayerAction {
     record PlayPrev() implements PlayerAction {}
     record PlayNext() implements PlayerAction {}
     record SeekTo(Duration position) implements PlayerAction {}
-    record PlayQueue(List<SongInfo> queue, int position) implements PlayerAction {
+    record PlayAndReplaceQueue(List<SongInfo> queue, int position) implements PlayerAction {
         @Override
         public String toString() {
             return "PlayQueue(position=%d, size=%d)".formatted(position, this.queue.size());
