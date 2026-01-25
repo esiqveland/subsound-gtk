@@ -106,6 +106,8 @@ A few samples of what the UI looks like:
   - [ ] PlayQueue: enqueue a song that will be added after the current playing song in the playqueue
   - [ ] PlayQueue: Gapless playback of queue using gstreamer soon-finished signal / message + setting next-uri property
 - Proper navigation
+  - [ ] Remember currently playing song between app restarts
+  - [ ] store the playqueue or at least playcontext (position in a playlist?) between app restarts
   - [ ] fix back button in albumview
   - [ ] fix the navigationview. something is still wrong with app navigation...
   - [ ] fix back button in headerbar
@@ -142,8 +144,12 @@ A few samples of what the UI looks like:
 - [ ] Playlist support
   - [X] move Starred as a fake playlist under the playlists view
   - [X] browsing playlists
-  - add song to a playlist
-  - remove song from playlist
+  - [ ] keep a cache of available playlists in AppState for quick access
+  - [ ] add song to a playlist
+  - [ ] rename playlist
+  - [ ] delete playlist
+  - [ ] create playlist
+  - [ ]remove song from playlist
   - play as playqueue
 - [X] Mpris support
     - [X] thumbnail - needs to give the path to our downloaded copy on disk, or do a loooot of resizing to send it over dbus
