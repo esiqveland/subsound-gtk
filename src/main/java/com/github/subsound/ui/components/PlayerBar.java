@@ -190,7 +190,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
 
         // Queue button with popover
         queuePopover = new PlayQueuePopover(
-                () -> this.currentState.get().queue(),
+                this.appManager,
                 index -> this.appManager.handleAction(new PlayerAction.PlayPositionInQueue(index))
         );
 

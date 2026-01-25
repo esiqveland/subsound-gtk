@@ -17,6 +17,7 @@ import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.sound.PlaybinPlayer.AudioSource;
 import com.github.subsound.sound.PlaybinPlayer.Source;
 import com.github.subsound.ui.components.AppNavigation;
+import com.github.subsound.ui.models.GQueueItem;
 import com.github.subsound.ui.models.GSongInfo;
 import com.github.subsound.utils.Utils;
 import io.reactivex.rxjava3.schedulers.Schedulers;
@@ -552,6 +553,10 @@ public class AppManager {
 
     public ListStore<GSongInfo> getStarredList() {
         return this.starredList;
+    }
+
+    public ListStore<GQueueItem> getQueueListStore() {
+        return this.playQueue.getListStore();
     }
 
     private final Lock lock = new ReentrantLock();

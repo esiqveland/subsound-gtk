@@ -1,48 +1,112 @@
 package com.github.subsound.ui.components;
 
-import com.github.subsound.app.state.PlayQueue.PlayQueueState;
-import com.github.subsound.integration.ServerClient.SongInfo;
-import org.gnome.gtk.Align;
+import com.github.subsound.app.state.AppManager;
+import com.github.subsound.ui.models.GQueueItem;
+import org.gnome.gio.ListStore;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Label;
-import org.gnome.gtk.ListBox;
+import org.gnome.gtk.ListItem;
+import org.gnome.gtk.ListScrollFlags;
+import org.gnome.gtk.ListView;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Popover;
 import org.gnome.gtk.PositionType;
 import org.gnome.gtk.ScrolledWindow;
-import org.gnome.gtk.SelectionMode;
-import org.gnome.pango.EllipsizeMode;
+import org.gnome.gtk.SignalListItemFactory;
+import org.gnome.gtk.SingleSelection;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.IntConsumer;
-import java.util.function.Supplier;
 
 public class PlayQueuePopover extends Popover {
-    private final ListBox queueListBox;
+    private final ListView queueListView;
     private final ScrolledWindow queueScrolled;
-    private final Supplier<PlayQueueState> queueStateSupplier;
+    private final ListStore<GQueueItem> listModel;
+    private final SingleSelection<GQueueItem> selectionModel;
+    private final ConcurrentHashMap<PlayQueueItemRow, PlayQueueItemRow> listeners;
+    private final Box emptyStateBox;
 
-    public PlayQueuePopover(Supplier<PlayQueueState> queueStateSupplier, IntConsumer onPlayPosition) {
+    public PlayQueuePopover(AppManager appManager, IntConsumer onPlayPosition) {
         super();
-        this.queueStateSupplier = queueStateSupplier;
+        this.listModel = appManager.getQueueListStore();
+        this.listeners = new ConcurrentHashMap<>();
 
-        queueListBox = ListBox.builder()
-                .setSelectionMode(SelectionMode.SINGLE)
+        var factory = new SignalListItemFactory();
+        factory.onSetup(object -> {
+            ListItem listitem = (ListItem) object;
+            listitem.setActivatable(true);
+            var row = new PlayQueueItemRow();
+            listeners.put(row, row);
+            listitem.setChild(row);
+        });
+
+        factory.onBind(object -> {
+            ListItem listitem = (ListItem) object;
+            var item = (GQueueItem) listitem.getItem();
+            if (item == null) {
+                return;
+            }
+            var child = listitem.getChild();
+            if (child instanceof PlayQueueItemRow row) {
+                row.bind(item, listitem);
+            }
+        });
+
+        factory.onUnbind(object -> {
+            ListItem listitem = (ListItem) object;
+            var child = listitem.getChild();
+            if (child instanceof PlayQueueItemRow row) {
+                row.unbind();
+            }
+            listitem.setChild(null);
+        });
+
+        factory.onTeardown(object -> {
+            ListItem listitem = (ListItem) object;
+            var child = listitem.getChild();
+            if (child instanceof PlayQueueItemRow row) {
+                listeners.remove(row);
+            }
+        });
+
+        this.selectionModel = new SingleSelection<>(this.listModel);
+        this.selectionModel.setAutoselect(false);
+        this.selectionModel.setCanUnselect(true);
+
+        this.queueListView = ListView.builder()
+                .setShowSeparators(true)
+                .setOrientation(Orientation.VERTICAL)
+                .setSingleClickActivate(true)
+                .setFactory(factory)
+                .setModel(selectionModel)
                 .build();
-        queueListBox.addCssClass("boxed-list");
-        queueListBox.onRowActivated(row -> {
-            int index = row.getIndex();
+        this.queueListView.addCssClass("boxed-list");
+
+        this.queueListView.onActivate(index -> {
             this.popdown();
             onPlayPosition.accept(index);
         });
 
         queueScrolled = ScrolledWindow.builder()
-                .setChild(queueListBox)
+                .setChild(queueListView)
                 .setMinContentHeight(200)
                 .setMaxContentHeight(800)
                 .setMinContentWidth(300)
                 .build();
+
+        // Empty state
+        emptyStateBox = Box.builder()
+                .setOrientation(Orientation.VERTICAL)
+                .setMarginTop(16)
+                .setMarginBottom(16)
+                .setMarginStart(16)
+                .setMarginEnd(16)
+                .build();
+        var emptyLabel = Label.builder()
+                .setLabel("Queue is empty")
+                .build();
+        emptyLabel.addCssClass("dim-label");
+        emptyStateBox.append(emptyLabel);
 
         var queueHeader = Label.builder()
                 .setLabel("Play Queue")
@@ -57,86 +121,30 @@ public class PlayQueuePopover extends Popover {
                 .build();
         queuePopoverContent.append(queueHeader);
         queuePopoverContent.append(queueScrolled);
+        queuePopoverContent.append(emptyStateBox);
 
         this.setChild(queuePopoverContent);
         this.setPosition(PositionType.TOP);
+
         this.onShow(() -> {
-            this.updateQueueList();
+            updateEmptyState();
+            scrollToCurrentItem();
         });
     }
 
-    private void updateQueueList() {
-        // Clear existing items
-        var child = queueListBox.getFirstChild();
-        while (child != null) {
-            var next = child.getNextSibling();
-            queueListBox.remove(child);
-            child = next;
-        }
+    private void updateEmptyState() {
+        boolean isEmpty = listModel.getNItems() == 0;
+        queueScrolled.setVisible(!isEmpty);
+        emptyStateBox.setVisible(isEmpty);
+    }
 
-        var queueState = queueStateSupplier.get();
-        List<SongInfo> queue = queueState.playQueue();
-        Optional<Integer> currentPosition = queueState.position();
-
-        if (queue.isEmpty()) {
-            var emptyLabel = Label.builder()
-                    .setLabel("Queue is empty")
-                    .setMarginTop(16)
-                    .setMarginBottom(16)
-                    .setMarginStart(16)
-                    .setMarginEnd(16)
-                    .build();
-            emptyLabel.addCssClass("dim-label");
-            queueListBox.append(emptyLabel);
-            return;
-        }
-
-        for (int i = 0; i < queue.size(); i++) {
-            var song = queue.get(i);
-            final int index = i;
-            boolean isCurrent = currentPosition.map(pos -> pos == index).orElse(false);
-
-            var titleLabel = Label.builder()
-                    .setLabel(song.title())
-                    .setHalign(Align.START)
-                    .setEllipsize(EllipsizeMode.END)
-                    .setMaxWidthChars(35)
-                    .build();
-
-            var artistLabel = Label.builder()
-                    .setLabel(song.artist())
-                    .setHalign(Align.START)
-                    .setEllipsize(EllipsizeMode.END)
-                    .setMaxWidthChars(35)
-                    .build();
-            artistLabel.addCssClass("dim-label");
-            artistLabel.addCssClass("caption");
-
-            var rowBox = Box.builder()
-                    .setOrientation(Orientation.VERTICAL)
-                    .setSpacing(2)
-                    .setMarginTop(6)
-                    .setMarginBottom(6)
-                    .setMarginStart(12)
-                    .setMarginEnd(12)
-                    .build();
-            rowBox.append(titleLabel);
-            rowBox.append(artistLabel);
-
-            if (isCurrent) {
-                titleLabel.addCssClass("accent");
+    private void scrollToCurrentItem() {
+        for (int i = 0; i < listModel.getNItems(); i++) {
+            var item = listModel.getItem(i);
+            if (item != null && item.isCurrent()) {
+                this.queueListView.scrollTo(i, ListScrollFlags.FOCUS, null);
+                break;
             }
-
-            queueListBox.append(rowBox);
         }
-
-        // Scroll to the currently playing song
-        currentPosition.ifPresent(position -> {
-            var row = queueListBox.getRowAtIndex(position);
-            if (row != null) {
-                // Select the row to scroll it into view
-                queueListBox.selectRow(row);
-            }
-        });
     }
 }
