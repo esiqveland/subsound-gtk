@@ -41,6 +41,7 @@ public enum Icons {
     AlbumPlaceholder("media-optical-cd-audio-symbolic"),
     SettingsOld("settings-symbolic"),
     Settings("emblem-system-symbolic"),
+    OpenMenu("view-more-symbolic"),
     ;
 
     private final String iconName;

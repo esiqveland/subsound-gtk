@@ -347,6 +347,7 @@ public class AppManager {
 
                 // player actions:
                 case Enqueue a -> this.playQueue.enqueue(a.song());
+                case PlayerAction.EnqueueLast a -> this.playQueue.enqueueLast(a.song());
                 case PlayPositionInQueue a -> this.playQueue.playPosition(a.position());
                 case PlayerAction.PlayQueue a -> {
                     this.playQueue.replaceQueue(a.queue(), a.position());
@@ -362,6 +363,8 @@ public class AppManager {
                 case PlayerAction.Star a -> this.starSong(a);
                 case PlayerAction.Unstar a -> this.unstarSong(a);
                 case PlayerAction.PlaySong playSong -> this.loadSource(playSong.song());
+                case PlayerAction.AddToPlaylist a -> this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Add to playlist: not implemented yet")));
+                case PlayerAction.AddToDownloadQueue a -> this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Download queue: not implemented yet")));
             }
         });
     }

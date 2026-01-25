@@ -21,8 +21,11 @@ public sealed interface PlayerAction {
     record PlayPositionInQueue(int position) implements PlayerAction {}
     record PlaySong(SongInfo song) implements PlayerAction {}
     record Enqueue(SongInfo song) implements PlayerAction {}
+    record EnqueueLast(SongInfo song) implements PlayerAction {}
     record Star(SongInfo song) implements PlayerAction {}
     record Unstar(SongInfo song) implements PlayerAction {}
+    record AddToPlaylist(SongInfo song) implements PlayerAction {}
+    record AddToDownloadQueue(SongInfo song) implements PlayerAction {}
 
     // not strictly player actions:
     record SaveConfig(SettingsInfo next) implements PlayerAction {}

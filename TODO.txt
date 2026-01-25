@@ -1,0 +1,13 @@
+# TODO
+
+## General
+Merge GSongInfo and GQueueItem:
+ - this is to have a single place to update the currently playing and if the song is favorited via GObject signals.
+
+- AlbumSongActionRow: remove the play button and instead add a "menu" button (three dots icon),
+which opens a context menu with options to enqueue/queue next/favorite/add to playlist/add to download queue
+
+- AlbumPage: Add a button to download all songs in the album ("make available offline")
+
+
+

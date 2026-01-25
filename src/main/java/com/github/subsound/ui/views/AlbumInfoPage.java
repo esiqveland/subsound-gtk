@@ -8,6 +8,7 @@ import com.github.subsound.integration.ServerClient.AlbumInfo;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.ui.components.Classes;
+import com.github.subsound.ui.components.Icons;
 import com.github.subsound.ui.components.NowPlayingOverlayIcon;
 import com.github.subsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
 import com.github.subsound.ui.components.RoundedAlbumArt;
@@ -20,11 +21,13 @@ import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
 import org.gnome.gtk.CssProvider;
+import org.gnome.gtk.MenuButton;
 import org.gnome.gtk.Gtk;
 import org.gnome.gtk.Justification;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListBox;
 import org.gnome.gtk.Orientation;
+import org.gnome.gtk.Popover;
 import org.gnome.gtk.Revealer;
 import org.gnome.gtk.RevealerTransitionType;
 import org.gnome.gtk.ScrolledWindow;
@@ -114,17 +117,83 @@ public class AlbumInfoPage extends Box {
                     .setSpacing(8)
                     .build();
 
-            // var playButton = SplitButton.builder()
-            var playButton = Button.builder()
-                    //.setLabel("Play")
-                    .setIconName("media-playback-start-symbolic")
-                    .setCssClasses(cssClasses("success", "circular", "raised"))
-                    .setVisible(true)
+            // Context menu popover
+            var menuContent = Box.builder()
+                    .setOrientation(VERTICAL)
+                    .setSpacing(2)
+                    .setMarginTop(4)
+                    .setMarginBottom(4)
+                    .setMarginStart(4)
+                    .setMarginEnd(4)
                     .build();
+
+            var menuPopover = Popover.builder()
+                    .setChild(menuContent)
+                    .build();
+
+            var playMenuItem = menuItem("Play");
+            playMenuItem.onClicked(() -> {
+                menuPopover.popdown();
+                var idx = getIdx(songInfo.id(), this.albumInfo.songs());
+                this.onAction.apply(new PlayerAction.PlayQueue(
+                        this.albumInfo.songs(),
+                        idx
+                ));
+            });
+
+            var playNextMenuItem = menuItem("Play Next");
+            playNextMenuItem.onClicked(() -> {
+                menuPopover.popdown();
+                this.onAction.apply(new PlayerAction.Enqueue(songInfo));
+            });
+
+            var addToQueueMenuItem = menuItem("Add to Queue");
+            addToQueueMenuItem.onClicked(() -> {
+                menuPopover.popdown();
+                this.onAction.apply(new PlayerAction.EnqueueLast(songInfo));
+            });
+
+            var favoriteMenuItem = menuItem(songInfo.isStarred() ? "Unfavorite" : "Favorite");
+            favoriteMenuItem.onClicked(() -> {
+                menuPopover.popdown();
+                var action = songInfo.isStarred()
+                        ? new PlayerAction.Unstar(songInfo)
+                        : new PlayerAction.Star(songInfo);
+                this.onAction.apply(action);
+            });
+
+            var addToPlaylistMenuItem = menuItem("Add to Playlist\u2026");
+            addToPlaylistMenuItem.setTooltipText("TODO");
+            addToPlaylistMenuItem.setSensitive(false);
+            addToPlaylistMenuItem.onClicked(() -> {
+                menuPopover.popdown();
+                this.onAction.apply(new PlayerAction.AddToPlaylist(songInfo));
+            });
+
+            var downloadMenuItem = menuItem("Download");
+            downloadMenuItem.setTooltipText("TODO");
+            downloadMenuItem.setSensitive(false);
+            downloadMenuItem.onClicked(() -> {
+                menuPopover.popdown();
+                this.onAction.apply(new PlayerAction.AddToDownloadQueue(songInfo));
+            });
+
+            menuContent.append(playMenuItem);
+            menuContent.append(playNextMenuItem);
+            menuContent.append(addToQueueMenuItem);
+            menuContent.append(favoriteMenuItem);
+            menuContent.append(addToPlaylistMenuItem);
+            menuContent.append(downloadMenuItem);
+
+            var menuButton = MenuButton.builder()
+                    .setIconName(Icons.OpenMenu.getIconName())
+                    .setPopover(menuPopover)
+                    .build();
+            menuButton.addCssClass("flat");
+            menuButton.addCssClass("circular");
 
             var fileFormatLabel = Optional.ofNullable(songInfo.suffix())
                     .filter(fileExt -> !fileExt.isBlank())
-                    //.map(fileExt -> infoLabel(fileExt, cssClasses("dim-label")));
                     .map(fileExt -> Button.builder()
                             .setLabel(fileExt)
                             .setSensitive(false)
@@ -140,9 +209,9 @@ public class AlbumInfoPage extends Box {
             bitRateLabel.ifPresent(hoverBox::append);
             fileFormatLabel.ifPresent(hoverBox::append);
             hoverBox.append(fileSizeLabel);
-            var playButtonBox = Box.builder().setMarginStart(6).setMarginEnd(6).setVexpand(true).setValign(Align.CENTER).build();
-            playButtonBox.append(playButton);
-            hoverBox.append(playButtonBox);
+            var menuButtonBox = Box.builder().setMarginStart(6).setMarginEnd(6).setVexpand(true).setValign(Align.CENTER).build();
+            menuButtonBox.append(menuButton);
+            hoverBox.append(menuButtonBox);
 
             var revealer = Revealer.builder()
                     .setChild(hoverBox)
@@ -150,28 +219,13 @@ public class AlbumInfoPage extends Box {
                     .setTransitionType(RevealerTransitionType.CROSSFADE)
                     .build();
 
-            playButton.onClicked(() -> {
-                System.out.println("AlbumInfoBox.playButton: play " + songInfo.title() + " (%s)".formatted(songInfo.id()));
-                var idx = getIdx(songInfo.id(), this.albumInfo.songs());
-                this.onAction.apply(new PlayerAction.PlayQueue(
-                        this.albumInfo.songs(),
-                        idx
-                ));
-            });
             suffix.append(revealer);
             var starredButtonBox = Box.builder().setMarginStart(6).setMarginEnd(6).setVexpand(true).setValign(Align.CENTER).build();
             starredButtonBox.append(starredButton);
             suffix.append(starredButtonBox);
 
-            //var trackNumberTitle = songInfo.trackNumber().map(num -> "%d ⦁ ".formatted(num)).orElse("");
             String durationString = Utils.formatDurationShortest(songInfo.duration());
-            String subtitle = "" + durationString;
-
-//            var albumIcon = RoundedAlbumArt.resolveCoverArt(
-//                    this.thumbLoader,
-//                    songInfo.coverArt(),
-//                    48
-//            );
+            String subtitle = durationString;
 
             Label songNumberLabel = Label.builder()
                     .setLabel(songInfo.trackNumber().map(String::valueOf).orElse(""))
@@ -194,17 +248,14 @@ public class AlbumInfoPage extends Box {
                     },
                     () -> {
                         isHoverActive.set(false);
-                        var focused = this.hasFocus() || playButton.hasFocus();
-                        //System.out.println("onLeave: focused=" + focused);
+                        var focused = this.hasFocus() || menuButton.hasFocus();
                         revealer.setRevealChild(focused);
                         this.icon.setIsHover(false);
                     }
             );
             this.onStateFlagsChanged(flags -> {
-                var hasFocus = playButton.hasFocus() || flags.contains(StateFlags.FOCUSED) || flags.contains(StateFlags.FOCUS_WITHIN) || flags.contains(StateFlags.FOCUS_VISIBLE);
+                var hasFocus = menuButton.hasFocus() || flags.contains(StateFlags.FOCUSED) || flags.contains(StateFlags.FOCUS_WITHIN) || flags.contains(StateFlags.FOCUS_VISIBLE);
                 var hasHover = isHoverActive.get();
-                //System.out.println("onStateFlagsChanged: " + String.join(", ", flags.stream().map(s -> s.name()).toList()) + " hasHover=" + hasHover + " hasFocus=" + hasFocus);
-                //playButton.setVisible(hasFocus || hasHover);
                 revealer.setRevealChild(hasFocus || hasHover);
                 this.icon.setIsHover(hasFocus || hasHover);
             });
@@ -213,6 +264,16 @@ public class AlbumInfoPage extends Box {
             this.addSuffix(suffix);
             this.setTitle(songInfo.title());
             this.setSubtitle(subtitle);
+        }
+
+        private static Button menuItem(String label) {
+            var button = Button.builder().setLabel(label).build();
+            button.addCssClass("flat");
+            if (button.getChild() instanceof Label child) {
+                child.setHalign(Align.START);
+                child.addCssClass("body");
+            }
+            return button;
         }
 
     }
