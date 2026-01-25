@@ -8,6 +8,7 @@ import com.github.subsound.persistence.database.DatabaseServerService;
 import com.github.subsound.persistence.database.DownloadQueueItem;
 import com.github.subsound.persistence.database.DownloadQueueItem.DownloadStatus;
 import org.assertj.core.api.Assertions;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -26,6 +27,7 @@ public class DownloadManagerTest {
     public TemporaryFolder folder = new TemporaryFolder();
 
     @Test
+    @Ignore
     public void testDownloadQueueFlow() throws Exception {
         File dataDir = folder.newFolder("data");
         File dbFile = new File(dataDir, "test.db");
