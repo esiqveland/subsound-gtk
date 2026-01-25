@@ -55,6 +55,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.Optional;
 
 import static com.github.subsound.utils.Utils.mustRead;
 
@@ -113,11 +114,16 @@ public class MainApplication {
                 .build();
 
         // Server badge at the top
-        var serverBadge = createServerBadge();
+        var serverHostLabel = Label.builder()
+                .setLabel(getServerHostNameOrNotConnected())
+                .setHalign(Align.START)
+                .setEllipsize(EllipsizeMode.END)
+                .build();
+        var serverBadge = createServerBadge(serverHostLabel);
         popoverContent.append(serverBadge);
 
         var configureServerButton = Button.builder()
-                .setLabel("Configure Server...")
+                .setLabel("Server settings...")
                 .build();
         configureServerButton.addCssClass("flat");
         popoverContent.append(configureServerButton);
@@ -125,6 +131,9 @@ public class MainApplication {
         var settingsPopover = Popover.builder()
                 .setChild(popoverContent)
                 .build();
+        settingsPopover.onShow(() -> {
+            serverHostLabel.setLabel(getServerHostNameOrNotConnected());
+        });
 
         configureServerButton.onClicked(() -> {
             settingsPopover.popdown();
@@ -349,10 +358,13 @@ public class MainApplication {
                 .setHexpand(true);
     }
 
-    private Widget createServerBadge() {
-        var cfg = this.appManager.getConfig();
-        String serverHost = "Not connected";
+    private String getServerHostNameOrNotConnected() {
+        return getServerHostName().orElse("Not connected");
+    }
 
+    private Optional<String> getServerHostName() {
+        var cfg = this.appManager.getConfig();
+        String serverHost = null;
         if (cfg.serverConfig != null && cfg.serverConfig.url() != null && !cfg.serverConfig.url().isBlank()) {
             try {
                 URI uri = URI.create(cfg.serverConfig.url());
@@ -367,19 +379,16 @@ public class MainApplication {
                 serverHost = cfg.serverConfig.url();
             }
         }
+        return Optional.ofNullable(serverHost);
+    }
 
+    private Widget createServerBadge(Label serverLabel) {
         var titleLabel = Label.builder()
                 .setLabel("Connected to")
                 .setHalign(Align.START)
                 .build();
         titleLabel.addCssClass("dim-label");
         titleLabel.addCssClass("caption");
-
-        var serverLabel = Label.builder()
-                .setLabel(serverHost)
-                .setHalign(Align.START)
-                .setEllipsize(EllipsizeMode.END)
-                .build();
 
         var textBox = Box.builder()
                 .setOrientation(Orientation.VERTICAL)
