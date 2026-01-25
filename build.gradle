@@ -30,7 +30,7 @@ dependencies {
     implementation("org.xerial:sqlite-jdbc:3.50.3.0")
 
     implementation 'net.beardbot:subsonic-client:0.6.0'
-    implementation "com.github.ben-manes.caffeine:caffeine:3.2.0"
+    implementation "com.github.ben-manes.caffeine:caffeine:3.2.2"
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'com.google.code.gson:gson:2.13.1'
     implementation 'de.androidpit:color-thief:1.1.2'
