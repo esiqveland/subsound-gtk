@@ -37,7 +37,9 @@ import org.gnome.gtk.Button;
 import org.gnome.gtk.CallbackAction;
 import org.gnome.gtk.CssProvider;
 import org.gnome.gtk.Gtk;
+import org.gnome.gtk.MenuButton;
 import org.gnome.gtk.Orientation;
+import org.gnome.gtk.Popover;
 import org.gnome.gtk.Shortcut;
 import org.gnome.gtk.ShortcutController;
 import org.gnome.gtk.ShortcutScope;
@@ -66,7 +68,7 @@ public class MainApplication {
     private final HeaderBar headerBar;
     private final ViewSwitcher viewSwitcher;
 
-    private final Button settingsButton;
+    private final MenuButton settingsButton;
     private final PlayerBar playerBar;
     private final Box bottomBar;
     private final Shortcut playPauseShortcut;
@@ -97,13 +99,32 @@ public class MainApplication {
         });
         playPauseShortcut = Shortcut.builder().setTrigger(playPauseTrigger).setAction(playPauseAction).build();
 
-        settingsButton = Button.builder()
-                .setIconName(Icons.Settings.getIconName())
-                .setTooltipText("Settings")
+        // Create popover menu content
+        var configureServerButton = Button.builder()
+                .setLabel("Configure Server...")
                 .build();
-        settingsButton.onClicked(() -> {
+        configureServerButton.addCssClass("flat");
+
+        var popoverContent = Box.builder()
+                .setOrientation(Orientation.VERTICAL)
+                .setSpacing(4)
+                .build();
+        popoverContent.append(configureServerButton);
+
+        var settingsPopover = Popover.builder()
+                .setChild(popoverContent)
+                .build();
+
+        configureServerButton.onClicked(() -> {
+            settingsPopover.popdown();
             appNavigation.navigateTo(new AppNavigation.AppRoute.SettingsPage());
         });
+
+        settingsButton = MenuButton.builder()
+                .setIconName(Icons.Settings.getIconName())
+                .setTooltipText("Settings")
+                .setPopover(settingsPopover)
+                .build();
 
         viewSwitcher = ViewSwitcher.builder()
                 .setPolicy(ViewSwitcherPolicy.WIDE)
