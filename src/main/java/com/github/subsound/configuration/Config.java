@@ -23,6 +23,7 @@ public class Config {
     public Path dataDir = defaultStorageDir();
     public ServerConfig serverConfig;
     public OnboardingState onboarding;
+    public PlayerPreferences playerPreferences = new PlayerPreferences(1.0, false);
 
     public Config(Path configFilePath) {
         this.configFilePath = configFilePath;
@@ -39,12 +40,18 @@ public class Config {
     private ConfigurationDTO toFileFormat() {
         var d = new ConfigurationDTO();
         d.onboarding = this.onboarding;
-        d.server = new ServerConfigDTO(
-                this.serverConfig.id(),
-                this.serverConfig.type(),
-                this.serverConfig.url(),
-                this.serverConfig.username(),
-                this.serverConfig.password()
+        if (this.serverConfig != null) {
+            d.server = new ServerConfigDTO(
+                    this.serverConfig.id(),
+                    this.serverConfig.type(),
+                    this.serverConfig.url(),
+                    this.serverConfig.username(),
+                    this.serverConfig.password()
+            );
+        }
+        d.player = new ConfigurationDTO.PlayerPreferencesDTO(
+                this.playerPreferences.volume(),
+                this.playerPreferences.muted()
         );
         return d;
     }
@@ -57,6 +64,11 @@ public class Config {
             String url,
             String username,
             String password
+    ) {}
+
+    public record PlayerPreferences(
+            double volume,
+            boolean muted
     ) {}
 
     public static Config createDefault() {
@@ -83,6 +95,12 @@ public class Config {
                                         cfg.server.password
                                 );
                             }
+                            if (cfg.player != null) {
+                                config.playerPreferences = new PlayerPreferences(
+                                        cfg.player.volume(),
+                                        cfg.player.muted()
+                                );
+                            }
                         },
                         () -> log.debug("no config file found at path={}", configFilePath)
                 );
@@ -99,10 +117,17 @@ public class Config {
                 String password
         ) {}
 
+        public record PlayerPreferencesDTO(
+                double volume,
+                boolean muted
+        ) {}
+
         @SerializedName("server")
         public ServerConfigDTO server;
         @SerializedName("onboarding")
         public OnboardingState onboarding;
+        @SerializedName("player")
+        public PlayerPreferencesDTO player;
         public enum OnboardingState {
             DONE,
         }

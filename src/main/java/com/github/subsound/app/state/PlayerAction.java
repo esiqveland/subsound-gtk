@@ -15,7 +15,7 @@ public sealed interface PlayerAction {
     record PlayQueue(List<SongInfo> queue, int position) implements PlayerAction {
         @Override
         public String toString() {
-            return "PlayQueue([%d songs], position=%d)".formatted(this.queue.size(), position);
+            return "PlayQueue(position=%d, size=%d)".formatted(position, this.queue.size());
         }
     }
     record PlayPositionInQueue(int position) implements PlayerAction {}
@@ -26,5 +26,6 @@ public sealed interface PlayerAction {
 
     // not strictly player actions:
     record SaveConfig(SettingsInfo next) implements PlayerAction {}
+    record SavePlayerPreferences(double volume, boolean muted) implements PlayerAction {}
     record Toast(org.gnome.adw.Toast toast) implements PlayerAction {}
 }

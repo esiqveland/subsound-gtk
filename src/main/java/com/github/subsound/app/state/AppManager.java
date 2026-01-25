@@ -84,6 +84,12 @@ public class AppManager {
         player.onStateChanged(next -> {
             this.setState(old -> old.withPlayer(next));
         });
+
+        // Apply saved player preferences (volume/mute) from config
+        var playerPrefs = config.playerPreferences;
+        this.player.setVolume(playerPrefs.volume());
+        this.player.setMute(playerPrefs.muted());
+
         this.currentState = BehaviorSubject.createDefault(buildState());
         var disposable = this.currentState
                 .throttleLatest(100, TimeUnit.MILLISECONDS, true)
@@ -297,6 +303,7 @@ public class AppManager {
             switch (action) {
                 // config actions:
                 case PlayerAction.SaveConfig settings -> this.saveConfig(settings);
+                case PlayerAction.SavePlayerPreferences prefs -> this.savePlayerPreferences(prefs);
                 case PlayerAction.Toast t -> this.toast(t);
 
                 // player actions:
@@ -345,6 +352,20 @@ public class AppManager {
             var newClient = ServerClient.create(this.config.serverConfig);
             this.client.set(newClient);
         } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void savePlayerPreferences(PlayerAction.SavePlayerPreferences prefs) {
+        this.config.playerPreferences = new Config.PlayerPreferences(
+                prefs.volume(),
+                prefs.muted()
+        );
+        try {
+            this.config.saveToFile();
+            log.info("saved player preferences: volume={}, muted={}", prefs.volume(), prefs.muted());
+        } catch (IOException e) {
+            log.error("failed to save player preferences", e);
             throw new RuntimeException(e);
         }
     }
