@@ -14,6 +14,7 @@ import org.gnome.gtk.PositionType;
 import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.SignalListItemFactory;
 import org.gnome.gtk.SingleSelection;
+import org.gnome.gtk.Window;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.IntConsumer;
@@ -86,6 +87,7 @@ public class PlayQueuePopover extends Popover {
                 .setChild(queueListView)
                 .setMinContentHeight(200)
                 .setMaxContentHeight(800)
+                .setPropagateNaturalHeight(true)
                 .setMinContentWidth(300)
                 .build();
 
@@ -122,9 +124,21 @@ public class PlayQueuePopover extends Popover {
         this.setPosition(PositionType.TOP);
 
         this.onShow(() -> {
+            updateMaxHeight();
             updateEmptyState();
             scrollToCurrentItem();
         });
+    }
+
+    private void updateMaxHeight() {
+        var root = this.getRoot();
+        if (root instanceof Window window) {
+            int windowHeight = window.getHeight();
+            if (windowHeight > 0) {
+                int maxHeight = Math.max(400, windowHeight - 150);
+                queueScrolled.setMaxContentHeight(maxHeight);
+            }
+        }
     }
 
     private void updateEmptyState() {
