@@ -89,11 +89,6 @@ public class AppManager {
             this.setState(old -> old.withPlayer(next));
         });
 
-        // Apply saved player preferences (volume/mute) from config
-        var playerPrefs = config.playerPreferences;
-        this.player.setVolume(playerPrefs.volume());
-        this.player.setMute(playerPrefs.muted());
-
         this.currentState = BehaviorSubject.createDefault(buildState());
         var disposable = this.currentState
                 .throttleLatest(100, TimeUnit.MILLISECONDS, true)
@@ -101,6 +96,12 @@ public class AppManager {
                 .observeOn(Schedulers.io())
                 .subscribeOn(Schedulers.io())
                 .forEach(next -> this.notifyListeners());
+
+        // Apply saved player preferences (volume/mute) from config
+        // Must be done after currentState is initialized since setVolume/setMute trigger state changes
+        var playerPrefs = config.playerPreferences;
+        this.player.setVolume(playerPrefs.volume());
+        this.player.setMute(playerPrefs.muted());
     }
 
     private AppState buildState() {
@@ -420,13 +421,15 @@ public class AppManager {
             pendingPreferenceSave = null;
         }
         var state = this.player.getState();
+        // Convert linear volume to cubic for storage (setVolume expects cubic)
+        double cubicVolume = PlaybinPlayer.toVolumeCubic(state.volume());
         this.config.playerPreferences = new Config.PlayerPreferences(
-                state.volume(),
+                cubicVolume,
                 state.muted()
         );
         try {
             this.config.saveToFile();
-            log.info("saveCurrentPlayerPreferencesImmediately: saved player preferences: volume={}, muted={}", state.volume(), state.muted());
+            log.info("saveCurrentPlayerPreferencesImmediately: saved player preferences: volume={} (linear={}), muted={}", cubicVolume, state.volume(), state.muted());
         } catch (IOException e) {
             log.error("failed to save player preferences", e);
         }
