@@ -111,9 +111,9 @@ A few samples of what the UI looks like:
   - [ ] fix back button in headerbar
   - AdwNavigationView ?
   - AdwLeaflet + AdwClamp? see https://gitlab.gnome.org/GNOME/gnome-music/-/blob/master/data/ui/ArtistAlbumsWidget.ui
-- [ ] set up a sqlite database with migrations
-  - perhaps there is a good android library for migrating sqlite ?
+- [X] set up a sqlite database with migrations
   - [ ] record what we have downloaded / want to keep offline
+  - perhaps there is a good android library for migrating sqlite ?
 - Hotkeys
   - [ ] space should always play/pause
     - this looks very hard to do since spacebar is also the activation key for buttons / list items in GTK4
