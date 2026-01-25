@@ -98,8 +98,13 @@ public class PlayQueueTest {
 
     @Test
     public void testAttemptPlayPrevSeeksIfFarInSong() {
-        SongInfo song = SongInfoFactory.createRandomSongInfo();
-        playQueue.replaceQueue(List.of(song), 0);
+        var songs = List.of(
+                SongInfoFactory.createRandomSongInfo(),
+                SongInfoFactory.createRandomSongInfo(),
+                SongInfoFactory.createRandomSongInfo()
+        );
+        var song = songs.getFirst();
+        playQueue.replaceQueue(songs, 0);
 
         player.currentState = new PlayerState(
                 PlayerStates.PLAYING,
@@ -119,6 +124,7 @@ public class PlayQueueTest {
     public void testAttemptPlayPrevGoesToPreviousSong() {
         List<SongInfo> songs = List.of(
                 SongInfoFactory.createRandomSongInfo(),
+                SongInfoFactory.createRandomSongInfo(),
                 SongInfoFactory.createRandomSongInfo()
         );
         playQueue.replaceQueue(songs, 1);
@@ -127,7 +133,11 @@ public class PlayQueueTest {
                 PlayerStates.PLAYING,
                 1.0,
                 false,
-                Optional.of(new Source(songs.get(1).downloadUri(), Optional.of(Duration.ofSeconds(2)), Optional.of(songs.get(1).duration())))
+                Optional.of(new Source(
+                        songs.get(1).downloadUri(),
+                        Optional.of(Duration.ofSeconds(2)),
+                        Optional.of(songs.get(1).duration())
+                ))
         );
 
         playQueue.attemptPlayPrev();
@@ -139,6 +149,7 @@ public class PlayQueueTest {
     @Test
     public void testOnEndOfStreamPlaysNext() {
         List<SongInfo> songs = List.of(
+                SongInfoFactory.createRandomSongInfo(),
                 SongInfoFactory.createRandomSongInfo(),
                 SongInfoFactory.createRandomSongInfo()
         );

@@ -34,7 +34,7 @@ public class PlayQueuePopover extends Popover {
         factory.onSetup(object -> {
             ListItem listitem = (ListItem) object;
             listitem.setActivatable(true);
-            var row = new PlayQueueItemRow();
+            var row = new PlayQueueItemRow(appManager);
             listitem.setChild(row);
         });
 

@@ -1,13 +1,14 @@
 package com.github.subsound.ui.components;
 
+import com.github.subsound.app.state.AppManager;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.ui.models.GQueueItem;
 import com.github.subsound.utils.Utils;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
-import org.gnome.gtk.Justification;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListItem;
+import org.gnome.gtk.Widget;
 import org.gnome.pango.EllipsizeMode;
 import org.javagi.gobject.SignalConnection;
 
@@ -21,11 +22,13 @@ import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
 
 public class PlayQueueItemRow extends Box {
-    private static final int TRACK_NUMBER_LABEL_CHARS = 4;
+    private static final int ALBUM_ART_SIZE = 40;
 
+    private final AppManager appManager;
     private GQueueItem gQueueItem;
     private SongInfo songInfo;
 
+    private final Box albumArtBox;
     private final Label titleLabel;
     private final Label artistLabel;
     private final Label durationLabel;
@@ -34,13 +37,20 @@ public class PlayQueueItemRow extends Box {
     private final AtomicReference<SignalConnection<?>> positionSignal = new AtomicReference<>();
     private final AtomicInteger index = new AtomicInteger(0);
 
-    public PlayQueueItemRow() {
+    public PlayQueueItemRow(AppManager appManager) {
         super(HORIZONTAL, 8);
+        this.appManager = appManager;
 
         this.setMarginTop(6);
         this.setMarginBottom(6);
         this.setMarginStart(8);
         this.setMarginEnd(8);
+
+        // Album art placeholder box
+        this.albumArtBox = new Box(HORIZONTAL, 0);
+        this.albumArtBox.setHalign(CENTER);
+        this.albumArtBox.setValign(CENTER);
+        this.albumArtBox.setSizeRequest(ALBUM_ART_SIZE, ALBUM_ART_SIZE);
 
         // Content box (title + subtitle)
         var contentBox = new Box(VERTICAL, 2);
@@ -81,6 +91,7 @@ public class PlayQueueItemRow extends Box {
         contentBox.append(titleLabel);
         contentBox.append(subtitleBox);
 
+        this.append(albumArtBox);
         this.append(contentBox);
 
         this.onDestroy(this::unbind);
@@ -134,6 +145,21 @@ public class PlayQueueItemRow extends Box {
         this.titleLabel.setLabel(songInfo.title());
         this.artistLabel.setLabel(songInfo.artist());
         this.durationLabel.setLabel(Utils.formatDurationShort(songInfo.duration()));
+
+        // Update album art
+        Widget child = this.albumArtBox.getFirstChild();
+        while (child != null) {
+            Widget next = child.getNextSibling();
+            this.albumArtBox.remove(child);
+            child = next;
+        }
+        var albumArt = RoundedAlbumArt.resolveCoverArt(
+                this.appManager,
+                this.songInfo.coverArt(),
+                ALBUM_ART_SIZE,
+                false
+        );
+        this.albumArtBox.append(albumArt);
     }
 
     private void updateCurrentStyling() {
