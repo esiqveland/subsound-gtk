@@ -1,6 +1,7 @@
 package com.github.subsound.ui.models;
 
 import com.github.subsound.integration.ServerClient.SongInfo;
+import org.javagi.gobject.annotations.Property;
 import org.javagi.gobject.types.Types;
 import org.gnome.glib.Type;
 import org.gnome.gobject.GObject;
@@ -40,6 +41,7 @@ public class GQueueItem extends GObject {
         return songInfo;
     }
 
+    @Property
     public String getId() {
         return songInfo != null ? songInfo.id() : null;
     }
@@ -47,15 +49,16 @@ public class GQueueItem extends GObject {
         return songInfo != null ? songInfo.title() : null;
     }
 
-    public boolean isCurrent() {
+    @Property
+    public boolean getIsCurrent() {
         return isCurrent.get();
     }
 
-    public GQueueItem setIsCurrent(boolean current) {
+    @Property
+    public void setIsCurrent(boolean current) {
         if (this.isCurrent.compareAndSet(!current, current)) {
             this.notify(Signal.IS_CURRENT.signal);
         }
-        return this;
     }
 
     public static GQueueItem newInstance(SongInfo value) {

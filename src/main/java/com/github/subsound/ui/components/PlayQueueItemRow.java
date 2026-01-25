@@ -26,7 +26,6 @@ public class PlayQueueItemRow extends Box {
     private GQueueItem gQueueItem;
     private SongInfo songInfo;
 
-    private final Label trackNumberLabel;
     private final Label titleLabel;
     private final Label artistLabel;
     private final Label durationLabel;
@@ -42,15 +41,6 @@ public class PlayQueueItemRow extends Box {
         this.setMarginBottom(6);
         this.setMarginStart(8);
         this.setMarginEnd(8);
-
-        // Track number label
-        this.trackNumberLabel = infoLabel("", Classes.labelDim.add(Classes.labelNumeric));
-        this.trackNumberLabel.setVexpand(false);
-        this.trackNumberLabel.setValign(CENTER);
-        this.trackNumberLabel.setJustify(Justification.RIGHT);
-        this.trackNumberLabel.setSingleLineMode(true);
-        this.trackNumberLabel.setWidthChars(TRACK_NUMBER_LABEL_CHARS);
-        this.trackNumberLabel.setMaxWidthChars(TRACK_NUMBER_LABEL_CHARS);
 
         // Content box (title + subtitle)
         var contentBox = new Box(VERTICAL, 2);
@@ -91,7 +81,6 @@ public class PlayQueueItemRow extends Box {
         contentBox.append(titleLabel);
         contentBox.append(subtitleBox);
 
-        this.append(trackNumberLabel);
         this.append(contentBox);
 
         this.onDestroy(this::unbind);
@@ -115,8 +104,6 @@ public class PlayQueueItemRow extends Box {
         var positionConnection = listItem.onNotify("position", _ -> {
             int pos = listItem.getPosition();
             this.index.set(pos);
-            int trackNumber = pos + 1;
-            this.trackNumberLabel.setLabel("%d".formatted(trackNumber));
         });
         var oldPositionConnection = this.positionSignal.getAndSet(positionConnection);
         if (oldPositionConnection != null) {
@@ -144,8 +131,6 @@ public class PlayQueueItemRow extends Box {
             return;
         }
 
-        int trackNumber = this.index.get() + 1;
-        this.trackNumberLabel.setLabel("%d".formatted(trackNumber));
         this.titleLabel.setLabel(songInfo.title());
         this.artistLabel.setLabel(songInfo.artist());
         this.durationLabel.setLabel(Utils.formatDurationShort(songInfo.duration()));
@@ -156,7 +141,7 @@ public class PlayQueueItemRow extends Box {
             return;
         }
         Utils.runOnMainThread(() -> {
-            if (this.gQueueItem.isCurrent()) {
+            if (this.gQueueItem.getIsCurrent()) {
                 this.titleLabel.addCssClass(Classes.colorAccent.className());
             } else {
                 this.titleLabel.removeCssClass(Classes.colorAccent.className());

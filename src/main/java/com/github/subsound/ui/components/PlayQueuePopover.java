@@ -23,20 +23,18 @@ public class PlayQueuePopover extends Popover {
     private final ScrolledWindow queueScrolled;
     private final ListStore<GQueueItem> listModel;
     private final SingleSelection<GQueueItem> selectionModel;
-    private final ConcurrentHashMap<PlayQueueItemRow, PlayQueueItemRow> listeners;
+    private final SignalListItemFactory factory;
     private final Box emptyStateBox;
 
     public PlayQueuePopover(AppManager appManager, IntConsumer onPlayPosition) {
         super();
         this.listModel = appManager.getQueueListStore();
-        this.listeners = new ConcurrentHashMap<>();
 
-        var factory = new SignalListItemFactory();
+        factory = new SignalListItemFactory();
         factory.onSetup(object -> {
             ListItem listitem = (ListItem) object;
             listitem.setActivatable(true);
             var row = new PlayQueueItemRow();
-            listeners.put(row, row);
             listitem.setChild(row);
         });
 
@@ -64,9 +62,6 @@ public class PlayQueuePopover extends Popover {
         factory.onTeardown(object -> {
             ListItem listitem = (ListItem) object;
             var child = listitem.getChild();
-            if (child instanceof PlayQueueItemRow row) {
-                listeners.remove(row);
-            }
         });
 
         this.selectionModel = new SingleSelection<>(this.listModel);
@@ -141,7 +136,7 @@ public class PlayQueuePopover extends Popover {
     private void scrollToCurrentItem() {
         for (int i = 0; i < listModel.getNItems(); i++) {
             var item = listModel.getItem(i);
-            if (item != null && item.isCurrent()) {
+            if (item != null && item.getIsCurrent()) {
                 this.queueListView.scrollTo(i, ListScrollFlags.FOCUS, null);
                 break;
             }
