@@ -106,7 +106,7 @@ A few samples of what the UI looks like:
   - [ ] PlayQueue: enqueue a song that will be added after the current playing song in the playqueue
   - [ ] PlayQueue: Gapless playback of queue using gstreamer soon-finished signal / message + setting next-uri property
 - Proper navigation
-  - [ ] Remember currently playing song between app restarts
+  - [ ] store the currently playing song and current mute/volume between app restarts
   - [ ] store the playqueue or at least playcontext (position in a playlist?) between app restarts
   - [ ] fix back button in albumview
   - [ ] fix the navigationview. something is still wrong with app navigation...
