@@ -20,6 +20,7 @@ import java.util.function.Supplier;
 
 public class PlayQueuePopover extends Popover {
     private final ListBox queueListBox;
+    private final ScrolledWindow queueScrolled;
     private final Supplier<PlayQueueState> queueStateSupplier;
 
     public PlayQueuePopover(Supplier<PlayQueueState> queueStateSupplier, IntConsumer onPlayPosition) {
@@ -36,10 +37,10 @@ public class PlayQueuePopover extends Popover {
             onPlayPosition.accept(index);
         });
 
-        var queueScrolled = ScrolledWindow.builder()
+        queueScrolled = ScrolledWindow.builder()
                 .setChild(queueListBox)
                 .setMinContentHeight(200)
-                .setMaxContentHeight(400)
+                .setMaxContentHeight(800)
                 .setMinContentWidth(300)
                 .build();
 
@@ -59,7 +60,9 @@ public class PlayQueuePopover extends Popover {
 
         this.setChild(queuePopoverContent);
         this.setPosition(PositionType.TOP);
-        this.onShow(this::updateQueueList);
+        this.onShow(() -> {
+            this.updateQueueList();
+        });
     }
 
     private void updateQueueList() {
@@ -126,5 +129,14 @@ public class PlayQueuePopover extends Popover {
 
             queueListBox.append(rowBox);
         }
+
+        // Scroll to the currently playing song
+        currentPosition.ifPresent(position -> {
+            var row = queueListBox.getRowAtIndex(position);
+            if (row != null) {
+                // Select the row to scroll it into view
+                queueListBox.selectRow(row);
+            }
+        });
     }
 }

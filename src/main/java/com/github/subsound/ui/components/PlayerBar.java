@@ -198,6 +198,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
                 .setIconName(Icons.Playlists.getIconName())
                 .setTooltipText("Play Queue")
                 .setPopover(queuePopover)
+                .setDirection(org.gnome.gtk.ArrowType.UP)
                 .build();
 
         var volumeBox = Box.builder()
