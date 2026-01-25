@@ -11,6 +11,7 @@ import org.gnome.gtk.ActionBar;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
+import org.gnome.gtk.MenuButton;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Scale;
 import org.gnome.gtk.Widget;
@@ -50,6 +51,8 @@ public class PlayerBar extends Box implements AppManager.StateListener {
     private final Button playPauseButton;
     private final Button skipForwardButton;
     private final PlayerScrubber playerScrubber;
+    private final MenuButton queueButton;
+    private final PlayQueuePopover queuePopover;
     private final VolumeButton volumeButton;
     private final StarButton starButton;
     private final Scale volumeScale;
@@ -185,10 +188,23 @@ public class PlayerBar extends Box implements AppManager.StateListener {
         });
         volumeScale.setIncrements(0.017, 0.23);
 
+        // Queue button with popover
+        queuePopover = new PlayQueuePopover(
+                () -> this.currentState.get().queue(),
+                index -> this.appManager.handleAction(new PlayerAction.PlayPositionInQueue(index))
+        );
+
+        queueButton = MenuButton.builder()
+                .setIconName(Icons.Playlists.getIconName())
+                .setTooltipText("Play Queue")
+                .setPopover(queuePopover)
+                .build();
+
         var volumeBox = Box.builder()
                 .setOrientation(Orientation.HORIZONTAL)
                 .setValign(Align.CENTER)
                 .build();
+        volumeBox.append(queueButton);
         volumeBox.append(volumeButton);
         volumeBox.append(volumeScale);
 
