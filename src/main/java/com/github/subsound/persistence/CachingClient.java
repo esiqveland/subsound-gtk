@@ -39,6 +39,11 @@ public class CachingClient implements ServerClient {
     }
 
     @Override
+    public SongInfo getSong(String songId) {
+        return delegate.getSong(songId);
+    }
+
+    @Override
     public HomeOverview getHomeOverview() {
         return delegate.getHomeOverview();
     }

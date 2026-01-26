@@ -27,6 +27,7 @@ public interface ServerClient {
     ListPlaylists getPlaylists();
     Playlist getPlaylist(String playlistId);
     ListStarred getStarred();
+    SongInfo getSong(String songId);
     HomeOverview getHomeOverview();
     void starId(String id);
     void unStarId(String id);
@@ -199,7 +200,7 @@ public interface ServerClient {
     }
 
     enum PlaylistKind {
-        NORMAL, STARRED;
+        NORMAL, STARRED, DOWNLOADED;
     }
     record PlaylistSimple(
             String id,

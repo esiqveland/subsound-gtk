@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -91,7 +92,17 @@ public class PlaylistsViewLoader extends Box {
                             data.starredList().songs().size(),
                             data.starredList().songs().stream().flatMap(s -> s.starred().stream()).findFirst().orElseGet(Instant::now)
                     );
-                    var playlists = Stream.concat(Stream.of(starred), part1).collect(Collectors.toList());
+                    var downloadCount = this.appManager.getCompletedDownloads().size();
+                    ServerClient.PlaylistSimple downloaded = new ServerClient.PlaylistSimple(
+                            "downloaded",
+                            "Downloaded",
+                            PlaylistKind.DOWNLOADED,
+                            Optional.empty(),
+                            downloadCount,
+                            Instant.now()
+                    );
+                    var playlists = Stream.of(starred, downloaded).collect(Collectors.toList());
+                    part1.forEach(playlists::add);
                     return new PlaylistsData(new ListPlaylists(playlists), data.starredList());
                 });
         var loader = new FutureLoader<>(

@@ -2,6 +2,7 @@ package com.github.subsound.ui.components;
 
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.integration.ServerClient;
+import com.github.subsound.integration.ServerClient.PlaylistKind;
 import com.github.subsound.integration.ServerClient.PlaylistSimple;
 import com.github.subsound.ui.views.StarredListView;
 import com.github.subsound.ui.views.StarredLoader.PlaylistsData;
@@ -73,12 +74,21 @@ public class PlaylistsListView extends Box {
                     .setUseMarkup(false)
                     .setActivatable(true)
                     .build();
-            row.addPrefix(RoundedAlbumArt.resolveCoverArt(
-                    appManager,
-                    playlist.coverArtId(),
-                    48,
-                    true
-            ));
+            if (playlist.kind() == PlaylistKind.DOWNLOADED) {
+                var icon = Image.fromIconName(Icons.FolderDownload.getIconName());
+                icon.setPixelSize(24);
+                icon.setHalign(Align.CENTER);
+                icon.setValign(Align.CENTER);
+                icon.setSizeRequest(48, 48);
+                row.addPrefix(icon);
+            } else {
+                row.addPrefix(RoundedAlbumArt.resolveCoverArt(
+                        appManager,
+                        playlist.coverArtId(),
+                        48,
+                        true
+                ));
+            }
             return row;
         });
 
@@ -106,11 +116,18 @@ public class PlaylistsListView extends Box {
         doAsync(() -> switch (playlist.kind()) {
             case NORMAL -> this.appManager.useClient(cl -> cl.getPlaylist(playlist.id())).songs();
             case STARRED -> this.appManager.useClient(cl -> cl.getStarred()).songs();
+            case DOWNLOADED -> {
+                var downloads = this.appManager.getCompletedDownloads();
+                var futures = downloads.stream()
+                        .map(d -> Utils.doAsync(() -> this.appManager.useClient(cl -> cl.getSong(d.songId()))))
+                        .toList();
+                yield futures.stream().map(java.util.concurrent.CompletableFuture::join).toList();
+            }
         }).thenApply(data -> {
             var next = new StarredListView(new ServerClient.ListStarred(data), appManager, appManager::navigateTo);
             next.setHalign(Align.FILL);
             next.setValign(Align.FILL);
-            var page = NavigationPage.builder().setTag("page-2").setChild(next).setTitle("Starred").setHexpand(true).build();
+            var page = NavigationPage.builder().setTag("page-2").setChild(next).setTitle(playlist.name()).setHexpand(true).build();
             Utils.runOnMainThread(() -> {
                 this.view.setContent(page);
             });

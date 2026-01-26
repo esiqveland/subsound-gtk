@@ -43,6 +43,7 @@ public enum Icons {
     Settings("emblem-system-symbolic"),
     OpenMenu("view-more-symbolic"),
     ListRemove("list-remove-symbolic"),
+    FolderDownload("folder-download-symbolic"),
     ;
 
     private final String iconName;

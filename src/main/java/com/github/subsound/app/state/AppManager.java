@@ -13,6 +13,7 @@ import com.github.subsound.persistence.SongCache.LoadSongResult;
 import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.persistence.database.Database;
 import com.github.subsound.persistence.database.DatabaseServerService;
+import com.github.subsound.persistence.database.DownloadQueueItem;
 import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.sound.PlaybinPlayer.AudioSource;
 import com.github.subsound.sound.PlaybinPlayer.Source;
@@ -140,6 +141,12 @@ public class AppManager {
 
     public Config getConfig() {
         return config;
+    }
+
+    public java.util.List<DownloadQueueItem> getCompletedDownloads() {
+        return dbService.listDownloadQueue(java.util.List.of(
+                DownloadQueueItem.DownloadStatus.COMPLETED
+        ));
     }
 
     public AppManager setToastOverlay(ToastOverlay toastOverlay) {

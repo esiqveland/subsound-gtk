@@ -96,6 +96,12 @@ public class SubsonicClient implements ServerClient {
     }
 
     @Override
+    public SongInfo getSong(String songId) {
+        Child song = this.client.browsing().getSong(songId);
+        return toSongInfo(song);
+    }
+
+    @Override
     public HomeOverview getHomeOverview() {
         var recentTask = Utils.doAsync(() -> this.loadAlbumList(AlbumListType.RECENT));
         var newestTask = Utils.doAsync(() -> this.loadAlbumList(AlbumListType.NEWEST));
