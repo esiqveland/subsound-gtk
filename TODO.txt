@@ -12,6 +12,3 @@ which opens a context menu with options to enqueue/queue next/favorite/add to pl
 - Split the playqueue into separate priorities, where user queued is higher priority than
 automatically queued based on clicking on a song.
 
-So when a user adds a song to the playqueue, it should be prioritized higher than the automatically queued songs.
-so when its added to the end, it should be added to the end of user added songs, or if no such songs exist,
-it should be added as the next song to play.

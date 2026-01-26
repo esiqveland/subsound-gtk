@@ -17,6 +17,10 @@ import java.util.function.Consumer;
 
 import static com.github.subsound.sound.PlaybinPlayer.PlayerStates.END_OF_STREAM;
 
+// PlayQueue:
+// When a user adds a song to the playqueue, it should be prioritized higher than the automatically queued songs.
+// so when its added to the end, it should be added to the end of user added songs, or if no such songs exist,
+// it should be added as the next song to play.
 public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     private static final Logger log = LoggerFactory.getLogger(PlayQueue.class);
 

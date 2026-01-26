@@ -171,8 +171,6 @@ public class AlbumInfoPage extends Box {
             });
 
             var downloadMenuItem = menuItem("Download");
-            downloadMenuItem.setTooltipText("TODO");
-            downloadMenuItem.setSensitive(false);
             downloadMenuItem.onClicked(() -> {
                 menuPopover.popdown();
                 this.onAction.apply(new PlayerAction.AddToDownloadQueue(songInfo));

@@ -366,7 +366,10 @@ public class AppManager {
                 case PlayerAction.Unstar a -> this.unstarSong(a);
                 case PlayerAction.PlaySong playSong -> this.loadSource(playSong.song());
                 case PlayerAction.AddToPlaylist a -> this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Add to playlist: not implemented yet")));
-                case PlayerAction.AddToDownloadQueue a -> this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Download queue: not implemented yet")));
+                case PlayerAction.AddToDownloadQueue a -> {
+                    this.downloadManager.enqueue(a.song());
+                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Added to download queue")));
+                }
             }
         });
     }
