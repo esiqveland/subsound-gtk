@@ -1,11 +1,13 @@
 package com.github.subsound.ui.components;
 
 import com.github.subsound.app.state.AppManager;
+import com.github.subsound.app.state.PlayerAction;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.ui.models.GQueueItem;
 import com.github.subsound.utils.Utils;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
+import org.gnome.gtk.Button;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListItem;
 import org.gnome.gtk.Widget;
@@ -32,6 +34,7 @@ public class PlayQueueItemRow extends Box {
     private final Label titleLabel;
     private final Label artistLabel;
     private final Label durationLabel;
+    private final Button removeButton;
 
     private final AtomicReference<SignalConnection<?>> isCurrentSignal = new AtomicReference<>();
     private final AtomicReference<SignalConnection<?>> positionSignal = new AtomicReference<>();
@@ -91,8 +94,21 @@ public class PlayQueueItemRow extends Box {
         contentBox.append(titleLabel);
         contentBox.append(subtitleBox);
 
+        this.removeButton = Button.builder()
+                .setIconName(Icons.ListRemove.getIconName())
+                .build();
+        this.removeButton.addCssClass(Classes.flat.className());
+        this.removeButton.addCssClass("circular");
+        this.removeButton.addCssClass(Classes.colorError.className());
+        this.removeButton.setValign(CENTER);
+        this.removeButton.onClicked(() -> {
+            int pos = this.index.get();
+            this.appManager.handleAction(new PlayerAction.RemoveFromQueue(pos));
+        });
+
         this.append(albumArtBox);
         this.append(contentBox);
+        this.append(removeButton);
 
         this.onDestroy(this::unbind);
     }
@@ -177,7 +193,6 @@ public class PlayQueueItemRow extends Box {
                 return;
             }
             if (this.gQueueItem.getIsUserQueued()) {
-                System.out.println("User queued: " + this.index + " " + this.songInfo.title());
                 this.removeCssClass(Classes.queueAutomatic.className());
             } else {
                 this.addCssClass(Classes.queueAutomatic.className());

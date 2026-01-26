@@ -88,7 +88,7 @@ public class PlayQueuePopover extends Popover {
                 .setMinContentHeight(200)
                 .setMaxContentHeight(800)
                 .setPropagateNaturalHeight(true)
-                .setMinContentWidth(300)
+                .setMinContentWidth(340)
                 .build();
 
         // Empty state

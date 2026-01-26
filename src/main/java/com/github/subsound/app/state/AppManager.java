@@ -218,6 +218,7 @@ public class AppManager {
         this.playQueue.enqueue(songInfo);
     }
 
+
     public CompletableFuture<LoadSongResult> loadSource(SongInfo songInfo) {
         return CompletableFuture.supplyAsync(
                 () -> this.loadSourceSync(songInfo),
@@ -348,6 +349,7 @@ public class AppManager {
                 // player actions:
                 case Enqueue a -> this.playQueue.enqueue(a.song());
                 case PlayerAction.EnqueueLast a -> this.playQueue.enqueueLast(a.song());
+                case PlayerAction.RemoveFromQueue a -> this.playQueue.removeAt(a.position());
                 case PlayPositionInQueue a -> this.playQueue.playPosition(a.position());
                 case PlayerAction.PlayAndReplaceQueue a -> {
                     this.playQueue.replaceQueue(a.queue(), a.position());

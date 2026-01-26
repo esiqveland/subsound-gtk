@@ -156,6 +156,28 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
         }
     }
 
+    public void removeAt(int index) {
+        synchronized (lock) {
+            if (index < 0 || index >= listStore.size()) {
+                log.warn("removeAt: invalid index={}", index);
+                return;
+            }
+            int currentPos = position.orElse(-1);
+            listStore.remove(index);
+            if (index < currentPos) {
+                this.position = Optional.of(currentPos - 1);
+            } else if (index == currentPos) {
+                // The current song is removed from the queue but keeps playing.
+                // Decrement position so that "next" plays the song that was after
+                // the removed one (now shifted into the old slot).
+                this.position = currentPos > 0
+                        ? Optional.of(currentPos - 1)
+                        : Optional.empty();
+            }
+            this.notifyState();
+        }
+    }
+
     public void replaceQueue(List<SongInfo> newQueue, Optional<Integer> startPosition) {
         synchronized (lock) {
             listStore.removeAll();

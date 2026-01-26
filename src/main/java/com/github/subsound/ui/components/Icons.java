@@ -42,6 +42,7 @@ public enum Icons {
     SettingsOld("settings-symbolic"),
     Settings("emblem-system-symbolic"),
     OpenMenu("view-more-symbolic"),
+    ListRemove("list-remove-symbolic"),
     ;
 
     private final String iconName;

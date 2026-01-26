@@ -263,6 +263,91 @@ public class PlayQueueTest {
         assertThat(playQueue.getListStore().get(4).getIsUserQueued()).isFalse();
     }
 
+    @Test
+    public void testRemoveCurrentThenPlayNextPlaysCorrectSong() {
+        List<SongInfo> songs = List.of(
+                SongInfoFactory.createRandomSongInfo(),
+                SongInfoFactory.createRandomSongInfo(),
+                SongInfoFactory.createRandomSongInfo(),
+                SongInfoFactory.createRandomSongInfo()
+        );
+        playQueue.replaceQueue(songs, 1);
+        playRecorder.songs.clear();
+
+        // Remove the currently playing song (index 1)
+        playQueue.removeAt(1);
+
+        // Queue is now [song0, song2, song3], position adjusted to 0
+        assertThat(playQueue.getListStore().size()).isEqualTo(3);
+        assertThat(playQueue.getListStore().get(0).songInfo()).isEqualTo(songs.get(0));
+        assertThat(playQueue.getListStore().get(1).songInfo()).isEqualTo(songs.get(2));
+
+        // "Next" should play song2 (the song that was after the removed one)
+        playQueue.attemptPlayNext();
+        assertThat(playQueue.getState().position()).hasValue(1);
+        assertThat(playRecorder.songs).containsExactly(songs.get(2));
+    }
+
+    @Test
+    public void testRemoveCurrentThenEndOfStreamPlaysCorrectSong() {
+        List<SongInfo> songs = List.of(
+                SongInfoFactory.createRandomSongInfo(),
+                SongInfoFactory.createRandomSongInfo(),
+                SongInfoFactory.createRandomSongInfo()
+        );
+        playQueue.replaceQueue(songs, 1);
+        playRecorder.songs.clear();
+
+        playQueue.removeAt(1);
+
+        // Queue: [song0, song2], position adjusted to 0
+        // End of stream should advance to the next song (song2)
+        playQueue.onState(new PlayerState(PlayerStates.END_OF_STREAM, 1.0, false, Optional.empty()));
+        assertThat(playQueue.getState().position()).hasValue(1);
+        assertThat(playRecorder.songs).containsExactly(songs.get(2));
+    }
+
+    @Test
+    public void testRemoveCurrentAtStartThenPlayNext() {
+        List<SongInfo> songs = List.of(
+                SongInfoFactory.createRandomSongInfo(),
+                SongInfoFactory.createRandomSongInfo(),
+                SongInfoFactory.createRandomSongInfo()
+        );
+        playQueue.replaceQueue(songs, 0);
+        playRecorder.songs.clear();
+
+        playQueue.removeAt(0);
+
+        // Queue: [song1, song2], position is empty
+        assertThat(playQueue.getListStore().size()).isEqualTo(2);
+        assertThat(playQueue.getState().position()).isEmpty();
+
+        // "Next" should play song1 (now at index 0)
+        playQueue.attemptPlayNext();
+        assertThat(playQueue.getState().position()).hasValue(0);
+        assertThat(playRecorder.songs).containsExactly(songs.get(1));
+    }
+
+    @Test
+    public void testRemoveCurrentAtEndThenPlayNextDoesNothing() {
+        List<SongInfo> songs = List.of(
+                SongInfoFactory.createRandomSongInfo(),
+                SongInfoFactory.createRandomSongInfo()
+        );
+        playQueue.replaceQueue(songs, 1);
+        playRecorder.songs.clear();
+
+        playQueue.removeAt(1);
+
+        // Queue: [song0], position adjusted to 0
+        assertThat(playQueue.getListStore().size()).isEqualTo(1);
+
+        // "Next" should do nothing — no songs after
+        playQueue.attemptPlayNext();
+        assertThat(playRecorder.songs).isEmpty();
+    }
+
     private static class StubPlayer implements Player {
         PlayerState currentState = new PlayerState(PlayerStates.INIT, 1.0, false, Optional.empty());
         Duration seekedTo;
