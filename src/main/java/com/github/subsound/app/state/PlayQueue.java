@@ -11,10 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 import static com.github.subsound.sound.PlaybinPlayer.PlayerStates.END_OF_STREAM;
@@ -22,10 +20,10 @@ import static com.github.subsound.sound.PlaybinPlayer.PlayerStates.END_OF_STREAM
 public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     private static final Logger log = LoggerFactory.getLogger(PlayQueue.class);
 
+    private final Object lock = new Object();
     private final Player player;
     private final Consumer<PlayQueueState> onStateChanged;
     private final Consumer<SongInfo> onPlay;
-    private final CopyOnWriteArrayList<SongInfo> playQueue = new CopyOnWriteArrayList<>();
     private final ListStore<GQueueItem> listStore = new ListStore<>(GQueueItem.gtype);
     private Optional<Integer> position = Optional.empty();
 
@@ -45,31 +43,31 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     }
 
     public PlayQueueState getState() {
-        return new PlayQueueState(
-                Collections.unmodifiableList(playQueue),
-                position
-        );
+        synchronized (lock) {
+            return new PlayQueueState(position);
+        }
     }
 
     public void playPosition(int newPosition) {
-        if (newPosition < 0) {
-            log.warn("playPosition: can not play invalid position={}", newPosition);
-            return;
+        synchronized (lock) {
+            if (newPosition < 0) {
+                log.warn("playPosition: can not play invalid position={}", newPosition);
+                return;
+            }
+            if (newPosition >= listStore.size()) {
+                log.warn("playPosition: can not play invalid position={}", newPosition);
+                return;
+            }
+            SongInfo songInfo = listStore.get(newPosition).songInfo();
+            int oldPosition = this.position.orElse(-1);
+            this.position = Optional.of(newPosition);
+            updateCurrentItemStyling(oldPosition, newPosition);
+            this.onPlay.accept(songInfo);
+            this.notifyState();
         }
-        if (newPosition >= playQueue.size()) {
-            log.warn("playPosition: can not play invalid position={}", newPosition);
-            return;
-        }
-        SongInfo songInfo = playQueue.get(newPosition);
-        int oldPosition = this.position.orElse(-1);
-        this.position = Optional.of(newPosition);
-        updateCurrentItemStyling(oldPosition, newPosition);
-        this.onPlay.accept(songInfo);
-        this.notifyState();
     }
 
     public record PlayQueueState (
-            List<SongInfo> playQueue,
             Optional<Integer> position
     ){}
     private void notifyState() {
@@ -86,83 +84,83 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     }
 
     public void attemptPlayNext() {
-        if (playQueue.isEmpty()) {
-            return;
+        synchronized (lock) {
+            if (listStore.isEmpty()) {
+                return;
+            }
+            int oldIdx = position.orElse(-1);
+            int nextIdx = oldIdx + 1;
+            if (nextIdx >= listStore.size()) {
+                // we have reached the end of the queue
+                return;
+            }
+            var songInfo = listStore.get(nextIdx).songInfo();
+            this.position = Optional.of(nextIdx);
+            updateCurrentItemStyling(oldIdx, nextIdx);
+            this.onPlay.accept(songInfo);
+            this.notifyState();
         }
-        int oldIdx = position.orElse(-1);
-        int nextIdx = oldIdx + 1;
-        if (nextIdx >= playQueue.size()) {
-            // we have reached the end of the queue
-            return;
-        }
-        var songInfo = playQueue.get(nextIdx);
-        this.position = Optional.of(nextIdx);
-        updateCurrentItemStyling(oldIdx, nextIdx);
-        this.onPlay.accept(songInfo);
-        this.notifyState();
     }
 
     public void attemptPlayPrev() {
-        if (playQueue.isEmpty()) {
-            return;
-        }
-        var state = player.getState();
-        var currentPlayPosition = state.source().flatMap(Source::position).orElse(Duration.ZERO);
-        if (currentPlayPosition.getSeconds() >= 4) {
-            if (state.source().isPresent()) {
-                // its likely we can seek this source
+        synchronized (lock) {
+            if (listStore.isEmpty()) {
+                return;
+            }
+            var state = player.getState();
+            var currentPlayPosition = state.source().flatMap(Source::position).orElse(Duration.ZERO);
+            if (currentPlayPosition.getSeconds() >= 4) {
+                if (state.source().isPresent()) {
+                    // its likely we can seek this source
+                    player.seekTo(Duration.ZERO);
+                    return;
+                }
+            }
+            int oldIdx = this.position.orElse(0);
+            int prevIdx = oldIdx - 1;
+            if (prevIdx < 0) {
+                // we have reached before the start of the queue.
+                // seek to zero
                 player.seekTo(Duration.ZERO);
                 return;
             }
+            var songInfo = listStore.get(prevIdx).songInfo();
+            this.position = Optional.of(prevIdx);
+            updateCurrentItemStyling(oldIdx, prevIdx);
+            this.onPlay.accept(songInfo);
+            this.notifyState();
         }
-        int oldIdx = this.position.orElse(0);
-        int prevIdx = oldIdx - 1;
-        if (prevIdx < 0) {
-            // we have reached before the start of the queue.
-            // seek to zero
-            player.seekTo(Duration.ZERO);
-            return;
-        }
-        var songInfo = playQueue.get(prevIdx);
-        this.position = Optional.of(prevIdx);
-        updateCurrentItemStyling(oldIdx, prevIdx);
-        this.onPlay.accept(songInfo);
-        this.notifyState();
     }
 
     public void enqueue(SongInfo songInfo) {
-        int insertPosition = position.orElse(-1) + 1;
-        playQueue.add(insertPosition, songInfo);
-        Utils.runOnMainThread(() -> {
+        synchronized (lock) {
+            int insertPosition = position.orElse(-1) + 1;
             listStore.insert(insertPosition, GQueueItem.newInstance(songInfo));
-        });
-        this.notifyState();
+            this.notifyState();
+        }
     }
 
     public void enqueueLast(SongInfo songInfo) {
-        playQueue.add(songInfo);
-        Utils.runOnMainThread(() -> {
+        synchronized (lock) {
             listStore.append(GQueueItem.newInstance(songInfo));
-        });
-        this.notifyState();
+            this.notifyState();
+        }
     }
 
-    public void replaceQueue(List<SongInfo> queue, Optional<Integer> startPosition) {
-        playQueue.clear();
-        playQueue.addAll(queue);
-        position = startPosition;
-        Utils.runOnMainThread(() -> {
+    public void replaceQueue(List<SongInfo> newQueue, Optional<Integer> startPosition) {
+        synchronized (lock) {
             listStore.removeAll();
-            queue.stream()
+            newQueue.stream()
                     .map(GQueueItem::newInstance)
                     .forEach(listStore::append);
+            position = startPosition;
             startPosition.ifPresent(pos -> {
                 if (pos >= 0 && pos < listStore.getNItems()) {
                     listStore.getItem(pos).setIsCurrent(true);
                 }
             });
-        });
-        this.notifyState();
+            this.notifyState();
+        }
     }
 
     public void replaceQueue(List<SongInfo> queue) {

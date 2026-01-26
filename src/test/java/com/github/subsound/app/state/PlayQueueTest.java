@@ -18,7 +18,7 @@ import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class PlayAndReplaceQueueTest {
+public class PlayQueueTest {
 
     private StubPlayer player;
     private PlayQueueStateRecorder stateChangedRecorder;
@@ -40,9 +40,9 @@ public class PlayAndReplaceQueueTest {
         playQueue.enqueue(song);
 
         PlayQueue.PlayQueueState state = playQueue.getState();
-        assertThat(state.playQueue()).containsExactly(song);
         assertThat(state.position()).isEmpty();
         assertThat(stateChangedRecorder.states).isNotEmpty();
+        assertThat(playQueue.getListStore().getFirst().songInfo()).isEqualTo(song);
     }
 
     @Test
@@ -54,9 +54,10 @@ public class PlayAndReplaceQueueTest {
         playQueue.replaceQueue(songs, 1);
 
         PlayQueue.PlayQueueState state = playQueue.getState();
-        assertThat(state.playQueue()).containsExactlyElementsOf(songs);
         assertThat(state.position()).hasValue(1);
         assertThat(stateChangedRecorder.states).isNotEmpty();
+        assertThat(playQueue.getListStore().get(0).songInfo()).isEqualTo(songs.get(0));
+        assertThat(playQueue.getListStore().get(1).songInfo()).isEqualTo(songs.get(1));
     }
 
     @Test
