@@ -84,6 +84,10 @@ scale slider {
   background-color: rgba(0, 0, 0, 0.08);
 }
 
+.queue-automatic {
+  opacity: 0.6;
+}
+
 .blurred {
   filter: blur(6px);
 }

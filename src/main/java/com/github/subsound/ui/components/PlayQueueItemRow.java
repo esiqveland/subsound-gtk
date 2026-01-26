@@ -104,7 +104,7 @@ public class PlayQueueItemRow extends Box {
         // Listen for IS_CURRENT changes
         var currentConnection = this.gQueueItem.onNotify(
                 GQueueItem.Signal.IS_CURRENT.getId(),
-                _ -> updateCurrentStyling()
+                _ -> updateStyling()
         );
         var oldCurrentConnection = this.isCurrentSignal.getAndSet(currentConnection);
         if (oldCurrentConnection != null) {
@@ -123,7 +123,12 @@ public class PlayQueueItemRow extends Box {
 
         this.index.set(listItem.getPosition());
         updateView();
+        updateStyling();
+    }
+
+    private void updateStyling() {
         updateCurrentStyling();
+        updateQueueKindStyling();
     }
 
     public void unbind() {
@@ -160,6 +165,24 @@ public class PlayQueueItemRow extends Box {
                 false
         );
         this.albumArtBox.append(albumArt);
+    }
+
+    private void updateQueueKindStyling() {
+        if (this.gQueueItem == null) {
+            return;
+        }
+        Utils.runOnMainThread(() -> {
+            if (this.gQueueItem.getIsCurrent()) {
+                this.removeCssClass(Classes.queueAutomatic.className());
+                return;
+            }
+            if (this.gQueueItem.getIsUserQueued()) {
+                System.out.println("User queued: " + this.index + " " + this.songInfo.title());
+                this.removeCssClass(Classes.queueAutomatic.className());
+            } else {
+                this.addCssClass(Classes.queueAutomatic.className());
+            }
+        });
     }
 
     private void updateCurrentStyling() {

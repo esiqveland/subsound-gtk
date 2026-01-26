@@ -26,8 +26,14 @@ public class GQueueItem extends GObject {
         }
     }
 
+    public enum QueueKind {
+        USER_ADDED,
+        AUTOMATIC,
+    }
+
     private final AtomicBoolean isCurrent = new AtomicBoolean(false);
     private SongInfo songInfo;
+    private QueueKind queueKind = QueueKind.AUTOMATIC;
 
     public static Type getType() {
         return gtype;
@@ -61,9 +67,24 @@ public class GQueueItem extends GObject {
         }
     }
 
+    public QueueKind queueKind() {
+        return queueKind;
+    }
+
+    @Property
+    // should be available as 'is-user-queued' in GTK component
+    public boolean getIsUserQueued() {
+        return queueKind == QueueKind.USER_ADDED;
+    }
+
     public static GQueueItem newInstance(SongInfo value) {
+        return newInstance(value, QueueKind.AUTOMATIC);
+    }
+
+    public static GQueueItem newInstance(SongInfo value, QueueKind queueKind) {
         GQueueItem instance = GObject.newInstance(gtype);
         instance.songInfo = value;
+        instance.queueKind = queueKind;
         return instance;
     }
 }

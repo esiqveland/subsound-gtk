@@ -169,6 +169,100 @@ public class PlayQueueTest {
         assertThat(playRecorder.songs).contains(songs.get(1));
     }
 
+    @Test
+    public void testEnqueueMarksItemAsUserQueued() {
+        List<SongInfo> songs = List.of(
+                SongInfoFactory.createRandomSongInfo(),
+                SongInfoFactory.createRandomSongInfo()
+        );
+        playQueue.replaceQueue(songs, 0);
+
+        SongInfo enqueued = SongInfoFactory.createRandomSongInfo();
+        playQueue.enqueue(enqueued);
+
+        // enqueue inserts at position+1 with userQueued=true
+        assertThat(playQueue.getListStore().get(1).songInfo()).isEqualTo(enqueued);
+        assertThat(playQueue.getListStore().get(1).getIsUserQueued()).isTrue();
+        // original items are not user-queued
+        assertThat(playQueue.getListStore().get(0).getIsUserQueued()).isFalse();
+        assertThat(playQueue.getListStore().get(2).getIsUserQueued()).isFalse();
+    }
+
+    @Test
+    public void testEnqueueLastInsertsAfterUserQueuedBeforeAutoQueued() {
+        List<SongInfo> songs = List.of(
+                SongInfoFactory.createRandomSongInfo(),
+                SongInfoFactory.createRandomSongInfo(),
+                SongInfoFactory.createRandomSongInfo()
+        );
+        playQueue.replaceQueue(songs, 0);
+
+        // Enqueue a user-queued song via enqueue (Play Next)
+        SongInfo userSong = SongInfoFactory.createRandomSongInfo();
+        playQueue.enqueue(userSong);
+
+        // Now enqueueLast should insert after the user-queued song but before auto-queued
+        SongInfo lastSong = SongInfoFactory.createRandomSongInfo();
+        playQueue.enqueueLast(lastSong);
+
+        // Queue should be: [song0(current)] [userSong] [lastSong] [song1] [song2]
+        assertThat(playQueue.getListStore().get(0).songInfo()).isEqualTo(songs.get(0));
+        assertThat(playQueue.getListStore().get(1).songInfo()).isEqualTo(userSong);
+        assertThat(playQueue.getListStore().get(1).getIsUserQueued()).isTrue();
+        assertThat(playQueue.getListStore().get(2).songInfo()).isEqualTo(lastSong);
+        assertThat(playQueue.getListStore().get(2).getIsUserQueued()).isTrue();
+        assertThat(playQueue.getListStore().get(3).songInfo()).isEqualTo(songs.get(1));
+        assertThat(playQueue.getListStore().get(3).getIsUserQueued()).isFalse();
+    }
+
+    @Test
+    public void testEnqueueLastWithNoUserQueuedInsertsAtPositionPlusOne() {
+        List<SongInfo> songs = List.of(
+                SongInfoFactory.createRandomSongInfo(),
+                SongInfoFactory.createRandomSongInfo()
+        );
+        playQueue.replaceQueue(songs, 0);
+
+        SongInfo lastSong = SongInfoFactory.createRandomSongInfo();
+        playQueue.enqueueLast(lastSong);
+
+        // With no user-queued songs, should insert at position+1
+        assertThat(playQueue.getListStore().get(1).songInfo()).isEqualTo(lastSong);
+        assertThat(playQueue.getListStore().get(1).getIsUserQueued()).isTrue();
+        assertThat(playQueue.getListStore().get(2).songInfo()).isEqualTo(songs.get(1));
+    }
+
+    @Test
+    public void testEnqueueLastWithMultipleUserQueuedInsertsAfterLastOne() {
+        List<SongInfo> songs = List.of(
+                SongInfoFactory.createRandomSongInfo(),
+                SongInfoFactory.createRandomSongInfo()
+        );
+        playQueue.replaceQueue(songs, 0);
+
+        // Add multiple user-queued songs
+        SongInfo user1 = SongInfoFactory.createRandomSongInfo();
+        SongInfo user2 = SongInfoFactory.createRandomSongInfo();
+        playQueue.enqueue(user2);
+        playQueue.enqueue(user1);
+        // After enqueue: [song0] [user1] [user2] [song1]
+
+        SongInfo lastSong = SongInfoFactory.createRandomSongInfo();
+        playQueue.enqueueLast(lastSong);
+
+        // Should insert after user2 but before song1:
+        // [song0] [user1] [user2] [lastSong] [song1]
+        assertThat(playQueue.getListStore().get(0).songInfo()).isEqualTo(songs.get(0));
+        assertThat(playQueue.getListStore().get(1).songInfo()).isEqualTo(user1);
+        assertThat(playQueue.getListStore().get(1).getIsUserQueued()).isTrue();
+        assertThat(playQueue.getListStore().get(2).songInfo()).isEqualTo(user2);
+        assertThat(playQueue.getListStore().get(2).getIsUserQueued()).isTrue();
+        assertThat(playQueue.getListStore().get(3).songInfo()).isEqualTo(lastSong);
+        assertThat(playQueue.getListStore().get(3).getIsUserQueued()).isTrue();
+        assertThat(playQueue.getListStore().get(4).songInfo()).isEqualTo(songs.get(1));
+        assertThat(playQueue.getListStore().get(4).getIsUserQueued()).isFalse();
+    }
+
     private static class StubPlayer implements Player {
         PlayerState currentState = new PlayerState(PlayerStates.INIT, 1.0, false, Optional.empty());
         Duration seekedTo;

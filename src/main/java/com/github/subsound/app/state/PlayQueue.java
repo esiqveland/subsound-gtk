@@ -135,14 +135,23 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     public void enqueue(SongInfo songInfo) {
         synchronized (lock) {
             int insertPosition = position.orElse(-1) + 1;
-            listStore.insert(insertPosition, GQueueItem.newInstance(songInfo));
+            listStore.insert(insertPosition, GQueueItem.newInstance(songInfo, GQueueItem.QueueKind.USER_ADDED));
             this.notifyState();
         }
     }
 
     public void enqueueLast(SongInfo songInfo) {
         synchronized (lock) {
-            listStore.append(GQueueItem.newInstance(songInfo));
+            int currentPos = position.orElse(-1);
+            int insertPos = currentPos + 1;
+            for (int i = currentPos + 1; i < listStore.size(); i++) {
+                if (listStore.get(i).getIsUserQueued()) {
+                    insertPos = i + 1;
+                } else {
+                    break;
+                }
+            }
+            listStore.insert(insertPos, GQueueItem.newInstance(songInfo, GQueueItem.QueueKind.USER_ADDED));
             this.notifyState();
         }
     }

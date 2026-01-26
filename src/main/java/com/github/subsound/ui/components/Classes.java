@@ -46,7 +46,8 @@ public enum Classes {
     darken("darken"),
     rounded("rounded"),
     shadow("shadow"),
-    activatable("activatable");
+    activatable("activatable"),
+    queueAutomatic("queue-automatic");
 
     private final String className;
     Classes(String className) {
