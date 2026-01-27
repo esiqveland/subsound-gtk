@@ -368,7 +368,7 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
             return playbackStatus == that.playbackStatus &&
                     position.equals(that.position) &&
                     // dont crash if nothing is playing yet
-                    metadata == null ? that.metadata == null : metadata.equals(that.metadata) &&
+                    (metadata == null ? that.metadata == null : metadata.equals(that.metadata)) &&
                     Double.compare(rate, that.rate) == 0 &&
                     Double.compare(volume, that.volume) == 0 &&
                     shuffle == that.shuffle &&
