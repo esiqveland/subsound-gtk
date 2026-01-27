@@ -18,6 +18,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Subsound is a GTK4/Adwaita streaming music player written in Java, primarily targeting Navidrome (Subsonic-compatible) servers. It uses java-gi FFM bindings for GTK4, GLib, and GStreamer. Dark mode only. Offline access is a goal.
 
+## Documentation
+
+Subsonic API docs:
+ - https://www.subsonic.org/pages/api.jsp#versions
+ - XSD Schema: https://www.subsonic.org/pages/inc/api/schema/subsonic-rest-api-1.16.1.xsd
+ - https://opensubsonic.netlify.app/docs/api-reference/
+
+
 ## Build & Run Commands
 
 ```bash
