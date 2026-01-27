@@ -1639,6 +1639,13 @@
   },
   {
     "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/org/junit/junit-bom/5.12.2/junit-bom-5.12.2.pom",
+    "sha512": "ab6408540062233f4986b8b10c875d8eb7e6b8beb633be7a8e743140882789cf9fe9a25f4886e05e5bd24bc44df97b97396b89a05f39452135bfd4f2c35c3be0",
+    "dest": "./offline-repository/org/junit/junit-bom/5.12.2",
+    "dest-filename": "junit-bom-5.12.2.pom"
+  },
+  {
+    "type": "file",
     "url": "https://repo.maven.apache.org/maven2/org/junit/junit-bom/5.13.2/junit-bom-5.13.2.pom",
     "sha512": "d557142227e27ecee6f3bdc77a7765cec614a2a4b7e88c9343dad30b53648708e8f17e422a9a2cec6aefa9c0c8bc07f573da23ed68211a399ea0a80426011489",
     "dest": "./offline-repository/org/junit/junit-bom/5.13.2",
