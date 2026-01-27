@@ -117,7 +117,7 @@ public class PlaylistsListView extends Box {
             case NORMAL -> this.appManager.useClient(cl -> cl.getPlaylist(playlist.id())).songs();
             case STARRED -> this.appManager.useClient(cl -> cl.getStarred()).songs();
             case DOWNLOADED -> {
-                var downloads = this.appManager.getCompletedDownloads();
+                var downloads = this.appManager.getDownloadQueue();
                 var futures = downloads.stream()
                         .map(d -> Utils.doAsync(() -> this.appManager.useClient(cl -> cl.getSong(d.songId()))))
                         .toList();

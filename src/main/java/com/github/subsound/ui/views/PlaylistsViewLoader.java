@@ -92,7 +92,7 @@ public class PlaylistsViewLoader extends Box {
                             data.starredList().songs().size(),
                             data.starredList().songs().stream().flatMap(s -> s.starred().stream()).findFirst().orElseGet(Instant::now)
                     );
-                    var downloadCount = this.appManager.getCompletedDownloads().size();
+                    var downloadCount = this.appManager.getDownloadQueue().size();
                     ServerClient.PlaylistSimple downloaded = new ServerClient.PlaylistSimple(
                             "downloaded",
                             "Downloaded",

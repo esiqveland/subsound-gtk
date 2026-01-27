@@ -143,9 +143,12 @@ public class AppManager {
         return config;
     }
 
-    public java.util.List<DownloadQueueItem> getCompletedDownloads() {
+    public java.util.List<DownloadQueueItem> getDownloadQueue() {
         return dbService.listDownloadQueue(java.util.List.of(
-                DownloadQueueItem.DownloadStatus.COMPLETED
+                DownloadQueueItem.DownloadStatus.COMPLETED,
+                DownloadQueueItem.DownloadStatus.PENDING,
+                DownloadQueueItem.DownloadStatus.DOWNLOADING,
+                DownloadQueueItem.DownloadStatus.FAILED
         ));
     }
 
