@@ -33,7 +33,9 @@ public interface ServerClient {
     void unStarId(String id);
     ServerType getServerType();
     boolean testConnection();
+    ServerInfo getServerInfo();
 
+    record ServerInfo(String apiVersion, long songCount) {}
 
     record TranscodeInfo(
             Optional<Integer> originalBitRate,

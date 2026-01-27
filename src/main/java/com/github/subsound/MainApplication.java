@@ -7,6 +7,7 @@ import com.github.subsound.ui.components.AppNavigation;
 import com.github.subsound.ui.components.Icons;
 import com.github.subsound.ui.components.OnboardingOverlay;
 import com.github.subsound.ui.components.PlayerBar;
+import com.github.subsound.ui.components.ServerBadge;
 import com.github.subsound.ui.components.SettingsPage;
 import com.github.subsound.ui.views.AlbumInfoLoader;
 import com.github.subsound.ui.views.ArtistInfoLoader;
@@ -37,7 +38,6 @@ import org.gnome.gtk.Button;
 import org.gnome.gtk.CallbackAction;
 import org.gnome.gtk.CssProvider;
 import org.gnome.gtk.Gtk;
-import org.gnome.gtk.Label;
 import org.gnome.gtk.MenuButton;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Popover;
@@ -45,17 +45,13 @@ import org.gnome.gtk.Shortcut;
 import org.gnome.gtk.ShortcutController;
 import org.gnome.gtk.ShortcutScope;
 import org.gnome.gtk.ShortcutTrigger;
-import org.gnome.gtk.StyleContext;
 import org.gnome.gtk.Widget;
-import org.gnome.pango.EllipsizeMode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
 import java.nio.file.Path;
-import java.util.Optional;
 
 import static com.github.subsound.utils.Utils.mustRead;
 
@@ -114,12 +110,7 @@ public class MainApplication {
                 .build();
 
         // Server badge at the top
-        var serverHostLabel = Label.builder()
-                .setLabel(getServerHostNameOrNotConnected())
-                .setHalign(Align.START)
-                .setEllipsize(EllipsizeMode.END)
-                .build();
-        var serverBadge = createServerBadge(serverHostLabel);
+        var serverBadge = new ServerBadge(appManager);
         popoverContent.append(serverBadge);
 
         var configureServerButton = Button.builder()
@@ -131,9 +122,7 @@ public class MainApplication {
         var settingsPopover = Popover.builder()
                 .setChild(popoverContent)
                 .build();
-        settingsPopover.onShow(() -> {
-            serverHostLabel.setLabel(getServerHostNameOrNotConnected());
-        });
+        settingsPopover.onShow(serverBadge::refresh);
 
         configureServerButton.onClicked(() -> {
             settingsPopover.popdown();
@@ -358,59 +347,4 @@ public class MainApplication {
                 .setHexpand(true);
     }
 
-    private String getServerHostNameOrNotConnected() {
-        return getServerHostName().orElse("Not connected");
-    }
-
-    private Optional<String> getServerHostName() {
-        var cfg = this.appManager.getConfig();
-        String serverHost = null;
-        if (cfg.serverConfig != null && cfg.serverConfig.url() != null && !cfg.serverConfig.url().isBlank()) {
-            try {
-                URI uri = URI.create(cfg.serverConfig.url());
-                serverHost = uri.getHost();
-                if (serverHost == null) {
-                    serverHost = cfg.serverConfig.url();
-                } else {
-                    var parts = serverHost.split(":");
-                    serverHost = parts[0];
-                }
-            } catch (Exception e) {
-                serverHost = cfg.serverConfig.url();
-            }
-        }
-        return Optional.ofNullable(serverHost);
-    }
-
-    private Widget createServerBadge(Label serverLabel) {
-        var titleLabel = Label.builder()
-                .setLabel("Connected to")
-                .setHalign(Align.START)
-                .build();
-        titleLabel.addCssClass("dim-label");
-        titleLabel.addCssClass("caption");
-
-        var textBox = Box.builder()
-                .setOrientation(Orientation.VERTICAL)
-                .setSpacing(2)
-                .build();
-        textBox.append(titleLabel);
-        textBox.append(serverLabel);
-
-        var icon = org.gnome.gtk.Image.fromIconName(Icons.NetworkServer.getIconName());
-        icon.setIconSize(org.gnome.gtk.IconSize.LARGE);
-
-        var badge = Box.builder()
-                .setOrientation(Orientation.HORIZONTAL)
-                .setSpacing(12)
-                .setMarginTop(8)
-                .setMarginBottom(8)
-                .setMarginStart(12)
-                .setMarginEnd(12)
-                .build();
-        badge.append(icon);
-        badge.append(textBox);
-
-        return badge;
-    }
 }

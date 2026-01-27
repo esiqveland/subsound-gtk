@@ -44,6 +44,7 @@ public enum Icons {
     OpenMenu("view-more-symbolic"),
     ListRemove("list-remove-symbolic"),
     FolderDownload("folder-download-symbolic"),
+    NetworkError("network-error-symbolic"),
     ;
 
     private final String iconName;

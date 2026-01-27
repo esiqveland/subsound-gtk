@@ -67,4 +67,9 @@ public class CachingClient implements ServerClient {
     public boolean testConnection() {
         return delegate.testConnection();
     }
+
+    @Override
+    public ServerInfo getServerInfo() {
+        return delegate.getServerInfo();
+    }
 }

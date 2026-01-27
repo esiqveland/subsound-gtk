@@ -227,6 +227,14 @@ public class SubsonicClient implements ServerClient {
         return this.client.testConnection();
     }
 
+    @Override
+    public ServerInfo getServerInfo() {
+        var scanStatus = this.client.libraryScan().getScanStatus();
+        var apiVersion = this.client.getApiVersion().getVersionString();
+        long count = scanStatus.getCount() != null ? scanStatus.getCount() : 0;
+        return new ServerInfo(apiVersion, count);
+    }
+
     private SongInfo toSongInfo(Child song) {
         try {
             var duration = Duration.ofSeconds(song.getDuration());
