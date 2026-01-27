@@ -35,7 +35,13 @@ public interface ServerClient {
     boolean testConnection();
     ServerInfo getServerInfo();
 
-    record ServerInfo(String apiVersion, long songCount) {}
+    record ServerInfo(
+            String apiVersion,
+            long songCount,
+            Optional<Integer> folderCount,
+            Optional<Instant> lastScan,
+            Optional<String> serverVersion
+    ) {}
 
     record TranscodeInfo(
             Optional<Integer> originalBitRate,

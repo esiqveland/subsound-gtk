@@ -1,5 +1,6 @@
 package com.github.subsound.utils;
 
+import com.github.subsound.utils.javahttp.InstantAdapter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.Strictness;
@@ -39,6 +40,7 @@ import java.security.NoSuchAlgorithmException;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
@@ -50,8 +52,11 @@ import java.util.function.Supplier;
 public class Utils {
     public static final ExecutorService ASYNC_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
     private static final HexFormat HEX = HexFormat.of().withLowerCase();
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().setStrictness(Strictness.STRICT).create();
-
+    private static final Gson GSON = new GsonBuilder()
+            .setPrettyPrinting()
+            .setStrictness(Strictness.STRICT)
+            .registerTypeAdapter(Instant.class, new InstantAdapter())
+            .create();
 
     public static <T> CompletableFuture<T> doAsync(Supplier<T> supplier) {
         return CompletableFuture.supplyAsync(supplier, ASYNC_EXECUTOR);

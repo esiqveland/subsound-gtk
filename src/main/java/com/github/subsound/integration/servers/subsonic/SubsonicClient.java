@@ -5,27 +5,33 @@ import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.ObjectIdentifier.AlbumIdentifier;
 import com.github.subsound.integration.ServerClient.ObjectIdentifier.ArtistIdentifier;
 import com.github.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier;
+import com.github.subsound.integration.servers.subsonic.SubsonicClient.SubsonicResponseJson.SubsonicResponse;
 import com.github.subsound.utils.Utils;
+import com.github.subsound.utils.javahttp.LoggingHttpClient;
 import com.github.subsound.utils.javahttp.TextUtils;
+import com.google.gson.annotations.SerializedName;
 import net.beardbot.subsonic.client.Subsonic;
 import net.beardbot.subsonic.client.SubsonicPreferences;
-import net.beardbot.subsonic.client.api.browsing.IndexParams;
 import net.beardbot.subsonic.client.api.lists.AlbumListParams;
 import net.beardbot.subsonic.client.api.lists.AlbumListType;
 import net.beardbot.subsonic.client.api.media.CoverArtParams;
 import net.beardbot.subsonic.client.api.media.StreamParams;
 import net.beardbot.subsonic.client.base.ApiParams;
 import okhttp3.HttpUrl;
-import org.subsonic.restapi.Artist;
 import org.subsonic.restapi.Child;
-import org.subsonic.restapi.Index;
 import org.subsonic.restapi.PlaylistWithSongs;
 import org.subsonic.restapi.Starred2;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
@@ -39,12 +45,17 @@ import static java.util.Optional.ofNullable;
 public class SubsonicClient implements ServerClient {
     private final String serverId;
     private final Path dataDir;
+    private final SubsonicPreferences settings;
+    private final URI uri;
     private final Subsonic client;
+    private final HttpClient httpClient = new LoggingHttpClient(HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build());
 
-    public SubsonicClient(String serverId, Path dataDir, Subsonic client) {
+    public SubsonicClient(String serverId, Path dataDir, SubsonicPreferences settings) {
         this.serverId = serverId;
         this.dataDir = dataDir;
-        this.client = client;
+        this.settings = settings;
+        this.uri = URI.create(settings.getServerUrl());
+        this.client = new Subsonic(settings);
     }
 
     public URI coverArtLink(String coverArtId) {
@@ -229,10 +240,95 @@ public class SubsonicClient implements ServerClient {
 
     @Override
     public ServerInfo getServerInfo() {
-        var scanStatus = this.client.libraryScan().getScanStatus();
+        var scanStatusResponse = this.getScanStatusJson();
+        var scanStatus = scanStatusResponse.scanStatus;
         var apiVersion = this.client.getApiVersion().getVersionString();
-        long count = scanStatus.getCount() != null ? scanStatus.getCount() : 0;
-        return new ServerInfo(apiVersion, count);
+        long count = scanStatus.count() != null ? scanStatus.count : 0;
+        Optional<Integer> folderCount = scanStatus.folderCount != null ? Optional.of(scanStatus.folderCount) : Optional.empty();
+        Optional<Instant> lastScan = scanStatus.lastScan != null ? Optional.of(scanStatus.lastScan) : Optional.empty();
+        Optional<String> serverVersion = scanStatusResponse.serverVersion != null ? Optional.of(scanStatusResponse.serverVersion) : Optional.empty();
+        return new ServerInfo(apiVersion, count, folderCount, lastScan, serverVersion);
+    }
+
+
+    // {
+    //  "subsonic-response": {
+    //    "status": "ok",
+    //    "version": "1.16.1",
+    //    "type": "navidrome",
+    //    "serverVersion": "0.59.0 (cc3cca60)",
+    //    "openSubsonic": true,
+    //    "scanStatus": {
+    //      "scanning": false,
+    //      "count": 3658,
+    //      "folderCount": 357,
+    //      "lastScan": "2026-01-25T10:38:16.590557775Z",
+    //      "scanType": "full",
+    //      "elapsedTime": 12590557775
+    //    }
+    //  }
+    //}
+    public static class SubsonicResponseJson<T> {
+        public static class SubsonicResponse<T> {
+            public String status;
+            public String version;
+            public String type;
+            public String serverVersion;
+            public Boolean openSubsonic;
+            // TODO: find a way to make the subtype here have a dynamic key name
+            public T scanStatus;
+        }
+        @SerializedName("subsonic-response")
+        public SubsonicResponse<T> subsonicResponse;
+    }
+    public static class ScanStatusResponse extends SubsonicResponseJson<ScanStatusJson> {}
+    public record ScanStatusJson(
+            Boolean scanning,
+            Integer count, // songCount
+            Integer folderCount,
+            Instant lastScan,
+            String scanType,
+            Long elapsedTime
+    ) {}
+
+    public SubsonicResponse<ScanStatusJson> getScanStatusJson() {
+        try {
+            URI link = getServerUri("/rest/getScanStatus", ResponseFormat.JSON);
+            var req = HttpRequest.newBuilder().GET().uri(link).build();
+            var bodyHandler = HttpResponse.BodyHandlers.ofByteArray();
+            HttpResponse<byte[]> res = this.httpClient.send(req, bodyHandler);
+            var bodyBytes = res.body();
+            var bodyString = new String(bodyBytes, StandardCharsets.UTF_8);
+            if (res.statusCode() >= 200 && res.statusCode() < 300) {
+                var parsed = Utils.fromJson(bodyString, ScanStatusResponse.class);
+                if ("ok".equalsIgnoreCase(parsed.subsonicResponse.status)) {
+                    return parsed.subsonicResponse;
+                }
+                throw new RuntimeException("error loading: status=" + res.statusCode() + " link=" + link.toString()+" body="+bodyString);
+            } else {
+                throw new RuntimeException("error loading: status=" + res.statusCode() + " link=" + link.toString()+" body="+bodyString);
+            }
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    enum ResponseFormat { XML, JSON }
+    private URI getServerUri(String path, ResponseFormat format) {
+        var auth = this.settings.getAuthentication();
+        var v = this.client.getApiVersion().getVersionString();
+        return HttpUrl.get(this.uri).newBuilder(path)
+                .setQueryParameter("u", this.settings.getUsername())
+                .setQueryParameter("s", auth.getSalt())
+                .setQueryParameter("t", auth.getToken())
+                .setQueryParameter("c", this.settings.getClientName())
+                .setQueryParameter("f", switch (format) {
+                    case XML -> "xml";
+                    case JSON -> "json";
+                })
+                .setQueryParameter("v", v)
+                .build()
+                .uri();
     }
 
     private SongInfo toSongInfo(Child song) {
@@ -358,6 +454,7 @@ public class SubsonicClient implements ServerClient {
     }
 
     public static SubsonicClient create(ServerConfig cfg) {
-        return new SubsonicClient(cfg.id(), cfg.dataDir(), new Subsonic(createSettings(cfg)));
+        var settings = createSettings(cfg);
+        return new SubsonicClient(cfg.id(), cfg.dataDir(), settings);
     }
 }

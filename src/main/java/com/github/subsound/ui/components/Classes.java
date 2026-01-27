@@ -65,6 +65,11 @@ public enum Classes {
     public static String[] toClassnames(Classes ...classes) {
         return Arrays.stream(classes).map(Classes::className).toArray(String[]::new);
     }
+
+    public static String[] toClassnames(String ...classes) {
+        return classes.clone();
+    }
+
     public static String[] toClassnames(Classes clazz) {
         return new String[]{clazz.className()};
     }

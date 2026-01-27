@@ -74,8 +74,9 @@ public class LoggingHttpClient extends HttpClient {
     public <T> HttpResponse<T> send(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler) throws IOException, InterruptedException {
         logRequest(request);
         try {
+            var startedNanos = Duration.ofNanos(System.nanoTime());
             var res = this.delegate.send(request, responseBodyHandler);
-            logResponse(res);
+            logResponse(res, startedNanos);
             return res;
         } catch (Exception e) {
             logError(request, e);
@@ -84,29 +85,32 @@ public class LoggingHttpClient extends HttpClient {
     }
 
     private void logError(HttpRequest request, Exception e) {
-        log.error("[%s %s] --> ERROR: %s".formatted(request.uri().toString(), request.method(), e.getMessage()));
+        log.warn("[%s %s] <-- ERROR: %s".formatted(request.method(), request.uri().toString(), e.getMessage()));
     }
 
-    private <T> HttpResponse<T> logResponse(HttpResponse<T> res) {
-        log.info("[%s %s] <-- %d ".formatted(res.request().uri().toString(), res.request().method(), res.statusCode()));
+    private <T> HttpResponse<T> logResponse(HttpResponse<T> res, Duration startedNanos) {
+        var duration = Duration.ofNanos(System.nanoTime() - startedNanos.toNanos());
+        log.info("[%s %s] <-- %d in %dms".formatted(res.request().method(), res.request().uri().toString(), res.statusCode(), duration.toMillis()));
         return res;
     }
 
     private void logRequest(HttpRequest request) {
-        log.info("[%s %s] --> ".formatted(request.uri().toString(), request.method()));
+        log.info("[%s %s] --> ".formatted(request.method(), request.uri().toString()));
     }
 
     @Override
     public <T> CompletableFuture<HttpResponse<T>> sendAsync(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler) {
         logRequest(request);
+        var startedNanos = Duration.ofNanos(System.nanoTime());
         return this.delegate.sendAsync(request, responseBodyHandler)
-                .thenApply(this::logResponse);
+                .thenApply(res -> logResponse(res, startedNanos));
     }
 
     @Override
     public <T> CompletableFuture<HttpResponse<T>> sendAsync(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler, HttpResponse.PushPromiseHandler<T> pushPromiseHandler) {
         logRequest(request);
+        var startedNanos = Duration.ofNanos(System.nanoTime());
         return this.delegate.sendAsync(request, responseBodyHandler, pushPromiseHandler)
-                .thenApply(this::logResponse);
+                .thenApply(res -> logResponse(res, startedNanos));
     }
 }

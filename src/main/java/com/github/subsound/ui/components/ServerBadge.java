@@ -26,7 +26,9 @@ public class ServerBadge extends Box {
 
     private final AppManager appManager;
     private final Label hostnameLabel;
-    private final Label statsLabel;
+    private final Label statsLabelSongs;
+    private final Label statsLabelFolders;
+    private final Label statsLabelAppVersion;
     private final Label statusDot;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private ScheduledFuture<?> pingTask;
@@ -84,17 +86,14 @@ public class ServerBadge extends Box {
         topRow.append(statusDot);
 
         // Stats row
-        this.statsLabel = Label.builder()
-                .setLabel("")
-                .setHalign(Align.START)
-                .setMarginStart(44) // align with text (icon 24 + spacing 12 + a bit)
-                .build();
-        this.statsLabel.addCssClass("dim-label");
-        this.statsLabel.addCssClass("caption");
-        this.statsLabel.setVisible(false);
+        this.statsLabelSongs = newStatsLabel();
+        this.statsLabelFolders = newStatsLabel();
+        this.statsLabelAppVersion = newStatsLabel();
 
         this.append(topRow);
-        this.append(statsLabel);
+        this.append(statsLabelSongs);
+        this.append(statsLabelFolders);
+        this.append(statsLabelAppVersion);
 
         // Start periodic ping
         this.pingTask = scheduler.scheduleWithFixedDelay(this::checkConnectivity, 0, 30, TimeUnit.SECONDS);
@@ -105,6 +104,16 @@ public class ServerBadge extends Box {
             }
             scheduler.shutdown();
         });
+    }
+
+    private Label newStatsLabel() {
+        return Label.builder()
+                .setLabel("")
+                .setHalign(Align.START)
+                .setMarginStart(44) // align with text (icon 24 + spacing 12 + a bit)
+                .setCssClasses(Classes.toClassnames("dim-label", "caption"))
+                .setVisible(false)
+                .build();
     }
 
     /**
@@ -122,7 +131,7 @@ public class ServerBadge extends Box {
             var status = fetchServerStatus();
             Utils.runOnMainThread(() -> applyStatus(status));
         } catch (Exception e) {
-            log.debug("Connectivity check failed", e);
+            log.info("Connectivity check failed", e);
             Utils.runOnMainThread(() -> applyStatus(new ServerStatus(false, null)));
         }
     }
@@ -138,7 +147,7 @@ public class ServerBadge extends Box {
             }
             return new ServerStatus(false, null);
         } catch (Exception e) {
-            log.debug("Failed to fetch server status", e);
+            log.info("Failed to fetch server status", e);
             return new ServerStatus(false, null);
         }
     }
@@ -151,16 +160,33 @@ public class ServerBadge extends Box {
             statusDot.setTooltipText("Online");
             if (status.serverInfo() != null) {
                 var info = status.serverInfo();
-                var text = "API v%s \u00b7 %,d songs".formatted(info.apiVersion(), info.songCount());
-                statsLabel.setLabel(text);
-                statsLabel.setVisible(true);
+                var text = "%d songs".formatted(info.songCount());
+                statsLabelSongs.setLabel(text);
+                statsLabelSongs.setVisible(true);
+                info.folderCount().ifPresentOrElse(folderCount -> {
+                        statsLabelFolders.setLabel("%d folders".formatted(folderCount));
+                        statsLabelFolders.setVisible(true);
+                    },
+                    () -> statsLabelFolders.setVisible(false)
+                );
+                info.serverVersion().or(() -> Optional.ofNullable(info.apiVersion())).ifPresentOrElse(serverVersion -> {
+                        statsLabelAppVersion.setLabel(serverVersion);
+                        statsLabelAppVersion.setVisible(true);
+                    },
+                    () -> statsLabelAppVersion.setVisible(false)
+                );
+                //var text = "API v%s \u00b7 %,d songs".formatted(info.apiVersion(), info.songCount());
+
             }
+
         } else {
             statusDot.removeCssClass("success");
             statusDot.removeCssClass("dim-label");
             statusDot.addCssClass("error");
             statusDot.setTooltipText("Offline");
-            statsLabel.setVisible(false);
+            statsLabelSongs.setVisible(false);
+            statsLabelFolders.setVisible(false);
+            statsLabelAppVersion.setVisible(false);
         }
     }
 
