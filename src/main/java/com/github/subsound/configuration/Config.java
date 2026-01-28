@@ -37,6 +37,10 @@ public class Config {
         Files.writeString(this.configFilePath, jsonStr, StandardCharsets.UTF_8);
     }
 
+    public Optional<ServerConfig> getServerConfig() {
+        return Optional.ofNullable(this.serverConfig);
+    }
+
     private ConfigurationDTO toFileFormat() {
         var d = new ConfigurationDTO();
         d.onboarding = this.onboarding;

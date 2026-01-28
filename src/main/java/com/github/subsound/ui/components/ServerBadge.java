@@ -26,6 +26,7 @@ public class ServerBadge extends Box {
 
     private final AppManager appManager;
     private final Label hostnameLabel;
+    private final Label statsLabelUsername;
     private final Label statsLabelSongs;
     private final Label statsLabelFolders;
     private final Label statsLabelAppVersion;
@@ -42,7 +43,7 @@ public class ServerBadge extends Box {
         this.setMarginStart(12);
         this.setMarginEnd(12);
 
-        // Top row: server icon + hostname + status indicator
+        // Top row: server icon + hostname
         var topRow = Box.builder()
                 .setOrientation(Orientation.HORIZONTAL)
                 .setSpacing(12)
@@ -81,16 +82,30 @@ public class ServerBadge extends Box {
         textBox.append(titleLabel);
         textBox.append(hostnameLabel);
 
-        topRow.append(serverIcon);
+        var onlineIndicatorBox = new Box(Orientation.VERTICAL, 4);
+        onlineIndicatorBox.setHalign(Align.CENTER);
+        onlineIndicatorBox.setValign(Align.CENTER);
+        onlineIndicatorBox.append(statusDot);
+        topRow.append(onlineIndicatorBox);
         topRow.append(textBox);
-        topRow.append(statusDot);
+
+        // Status indicator row - positioned below statusDot on the left
+        var statusRow = Box.builder()
+                .setOrientation(Orientation.HORIZONTAL)
+                .setSpacing(12)
+                //.setMarginStart(32) // align with server icon (icon size 24 + spacing 12 = 36, but we use 32 for better alignment)
+                .build();
 
         // Stats row
+        this.statsLabelUsername = newStatsLabel();
+        this.statsLabelUsername.setCssClasses(Classes.toClassnames(Classes.captionHeading));
         this.statsLabelSongs = newStatsLabel();
         this.statsLabelFolders = newStatsLabel();
         this.statsLabelAppVersion = newStatsLabel();
 
         this.append(topRow);
+        this.append(statusRow);
+        this.append(statsLabelUsername);
         this.append(statsLabelSongs);
         this.append(statsLabelFolders);
         this.append(statsLabelAppVersion);
@@ -110,7 +125,7 @@ public class ServerBadge extends Box {
         return Label.builder()
                 .setLabel("")
                 .setHalign(Align.START)
-                .setMarginStart(44) // align with text (icon 24 + spacing 12 + a bit)
+                //.setMarginStart(32) // align with status dot (same as statusRow margin)
                 .setCssClasses(Classes.toClassnames("dim-label", "caption"))
                 .setVisible(false)
                 .build();
@@ -132,27 +147,35 @@ public class ServerBadge extends Box {
             Utils.runOnMainThread(() -> applyStatus(status));
         } catch (Exception e) {
             log.info("Connectivity check failed", e);
-            Utils.runOnMainThread(() -> applyStatus(new ServerStatus(false, null)));
+            var usernameOpt = appManager.getConfig().getServerConfig().map(cfg -> cfg.username());
+            Utils.runOnMainThread(() -> applyStatus(new ServerStatus(usernameOpt, false, null)));
         }
     }
 
-    private record ServerStatus(boolean online, ServerClient.ServerInfo serverInfo) {}
+    private record ServerStatus(Optional<String> username, boolean online, ServerClient.ServerInfo serverInfo) {}
 
     private ServerStatus fetchServerStatus() {
+        var usernameOpt = appManager.getConfig().getServerConfig().map(cfg -> cfg.username());
         try {
             boolean online = appManager.useClient(ServerClient::testConnection);
             if (online) {
                 var info = appManager.useClient(ServerClient::getServerInfo);
-                return new ServerStatus(true, info);
+                return new ServerStatus(usernameOpt, true, info);
             }
-            return new ServerStatus(false, null);
+            return new ServerStatus(usernameOpt, false, null);
         } catch (Exception e) {
             log.info("Failed to fetch server status", e);
-            return new ServerStatus(false, null);
+            return new ServerStatus(usernameOpt, false, null);
         }
     }
 
     private void applyStatus(ServerStatus status) {
+        status.username().ifPresentOrElse(
+        username -> statsLabelUsername.setLabel("@%s".formatted(username)),
+                () -> statsLabelUsername.setLabel("@")
+        );
+        statsLabelUsername.setVisible(true);
+
         if (status.online()) {
             statusDot.removeCssClass("error");
             statusDot.removeCssClass("dim-label");
