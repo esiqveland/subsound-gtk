@@ -2,6 +2,7 @@ package com.github.subsound.integration.platform.mpriscontroller;
 
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.integration.ServerClient;
+import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.utils.OsUtil;
 import com.softwaremill.jox.Channel;
 import com.softwaremill.jox.ChannelDoneException;
@@ -151,7 +152,8 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
 
     @Override
     public void Seek(long microseconds) {
-        log.info("Seek");
+        var pos = Duration.ofNanos(microseconds * 1000L);
+        log.info("Seek to pos={}", pos.getSeconds());
     }
 
     @Override
@@ -161,7 +163,7 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
 
     @Override
     public void SetPosition(String trackId, long position) {
-        log.info("SetPosition");
+        log.info("SetPosition trackId={} position={}", trackId, position);
     }
 
     @Override
@@ -190,8 +192,9 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
                 false,
                 metadata,
                 next.player().volume(),
-                // TODO(mpris): song position
-                Duration.ZERO,
+                // mpris: it should be fine to publish the position here, mpris clients that render a position,
+                // should manage their own updates by calling with Get('playerid', Variant[Position])) for updates.
+                next.player().source().flatMap(PlaybinPlayer.Source::position).orElse(Duration.ZERO),
                 1.0,
                 1.0,
                 true,
