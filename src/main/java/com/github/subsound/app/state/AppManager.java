@@ -125,10 +125,75 @@ public class AppManager {
                 .orElse(PlayerStateJson.defaultState());
         this.player.setVolume(playerState.volume());
         this.player.setMute(playerState.muted());
+
+        // Restore last playing song from DB (without auto-playing)
+        var lastPlayback = playerState.currentPlayback();
+        if (lastPlayback != null && lastPlayback.songId() != null && !lastPlayback.songId().isBlank()) {
+            restoreLastPlayingSong(lastPlayback.songId());
+        }
+
         this.downloadManager = new DownloadManager(
                 dbService,
                 songCache
         );
+    }
+
+    /**
+     * Asynchronously restores the last playing song from the server without auto-playing.
+     * Fetches the song info, caches the audio, and sets it as the player source in paused state.
+     */
+    private void restoreLastPlayingSong(String songId) {
+        CompletableFuture.supplyAsync(() -> {
+            try {
+                var serverClient = this.client.get();
+                if (serverClient == null) {
+                    return null;
+                }
+                return serverClient.getSong(songId);
+            } catch (Exception e) {
+                log.warn("Failed to restore last playing song: songId={}", songId, e);
+                return null;
+            }
+        }, ASYNC_EXECUTOR).thenAcceptAsync(songInfo -> {
+            if (songInfo == null) {
+                return;
+            }
+            try {
+                UUID requestId = UUID.randomUUID();
+                this.setState(old -> old.with()
+                        .nowPlaying(Optional.of(new NowPlaying(
+                                songInfo,
+                                LOADING,
+                                requestId,
+                                new BufferingProgress(songInfo.size(), 0),
+                                Optional.empty()
+                        )))
+                        .build()
+                );
+                LoadSongResult song = songCache.getSong(new CacheSong(
+                        SERVER_ID,
+                        songInfo.id(),
+                        songInfo.transcodeInfo(),
+                        songInfo.suffix(),
+                        songInfo.size(),
+                        (total, count) -> {}
+                ));
+                this.player.setSource(
+                        new AudioSource(song.uri(), songInfo.duration()),
+                        false
+                );
+                this.setState(old -> old.withNowPlaying(Optional.of(new NowPlaying(
+                        songInfo,
+                        READY,
+                        requestId,
+                        new BufferingProgress(1000, 1000),
+                        Optional.of(song)
+                ))));
+                log.info("Restored last playing song: id={} title={}", songInfo.id(), songInfo.title());
+            } catch (Exception e) {
+                log.warn("Failed to load last playing song: songId={}", songId, e);
+            }
+        }, ASYNC_EXECUTOR);
     }
 
     private AppState buildState() {
@@ -453,9 +518,16 @@ public class AppManager {
         var state = this.player.getState();
         // Convert linear volume to cubic for storage (setVolume expects cubic)
         double cubicVolume = PlaybinPlayer.toVolumeCubic(state.volume());
+        var currentSongId = this.currentState.getValue().nowPlaying()
+                .map(NowPlaying::song)
+                .map(SongInfo::id)
+                .orElse(null);
+        PlayerStateJson.PlaybackPosition playbackPosition = currentSongId != null
+                ? new PlayerStateJson.PlaybackPosition(currentSongId, 0, 0)
+                : null;
         var playerConfig = new PlayerConfig(
                 SERVER_ID,
-                new PlayerStateJson(cubicVolume, state.muted(), null),
+                new PlayerStateJson(cubicVolume, state.muted(), playbackPosition),
                 java.time.Instant.now()
         );
         try {
