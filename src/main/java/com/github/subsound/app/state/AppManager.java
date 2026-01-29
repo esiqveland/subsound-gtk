@@ -29,8 +29,6 @@ import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
 import org.gnome.adw.ToastOverlay;
 import org.gnome.gio.ListStore;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,11 +99,19 @@ public class AppManager {
         client.ifPresent(this.client::set);
 
         this.database = new Database();
+        this.playerConfigService = new PlayerConfigService(this.database);
+        // Apply saved player preferences (volume/mute) from DB
+        // Must be done after currentState is initialized since setVolume/setMute trigger state changes
+        var savedConfig = this.playerConfigService.loadPlayerConfig();
+        var savedPlayerState = savedConfig
+                .map(PlayerConfig::playerState)
+                .orElse(PlayerStateJson.defaultState());
+
+        var savedServerId = savedConfig.map(PlayerConfig::serverId).orElse(SERVER_ID);
         this.dbService = new DatabaseServerService(
-                UUID.fromString(SERVER_ID),
+                UUID.fromString(savedServerId),
                 this.database
         );
-        this.playerConfigService = new PlayerConfigService(this.database);
 
         player.onStateChanged(next -> {
             this.setState(old -> old.withPlayer(next));
@@ -119,19 +125,14 @@ public class AppManager {
                 .subscribeOn(Schedulers.io())
                 .forEach(next -> this.notifyListeners());
 
-        // Apply saved player preferences (volume/mute) from DB
-        // Must be done after currentState is initialized since setVolume/setMute trigger state changes
-        var savedConfig = this.playerConfigService.loadPlayerConfig();
-        var playerState = savedConfig
-                .map(PlayerConfig::playerState)
-                .orElse(PlayerStateJson.defaultState());
-        this.player.setVolume(playerState.volume());
-        this.player.setMute(playerState.muted());
+        // restore saved volume:
+        this.player.setVolume(savedPlayerState.volume());
+        this.player.setMute(savedPlayerState.muted());
 
         // Restore last playing song from DB (without auto-playing)
-        var lastPlayback = playerState.currentPlayback();
+        var lastPlayback = savedPlayerState.currentPlayback();
         if (lastPlayback != null && lastPlayback.songId() != null && !lastPlayback.songId().isBlank()) {
-            restoreLastPlayingSong(lastPlayback.songId());
+            restoreLastPlayingSong(lastPlayback);
         }
 
         this.downloadManager = new DownloadManager(
@@ -144,7 +145,12 @@ public class AppManager {
      * Asynchronously restores the last playing song from the server without auto-playing.
      * Fetches the song info, caches the audio, and sets it as the player source in paused state.
      */
-    private void restoreLastPlayingSong(@NonNull String songId) {
+    private void restoreLastPlayingSong(PlayerStateJson.PlaybackPosition storedPlayback) {
+        var songId = storedPlayback.songId();
+        if (songId == null || songId.isBlank()) {
+            // cant restore this...
+            return;
+        }
         CompletableFuture.supplyAsync(() -> {
             try {
                 var serverClient = this.client.get();
@@ -153,15 +159,22 @@ public class AppManager {
                 }
                 return serverClient.getSong(songId);
             } catch (Exception e) {
-                log.warn("Failed to restore last playing song: songId={}", songId, e);
-                return null;
+                throw new RuntimeException("Failed to restore last playing song: songId=%s".formatted(songId), e);
             }
-        }, ASYNC_EXECUTOR).thenAcceptAsync(songInfo -> {
-            if (songInfo == null) {
-                return;
-            }
-            this.handleAction(new PlayerAction.PlaySong(songInfo, true));
-        }, ASYNC_EXECUTOR);
+        }, ASYNC_EXECUTOR)
+                .thenComposeAsync(songInfo ->
+                        this.handleAction(new PlayerAction.PlaySong(songInfo, true)).thenApply(v -> songInfo),
+                ASYNC_EXECUTOR)
+                .thenComposeAsync(songInfo -> {
+                    var position = Duration.ofMillis(storedPlayback.positionMillis());
+                    log.info("restoreLastPlayingSong: seekTo position={}ms", position.toMillis());
+                    return this.handleAction(new PlayerAction.SeekTo(position)).thenApply(v -> songInfo);
+                }, ASYNC_EXECUTOR)
+                .thenAccept(songInfo -> log.info("restoreLastPlayingSong: restored songId={} title={}", songId, songInfo.title()))
+                .exceptionally(throwable -> {
+                    log.warn("Failed to restore last playing song: songId={}", songId, throwable);
+                    return null;
+                });
     }
 
     private AppState buildState() {
@@ -489,12 +502,17 @@ public class AppManager {
         var state = this.player.getState();
         // Convert linear volume to cubic for storage (setVolume expects cubic)
         double cubicVolume = PlaybinPlayer.toVolumeCubic(state.volume());
-        var currentSongId = this.currentState.getValue().nowPlaying()
+        var playerState = this.currentState.getValue();
+        var currentSongId = playerState.nowPlaying()
                 .map(NowPlaying::song)
                 .map(SongInfo::id)
                 .orElse(null);
+        var currentSource = this.player.getState().source();
+        var playerPosition = currentSource.flatMap(Source::position).orElse(Duration.ZERO);
+        var playerDuration = currentSource.flatMap(Source::duration).orElse(Duration.ZERO);
+
         PlayerStateJson.PlaybackPosition playbackPosition = currentSongId != null
-                ? new PlayerStateJson.PlaybackPosition(currentSongId, 0, 0)
+                ? new PlayerStateJson.PlaybackPosition(currentSongId, playerPosition.toMillis(), playerDuration.toMillis())
                 : null;
         var playerConfig = new PlayerConfig(
                 SERVER_ID,
