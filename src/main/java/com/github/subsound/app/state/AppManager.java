@@ -102,7 +102,7 @@ public class AppManager {
 
         this.database = new Database();
         this.dbService = new DatabaseServerService(
-                UUID.nameUUIDFromBytes(SERVER_ID.getBytes()),
+                UUID.fromString(SERVER_ID),
                 this.database
         );
         this.playerConfigService = new PlayerConfigService(this.database);
