@@ -14,6 +14,9 @@ import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.persistence.database.Database;
 import com.github.subsound.persistence.database.DatabaseServerService;
 import com.github.subsound.persistence.database.DownloadQueueItem;
+import com.github.subsound.persistence.database.PlayerConfig;
+import com.github.subsound.persistence.database.PlayerConfigService;
+import com.github.subsound.persistence.database.PlayerStateJson;
 import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.sound.PlaybinPlayer.AudioSource;
 import com.github.subsound.sound.PlaybinPlayer.Source;
@@ -69,6 +72,7 @@ public class AppManager {
     private final ScheduledExecutorService preferenceSaveScheduler = Executors.newSingleThreadScheduledExecutor();
     private final Database database;
     private final DatabaseServerService dbService;
+    private final PlayerConfigService playerConfigService;
     private final DownloadManager downloadManager;
     private volatile ScheduledFuture<?> pendingPreferenceSave;
 
@@ -99,6 +103,7 @@ public class AppManager {
                 UUID.nameUUIDFromBytes(SERVER_ID.getBytes()),
                 this.database
         );
+        this.playerConfigService = new PlayerConfigService(this.database);
 
         player.onStateChanged(next -> {
             this.setState(old -> old.withPlayer(next));
@@ -112,11 +117,14 @@ public class AppManager {
                 .subscribeOn(Schedulers.io())
                 .forEach(next -> this.notifyListeners());
 
-        // Apply saved player preferences (volume/mute) from config
+        // Apply saved player preferences (volume/mute) from DB
         // Must be done after currentState is initialized since setVolume/setMute trigger state changes
-        var playerPrefs = config.playerPreferences;
-        this.player.setVolume(playerPrefs.volume());
-        this.player.setMute(playerPrefs.muted());
+        var savedConfig = this.playerConfigService.loadPlayerConfig();
+        var playerState = savedConfig
+                .map(PlayerConfig::playerState)
+                .orElse(PlayerStateJson.defaultState());
+        this.player.setVolume(playerState.volume());
+        this.player.setMute(playerState.muted());
         this.downloadManager = new DownloadManager(
                 dbService,
                 songCache
@@ -353,7 +361,6 @@ public class AppManager {
             switch (action) {
                 // config actions:
                 case PlayerAction.SaveConfig settings -> this.saveConfig(settings);
-                case PlayerAction.SavePlayerPreferences prefs -> this.savePlayerPreferences(prefs);
                 case PlayerAction.Toast t -> this.toast(t);
 
                 // player actions:
@@ -413,20 +420,6 @@ public class AppManager {
         }
     }
 
-    private void savePlayerPreferences(PlayerAction.SavePlayerPreferences prefs) {
-        this.config.playerPreferences = new Config.PlayerPreferences(
-                prefs.volume(),
-                prefs.muted()
-        );
-        try {
-            this.config.saveToFile();
-            log.info("saved player preferences: volume={}, muted={}", prefs.volume(), prefs.muted());
-        } catch (IOException e) {
-            log.error("failed to save player preferences", e);
-            throw new RuntimeException(e);
-        }
-    }
-
     /**
      * Saves player preferences with debouncing (500ms delay).
      * If called multiple times within the delay, only the last call will actually save.
@@ -460,14 +453,15 @@ public class AppManager {
         var state = this.player.getState();
         // Convert linear volume to cubic for storage (setVolume expects cubic)
         double cubicVolume = PlaybinPlayer.toVolumeCubic(state.volume());
-        this.config.playerPreferences = new Config.PlayerPreferences(
-                cubicVolume,
-                state.muted()
+        var playerConfig = new PlayerConfig(
+                SERVER_ID,
+                new PlayerStateJson(cubicVolume, state.muted(), null),
+                java.time.Instant.now()
         );
         try {
-            this.config.saveToFile();
+            this.playerConfigService.savePlayerConfig(playerConfig);
             log.info("saveCurrentPlayerPreferencesImmediately: saved player preferences: volume={} (linear={}), muted={}", cubicVolume, state.volume(), state.muted());
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("failed to save player preferences", e);
         }
     }
