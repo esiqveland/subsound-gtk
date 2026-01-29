@@ -171,6 +171,10 @@ public class PlaybinPlayer implements Player {
         if (startPlaying) {
             var playing = this.playbinEl.setState(State.PLAYING);
             System.out.println("Player: Change source to src=" + fileUri + ": PLAYING=" + playing.name());
+        } else {
+            // Transition to PAUSED to preroll the media (required for seeking to work)
+            var paused = this.playbinEl.setState(State.PAUSED);
+            System.out.println("Player: Change source to src=" + fileUri + ": PAUSED=" + paused.name());
         }
         this.notifyState();
     }
