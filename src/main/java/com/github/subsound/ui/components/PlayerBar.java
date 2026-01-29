@@ -16,11 +16,13 @@ import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Scale;
 import org.gnome.gtk.Widget;
 import org.gnome.pango.EllipsizeMode;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.github.subsound.app.state.AppManager.NowPlaying.State.LOADING;
@@ -244,6 +246,12 @@ public class PlayerBar extends Box implements AppManager.StateListener {
         mainBar.setCenterWidget(centerWidget);
         mainBar.packEnd(volumeBox);
         this.append(mainBar);
+
+        // make sure we update if a state with something playing was already loaded at start:
+        var startState = this.currentState.get();
+        if (startState.nowPlaying().isPresent()) {
+            this.onStateChanged(startState.withNowPlaying(Optional.empty()), startState);
+        }
     }
 
     private void onPrev() {
@@ -264,9 +272,13 @@ public class PlayerBar extends Box implements AppManager.StateListener {
 
     @Override
     public void onStateChanged(AppState state) {
+        var prevState = this.currentState.get();
+        onStateChanged(prevState, state);
+    }
+
+    public void onStateChanged(@Nullable AppState prevState, AppState state) {
         var player = state.player();
         var playing = state.nowPlaying();
-        var prevState = this.currentState.get();
 
         Optional<CoverArt> nextCover = playing.flatMap(st -> st.song().coverArt());
         try {

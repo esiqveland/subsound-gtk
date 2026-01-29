@@ -1,6 +1,7 @@
 package com.github.subsound.ui.views;
 
 import com.github.subsound.app.state.AppManager;
+import com.github.subsound.app.state.PlayerAction;
 import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import org.gnome.gtk.Align;
@@ -86,7 +87,7 @@ public class TestPlayerPage extends Box {
             var uri = sample.uri();
             btn.onClicked(() -> {
                 System.out.println("Btn: change source to=" + btnName);
-                this.player.loadSource(sample.toSongInfo());
+                this.player.loadSource(new PlayerAction.PlaySong(sample.toSongInfo()));
             });
             return btn;
         }).toList();

@@ -29,6 +29,8 @@ import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
 import org.gnome.adw.ToastOverlay;
 import org.gnome.gio.ListStore;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,7 +95,7 @@ public class AppManager {
         this.playQueue = new PlayQueue(
                 player,
                 nextState -> this.setState(old -> old.withQueue(nextState)),
-                this::loadSource
+                songInfo -> loadSource(new PlayerAction.PlaySong(songInfo))
         );
         this.client = new AtomicReference<>();
         client.ifPresent(this.client::set);
@@ -142,7 +144,7 @@ public class AppManager {
      * Asynchronously restores the last playing song from the server without auto-playing.
      * Fetches the song info, caches the audio, and sets it as the player source in paused state.
      */
-    private void restoreLastPlayingSong(String songId) {
+    private void restoreLastPlayingSong(@NonNull String songId) {
         CompletableFuture.supplyAsync(() -> {
             try {
                 var serverClient = this.client.get();
@@ -158,41 +160,7 @@ public class AppManager {
             if (songInfo == null) {
                 return;
             }
-            try {
-                UUID requestId = UUID.randomUUID();
-                this.setState(old -> old.with()
-                        .nowPlaying(Optional.of(new NowPlaying(
-                                songInfo,
-                                LOADING,
-                                requestId,
-                                new BufferingProgress(songInfo.size(), 0),
-                                Optional.empty()
-                        )))
-                        .build()
-                );
-                LoadSongResult song = songCache.getSong(new CacheSong(
-                        SERVER_ID,
-                        songInfo.id(),
-                        songInfo.transcodeInfo(),
-                        songInfo.suffix(),
-                        songInfo.size(),
-                        (total, count) -> {}
-                ));
-                this.player.setSource(
-                        new AudioSource(song.uri(), songInfo.duration()),
-                        false
-                );
-                this.setState(old -> old.withNowPlaying(Optional.of(new NowPlaying(
-                        songInfo,
-                        READY,
-                        requestId,
-                        new BufferingProgress(1000, 1000),
-                        Optional.of(song)
-                ))));
-                log.info("Restored last playing song: id={} title={}", songInfo.id(), songInfo.title());
-            } catch (Exception e) {
-                log.warn("Failed to load last playing song: songId={}", songId, e);
-            }
+            this.handleAction(new PlayerAction.PlaySong(songInfo, true));
         }, ASYNC_EXECUTOR);
     }
 
@@ -302,7 +270,7 @@ public class AppManager {
     }
 
 
-    public CompletableFuture<LoadSongResult> loadSource(SongInfo songInfo) {
+    public CompletableFuture<LoadSongResult> loadSource(PlayerAction.PlaySong songInfo) {
         return CompletableFuture.supplyAsync(
                 () -> this.loadSourceSync(songInfo),
                 ASYNC_EXECUTOR
@@ -318,7 +286,9 @@ public class AppManager {
         void update(ProgressUpdate u);
     }
 
-    private LoadSongResult loadSourceSync(SongInfo songInfo) {
+    private LoadSongResult loadSourceSync(PlayerAction.PlaySong playCmd) {
+        var songInfo = playCmd.song();
+        boolean startPaused = playCmd.startPaused();
         this.pause();
         UUID requestId = UUID.randomUUID();
         this.setState(old -> old.with()
@@ -371,9 +341,10 @@ public class AppManager {
             // we changed song while loading. Ignore this and do nothing:
             return song;
         }
+        boolean startPlaying = !startPaused;
         this.player.setSource(
                 new AudioSource(song.uri(), songInfo.duration()),
-                true
+                startPlaying
         );
         this.setState(old -> old.withNowPlaying(Optional.of(new NowPlaying(
                 songInfo,
@@ -446,7 +417,7 @@ public class AppManager {
                 // API actions
                 case PlayerAction.Star a -> this.starSong(a);
                 case PlayerAction.Unstar a -> this.unstarSong(a);
-                case PlayerAction.PlaySong playSong -> this.loadSource(playSong.song());
+                case PlayerAction.PlaySong playSong -> this.loadSource(playSong);
                 case PlayerAction.AddToPlaylist a -> this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Add to playlist: not implemented yet")));
                 case PlayerAction.AddToDownloadQueue a -> {
                     this.downloadManager.enqueue(a.song());

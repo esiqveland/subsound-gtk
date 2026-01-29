@@ -1,6 +1,7 @@
 package com.github.subsound;
 
 import com.github.subsound.app.state.AppManager;
+import com.github.subsound.app.state.PlayerAction;
 import com.github.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
 import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.ui.components.AppNavigation;
@@ -236,7 +237,8 @@ public class MainApplication {
             if (appManager.getConfig().isTestpageEnabled) {
                 var testPlayerPage = new TestPlayerPage(this.appManager);
                 if (!testPlayerPage.knownSongs.isEmpty()) {
-                    this.appManager.loadSource(testPlayerPage.knownSongs.getFirst().toSongInfo()).join();
+                    var songInfo = testPlayerPage.knownSongs.getFirst().toSongInfo();
+                    this.appManager.loadSource(new PlayerAction.PlaySong(songInfo)).join();
                 }
                 ViewStackPage testPage = viewStack.addTitled(testPlayerPage, "testPage", "Testpage");
             }

@@ -2,6 +2,7 @@ package com.github.subsound.app.state;
 
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.ui.components.SettingsPage.SettingsInfo;
+import org.gnome.adw.Toast;
 
 import java.time.Duration;
 import java.util.List;
@@ -19,7 +20,11 @@ public sealed interface PlayerAction {
         }
     }
     record PlayPositionInQueue(int position) implements PlayerAction {}
-    record PlaySong(SongInfo song) implements PlayerAction {}
+    record PlaySong(SongInfo song, boolean startPaused) implements PlayerAction {
+        public PlaySong(SongInfo song) {
+            this(song, false);
+        }
+    }
     record Enqueue(SongInfo song) implements PlayerAction {}
     record EnqueueLast(SongInfo song) implements PlayerAction {}
     record RemoveFromQueue(int position) implements PlayerAction {}
