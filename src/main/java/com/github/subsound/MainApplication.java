@@ -73,8 +73,9 @@ public class MainApplication {
     private final PlayerBar playerBar;
     private final Box bottomBar;
     private final Shortcut playPauseShortcut;
+    private final ServerBadge serverBadge;
     private AppNavigation appNavigation;
-    private CssProvider mainProvider = CssProvider.builder().build();
+    private final CssProvider mainProvider = CssProvider.builder().build();
 
 
     public MainApplication(AppManager appManager) {
@@ -111,7 +112,7 @@ public class MainApplication {
                 .build();
 
         // Server badge at the top
-        var serverBadge = new ServerBadge(appManager);
+        this.serverBadge = new ServerBadge(appManager);
         popoverContent.append(serverBadge);
 
         var configureServerButton = Button.builder()
@@ -349,4 +350,7 @@ public class MainApplication {
                 .setHexpand(true);
     }
 
+    public void shutdown() {
+        this.serverBadge.shutdown();
+    }
 }

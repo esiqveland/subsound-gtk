@@ -236,4 +236,11 @@ public class ServerBadge extends Box {
         }
         return Optional.ofNullable(serverHost);
     }
+
+    public void shutdown() {
+        if (pingTask != null) {
+            pingTask.cancel(false);
+        }
+        scheduler.shutdown();
+    }
 }

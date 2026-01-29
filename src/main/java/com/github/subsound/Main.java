@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Main {
     private final static Logger log = LoggerFactory.getLogger(Main.class);
@@ -55,12 +56,18 @@ public class Main {
         });
 
         try {
+            var mainAppRef = new AtomicReference<MainApplication>();
             var app = new Application("com.github.Subsound", ApplicationFlags.DEFAULT_FLAGS);
             app.onActivate(() -> {
                 MainApplication mainApp = new MainApplication(appManager);
+                mainAppRef.set(mainApp);
                 mainApp.runActivate(app);
             });
             app.onShutdown(() -> {
+                var mainApp = mainAppRef.get();
+                if (mainApp != null) {
+                    mainApp.shutdown();
+                }
                 mprisController.stop();
                 player.quit();
                 appManager.shutdown();
