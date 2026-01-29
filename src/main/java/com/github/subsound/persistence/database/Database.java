@@ -98,6 +98,7 @@ public class Database {
         migrations.add(new MigrationV4());
         migrations.add(new MigrationV5());
         migrations.add(new MigrationV6());
+        migrations.add(new MigrationV7());
         return migrations;
     }
 
@@ -253,6 +254,26 @@ public class Database {
         public void apply(Connection conn) throws SQLException {
             try (Statement stmt = conn.createStatement()) {
                 stmt.execute("ALTER TABLE download_queue ADD COLUMN checksum TEXT");
+            }
+        }
+    }
+
+    private static class MigrationV7 implements Migration {
+        @Override
+        public int version() {
+            return 7;
+        }
+
+        @Override
+        public void apply(Connection conn) throws SQLException {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS player_config (
+                        config_key INTEGER PRIMARY KEY,
+                        config_json TEXT NOT NULL,
+                        updated_at INTEGER DEFAULT (strftime('%s', 'now'))
+                    )
+                """);
             }
         }
     }
