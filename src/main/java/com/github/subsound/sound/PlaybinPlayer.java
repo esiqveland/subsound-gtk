@@ -346,6 +346,17 @@ public class PlaybinPlayer implements Player {
         this.notifyState();
     }
 
+    /**
+     * Blocks until the GStreamer pipeline has finished its pending state transition.
+     * Call this after setSource with startPlaying=false before seeking.
+     */
+    public void waitUntilReady() {
+        var stateOut = new Out<State>();
+        var pendingOut = new Out<State>();
+        var result = playbinEl.getState(stateOut, pendingOut, Gst.CLOCK_TIME_NONE);
+        log.info("waitUntilReady: result={} state={} pending={}", result.name(), stateOut.get(), pendingOut.get());
+    }
+
     public void seekTo(Duration position) {
         //playbin.seek(1.0, Format.TIME, SeekFlags.FLUSH, SeekType.SET, 0, SeekType.NONE, 0);
         playbinEl.seekSimple(Format.TIME, Set.of(SeekFlags.ACCURATE, SeekFlags.FLUSH), position.toNanos());

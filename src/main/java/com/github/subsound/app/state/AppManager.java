@@ -143,7 +143,6 @@ public class AppManager {
 
     /**
      * Asynchronously restores the last playing song from the server without auto-playing.
-     * Fetches the song info, caches the audio, and sets it as the player source in paused state.
      */
     private void restoreLastPlayingSong(PlayerStateJson.PlaybackPosition storedPlayback) {
         var songId = storedPlayback.songId();
@@ -162,8 +161,7 @@ public class AppManager {
                 throw new RuntimeException("Failed to restore last playing song: songId=%s".formatted(songId), e);
             }
         }, ASYNC_EXECUTOR)
-                .thenComposeAsync(songInfo ->
-                        this.handleAction(new PlayerAction.PlaySong(songInfo, true)).thenApply(v -> songInfo),
+                .thenComposeAsync(songInfo -> this.loadSource(new PlayerAction.PlaySong(songInfo, true)).thenApply(v -> songInfo),
                 ASYNC_EXECUTOR)
                 .thenComposeAsync(songInfo -> {
                     var position = Duration.ofMillis(storedPlayback.positionMillis());
@@ -359,6 +357,7 @@ public class AppManager {
                 new AudioSource(song.uri(), songInfo.duration()),
                 startPlaying
         );
+
         this.setState(old -> old.withNowPlaying(Optional.of(new NowPlaying(
                 songInfo,
                 READY,
@@ -366,6 +365,12 @@ public class AppManager {
                 new BufferingProgress(1000, 1000),
                 Optional.of(song)
         ))));
+
+        // block after updating UI NowPlaying state
+        if (!startPlaying) {
+            // Block until GStreamer has prerolled (reached PAUSED), so subsequent seeks work.
+            this.player.waitUntilReady();
+        }
         return song;
     }
 
