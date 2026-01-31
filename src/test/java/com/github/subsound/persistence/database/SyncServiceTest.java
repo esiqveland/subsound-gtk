@@ -57,6 +57,7 @@ public class SyncServiceTest {
         ArtistAlbumInfo albumSimple = new ArtistAlbumInfo("album-1", "Album One", 1, "artist-1", "Artist One", Duration.ofMinutes(3), Optional.empty(), Optional.of(2023), Optional.empty(), Optional.empty());
         ArtistInfo artistInfo = new ArtistInfo("artist-1", "Artist One", 1, Optional.empty(), Optional.empty(), List.of(albumSimple), new Biography("bio", "bio", "link"));
         when(serverClient.getArtistInfo("artist-1")).thenReturn(artistInfo);
+        when(serverClient.getPlaylists()).thenReturn(new ServerClient.ListPlaylists(List.of()));
 
         // Mock Album Info
         SongInfo songInfo = mock(SongInfo.class);
