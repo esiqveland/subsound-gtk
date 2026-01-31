@@ -43,7 +43,8 @@ public class DatabaseServerServiceTest {
                 Duration.ofMinutes(45),
                 Optional.of(now),
                 Optional.of("cover-1"),
-                now.minus(1, ChronoUnit.DAYS)
+                now.minus(1, ChronoUnit.DAYS),
+                Optional.of("Rock")
         );
 
         Album album2 = new Album(
@@ -57,7 +58,8 @@ public class DatabaseServerServiceTest {
                 Duration.ofMinutes(50),
                 Optional.empty(),
                 Optional.empty(),
-                now
+                now,
+                Optional.empty()
         );
 
         Album album3 = new Album(
@@ -71,7 +73,8 @@ public class DatabaseServerServiceTest {
                 Duration.ofMinutes(30),
                 Optional.empty(),
                 Optional.of("cover-3"),
-                now.minus(2, ChronoUnit.DAYS)
+                now.minus(2, ChronoUnit.DAYS),
+                Optional.empty()
         );
 
         // Test insert
@@ -188,7 +191,13 @@ public class DatabaseServerServiceTest {
                 Duration.ofMinutes(3),
                 Optional.of(now),
                 Optional.of("cover-1"),
-                now
+                now,
+                Optional.of(1),
+                Optional.of(1),
+                Optional.of(320),
+                5000000L,
+                "Rock",
+                "mp3"
         );
 
         Song song2 = new Song(
@@ -202,7 +211,13 @@ public class DatabaseServerServiceTest {
                 Duration.ofMinutes(4),
                 Optional.empty(),
                 Optional.empty(),
-                now
+                now,
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                0L,
+                "",
+                ""
         );
 
         Song song3 = new Song(
@@ -216,7 +231,13 @@ public class DatabaseServerServiceTest {
                 Duration.ofMinutes(5),
                 Optional.of(now.minus(1, ChronoUnit.HOURS)),
                 Optional.of("cover-3"),
-                now
+                now,
+                Optional.of(3),
+                Optional.empty(),
+                Optional.of(256),
+                8000000L,
+                "Pop",
+                "flac"
         );
 
         // Test insert

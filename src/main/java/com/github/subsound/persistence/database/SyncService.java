@@ -25,19 +25,21 @@ public class SyncService {
         this.serverId = serverId;
     }
 
-    record SyncStats(int artists, int albums, int songs) {}
+    public record SyncStats(int artists, int albums, int songs, int playlists) {}
+
     public SyncStats syncAll() {
         logger.info("Starting full sync for server: {}", serverId);
         try {
             var artists = serverClient.getArtists().list();
             logger.info("Fetched {} artists", artists.size());
-            var stats = new SyncStats(0, 0, 0);
+            var stats = new SyncStats(0, 0, 0, 0);
             for (ArtistEntry artistEntry : artists) {
                 var s = syncArtist(artistEntry.id());
                 stats = new SyncStats(
                         stats.artists + s.artists,
                         stats.albums + s.albums,
-                        stats.songs + s.songs
+                        stats.songs + s.songs,
+                        stats.playlists
                 );
             }
             logger.info("Synced {} artists, {} albums, {} songs", stats.artists, stats.albums, stats.songs);
@@ -64,12 +66,12 @@ public class SyncService {
 
         int songs = 0;
         for (ArtistAlbumInfo albumInfoSimple : artistInfo.albums()) {
-            songs += syncAlbum(albumInfoSimple.id());
+            songs += syncAlbum(albumInfoSimple.id(), albumInfoSimple.genre());
         }
-        return new SyncStats(1, artistInfo.albums().size(), songs);
+        return new SyncStats(1, artistInfo.albums().size(), songs, 0);
     }
 
-    private int syncAlbum(String albumId) {
+    private int syncAlbum(String albumId, java.util.Optional<String> genre) {
         AlbumInfo albumInfo = serverClient.getAlbumInfo(albumId);
         Album album = new Album(
                 albumInfo.id(),
@@ -82,7 +84,8 @@ public class SyncService {
                 albumInfo.duration(),
                 albumInfo.starredAt(),
                 albumInfo.coverArt().map(CoverArt::coverArtId),
-                java.time.Instant.now()
+                java.time.Instant.now(),
+                genre
         );
         databaseServerService.insert(album);
 
@@ -98,10 +101,47 @@ public class SyncService {
                     songInfo.duration(),
                     songInfo.starred(),
                     songInfo.coverArt().map(ca -> ca.coverArtId()),
-                    java.time.Instant.now()
+                    java.time.Instant.now(),
+                    songInfo.trackNumber(),
+                    songInfo.discNumber(),
+                    songInfo.bitRate(),
+                    songInfo.size(),
+                    songInfo.genre(),
+                    songInfo.suffix()
             );
             databaseServerService.insert(song);
         }
         return albumInfo.songs().size();
+    }
+
+    private int syncPlaylists() {
+        try {
+            var playlists = serverClient.getPlaylists().playlists();
+            logger.info("Fetched {} playlists", playlists.size());
+            for (var playlistSimple : playlists) {
+                var playlist = serverClient.getPlaylist(playlistSimple.id());
+                PlaylistRow row = new PlaylistRow(
+                        playlist.id(),
+                        serverId,
+                        playlist.name(),
+                        playlist.songCount(),
+                        playlist.songs().stream()
+                                .map(SongInfo::duration)
+                                .reduce(java.time.Duration.ZERO, java.time.Duration::plus),
+                        playlist.coverArtId().map(CoverArt::coverArtId),
+                        playlist.created(),
+                        java.time.Instant.now()
+                );
+                databaseServerService.insert(row);
+                databaseServerService.deletePlaylistSongs(playlist.id());
+                for (int i = 0; i < playlist.songs().size(); i++) {
+                    databaseServerService.insertPlaylistSong(playlist.id(), playlist.songs().get(i).id(), i);
+                }
+            }
+            return playlists.size();
+        } catch (Exception e) {
+            logger.error("Error syncing playlists", e);
+            return 0;
+        }
     }
 }

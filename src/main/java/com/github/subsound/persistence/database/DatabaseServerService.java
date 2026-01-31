@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -33,8 +32,8 @@ public class DatabaseServerService {
 
     public void insert(Album album) {
         String sql = """
-                INSERT INTO albums (id, server_id, artist_id, name, song_count, year, artist_name, duration_ms, starred_at_ms, cover_art_id, added_at_ms)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO albums (id, server_id, artist_id, name, song_count, year, artist_name, duration_ms, starred_at_ms, cover_art_id, added_at_ms, genre)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -61,6 +60,11 @@ public class DatabaseServerService {
                 pstmt.setNull(10, Types.VARCHAR);
             }
             pstmt.setLong(11, album.addedAt().toEpochMilli());
+            if (album.genre().isPresent()) {
+                pstmt.setString(12, album.genre().get());
+            } else {
+                pstmt.setNull(12, Types.VARCHAR);
+            }
             pstmt.executeUpdate();
         } catch (SQLException e) {
             logger.error("Failed to insert album", e);
@@ -133,6 +137,9 @@ public class DatabaseServerService {
         String coverArtId = rs.getString("cover_art_id");
         Optional<String> coverArtIdOptional = Optional.ofNullable(coverArtId);
 
+        String genre = rs.getString("genre");
+        Optional<String> genreOptional = Optional.ofNullable(genre);
+
         return new Album(
                 rs.getString("id"),
                 UUID.fromString(rs.getString("server_id")),
@@ -144,12 +151,13 @@ public class DatabaseServerService {
                 Duration.ofMillis(rs.getLong("duration_ms")),
                 starredAt,
                 coverArtIdOptional,
-                Instant.ofEpochMilli(rs.getLong("added_at_ms"))
+                Instant.ofEpochMilli(rs.getLong("added_at_ms")),
+                genreOptional
         );
     }
 
     public void insert(Artist artist) {
-        String sql = "INSERT INTO artists (id, server_id, name, album_count, starred_at, cover_art_id, biography) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT OR REPLACE INTO artists (id, server_id, name, album_count, starred_at, cover_art_id, biography) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, artist.id());
@@ -218,7 +226,7 @@ public class DatabaseServerService {
     private Artist mapResultSetToArtist(ResultSet rs) throws SQLException {
         long starredAt = rs.getLong("starred_at");
         Optional<Instant> starredAtInstant = rs.wasNull() ? Optional.empty() : Optional.of(Instant.ofEpochMilli(starredAt));
-        
+
         String coverArtId = rs.getString("cover_art_id");
         Optional<String> coverArtIdOptional = Optional.ofNullable(coverArtId);
 
@@ -242,8 +250,8 @@ public class DatabaseServerService {
 
     public void insert(Song song) {
         String sql = """
-                INSERT INTO songs (id, server_id, album_id, name, year, artist_id, artist_name, duration_ms, starred_at_ms, cover_art_id, created_at_ms)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO songs (id, server_id, album_id, name, year, artist_id, artist_name, duration_ms, starred_at_ms, cover_art_id, created_at_ms, track_number, disc_number, bit_rate, size, genre, suffix)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -270,6 +278,24 @@ public class DatabaseServerService {
                 pstmt.setNull(10, Types.VARCHAR);
             }
             pstmt.setLong(11, song.createdAt().toEpochMilli());
+            if (song.trackNumber().isPresent()) {
+                pstmt.setInt(12, song.trackNumber().get());
+            } else {
+                pstmt.setNull(12, Types.INTEGER);
+            }
+            if (song.discNumber().isPresent()) {
+                pstmt.setInt(13, song.discNumber().get());
+            } else {
+                pstmt.setNull(13, Types.INTEGER);
+            }
+            if (song.bitRate().isPresent()) {
+                pstmt.setInt(14, song.bitRate().get());
+            } else {
+                pstmt.setNull(14, Types.INTEGER);
+            }
+            pstmt.setLong(15, song.size());
+            pstmt.setString(16, song.genre());
+            pstmt.setString(17, song.suffix());
             pstmt.executeUpdate();
         } catch (SQLException e) {
             logger.error("Failed to insert song", e);
@@ -279,7 +305,7 @@ public class DatabaseServerService {
 
     public List<Song> listSongsByAlbumId(String albumId) {
         List<Song> songs = new ArrayList<>();
-        String sql = "SELECT * FROM songs WHERE server_id = ? AND album_id = ?";
+        String sql = "SELECT * FROM songs WHERE server_id = ? AND album_id = ? ORDER BY disc_number, track_number";
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, this.serverId.toString());
@@ -342,6 +368,15 @@ public class DatabaseServerService {
         String coverArtId = rs.getString("cover_art_id");
         Optional<String> coverArtIdOptional = Optional.ofNullable(coverArtId);
 
+        int trackNumber = rs.getInt("track_number");
+        Optional<Integer> trackNumberOpt = rs.wasNull() ? Optional.empty() : Optional.of(trackNumber);
+
+        int discNumber = rs.getInt("disc_number");
+        Optional<Integer> discNumberOpt = rs.wasNull() ? Optional.empty() : Optional.of(discNumber);
+
+        int bitRate = rs.getInt("bit_rate");
+        Optional<Integer> bitRateOpt = rs.wasNull() ? Optional.empty() : Optional.of(bitRate);
+
         return new Song(
                 rs.getString("id"),
                 UUID.fromString(rs.getString("server_id")),
@@ -353,7 +388,140 @@ public class DatabaseServerService {
                 Duration.ofMillis(rs.getLong("duration_ms")),
                 starredAtInstant,
                 coverArtIdOptional,
-                Instant.ofEpochMilli(rs.getLong("created_at_ms"))
+                Instant.ofEpochMilli(rs.getLong("created_at_ms")),
+                trackNumberOpt,
+                discNumberOpt,
+                bitRateOpt,
+                rs.getLong("size"),
+                rs.getString("genre") != null ? rs.getString("genre") : "",
+                rs.getString("suffix") != null ? rs.getString("suffix") : ""
+        );
+    }
+
+    // Playlist methods
+
+    public void insert(PlaylistRow playlist) {
+        String sql = """
+                INSERT OR REPLACE INTO playlists (id, server_id, name, song_count, duration_ms, cover_art_id, created_at_ms, updated_at_ms)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, playlist.id());
+            pstmt.setString(2, playlist.serverId().toString());
+            pstmt.setString(3, playlist.name());
+            pstmt.setInt(4, playlist.songCount());
+            pstmt.setLong(5, playlist.duration().toMillis());
+            if (playlist.coverArtId().isPresent()) {
+                pstmt.setString(6, playlist.coverArtId().get());
+            } else {
+                pstmt.setNull(6, Types.VARCHAR);
+            }
+            pstmt.setLong(7, playlist.createdAt().toEpochMilli());
+            pstmt.setLong(8, playlist.updatedAt().toEpochMilli());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Failed to insert playlist", e);
+            throw new RuntimeException("Failed to insert playlist", e);
+        }
+    }
+
+    public void insertPlaylistSong(String playlistId, String songId, int sortOrder) {
+        String sql = "INSERT OR REPLACE INTO playlist_songs (playlist_id, server_id, song_id, sort_order) VALUES (?, ?, ?, ?)";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, playlistId);
+            pstmt.setString(2, this.serverId.toString());
+            pstmt.setString(3, songId);
+            pstmt.setInt(4, sortOrder);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Failed to insert playlist song", e);
+            throw new RuntimeException("Failed to insert playlist song", e);
+        }
+    }
+
+    public void deletePlaylistSongs(String playlistId) {
+        String sql = "DELETE FROM playlist_songs WHERE playlist_id = ? AND server_id = ?";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, playlistId);
+            pstmt.setString(2, this.serverId.toString());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Failed to delete playlist songs", e);
+            throw new RuntimeException("Failed to delete playlist songs", e);
+        }
+    }
+
+    public List<PlaylistRow> listPlaylists() {
+        List<PlaylistRow> playlists = new ArrayList<>();
+        String sql = "SELECT * FROM playlists WHERE server_id = ? ORDER BY name";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    playlists.add(mapResultSetToPlaylist(rs));
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to list playlists for server: {}", serverId, e);
+            throw new RuntimeException("Failed to list playlists", e);
+        }
+        return playlists;
+    }
+
+    public Optional<PlaylistRow> getPlaylistById(String playlistId) {
+        String sql = "SELECT * FROM playlists WHERE server_id = ? AND id = ?";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            pstmt.setString(2, playlistId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapResultSetToPlaylist(rs));
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to get playlist by id: {}", playlistId, e);
+            throw new RuntimeException("Failed to get playlist by id", e);
+        }
+        return Optional.empty();
+    }
+
+    public List<String> listPlaylistSongIds(String playlistId) {
+        List<String> songIds = new ArrayList<>();
+        String sql = "SELECT song_id FROM playlist_songs WHERE playlist_id = ? AND server_id = ? ORDER BY sort_order";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, playlistId);
+            pstmt.setString(2, this.serverId.toString());
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    songIds.add(rs.getString("song_id"));
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to list playlist songs for playlist: {}", playlistId, e);
+            throw new RuntimeException("Failed to list playlist songs", e);
+        }
+        return songIds;
+    }
+
+    private PlaylistRow mapResultSetToPlaylist(ResultSet rs) throws SQLException {
+        String coverArtId = rs.getString("cover_art_id");
+        Optional<String> coverArtIdOptional = Optional.ofNullable(coverArtId);
+
+        return new PlaylistRow(
+                rs.getString("id"),
+                UUID.fromString(rs.getString("server_id")),
+                rs.getString("name"),
+                rs.getInt("song_count"),
+                Duration.ofMillis(rs.getLong("duration_ms")),
+                coverArtIdOptional,
+                Instant.ofEpochMilli(rs.getLong("created_at_ms")),
+                Instant.ofEpochMilli(rs.getLong("updated_at_ms"))
         );
     }
 

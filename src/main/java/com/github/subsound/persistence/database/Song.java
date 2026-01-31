@@ -16,6 +16,12 @@ public record Song(
         Duration duration,
         Optional<Instant> starredAt,
         Optional<String> coverArtId,
-        Instant createdAt
+        Instant createdAt,
+        Optional<Integer> trackNumber,
+        Optional<Integer> discNumber,
+        Optional<Integer> bitRate,
+        long size,
+        String genre,
+        String suffix
 ) {
 }

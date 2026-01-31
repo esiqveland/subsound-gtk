@@ -99,6 +99,7 @@ public class Database {
         migrations.add(new MigrationV5());
         migrations.add(new MigrationV6());
         migrations.add(new MigrationV7());
+        migrations.add(new MigrationV8());
         return migrations;
     }
 
@@ -272,6 +273,53 @@ public class Database {
                         config_key INTEGER PRIMARY KEY,
                         config_json TEXT NOT NULL,
                         updated_at INTEGER DEFAULT (strftime('%s', 'now'))
+                    )
+                """);
+            }
+        }
+    }
+
+    private static class MigrationV8 implements Migration {
+        @Override
+        public int version() {
+            return 8;
+        }
+
+        @Override
+        public void apply(Connection conn) throws SQLException {
+            try (Statement stmt = conn.createStatement()) {
+                // Add missing song fields
+                stmt.execute("ALTER TABLE songs ADD COLUMN track_number INTEGER");
+                stmt.execute("ALTER TABLE songs ADD COLUMN disc_number INTEGER");
+                stmt.execute("ALTER TABLE songs ADD COLUMN bit_rate INTEGER");
+                stmt.execute("ALTER TABLE songs ADD COLUMN size INTEGER DEFAULT 0");
+                stmt.execute("ALTER TABLE songs ADD COLUMN genre TEXT DEFAULT ''");
+                stmt.execute("ALTER TABLE songs ADD COLUMN suffix TEXT DEFAULT ''");
+
+                // Add missing album fields
+                stmt.execute("ALTER TABLE albums ADD COLUMN genre TEXT");
+
+                // Playlist tables
+                stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS playlists (
+                        id TEXT,
+                        server_id TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        song_count INTEGER NOT NULL,
+                        duration_ms INTEGER NOT NULL,
+                        cover_art_id TEXT,
+                        created_at_ms INTEGER NOT NULL,
+                        updated_at_ms INTEGER NOT NULL,
+                        PRIMARY KEY (id, server_id)
+                    )
+                """);
+                stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS playlist_songs (
+                        playlist_id TEXT NOT NULL,
+                        server_id TEXT NOT NULL,
+                        song_id TEXT NOT NULL,
+                        sort_order INTEGER NOT NULL,
+                        PRIMARY KEY (playlist_id, server_id, song_id)
                     )
                 """);
             }

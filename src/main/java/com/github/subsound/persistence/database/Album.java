@@ -16,6 +16,7 @@ public record Album(
         Duration duration,
         Optional<Instant> starredAt,
         Optional<String> coverArtId,
-        Instant addedAt
+        Instant addedAt,
+        Optional<String> genre
 ) {
 }
