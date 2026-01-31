@@ -30,9 +30,9 @@ dependencies {
     implementation("org.xerial:sqlite-jdbc:3.50.3.0")
 
     implementation 'net.beardbot:subsonic-client:0.6.0'
-    implementation "com.github.ben-manes.caffeine:caffeine:3.2.0"
-    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-    implementation 'com.google.code.gson:gson:2.13.1'
+    implementation "com.github.ben-manes.caffeine:caffeine:3.2.3"
+    implementation 'com.squareup.okhttp3:okhttp:5.3.2'
+    implementation 'com.google.code.gson:gson:2.13.2'
     implementation 'de.androidpit:color-thief:1.1.2'
     implementation 'io.reactivex.rxjava3:rxjava:3.1.10'
     implementation 'com.github.akarnokd:rxjava3-fiber-interop:0.0.18'
@@ -49,16 +49,16 @@ dependencies {
     implementation 'org.slf4j:slf4j-api:2.0.16'
     implementation 'org.slf4j:jul-to-slf4j:2.0.16'
     implementation 'org.slf4j:jul-to-slf4j:2.0.16'
-    implementation 'ch.qos.logback:logback-classic:1.5.18'
+    implementation 'ch.qos.logback:logback-classic:1.5.26'
 
-    implementation 'com.twelvemonkeys.imageio:imageio-core:3.12.0'
-    implementation 'com.twelvemonkeys.imageio:imageio-metadata:3.12.0'
+    implementation 'com.twelvemonkeys.imageio:imageio-core:3.13.0'
+    implementation 'com.twelvemonkeys.imageio:imageio-metadata:3.13.0'
     // webp conversion support:
-    implementation 'com.twelvemonkeys.imageio:imageio-webp:3.12.0'
+    implementation 'com.twelvemonkeys.imageio:imageio-webp:3.13.0'
 
-    testImplementation 'org.assertj:assertj-core:3.27.3'
+    testImplementation 'org.assertj:assertj-core:3.27.7'
     testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.mockito:mockito-core:5.15.2'
+    testImplementation 'org.mockito:mockito-core:5.21.0'
 }
 
 // copy the Constants class and replace the version placeholder with the application version
