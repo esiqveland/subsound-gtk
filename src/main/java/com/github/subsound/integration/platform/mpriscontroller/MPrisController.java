@@ -238,8 +238,8 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
 
     @Override
     public <A> void Set(String _interfaceName, String _propertyName, A _value) {
-        switch (_interfaceName) {
-            case MprisApplicationProperties.dbusInterfaceName -> this.mprisApplicationProperties.Set(_interfaceName, _propertyName, _value);
+        if (MprisApplicationProperties.dbusInterfaceName.equals(_interfaceName)) {
+            this.mprisApplicationProperties.Set(_interfaceName, _propertyName, _value);
         }
     }
 
