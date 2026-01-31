@@ -42,7 +42,9 @@ public class SyncService {
                         stats.playlists
                 );
             }
-            logger.info("Synced {} artists, {} albums, {} songs", stats.artists, stats.albums, stats.songs);
+            int playlistCount = syncPlaylists();
+            stats = new SyncStats(stats.artists, stats.albums, stats.songs, playlistCount);
+            logger.info("Synced {} artists, {} albums, {} songs, {} playlists", stats.artists, stats.albums, stats.songs, stats.playlists);
             logger.info("Full sync completed for server: {}", serverId);
             return stats;
         } catch (Exception e) {

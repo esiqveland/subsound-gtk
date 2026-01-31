@@ -36,4 +36,5 @@ public sealed interface PlayerAction {
     // not strictly player actions:
     record SaveConfig(SettingsInfo next) implements PlayerAction {}
     record Toast(org.gnome.adw.Toast toast) implements PlayerAction {}
+    record SyncDatabase() implements PlayerAction {}
 }

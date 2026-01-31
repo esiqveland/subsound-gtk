@@ -95,9 +95,6 @@ public class AppManager {
                 nextState -> this.setState(old -> old.withQueue(nextState)),
                 songInfo -> loadSource(new PlayerAction.PlaySong(songInfo))
         );
-        this.client = new AtomicReference<>();
-        client.ifPresent(this.client::set);
-
         this.database = new Database();
         this.playerConfigService = new PlayerConfigService(this.database);
         // Apply saved player preferences (volume/mute) from DB
@@ -112,6 +109,9 @@ public class AppManager {
                 UUID.fromString(savedServerId),
                 this.database
         );
+
+        this.client = new AtomicReference<>();
+        client.ifPresent(c -> this.client.set(wrapWithCaching(c)));
 
         player.onStateChanged(next -> {
             this.setState(old -> old.withPlayer(next));
@@ -441,6 +441,17 @@ public class AppManager {
                     this.downloadManager.enqueue(a.song());
                     this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Added to download queue")));
                 }
+                case PlayerAction.SyncDatabase s -> {
+                    var syncService = new com.github.subsound.persistence.database.SyncService(
+                            this.client.get(), this.dbService, UUID.fromString(SERVER_ID)
+                    );
+                    var stats = syncService.syncAll();
+                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(
+                            "Synced %d artists, %d albums, %d songs".formatted(
+                                    stats.artists(), stats.albums(), stats.songs()
+                            )
+                    )));
+                }
             }
         });
     }
@@ -468,10 +479,16 @@ public class AppManager {
         try {
             this.config.saveToFile();
             var newClient = ServerClient.create(this.config.serverConfig);
-            this.client.set(newClient);
+            this.client.set(wrapWithCaching(newClient));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private ServerClient wrapWithCaching(ServerClient raw) {
+        return new com.github.subsound.persistence.CachingClient(
+                raw, this.dbService, SERVER_ID, this.config.dataDir
+        );
     }
 
     /**

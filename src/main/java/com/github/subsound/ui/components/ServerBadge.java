@@ -3,8 +3,10 @@ package com.github.subsound.ui.components;
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.integration.ServerClient;
 import com.github.subsound.utils.Utils;
+import com.github.subsound.app.state.PlayerAction;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
+import org.gnome.gtk.Button;
 import org.gnome.gtk.IconSize;
 import org.gnome.gtk.Image;
 import org.gnome.gtk.Label;
@@ -103,12 +105,28 @@ public class ServerBadge extends Box {
         this.statsLabelFolders = newStatsLabel();
         this.statsLabelAppVersion = newStatsLabel();
 
+        var syncButton = Button.builder()
+                .setLabel("Sync library")
+                .build();
+        syncButton.addCssClass("flat");
+        syncButton.onClicked(() -> {
+            syncButton.setSensitive(false);
+            syncButton.setLabel("Syncing\u2026");
+            appManager.handleAction(new PlayerAction.SyncDatabase()).whenComplete((v, err) -> {
+                Utils.runOnMainThread(() -> {
+                    syncButton.setSensitive(true);
+                    syncButton.setLabel("Sync library");
+                });
+            });
+        });
+
         this.append(topRow);
         this.append(statusRow);
         this.append(statsLabelUsername);
         this.append(statsLabelSongs);
         this.append(statsLabelFolders);
         this.append(statsLabelAppVersion);
+        this.append(syncButton);
 
         // Start periodic ping
         this.pingTask = scheduler.scheduleWithFixedDelay(this::checkConnectivity, 0, 30, TimeUnit.SECONDS);
