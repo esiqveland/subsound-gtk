@@ -1,6 +1,8 @@
 package com.github.subsound.persistence.database;
 
 import com.github.subsound.integration.platform.PortalUtils;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +43,16 @@ public class Database {
     private DataSource createDataSource(String url) {
         SQLiteDataSource ds = new SQLiteDataSource();
         ds.setUrl(url);
-        return ds;
+        var cfg = new HikariConfig();
+        //cfg.setJdbcUrl(url);
+        cfg.setDataSource(ds);
+        // SQLITE only support single connection per db file, so limit at 1 connection in pool:
+        cfg.setMaximumPoolSize(1);
+        cfg.setMinimumIdle(1);
+        cfg.setAutoCommit(true);
+        //cfg.setTransactionIsolation();
+        cfg.setConnectionTimeout(120000);
+        return new HikariDataSource(cfg);
     }
 
     private Connection getConnection() throws SQLException {
