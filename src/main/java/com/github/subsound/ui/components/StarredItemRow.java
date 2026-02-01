@@ -271,7 +271,7 @@ public class StarredItemRow extends Box implements StarredListView.UpdateListene
 
     public void setSongInfo(GSongInfo songInfo, ListItem listItem, MiniState miniState) {
         this.gSongInfo = songInfo;
-        this.songInfo = songInfo.songInfo();
+        this.songInfo = songInfo.getSongInfo();
         var connection = this.gSongInfo.onNotify(
                 GSongInfo.Signal.IS_PLAYING.getId(),
                 _ -> this.update(miniState)

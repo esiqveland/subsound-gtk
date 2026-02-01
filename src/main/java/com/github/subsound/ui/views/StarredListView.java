@@ -95,7 +95,7 @@ public class StarredListView extends Box implements AppManager.StateListener {
                 return;
             }
 
-            var songInfo = item.songInfo();
+            var songInfo = item.getSongInfo();
             if (songInfo == null) {
                 return;
             }
@@ -159,12 +159,12 @@ public class StarredListView extends Box implements AppManager.StateListener {
                 .build();
         var activateSignal = this.listView.onActivate(index -> {
             //var songInfo = this.data.songs().get(index);
-            var songInfo = this.listModel.getItem(index).songInfo();
+            var songInfo = this.listModel.getItem(index).getSongInfo();
             if (songInfo == null) {
                 return;
             }
             log.info("listView.onActivate: {} {}", index, songInfo.title());
-            List<SongInfo> songs = this.listModel.stream().map(GSongInfo::songInfo).toList();
+            List<SongInfo> songs = this.listModel.stream().map(GSongInfo::getSongInfo).toList();
             this.onAction.apply(new PlayerAction.PlayAndReplaceQueue(songs, index));
         });
 

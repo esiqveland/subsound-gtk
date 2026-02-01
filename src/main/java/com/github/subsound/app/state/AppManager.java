@@ -614,9 +614,9 @@ public class AppManager {
             var indices = new ArrayList<Integer>();
             while (it.hasNext()) {
                 var s = it.next();
-                if (s.songInfo() == a) {
+                if (s.getSongInfo() == a) {
                     indices.add(idx);
-                } else if (s.songInfo().id().equals(a.id())) {
+                } else if (s.getSongInfo().id().equals(a.id())) {
                     indices.add(idx);
                 }
                 idx++;
