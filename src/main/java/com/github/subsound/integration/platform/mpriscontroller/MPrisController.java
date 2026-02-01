@@ -226,18 +226,29 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
         return new Variant<>(value);
     }
 
+
     @Override
     public <A> A Get(String _interfaceName, String _propertyName) {
+        log.info("MprisController.Get {} {}", _interfaceName, _propertyName);
         return switch (_interfaceName) {
             case MprisApplicationProperties.dbusInterfaceName ->
                     this.mprisApplicationProperties.Get(_interfaceName, _propertyName);
-            case MPRISPlayerState.interfaceName -> this.playerState.get().Get(_interfaceName, _propertyName);
+            case MPRISPlayerState.interfaceName -> (A)this.getPlayerProperty(_interfaceName, _propertyName).getValue();
             default -> throw new IllegalArgumentException("Get: Unexpected value: " + _interfaceName);
         };
     }
 
+    private Variant<?> getPlayerProperty(String _interfaceName, String propertyName) {
+        if (propertyName.equals("Position")) {
+            var position = this.appManager.getPlayerPosition().orElse(Duration.ZERO);
+            return ofVariant(toMicroseconds(position));
+        }
+        return this.playerState.get().Get(_interfaceName, propertyName);
+    }
+
     @Override
     public <A> void Set(String _interfaceName, String _propertyName, A _value) {
+        log.info("MprisController.Set {} {}", _interfaceName, _propertyName);
         if (MprisApplicationProperties.dbusInterfaceName.equals(_interfaceName)) {
             this.mprisApplicationProperties.Set(_interfaceName, _propertyName, _value);
         }
@@ -483,6 +494,7 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
 
         @Override
         public <A> A Get(String _interfaceName, String _propertyName) {
+            log.info("MprisController.Get<> {} {}", _interfaceName, _propertyName);
             //noinspection unchecked
             return (A) this.variants.get(_propertyName);
         }

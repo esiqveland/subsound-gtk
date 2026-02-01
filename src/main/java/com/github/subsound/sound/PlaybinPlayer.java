@@ -487,6 +487,10 @@ public class PlaybinPlayer implements Player {
         GLib.print("Running...\n");
     }
 
+    public Optional<Duration> getCurrentPosition() {
+        return Optional.ofNullable(this.position);
+    }
+
     public double getVolume() {
         return this.currentVolume;
     }

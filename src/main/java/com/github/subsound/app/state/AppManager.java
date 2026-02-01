@@ -240,6 +240,10 @@ public class AppManager {
         log.info("AppManager shutdown completed in %dms".formatted(elapsed));
     }
 
+    public Optional<Duration> getPlayerPosition() {
+        return this.player.getCurrentPosition();
+    }
+
     public interface StateListener {
         void onStateChanged(AppState state);
     }
