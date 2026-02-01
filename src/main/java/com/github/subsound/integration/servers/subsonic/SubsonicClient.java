@@ -143,11 +143,6 @@ public class SubsonicClient implements ServerClient {
 
     @Override
     public ArtistInfo getArtistInfo(String artistId) {
-//        try (var scope = new StructuredTaskScope<Object>()){
-//            var task1 = scope.fork(() -> this.client.browsing().getArtist(artistId));
-//            var task2 = scope.fork(() -> this.client.browsing().getArtistInfo2(artistId));
-//        }
-
         var task1 = Utils.doAsync(() -> this.client.browsing().getArtist(artistId));
         var task2 = Utils.doAsync(() -> this.client.browsing().getArtistInfo2(artistId));
         return task1.thenCombine(task2, (artist, info) -> {
