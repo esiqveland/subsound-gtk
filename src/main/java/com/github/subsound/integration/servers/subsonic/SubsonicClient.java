@@ -34,6 +34,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -143,27 +144,20 @@ public class SubsonicClient implements ServerClient {
 
     @Override
     public ArtistInfo getArtistInfo(String artistId) {
-        var task1 = Utils.doAsync(() -> this.client.browsing().getArtist(artistId));
-        var task2 = Utils.doAsync(() -> this.client.browsing().getArtistInfo2(artistId));
+        var task1 = Utils.doAsync(() -> this.getArtistJson(artistId));
+        var task2 = Utils.doAsync(() -> this.getArtistInfo2Json(artistId));
         return task1.thenCombine(task2, (artist, info) -> {
-            var albums = artist.getAlbums().stream()
-                    .map(album -> ArtistAlbumInfo.create(
-                                    album,
-                                    toCoverArt(album.getCoverArtId(), new AlbumIdentifier(album.getId()))
-                            )
-                    )
-                    .toList();
-
-            var bio = Optional.ofNullable(info.getBiography())
+            var albums = toAlbumInfoList(artist);
+            var bio = Optional.ofNullable(info.biography())
                     .filter(str -> !str.isBlank())
                     .orElse("");
             Biography biography = TextUtils.parseLink(bio);
             return new ArtistInfo(
-                    artist.getId(),
-                    artist.getName(),
-                    artist.getAlbumCount(),
-                    ofNullable(artist.getStarred()).map(d -> d.toInstant(ZoneOffset.UTC)),
-                    toCoverArt(artist.getCoverArtId(), new ArtistIdentifier(artist.getId())),
+                    artist.id(),
+                    artist.name(),
+                    artist.albumCount() != null ? artist.albumCount() : 0,
+                    ofNullable(artist.starred()),
+                    toCoverArt(artist.coverArt(), new ArtistIdentifier(artist.id())),
                     albums,
                     biography
             );
@@ -171,25 +165,58 @@ public class SubsonicClient implements ServerClient {
     }
 
     @Override
+    public ArtistInfo getArtistWithAlbums(String artistId) {
+        var artist = this.getArtistJson(artistId);
+        var albums = toAlbumInfoList(artist);
+        return new ArtistInfo(
+                artist.id(),
+                artist.name(),
+                artist.albumCount() != null ? artist.albumCount() : 0,
+                ofNullable(artist.starred()),
+                toCoverArt(artist.coverArt(), new ArtistIdentifier(artist.id())),
+                albums,
+                new Biography("", "", "")
+        );
+    }
+
+    private List<ArtistAlbumInfo> toAlbumInfoList(ArtistWithAlbumsJson artist) {
+        if (artist.album() == null) {
+            return List.of();
+        }
+        return artist.album().stream()
+                .map(album -> new ArtistAlbumInfo(
+                        album.id(),
+                        album.name(),
+                        album.songCount() != null ? album.songCount() : 0,
+                        album.artistId(),
+                        album.artist(),
+                        Duration.ofSeconds(album.duration() != null ? album.duration() : 0),
+                        ofNullable(album.genre()).filter(s -> !s.isBlank()),
+                        ofNullable(album.year()),
+                        ofNullable(album.starred()),
+                        toCoverArt(album.coverArt(), new AlbumIdentifier(album.id()))
+                ))
+                .toList();
+    }
+
+    @Override
     public AlbumInfo getAlbumInfo(String albumId) {
         var task1 = Utils.doAsync(() -> this.client.browsing().getAlbum(albumId));
-        var task2 = Utils.doAsync(() -> this.client.browsing().getAlbumInfo2(albumId));
-        return task1.thenCombine(task2, (album, info) -> {
-            //info.getNotes();
-
-            return new AlbumInfo(
-                    album.getId(),
-                    album.getName(),
-                    album.getSongCount(),
-                    ofNullable(album.getYear()),
-                    album.getArtistId(),
-                    album.getArtist(),
-                    Duration.ofSeconds(album.getDuration()),
-                    ofNullable(album.getStarred()).map(d -> d.toInstant(ZoneOffset.UTC)),
-                    toCoverArt(album.getCoverArtId(), new AlbumIdentifier(album.getId())),
-                    toSongInfo(album.getSongs())
-            );
-        }).join();
+        //var task2 = Utils.doAsync(() -> this.client.browsing().getAlbumInfo2(albumId));
+        //var info = task2.join();
+        var album = task1.join();
+        return new AlbumInfo(
+                album.getId(),
+                album.getName(),
+                album.getSongCount(),
+                ofNullable(album.getYear()),
+                album.getArtistId(),
+                album.getArtist(),
+                Duration.ofSeconds(album.getDuration()),
+                ofNullable(album.getStarred()).map(d -> d.toInstant(ZoneOffset.UTC)),
+                toCoverArt(album.getCoverArtId(), new AlbumIdentifier(album.getId())),
+                toSongInfo(album.getSongs())
+        );
     }
 
     @Override
@@ -308,11 +335,111 @@ public class SubsonicClient implements ServerClient {
         }
     }
 
+    // JSON response models for /rest/getArtist
+    public static class GetArtistResponseJson {
+        @SerializedName("subsonic-response")
+        public GetArtistResponseInner subsonicResponse;
+        public static class GetArtistResponseInner {
+            public String status;
+            public ArtistWithAlbumsJson artist;
+        }
+    }
+    public record ArtistWithAlbumsJson(
+            String id,
+            String name,
+            Integer albumCount,
+            String coverArt,
+            Instant starred,
+            List<AlbumID3Json> album
+    ) {}
+    public record AlbumID3Json(
+            String id,
+            String name,
+            String artist,
+            String artistId,
+            String coverArt,
+            Integer songCount,
+            Integer duration,
+            Integer year,
+            String genre,
+            Instant starred
+    ) {}
+
+    // JSON response models for /rest/getArtistInfo2
+    public static class GetArtistInfo2ResponseJson {
+        @SerializedName("subsonic-response")
+        public GetArtistInfo2ResponseInner subsonicResponse;
+        public static class GetArtistInfo2ResponseInner {
+            public String status;
+            public ArtistInfo2Json artistInfo2;
+        }
+    }
+    public record ArtistInfo2Json(
+            String biography,
+            String musicBrainzId,
+            String lastFmUrl,
+            String smallImageUrl,
+            String mediumImageUrl,
+            String largeImageUrl
+    ) {}
+
+    public ArtistWithAlbumsJson getArtistJson(String artistId) {
+        try {
+            URI link = getServerUri("/rest/getArtist", ResponseFormat.JSON, Map.of("id", artistId));
+            var req = HttpRequest.newBuilder().GET().uri(link).build();
+            HttpResponse<byte[]> res = this.httpClient.send(req, HttpResponse.BodyHandlers.ofByteArray());
+            var bodyString = new String(res.body(), StandardCharsets.UTF_8);
+            if (res.statusCode() >= 200 && res.statusCode() < 300) {
+                var parsed = Utils.fromJson(bodyString, GetArtistResponseJson.class);
+                if ("ok".equalsIgnoreCase(parsed.subsonicResponse.status)) {
+                    return parsed.subsonicResponse.artist;
+                }
+            }
+            throw new RuntimeException("error loading getArtist: status=" + res.statusCode() + " body=" + bodyString);
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    ArtistInfo2Json getArtistInfo2Json(String artistId) {
+        try {
+            URI link = getServerUri("/rest/getArtistInfo2", ResponseFormat.JSON, Map.of("id", artistId));
+            var req = HttpRequest.newBuilder().GET().uri(link).build();
+            HttpResponse<byte[]> res = this.httpClient.send(req, HttpResponse.BodyHandlers.ofByteArray());
+            var bodyString = new String(res.body(), StandardCharsets.UTF_8);
+            if (res.statusCode() >= 200 && res.statusCode() < 300) {
+                var parsed = Utils.fromJson(bodyString, GetArtistInfo2ResponseJson.class);
+                if ("ok".equalsIgnoreCase(parsed.subsonicResponse.status)) {
+                    return parsed.subsonicResponse.artistInfo2;
+                }
+            }
+            throw new RuntimeException("error loading getArtistInfo2: status=" + res.statusCode() + " body=" + bodyString);
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    String fetchJsonBody(String path, Map<String, String> extraParams) {
+        try {
+            URI link = getServerUri(path, ResponseFormat.JSON, extraParams);
+            var req = HttpRequest.newBuilder().GET().uri(link).build();
+            HttpResponse<byte[]> res = this.httpClient.send(req, HttpResponse.BodyHandlers.ofByteArray());
+            return new String(res.body(), StandardCharsets.UTF_8);
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     enum ResponseFormat { XML, JSON }
-    private URI getServerUri(String path, ResponseFormat format) {
+
+    final URI getServerUri(String path, ResponseFormat format) {
+        return getServerUri(path, format, Map.of());
+    }
+
+    final URI getServerUri(String path, ResponseFormat format, Map<String, String> extraParams) {
         var auth = this.settings.getAuthentication();
         var v = this.client.getApiVersion().getVersionString();
-        return HttpUrl.get(this.uri).newBuilder(path)
+        var builder = HttpUrl.get(this.uri).newBuilder(path)
                 .setQueryParameter("u", this.settings.getUsername())
                 .setQueryParameter("s", auth.getSalt())
                 .setQueryParameter("t", auth.getToken())
@@ -321,9 +448,11 @@ public class SubsonicClient implements ServerClient {
                     case XML -> "xml";
                     case JSON -> "json";
                 })
-                .setQueryParameter("v", v)
-                .build()
-                .uri();
+                .setQueryParameter("v", v);
+        for (var param : extraParams.entrySet()) {
+            builder.setQueryParameter(param.getKey(), param.getValue());
+        }
+        return builder.build().uri();
     }
 
     private SongInfo toSongInfo(Child song) {
