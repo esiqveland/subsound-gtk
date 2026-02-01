@@ -14,7 +14,7 @@ def mainClass = 'com.github.subsound.Main'
 
 repositories {
     maven { url './offline-repository/' }
-    maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots' }
+//    maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots' }
     mavenCentral()
     google()
 }
@@ -32,6 +32,7 @@ dependencies {
     implementation 'net.beardbot:subsonic-client:0.6.0'
     implementation "com.github.ben-manes.caffeine:caffeine:3.2.3"
     implementation 'com.squareup.okhttp3:okhttp:5.3.2'
+    implementation 'com.zaxxer:HikariCP:7.0.2'
     implementation 'com.google.code.gson:gson:2.13.2'
     implementation 'de.androidpit:color-thief:1.1.2'
     implementation 'io.reactivex.rxjava3:rxjava:3.1.10'
