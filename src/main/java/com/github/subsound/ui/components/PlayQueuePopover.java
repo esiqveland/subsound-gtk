@@ -57,12 +57,11 @@ public class PlayQueuePopover extends Popover {
             if (child instanceof PlayQueueItemRow row) {
                 row.unbind();
             }
-            listitem.setChild(null);
         });
 
         factory.onTeardown(object -> {
             ListItem listitem = (ListItem) object;
-            var child = listitem.getChild();
+            listitem.setChild(null);
         });
 
         this.selectionModel = new SingleSelection<>(this.listModel);

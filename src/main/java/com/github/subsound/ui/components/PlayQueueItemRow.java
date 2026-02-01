@@ -156,6 +156,8 @@ public class PlayQueueItemRow extends Box {
         if (sig2 != null) {
             sig2.disconnect();
         }
+        this.songInfo = null;
+        this.gQueueItem = null;
     }
 
     private void updateView() {
