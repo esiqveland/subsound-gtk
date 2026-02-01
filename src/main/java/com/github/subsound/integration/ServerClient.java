@@ -6,6 +6,7 @@ import com.github.subsound.utils.Utils;
 import io.soabase.recordbuilder.core.RecordBuilder;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
 import org.subsonic.restapi.AlbumID3;
+import org.subsonic.restapi.ArtistInfo2;
 
 import java.net.URI;
 import java.nio.file.Path;
@@ -23,6 +24,7 @@ public interface ServerClient {
 
     ListArtists getArtists();
     ArtistInfo getArtistInfo(String artistId);
+    ArtistInfo getArtistWithAlbums(String artistId);
     AlbumInfo getAlbumInfo(String albumId);
     ListPlaylists getPlaylists();
     Playlist getPlaylist(String playlistId);
