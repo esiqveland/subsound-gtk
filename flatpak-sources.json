@@ -568,6 +568,20 @@
   },
   {
     "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/zaxxer/HikariCP/7.0.2/HikariCP-7.0.2.jar",
+    "sha512": "fab69440ecf96687ac9cd69d19503a824f7bec74d97329ee6f8568981200799a1503df5517b9e0322a8d139fc71d6af193314890716ff8f0fd52163dad6f0c6c",
+    "dest": "./offline-repository/com/zaxxer/HikariCP/7.0.2",
+    "dest-filename": "HikariCP-7.0.2.jar"
+  },
+  {
+    "type": "file",
+    "url": "https://repo.maven.apache.org/maven2/com/zaxxer/HikariCP/7.0.2/HikariCP-7.0.2.pom",
+    "sha512": "d34f1f9ecc45d7149cb6777ed183be19107448aad7a615382e9399a19c658902bfee28312527ee5384f8a87a2a966f5a79126ad20172de7a6e03c58c54a1a22e",
+    "dest": "./offline-repository/com/zaxxer/HikariCP/7.0.2",
+    "dest-filename": "HikariCP-7.0.2.pom"
+  },
+  {
+    "type": "file",
     "url": "https://repo.maven.apache.org/maven2/commons-codec/commons-codec/1.17.1/commons-codec-1.17.1.jar",
     "sha512": "a7db98db470e6ad338266ff442fbdfbc277ba1d07a591336f7d15dc49fdac884da7dac04d806628b12437f993d8b5e6a4b800a66590ff11936dbf8bedcd8e860",
     "dest": "./offline-repository/commons-codec/commons-codec/1.17.1",
