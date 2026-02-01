@@ -54,7 +54,7 @@ public class SyncService {
     }
 
     private SyncStats syncArtist(String artistId) {
-        ArtistInfo artistInfo = serverClient.getArtistInfo(artistId);
+        ArtistInfo artistInfo = serverClient.getArtistWithAlbums(artistId);
         Artist artist = new Artist(
                 artistInfo.id(),
                 serverId,
