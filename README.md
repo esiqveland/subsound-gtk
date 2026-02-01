@@ -60,6 +60,8 @@ A few samples of what the UI looks like:
   - [X] fix song cache storing with original suffix instead of transcode format suffix
     - This caused us to save mp3 transcoded flac data with .flac extension
   - [ ] find a way to handle difference between original and stream (transcoded) data better
+  - [ ] transcode configurable
+  - [ ] we should only transcode flac/wav or bitrate > X kbps. f.ex. a 193kbps mp3 should not be transcoded, and probably not a 320kbps mp3 either. mp3 should probably not be transcoded to opus f.ex.
 - [X] replace gtk.image with gtk.picture? https://docs.gtk.org/gtk4/class.Picture.html
 - [X] PlayerBar: title/album
 - [X] PlayerBar: wire up now-playing to playerState
