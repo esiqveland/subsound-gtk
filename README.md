@@ -103,10 +103,12 @@ A few samples of what the UI looks like:
 - [X] PlayQueue: implement a in-memory play queue
   - [X] PlayQueue: auto playback of next queue item
   - [X] PlayQueue: prev with position >= 4.0 seconds played means seekToStart
-  - [ ] PlayQueue: enqueue a song that will be added after the current playing song in the playqueue
+  - [X] PlayQueue: visualize playqueue in the PlayerBar
+  - [X] PlayQueue: enqueue a song that will be added after the current playing song in the playqueue
   - [ ] PlayQueue: Gapless playback of queue using gstreamer soon-finished signal / message + setting next-uri property
+  - [ ] PlayQueue: persist playqueue between app restarts
 - Proper navigation
-  - [ ] store the currently playing song and current mute/volume between app restarts
+  - [X] store the currently playing song and current mute/volume between app restarts
   - [ ] store the playqueue or at least playcontext (position in a playlist?) between app restarts
   - [ ] fix back button in albumview
   - [ ] fix the navigationview. something is still wrong with app navigation...
@@ -115,7 +117,6 @@ A few samples of what the UI looks like:
   - AdwLeaflet + AdwClamp? see https://gitlab.gnome.org/GNOME/gnome-music/-/blob/master/data/ui/ArtistAlbumsWidget.ui
 - [X] set up a sqlite database with migrations
   - [ ] record what we have downloaded / want to keep offline
-  - perhaps there is a good android library for migrating sqlite ?
 - Hotkeys
   - [ ] space should always play/pause
     - this looks very hard to do since spacebar is also the activation key for buttons / list items in GTK4
@@ -150,13 +151,14 @@ A few samples of what the UI looks like:
   - [ ] rename playlist
   - [ ] delete playlist
   - [ ] create playlist
-  - [ ]remove song from playlist
-  - play as playqueue
+  - [ ] remove song from playlist
 - [X] Mpris support
     - [X] thumbnail - needs to give the path to our downloaded copy on disk, or do a loooot of resizing to send it over dbus
     - [X] play/pause
     - [X] skip/prev
     - [X] App name / App icon
+    - [X] Track info
+    - [X] Get Position
     - [X] Optimize updates for when we post a new state (hopefully we don't need more optimization here)
     - [ ] Play position
 
@@ -176,7 +178,6 @@ Features:
 - [X] Local music cache
 - [X] Local artwork cache
 - [X] Transcoding music
-- [ ] Metadata cache / offline storage for song/artist metadata so we can browse most content offline
 - [ ] Onboarding UI
 - [X] Configuration UI
 - [X] Starred listing
@@ -184,14 +185,23 @@ Features:
 - [X] Browse artists
 - [X] Plays any track!
 - [X] MPRIS support
+- [ ] Offline playback
+  - [X] Download songs to local cache
+  - [X] Play songs from local cache
+  - [X] Download album art to local cache
+  - [X] Sync artist/song metadata for offline storage
+    - [ ] Make it fast
+  - [ ] Playlists
+  - [ ] Browse from offline storage only
+  - [ ] Download manager for offline available content
+    - This kind of already works, but there is no UI that shows status for it
 
 Later goals:
- - [ ] Scrobble plays
- - [ ] Download manager for offline available content
+ - [ ] Scrobble plays + offline storage --> sync later to server
  - [ ] Internationalize
 
 Eventually goals:
- - [ ] support multiple server types (native Navidrome API, Jellyfish etc)
+ - [ ] support multiple server types (native Navidrome API, OpenSubsonic, Jellyfish etc)
  - [ ] support the subsonic podcast features
  - [ ] could support chromecast
  - [ ] consider using fanart.tv
