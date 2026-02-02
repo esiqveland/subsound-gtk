@@ -140,7 +140,10 @@ public class StarredListView extends Box implements AppManager.StateListener {
         Utils.runOnMainThread(() -> {
             // this needs to run on idle thread, otherwise it segfaults:
             this.listModel.removeAll();
-            data.songs().stream().map(GSongInfo::newInstance).forEach(this.listModel::append);
+            var items = data.songs().stream()
+                    .map(GSongInfo::newInstance)
+                    .toArray(GSongInfo[]::new);
+            this.listModel.splice(0, 0, items);
         });
 
         this.selectionModel = new SingleSelection<>(this.listModel);
