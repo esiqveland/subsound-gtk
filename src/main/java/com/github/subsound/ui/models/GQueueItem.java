@@ -7,32 +7,16 @@ import org.gnome.glib.Type;
 import org.gnome.gobject.GObject;
 
 import java.lang.foreign.MemorySegment;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class GQueueItem extends GObject {
     public static final Type gtype = Types.register(GQueueItem.class);
-
-    public enum Signal {
-        IS_CURRENT("is-current");
-
-        private final String signal;
-
-        Signal(String signal) {
-            this.signal = signal;
-        }
-
-        public String getId() {
-            return this.signal;
-        }
-    }
 
     public enum QueueKind {
         USER_ADDED,
         AUTOMATIC,
     }
 
-    private final AtomicBoolean isCurrent = new AtomicBoolean(false);
-    private SongInfo songInfo;
+    private GSongInfo gSongInfo;
     private QueueKind queueKind = QueueKind.AUTOMATIC;
 
     public static Type getType() {
@@ -43,28 +27,16 @@ public class GQueueItem extends GObject {
         super(address);
     }
 
+    public GSongInfo getSongInfo() {
+        return gSongInfo;
+    }
     public SongInfo songInfo() {
-        return songInfo;
+        return this.gSongInfo.getSongInfo();
     }
 
     @Property
     public String getId() {
-        return songInfo != null ? songInfo.id() : null;
-    }
-    public String getTitle() {
-        return songInfo != null ? songInfo.title() : null;
-    }
-
-    @Property
-    public boolean getIsCurrent() {
-        return isCurrent.get();
-    }
-
-    @Property
-    public void setIsCurrent(boolean current) {
-        if (this.isCurrent.compareAndSet(!current, current)) {
-            this.notify(Signal.IS_CURRENT.signal);
-        }
+        return gSongInfo != null ? gSongInfo.getSongInfo().id() : null;
     }
 
     public QueueKind queueKind() {
@@ -78,12 +50,16 @@ public class GQueueItem extends GObject {
     }
 
     public static GQueueItem newInstance(SongInfo value) {
-        return newInstance(value, QueueKind.AUTOMATIC);
+        return newInstance(GSongInfo.newInstance(value), QueueKind.AUTOMATIC);
     }
 
     public static GQueueItem newInstance(SongInfo value, QueueKind queueKind) {
+        return newInstance(GSongInfo.newInstance(value), queueKind);
+    }
+
+    public static GQueueItem newInstance(GSongInfo gSongInfo, QueueKind queueKind) {
         GQueueItem instance = GObject.newInstance(gtype);
-        instance.songInfo = value;
+        instance.gSongInfo = gSongInfo;
         instance.queueKind = queueKind;
         return instance;
     }

@@ -5,6 +5,7 @@ import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.sound.PlaybinPlayer.Source;
 import com.github.subsound.ui.models.GQueueItem;
+import com.github.subsound.ui.models.GSongInfo;
 import com.github.subsound.utils.Utils;
 import org.gnome.gio.ListStore;
 import org.slf4j.Logger;
@@ -27,14 +28,14 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     private final Object lock = new Object();
     private final Player player;
     private final Consumer<PlayQueueState> onStateChanged;
-    private final Consumer<SongInfo> onPlay;
+    private final Consumer<GSongInfo> onPlay;
     private final ListStore<GQueueItem> listStore = new ListStore<>(GQueueItem.gtype);
     private Optional<Integer> position = Optional.empty();
 
     public PlayQueue(
             Player player,
             Consumer<PlayQueueState> onStateChanged,
-            Consumer<SongInfo> onPlay
+            Consumer<GSongInfo> onPlay
     ) {
         this.player = player;
         this.onStateChanged = onStateChanged;
@@ -62,11 +63,11 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
                 log.warn("playPosition: can not play invalid position={}", newPosition);
                 return;
             }
-            SongInfo songInfo = listStore.get(newPosition).songInfo();
+            var newItem = listStore.get(newPosition);
             int oldPosition = this.position.orElse(-1);
             this.position = Optional.of(newPosition);
             updateCurrentItemStyling(oldPosition, newPosition);
-            this.onPlay.accept(songInfo);
+            this.onPlay.accept(newItem.getSongInfo());
             this.notifyState();
         }
     }
@@ -98,10 +99,10 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
                 // we have reached the end of the queue
                 return;
             }
-            var songInfo = listStore.get(nextIdx).songInfo();
+            var queueItem = listStore.get(nextIdx);
             this.position = Optional.of(nextIdx);
             updateCurrentItemStyling(oldIdx, nextIdx);
-            this.onPlay.accept(songInfo);
+            this.onPlay.accept(queueItem.getSongInfo());
             this.notifyState();
         }
     }
@@ -128,10 +129,10 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
                 player.seekTo(Duration.ZERO);
                 return;
             }
-            var songInfo = listStore.get(prevIdx).songInfo();
+            var queueItem = listStore.get(prevIdx);
             this.position = Optional.of(prevIdx);
             updateCurrentItemStyling(oldIdx, prevIdx);
-            this.onPlay.accept(songInfo);
+            this.onPlay.accept(queueItem.getSongInfo());
             this.notifyState();
         }
     }
@@ -191,7 +192,7 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
             position = startPosition;
             startPosition.ifPresent(pos -> {
                 if (pos >= 0 && pos < listStore.getNItems()) {
-                    listStore.getItem(pos).setIsCurrent(true);
+                    listStore.getItem(pos).getSongInfo().setIsPlaying(true);
                 }
             });
             this.notifyState();
@@ -209,11 +210,11 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     private void updateCurrentItemStyling(int oldPosition, int newPosition) {
         Utils.runOnMainThread(() -> {
             if (oldPosition >= 0 && oldPosition < listStore.getNItems()) {
-                listStore.getItem(oldPosition).setIsCurrent(false);
+                listStore.getItem(oldPosition).getSongInfo().setIsPlaying(false);
             }
             if (newPosition >= 0 && newPosition < listStore.getNItems()) {
                 var nextItem = listStore.getItem(newPosition);
-                nextItem.setIsCurrent(true);
+                nextItem.getSongInfo().setIsPlaying(true);
                 log.info("updateCurrentItemStyling: nextItem={}", nextItem.getId());
             }
         });

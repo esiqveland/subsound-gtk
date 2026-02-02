@@ -1,11 +1,10 @@
 package com.github.subsound.ui.models;
 
 import com.github.subsound.integration.ServerClient;
-import com.github.subsound.ui.views.StarredListView;
-import org.javagi.gobject.annotations.Property;
-import org.javagi.gobject.types.Types;
 import org.gnome.glib.Type;
 import org.gnome.gobject.GObject;
+import org.javagi.gobject.annotations.Property;
+import org.javagi.gobject.types.Types;
 
 import java.lang.foreign.MemorySegment;
 import java.time.Instant;
@@ -51,6 +50,7 @@ public class GSongInfo extends GObject {
     public void setIsPlaying(boolean isPlaying) {
         if (this.isPlaying.compareAndSet(!isPlaying, isPlaying)) {
             this.notify(Signal.IS_PLAYING.signal);
+            //runOnMainThread(() -> this.notify(Signal.IS_PLAYING.signal));
         }
     }
 
@@ -77,6 +77,7 @@ public class GSongInfo extends GObject {
             if (this.isFavorite.get() != isFavorite) {
                 this.isFavorite.set(isFavorite);
                 this.notify(Signal.IS_FAVORITE.signal);
+                //runOnMainThread(() -> this.notify(Signal.IS_FAVORITE.signal));
             }
         } finally {
             lock.unlock();

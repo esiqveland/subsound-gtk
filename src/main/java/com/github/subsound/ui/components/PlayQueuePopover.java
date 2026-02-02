@@ -16,7 +16,6 @@ import org.gnome.gtk.SignalListItemFactory;
 import org.gnome.gtk.SingleSelection;
 import org.gnome.gtk.Window;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.IntConsumer;
 
 public class PlayQueuePopover extends Popover {
@@ -149,7 +148,7 @@ public class PlayQueuePopover extends Popover {
     private void scrollToCurrentItem() {
         for (int i = 0; i < listModel.getNItems(); i++) {
             var item = listModel.getItem(i);
-            if (item != null && item.getIsCurrent()) {
+            if (item != null && item.getSongInfo().getIsPlaying()) {
                 this.queueListView.scrollTo(i, ListScrollFlags.FOCUS, null);
                 break;
             }

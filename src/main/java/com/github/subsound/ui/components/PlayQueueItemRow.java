@@ -2,8 +2,10 @@ package com.github.subsound.ui.components;
 
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.app.state.PlayerAction;
+import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.ui.models.GQueueItem;
+import com.github.subsound.ui.models.GSongInfo;
 import com.github.subsound.utils.Utils;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
@@ -28,6 +30,7 @@ public class PlayQueueItemRow extends Box {
 
     private final AppManager appManager;
     private GQueueItem gQueueItem;
+    private GSongInfo gSongInfo;
     private SongInfo songInfo;
 
     private final Box albumArtBox;
@@ -115,11 +118,12 @@ public class PlayQueueItemRow extends Box {
 
     public void bind(GQueueItem item, ListItem listItem) {
         this.gQueueItem = item;
-        this.songInfo = item.songInfo();
+        this.gSongInfo = item.getSongInfo();
+        this.songInfo = item.getSongInfo().getSongInfo();
 
         // Listen for IS_CURRENT changes
-        var currentConnection = this.gQueueItem.onNotify(
-                GQueueItem.Signal.IS_CURRENT.getId(),
+        var currentConnection = this.gSongInfo.onNotify(
+                GSongInfo.Signal.IS_PLAYING.getId(),
                 _ -> updateStyling()
         );
         var oldCurrentConnection = this.isCurrentSignal.getAndSet(currentConnection);
@@ -157,11 +161,12 @@ public class PlayQueueItemRow extends Box {
             sig2.disconnect();
         }
         this.songInfo = null;
+        this.gSongInfo = null;
         this.gQueueItem = null;
     }
 
     private void updateView() {
-        if (this.songInfo == null) {
+        if (this.gSongInfo == null) {
             return;
         }
 
@@ -190,7 +195,7 @@ public class PlayQueueItemRow extends Box {
             return;
         }
         Utils.runOnMainThread(() -> {
-            if (this.gQueueItem.getIsCurrent()) {
+            if (this.gSongInfo.getIsPlaying()) {
                 this.removeCssClass(Classes.queueAutomatic.className());
                 return;
             }
@@ -207,7 +212,7 @@ public class PlayQueueItemRow extends Box {
             return;
         }
         Utils.runOnMainThread(() -> {
-            if (this.gQueueItem.getIsCurrent()) {
+            if (this.gSongInfo.getIsPlaying()) {
                 this.titleLabel.addCssClass(Classes.colorAccent.className());
             } else {
                 this.titleLabel.removeCssClass(Classes.colorAccent.className());

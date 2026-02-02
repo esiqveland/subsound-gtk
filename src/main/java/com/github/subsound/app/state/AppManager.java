@@ -93,7 +93,7 @@ public class AppManager {
         this.playQueue = new PlayQueue(
                 player,
                 nextState -> this.setState(old -> old.withQueue(nextState)),
-                songInfo -> loadSource(new PlayerAction.PlaySong(songInfo))
+                songInfo -> loadSource(new PlayerAction.PlaySong(songInfo.getSongInfo()))
         );
         this.database = new Database();
         this.playerConfigService = new PlayerConfigService(this.database);

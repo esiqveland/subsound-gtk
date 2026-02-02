@@ -7,6 +7,7 @@ import com.github.subsound.sound.PlaybinPlayer.PlayerStates;
 import com.github.subsound.sound.PlaybinPlayer.Source;
 import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.sound.Player;
+import com.github.subsound.ui.models.GSongInfo;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -381,11 +382,11 @@ public class PlayQueueTest {
         }
     }
 
-    private static class SongInfoRecorder implements Consumer<SongInfo> {
+    private static class SongInfoRecorder implements Consumer<GSongInfo> {
         final List<SongInfo> songs = new ArrayList<>();
         @Override
-        public void accept(SongInfo songInfo) {
-            songs.add(songInfo);
+        public void accept(GSongInfo songInfo) {
+            songs.add(songInfo.getSongInfo());
         }
     }
 }
