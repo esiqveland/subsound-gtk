@@ -2,6 +2,7 @@ package com.github.subsound.ui.components;
 
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.ui.models.GQueueItem;
+import com.github.subsound.utils.Utils;
 import org.gnome.gio.ListStore;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Label;
@@ -126,7 +127,8 @@ public class PlayQueuePopover extends Popover {
         this.onShow(() -> {
             updateMaxHeight();
             updateEmptyState();
-            scrollToCurrentItem();
+            // scrollToCurrentItem is visually buggy if run at the same as onShow()
+            Utils.runOnMainThread(this::scrollToCurrentItem);
         });
     }
 
