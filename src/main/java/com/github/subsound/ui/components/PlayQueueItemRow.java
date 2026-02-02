@@ -195,6 +195,9 @@ public class PlayQueueItemRow extends Box {
             return;
         }
         Utils.runOnMainThread(() -> {
+            if (this.gSongInfo == null || this.gQueueItem == null) {
+                return;
+            }
             if (this.gSongInfo.getIsPlaying()) {
                 this.removeCssClass(Classes.queueAutomatic.className());
                 return;
@@ -208,10 +211,13 @@ public class PlayQueueItemRow extends Box {
     }
 
     private void updateCurrentStyling() {
-        if (this.gQueueItem == null) {
+        if (this.gQueueItem == null || this.gSongInfo == null) {
             return;
         }
         Utils.runOnMainThread(() -> {
+            if (this.gSongInfo == null) {
+                return;
+            }
             if (this.gSongInfo.getIsPlaying()) {
                 this.titleLabel.addCssClass(Classes.colorAccent.className());
             } else {
