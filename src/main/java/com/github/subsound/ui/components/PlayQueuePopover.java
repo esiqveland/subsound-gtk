@@ -19,6 +19,7 @@ import org.gnome.gtk.Window;
 import java.util.function.IntConsumer;
 
 public class PlayQueuePopover extends Popover {
+    private final AppManager appManager;
     private final ListView queueListView;
     private final ScrolledWindow queueScrolled;
     private final ListStore<GQueueItem> listModel;
@@ -29,6 +30,7 @@ public class PlayQueuePopover extends Popover {
     public PlayQueuePopover(AppManager appManager, IntConsumer onPlayPosition) {
         super();
         this.listModel = appManager.getQueueListStore();
+        this.appManager = appManager;
 
         factory = new SignalListItemFactory();
         factory.onSetup(object -> {
@@ -146,12 +148,14 @@ public class PlayQueuePopover extends Popover {
     }
 
     private void scrollToCurrentItem() {
-        for (int i = 0; i < listModel.getNItems(); i++) {
-            var item = listModel.getItem(i);
-            if (item != null && item.getSongInfo().getIsPlaying()) {
-                this.queueListView.scrollTo(i, ListScrollFlags.FOCUS, null);
-                break;
-            }
+        var currentPosOpt = this.appManager.getState().queue().position();
+        if (currentPosOpt.isEmpty()) {
+            return;
         }
+        int currentPos = currentPosOpt.get();
+        if (currentPos < 0 || currentPos >= listModel.getNItems()) {
+            return;
+        }
+        this.queueListView.scrollTo(currentPos, ListScrollFlags.FOCUS, null);
     }
 }
