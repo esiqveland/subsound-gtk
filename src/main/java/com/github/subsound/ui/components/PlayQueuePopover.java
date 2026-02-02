@@ -30,7 +30,7 @@ public class PlayQueuePopover extends Popover {
 
     public PlayQueuePopover(AppManager appManager, IntConsumer onPlayPosition) {
         super();
-        this.listModel = appManager.getQueueListStore();
+        this.listModel = appManager.getPlayQueueListStore();
         this.appManager = appManager;
 
         factory = new SignalListItemFactory();

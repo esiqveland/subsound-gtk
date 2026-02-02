@@ -654,7 +654,7 @@ public class AppManager {
         return this.starredList;
     }
 
-    public ListStore<GQueueItem> getQueueListStore() {
+    public ListStore<GQueueItem> getPlayQueueListStore() {
         return this.playQueue.getListStore();
     }
 
