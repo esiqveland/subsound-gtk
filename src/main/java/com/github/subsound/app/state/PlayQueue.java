@@ -185,16 +185,16 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
 
     public void replaceQueue(List<SongInfo> newQueue, Optional<Integer> startPosition) {
         synchronized (lock) {
-            listStore.removeAll();
-            newQueue.stream()
+            var items = newQueue.stream()
                     .map(GQueueItem::newInstance)
-                    .forEach(listStore::append);
-            position = startPosition;
-            startPosition.ifPresent(pos -> {
-                if (pos >= 0 && pos < listStore.getNItems()) {
-                    listStore.getItem(pos).getSongInfo().setIsPlaying(true);
-                }
-            });
+                    .toArray(GQueueItem[]::new);
+
+            listStore.splice(0, listStore.size(), items);
+            position = startPosition.filter(pos -> pos >= 0 && pos < listStore.getNItems());
+            if (position.isPresent()) {
+                var pos = position.get();
+                listStore.getItem(pos).getSongInfo().setIsPlaying(true);
+            }
             this.notifyState();
         }
     }
