@@ -127,7 +127,7 @@ public class PlayQueuePopover extends Popover {
         this.onShow(() -> {
             updateMaxHeight();
             updateEmptyState();
-            // scrollToCurrentItem is visually buggy if run at the same as onShow()
+            // scrollToCurrentItem is visually buggy if run at the same time as onShow()
             Utils.runOnMainThread(this::scrollToCurrentItem);
         });
     }
