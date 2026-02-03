@@ -1,6 +1,7 @@
 package com.github.subsound.ui.views;
 
 import com.github.subsound.app.state.AppManager;
+import com.github.subsound.app.state.PlayerAction;
 import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.ListPlaylists;
 import com.github.subsound.integration.ServerClient.ListStarred;
@@ -27,7 +28,7 @@ public class StarredLoader extends Box {
     private final ThumbnailCache thumbLoader;
     private final Consumer<AppNavigation.AppRoute> onNavigate;
 
-    private final BoxHolder<FutureLoader<PlaylistsData, StarredListView>> holder;
+    private final StarredListView2 starredView;
     private final AppManager appManager;
     private final AtomicBoolean isLoaded = new AtomicBoolean(false);
 
@@ -40,49 +41,23 @@ public class StarredLoader extends Box {
         this.thumbLoader = thumbLoader;
         this.appManager = appManager;
         this.onNavigate = onNavigate;
-        this.holder = new BoxHolder<>();
         this.setHexpand(true);
         this.setVexpand(true);
         this.setHalign(Align.FILL);
         this.setValign(Align.FILL);
         this.onMap(() -> {
-            if (this.isLoaded.get()) {
+            if (!this.isLoaded.compareAndSet(false, true)) {
                 return;
             }
-            this.refresh();
+            this.appManager.handleAction(new PlayerAction.StarRefresh(false));
         });
+        this.starredView = new StarredListView2(appManager.getStarredList(), appManager, onNavigate);
         //this.onShow(this::refresh);
         //this.onRealize(this::refresh);
-        this.append(holder);
+        this.append(this.starredView);
     }
 
     public record PlaylistsData(ListPlaylists playlistList, ListStarred starredList){}
-
-    public synchronized StarredLoader refresh() {
-        // TODO: probably need to keep this in AppState,
-        //  so we can always have actions for AddToPlaylist and View/Edit Starred list:
-        var loadPlaylistList = Utils.doAsync(() -> this.appManager.useClient(ServerClient::getPlaylists));
-        var loadStarredList = Utils.doAsync(() -> this.appManager.useClient(ServerClient::getStarred));
-
-        var dataFuture = loadPlaylistList
-                .thenCombine(loadStarredList, PlaylistsData::new)
-                .thenApply(data -> {
-                    var listStarred = data.starredList();
-                    log.info("StarredLoader hello {}", listStarred.songs().size());
-                    //var newList = enlarge(listStarred);
-                    var newList = listStarred.songs();
-                    return new PlaylistsData(data.playlistList(), new ListStarred(newList));
-                });
-        var loader = new FutureLoader<>(
-                dataFuture,
-                starred -> {
-                    this.isLoaded.set(true);
-                    return new StarredListView(starred.starredList(), this.appManager, this.onNavigate);
-                }
-        );
-        this.holder.setChild(loader);
-        return this;
-    }
 
     // enlarge helps making a big fake list to test ListView scroll performance:
     private static List<SongInfo> enlarge(ListStarred listStarred) {

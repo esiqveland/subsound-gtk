@@ -2,6 +2,7 @@ package com.github.subsound.app.state;
 
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.ui.components.SettingsPage.SettingsInfo;
+import com.github.subsound.ui.models.GSongInfo;
 import org.gnome.adw.Toast;
 
 import java.time.Duration;
@@ -29,6 +30,8 @@ public sealed interface PlayerAction {
     record EnqueueLast(SongInfo song) implements PlayerAction {}
     record RemoveFromQueue(int position) implements PlayerAction {}
     record Star(SongInfo song) implements PlayerAction {}
+    record Star2(GSongInfo song) implements PlayerAction {}
+    record StarRefresh(boolean forced) implements PlayerAction {}
     record Unstar(SongInfo song) implements PlayerAction {}
     record AddToPlaylist(SongInfo song) implements PlayerAction {}
     record AddToDownloadQueue(SongInfo song) implements PlayerAction {}
