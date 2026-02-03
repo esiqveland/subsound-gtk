@@ -14,22 +14,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
+import static com.github.subsound.utils.Utils.runOnMainThread;
+
 public class GSongInfo extends GObject {
     public static final Type gtype = Types.register(GSongInfo.class);
-
-    public enum Signal {
-        IS_PLAYING("is-playing"),
-        IS_FAVORITE("is-favorite");
-        private final String signal;
-
-        Signal(String signal) {
-            this.signal = signal;
-        }
-
-        public String getId() {
-            return this.signal;
-        }
-    }
 
     private final AtomicBoolean isPlaying = new AtomicBoolean(false);
     private final AtomicBoolean isFavorite = new AtomicBoolean(false);
@@ -41,6 +29,20 @@ public class GSongInfo extends GObject {
 
     private ServerClient.SongInfo songInfo;
 
+    public GSongInfo(MemorySegment address) {
+        super(address);
+    }
+
+    public ServerClient.SongInfo getSongInfo() {
+        return songInfo;
+    }
+
+    public static GSongInfo newInstance(ServerClient.SongInfo value) {
+        GSongInfo instance = GObject.newInstance(gtype);
+        instance.songInfo = value;
+        return instance;
+    }
+
     @Property
     public boolean getIsPlaying() {
         return this.isPlaying.get();
@@ -49,8 +51,7 @@ public class GSongInfo extends GObject {
     @Property
     public void setIsPlaying(boolean isPlaying) {
         if (this.isPlaying.compareAndSet(!isPlaying, isPlaying)) {
-            this.notify(Signal.IS_PLAYING.signal);
-            //runOnMainThread(() -> this.notify(Signal.IS_PLAYING.signal));
+            runOnMainThread(() -> this.notify(Signal.IS_PLAYING.signal));
         }
     }
 
@@ -84,17 +85,22 @@ public class GSongInfo extends GObject {
         }
     }
 
-    public GSongInfo(MemorySegment address) {
-        super(address);
+    public enum Signal {
+        IS_PLAYING("is-playing"),
+        IS_FAVORITE("is-favorite");
+        private final String signal;
+
+        Signal(String signal) {
+            this.signal = signal;
+        }
+
+        public String getId() {
+            return this.signal;
+        }
     }
 
-    public ServerClient.SongInfo getSongInfo() {
-        return songInfo;
-    }
-
-    public static GSongInfo newInstance(ServerClient.SongInfo value) {
-        GSongInfo instance = GObject.newInstance(gtype);
-        instance.songInfo = value;
-        return instance;
+    @Property
+    public String getTitle() {
+        return this.songInfo.title();
     }
 }
