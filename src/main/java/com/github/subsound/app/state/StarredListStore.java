@@ -98,16 +98,16 @@ public class StarredListStore {
                 idx++;
             }
 
-//            Utils.runOnMainThread(() -> {
-            int count = 0;
-            for (int pos : indices) {
-                // when removing multiple items, we need to adjust for shift in indices:
-                int adjustedIndex = pos - count;
-                this.store.removeAt(adjustedIndex);
-                count++;
-            }
-            log.info("removed songId={} from {} positions", a.id(), count);
-//            });
+            Utils.runOnMainThreadFuture(() -> {
+                int count = 0;
+                for (int pos : indices) {
+                    // when removing multiple items, we need to adjust for shift in indices:
+                    int adjustedIndex = pos - count;
+                    this.store.removeAt(adjustedIndex);
+                    count++;
+                }
+                log.info("removed songId={} from {} positions", a.id(), count);
+            }).join();
         }
     }
 
