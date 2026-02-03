@@ -57,8 +57,6 @@ public class StarredLoader extends Box {
         this.append(this.starredView);
     }
 
-    public record PlaylistsData(ListPlaylists playlistList, ListStarred starredList){}
-
     // enlarge helps making a big fake list to test ListView scroll performance:
     private static List<SongInfo> enlarge(ListStarred listStarred) {
         int size = listStarred.songs().size();

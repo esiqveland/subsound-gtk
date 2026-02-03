@@ -11,12 +11,10 @@ import com.github.subsound.ui.components.AppNavigation;
 import com.github.subsound.ui.components.BoxHolder;
 import com.github.subsound.ui.components.FutureLoader;
 import com.github.subsound.ui.components.PlaylistsListView;
-import com.github.subsound.ui.views.StarredLoader.PlaylistsData;
 import com.github.subsound.utils.Utils;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Orientation;
-import org.javagi.gobject.SignalConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,6 +60,8 @@ public class PlaylistsViewLoader extends Box {
 
         this.append(holder);
     }
+
+    public record PlaylistsData(ListPlaylists playlistList, ListStarred starredList){}
 
     public synchronized CompletableFuture<PlaylistsData> refresh() {
         var loadPlaylistList = Utils.doAsync(() -> this.appManager.useClient(ServerClient::getPlaylists));

@@ -9,7 +9,6 @@ import org.apache.commons.io.IOUtils;
 import org.gnome.gio.File;
 import org.gnome.glib.GLib;
 import org.gnome.glib.SourceOnceFunc;
-import org.gnome.gobject.GObject;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.EventControllerMotion;
@@ -21,7 +20,6 @@ import org.gnome.gtk.PropagationLimit;
 import org.gnome.gtk.PropagationPhase;
 import org.gnome.gtk.Widget;
 import org.gnome.gtk.Window;
-import org.javagi.base.GErrorException;
 import org.javagi.gobject.SignalConnection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -74,6 +72,20 @@ public class Utils {
             fn.run();
             return GLib.SOURCE_REMOVE;
         });
+    }
+
+    public static CompletableFuture<Void> runOnMainThreadFuture(SourceOnceFunc fn) {
+        var future = new CompletableFuture<Void>();
+        runOnMainThread(() -> {
+            try {
+                fn.run();
+                future.complete(null);
+            } catch (Throwable e) {
+                future.completeExceptionally(e);
+                throw e;
+            }
+        });
+        return future;
     }
 
     public static String sha256(String value) {
