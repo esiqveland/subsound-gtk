@@ -92,7 +92,6 @@ public class StarredListStore {
             while (it.hasNext()) {
                 var s = it.next();
                 if (s.getSongInfo() == a || s.getSongInfo().id().equals(a.id())) {
-                    s.setStarredAt(Optional.empty());
                     indices.add(idx);
                 }
                 idx++;
@@ -103,6 +102,8 @@ public class StarredListStore {
                 for (int pos : indices) {
                     // when removing multiple items, we need to adjust for shift in indices:
                     int adjustedIndex = pos - count;
+                    var song = this.store.get(adjustedIndex);
+                    song.setStarredAt(Optional.empty());
                     this.store.removeAt(adjustedIndex);
                     count++;
                 }
