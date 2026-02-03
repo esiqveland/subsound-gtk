@@ -123,7 +123,6 @@ public class PlaylistListView extends Box implements AppManager.StateListener {
             } else {
                 log.warn("StarredListView.onUnbind: unexpected child type: {}", child.getClass().getName());
             }
-            listitem.setChild(null);
         });
         factory.onTeardown(item -> {
             ListItem listitem = (ListItem) item;
@@ -131,7 +130,6 @@ public class PlaylistListView extends Box implements AppManager.StateListener {
             if (child == null) {
                 return;
             }
-            //log.info("StarredListView.onTeardown");
             this.listeners.remove(child);
         });
         Utils.runOnMainThread(() -> {
@@ -156,9 +154,10 @@ public class PlaylistListView extends Box implements AppManager.StateListener {
                 .setFocusOnClick(true)
                 .setSingleClickActivate(false)
                 .setFactory(factory)
+                .setModel(selectionModel)
                 .build();
         var activateSignal = this.listView.onActivate(index -> {
-            GSongInfo songInfo = this.listModel.getItem(index);
+            var songInfo = this.listModel.getItem(index);
             if (songInfo == null) {
                 return;
             }
@@ -168,16 +167,12 @@ public class PlaylistListView extends Box implements AppManager.StateListener {
         });
 
         var mapSignal = this.onMap(() -> {
-            this.listView.setModel(selectionModel);
+            //this.listView.setModel(selectionModel);
             appManager.addOnStateChanged(this);
         });
         this.onDestroy(() -> {
             log.info("StarredListView: onDestroy");
             appManager.removeOnStateChanged(this);
-            // We have to unset the selectionModel, as it uses the global StarredList
-            // If the starredList is mapped in a different ListView without being unset first,
-            // the application segfaults.
-            this.listView.setModel(null);
             mapSignal.disconnect();
             activateSignal.disconnect();
         });
