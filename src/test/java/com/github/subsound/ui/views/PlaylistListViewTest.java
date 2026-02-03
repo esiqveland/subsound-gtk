@@ -4,7 +4,7 @@ import org.gnome.gio.ListStore;
 import org.gnome.gobject.GObject;
 import org.junit.Test;
 
-public class StarredListViewTest {
+public class PlaylistListViewTest {
 
     @Test
     public void testClear() {

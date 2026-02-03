@@ -9,7 +9,7 @@ import com.github.subsound.ui.components.AppNavigation;
 import com.github.subsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
 import com.github.subsound.ui.components.StarredItemRow;
 import com.github.subsound.ui.models.GSongInfo;
-import com.github.subsound.ui.views.StarredListView.UpdateListener.MiniState;
+import com.github.subsound.ui.views.PlaylistListView.UpdateListener.MiniState;
 import com.github.subsound.utils.Utils;
 import org.gnome.gio.ListStore;
 import org.gnome.gtk.Align;
@@ -37,18 +37,16 @@ import static org.gnome.gtk.Align.FILL;
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.VERTICAL;
 
-public class StarredListView extends Box implements AppManager.StateListener {
-    private static final Logger log = LoggerFactory.getLogger(StarredListView.class);
+public class PlaylistListView extends Box implements AppManager.StateListener {
+    private static final Logger log = LoggerFactory.getLogger(PlaylistListView.class);
     private final AppManager appManager;
     private final ListStarred data;
     private final ListView listView;
-    //private final ListIndexModel listModel;
-    //private final ListStore<GSongInfo> listModel;
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private final ScrolledWindow scroll;
     private final AtomicReference<MiniState> prevState;
     private final Consumer<AppNavigation.AppRoute> onNavigate;
-    private final ListStore<GSongInfo> listModel;
+    private final ListStore<GSongInfo> listModel = new ListStore<>();
     private final SingleSelection<GSongInfo> selectionModel;
 
     public interface UpdateListener {
@@ -57,7 +55,7 @@ public class StarredListView extends Box implements AppManager.StateListener {
     }
     private final ConcurrentHashMap<StarredItemRow, StarredItemRow> listeners = new ConcurrentHashMap<>();
 
-    public StarredListView(
+    public PlaylistListView(
             ListStarred data,
             AppManager appManager,
             Consumer<AppNavigation.AppRoute> onNavigate
@@ -136,7 +134,6 @@ public class StarredListView extends Box implements AppManager.StateListener {
             //log.info("StarredListView.onTeardown");
             this.listeners.remove(child);
         });
-        this.listModel = appManager.getStarredList();
         Utils.runOnMainThread(() -> {
             // this needs to run on idle thread, otherwise it segfaults:
             this.listModel.removeAll();

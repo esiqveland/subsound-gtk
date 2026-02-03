@@ -8,7 +8,7 @@ import com.github.subsound.ui.components.AppNavigation;
 import com.github.subsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
 import com.github.subsound.ui.components.StarredItemRow;
 import com.github.subsound.ui.models.GSongInfo;
-import com.github.subsound.ui.views.StarredListView.UpdateListener.MiniState;
+import com.github.subsound.ui.views.PlaylistListView.UpdateListener.MiniState;
 import com.github.subsound.utils.Utils;
 import org.gnome.gio.ListStore;
 import org.gnome.gtk.Align;

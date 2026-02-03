@@ -6,7 +6,7 @@ import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
 import com.github.subsound.ui.components.OverviewAlbumChild.AlbumCoverHolderSmall;
 import com.github.subsound.ui.models.GSongInfo;
-import com.github.subsound.ui.views.StarredListView;
+import com.github.subsound.ui.views.PlaylistListView;
 import com.github.subsound.utils.Utils;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
@@ -39,7 +39,7 @@ import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
 
-public class StarredItemRow extends Box implements StarredListView.UpdateListener {
+public class StarredItemRow extends Box implements PlaylistListView.UpdateListener {
     private static final int TRACK_NUMBER_LABEL_CHARS = 4;
 
     private final AppManager appManager;
