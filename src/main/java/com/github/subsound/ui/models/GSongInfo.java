@@ -9,6 +9,7 @@ import org.javagi.gobject.types.Types;
 import java.lang.foreign.MemorySegment;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -18,6 +19,7 @@ import static com.github.subsound.utils.Utils.runOnMainThread;
 
 public class GSongInfo extends GObject {
     public static final Type gtype = Types.register(GSongInfo.class);
+    public static final ConcurrentHashMap<String, GSongInfo> SONG_STORE = new ConcurrentHashMap<>();
 
     private final AtomicBoolean isPlaying = new AtomicBoolean(false);
     private final AtomicBoolean isFavorite = new AtomicBoolean(false);
@@ -38,9 +40,14 @@ public class GSongInfo extends GObject {
     }
 
     public static GSongInfo newInstance(ServerClient.SongInfo value) {
-        GSongInfo instance = GObject.newInstance(gtype);
-        instance.songInfo = value;
-        return instance;
+        return SONG_STORE.computeIfAbsent(
+                value.id(),
+                (key) -> {
+                    GSongInfo instance = GObject.newInstance(gtype);
+                    instance.songInfo = value;
+                    return instance;
+                }
+        );
     }
 
     @Property
