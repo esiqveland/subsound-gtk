@@ -6,6 +6,7 @@ import com.github.subsound.integration.ServerClient.PlaylistKind;
 import com.github.subsound.integration.ServerClient.PlaylistSimple;
 import com.github.subsound.ui.views.PlaylistsViewLoader.PlaylistsData;
 import com.github.subsound.ui.views.PlaylistListView;
+import com.github.subsound.ui.views.StarredListView;
 import com.github.subsound.utils.Utils;
 import org.gnome.adw.ActionRow;
 import org.gnome.adw.NavigationPage;
@@ -21,7 +22,9 @@ import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.StringList;
 import org.gnome.gtk.StringObject;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.github.subsound.utils.Utils.cssClasses;
@@ -35,8 +38,8 @@ public class PlaylistsListView extends Box {
     private final NavigationSplitView view;
     private final NavigationPage initialPage;
     private final NavigationPage page1;
-    private final NavigationPage contentPage;
-    private final PlaylistListView playlistListView;
+    private final StarredListView starredListView;
+    private final NavigationPage starredListPage;
 
     public PlaylistsListView(AppManager appManager, PlaylistsData data) {
         super(Orientation.VERTICAL, 0);
@@ -44,13 +47,11 @@ public class PlaylistsListView extends Box {
         this.data = data;
         this.cache = this.data.playlistList().playlists().stream()
                 .collect(Collectors.toMap(PlaylistSimple::id, a -> a));
-        this.playlistListView = new PlaylistListView(
-                data.starredList(),
-                this.appManager,
-                this.appManager::navigateTo
-        );
+        this.starredListView = new StarredListView(appManager.getStarredList(), appManager, appManager::navigateTo);
+        this.starredListView.setHalign(Align.FILL);
+        this.starredListView.setValign(Align.FILL);
+        this.starredListPage = NavigationPage.builder().setTag("starred").setChild(this.starredListView).setTitle("Starred").setHexpand(true).build();
 
-        this.contentPage = NavigationPage.builder().setTag("page-2").setChild(this.playlistListView).setTitle("Starred").build();
         var b = Box.builder().setValign(Align.CENTER).setHalign(Align.CENTER).build();
         b.append(Label.builder().setLabel("Select a playlist to view").setCssClasses(cssClasses("title-1")).build());
         var statusPage = StatusPage.builder().setChild(b).build();
@@ -113,7 +114,7 @@ public class PlaylistsListView extends Box {
         this.view.setVexpand(true);
         this.view.setHalign(Align.FILL);
         this.view.setValign(Align.BASELINE_FILL);
-        this.view.setContent(contentPage);
+        this.view.setContent(this.starredListPage);
         this.setHexpand(true);
         this.setVexpand(true);
         this.append(view);
@@ -121,17 +122,31 @@ public class PlaylistsListView extends Box {
 
     private void setSelectedPlaylist(PlaylistSimple playlist) {
         doAsync(() -> switch (playlist.kind()) {
-            case NORMAL -> this.appManager.useClient(cl -> cl.getPlaylist(playlist.id())).songs();
-            case STARRED -> this.appManager.useClient(cl -> cl.getStarred()).songs();
+            case NORMAL -> Optional.of(this.appManager.useClient(cl -> cl.getPlaylist(playlist.id())).songs());
+            case STARRED -> Optional.<List<ServerClient.SongInfo>>empty();
             case DOWNLOADED -> {
                 var downloads = this.appManager.getDownloadQueue();
                 var futures = downloads.stream()
                         .map(d -> Utils.doAsync(() -> this.appManager.useClient(cl -> cl.getSong(d.songId()))))
                         .toList();
-                yield futures.stream().map(java.util.concurrent.CompletableFuture::join).toList();
+                var list = futures.stream().map(java.util.concurrent.CompletableFuture::join).toList();
+                yield Optional.of(list);
             }
         }).thenApply(data -> {
-            var next = new PlaylistListView(new ServerClient.ListStarred(data), appManager, appManager::navigateTo);
+            if (playlist.kind() == PlaylistKind.STARRED) {
+                var currentPage = this.view.getContent();
+                if (currentPage == this.starredListPage) {
+                    return data;
+                }
+                Utils.runOnMainThread(() -> this.view.setContent(this.starredListPage));
+                return data;
+            }
+
+            if (data.isEmpty()) {
+                return this.data.starredList();
+            }
+
+            var next = new PlaylistListView(new ServerClient.ListStarred(data.get()), appManager, appManager::navigateTo);
             next.setHalign(Align.FILL);
             next.setValign(Align.FILL);
             var page = NavigationPage.builder().setTag("page-2").setChild(next).setTitle(playlist.name()).setHexpand(true).build();

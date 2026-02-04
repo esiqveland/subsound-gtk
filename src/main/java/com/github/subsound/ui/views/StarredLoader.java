@@ -2,16 +2,10 @@ package com.github.subsound.ui.views;
 
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.app.state.PlayerAction;
-import com.github.subsound.integration.ServerClient;
-import com.github.subsound.integration.ServerClient.ListPlaylists;
 import com.github.subsound.integration.ServerClient.ListStarred;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.ui.components.AppNavigation;
-import com.github.subsound.ui.components.BoxHolder;
-import com.github.subsound.ui.components.FutureLoader;
-import com.github.subsound.utils.Utils;
-import org.gnome.gio.ListStore;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Orientation;
@@ -28,7 +22,7 @@ public class StarredLoader extends Box {
     private final ThumbnailCache thumbLoader;
     private final Consumer<AppNavigation.AppRoute> onNavigate;
 
-    private final StarredListView2 starredView;
+    private final StarredListView starredView;
     private final AppManager appManager;
     private final AtomicBoolean isLoaded = new AtomicBoolean(false);
 
@@ -51,7 +45,7 @@ public class StarredLoader extends Box {
             }
             this.appManager.handleAction(new PlayerAction.StarRefresh(false));
         });
-        this.starredView = new StarredListView2(appManager.getStarredList(), appManager, onNavigate);
+        this.starredView = new StarredListView(appManager.getStarredList(), appManager, onNavigate);
         //this.onShow(this::refresh);
         //this.onRealize(this::refresh);
         this.append(this.starredView);

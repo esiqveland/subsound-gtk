@@ -35,8 +35,8 @@ import static org.gnome.gtk.Align.FILL;
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.VERTICAL;
 
-public class StarredListView2 extends Box implements AppManager.StateListener {
-    private static final Logger log = LoggerFactory.getLogger(StarredListView2.class);
+public class StarredListView extends Box implements AppManager.StateListener {
+    private static final Logger log = LoggerFactory.getLogger(StarredListView.class);
     private final AppManager appManager;
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private final Consumer<AppNavigation.AppRoute> onNavigate;
@@ -48,7 +48,7 @@ public class StarredListView2 extends Box implements AppManager.StateListener {
 
     private final ConcurrentHashMap<StarredItemRow, StarredItemRow> listeners = new ConcurrentHashMap<>();
 
-    public StarredListView2(
+    public StarredListView(
             ListStore<GSongInfo> listModel,
             AppManager appManager,
             Consumer<AppNavigation.AppRoute> onNavigate
