@@ -12,7 +12,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -104,50 +104,64 @@ public class StarredListStore {
             ArrayList<Insertion> insertions
     ) {}
     private static Differences mergeRefresh(ArrayList<String> backingIds, List<SongInfo> newSongs) {
-        // 1. Build lookup preserving API order (starredAt desc)
-        var newById = new LinkedHashMap<String, SongInfo>(newSongs.size());
-        for (var song : newSongs) {
-            newById.put(song.id(), song);
-        }
-        final Map<String, GSongInfo> deduped = new HashMap<>();
+        var newIds = newSongs.stream().map(SongInfo::id).toList();
+        var indexDiff = computeDiff(backingIds, newIds);
 
-        // 2. Update existing GSongInfo data in-place, create new ones
+        // Get or create GSongInfo instances and update their underlying data
+        final Map<String, GSongInfo> resolved = new HashMap<>(newSongs.size());
         for (var song : newSongs) {
-            var existing = deduped.get(song.id());
-            if (existing != null) {
-                existing.mutate(old -> song);
-            } else {
-                deduped.put(song.id(), GSongInfo.newInstance(song));
-            }
+            var gSong = GSongInfo.newInstance(song);
+            gSong.mutate(old -> song);
+            resolved.put(song.id(), gSong);
         }
 
-        var currentIdSet = new HashSet<>(backingIds);
+        var insertions = new ArrayList<Insertion>();
+        for (var ins : indexDiff.insertions()) {
+            insertions.add(new Insertion(ins.position(), resolved.get(newIds.get(ins.position()))));
+        }
 
-        // 3. Compute removal indices — songs in current list but not in new
+        return new Differences(indexDiff.removalIndices(), insertions);
+    }
+
+    /**
+     * Pure diff computation on ID lists. Given the current ordered list of IDs and the
+     * new ordered list, computes the minimal removal indices and insertion positions
+     * needed to transform current into new.
+     */
+    record IndexInsertion(int position) {}
+    record IndexDiff(
+            ArrayList<Integer> removalIndices,
+            ArrayList<IndexInsertion> insertions
+    ) {}
+    static IndexDiff computeDiff(List<String> currentIds, List<String> newIds) {
+        var newIdSet = new HashSet<>(newIds);
+        var currentIdSet = new HashSet<>(currentIds);
+
+        // Compute removal indices — IDs in current but not in new
         var removalIndices = new ArrayList<Integer>();
-        for (int i = 0; i < backingIds.size(); i++) {
-            if (!newById.containsKey(backingIds.get(i))) {
+        for (int i = 0; i < currentIds.size(); i++) {
+            if (!newIdSet.contains(currentIds.get(i))) {
                 removalIndices.add(i);
             }
         }
 
-        // 4. Compute the remaining ID set after removals
+        // Compute the remaining ID set after removals
         var remainingIdSet = new HashSet<>(currentIdSet);
         for (int i : removalIndices) {
-            remainingIdSet.remove(backingIds.get(i));
+            remainingIdSet.remove(currentIds.get(i));
         }
 
-        // 5. Compute insertions — walk new list in order, record positions for new items
-        var insertions = new ArrayList<Insertion>();
+        // Compute insertions — walk new list in order, record positions for new items
+        var insertions = new ArrayList<IndexInsertion>();
         int cursor = 0;
-        for (var song : newSongs) {
-            if (!remainingIdSet.contains(song.id())) {
-                insertions.add(new Insertion(cursor, deduped.get(song.id())));
+        for (var id : newIds) {
+            if (!remainingIdSet.contains(id)) {
+                insertions.add(new IndexInsertion(cursor));
             }
             cursor++;
         }
 
-        return new Differences(removalIndices, insertions);
+        return new IndexDiff(removalIndices, insertions);
     }
 
     public void addStarred(SongInfo songInfo) {
