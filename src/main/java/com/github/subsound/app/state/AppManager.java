@@ -610,18 +610,8 @@ public class AppManager {
                 }).orElse(appState));
     }
 
-    private final ReentrantLock starredListLock = new ReentrantLock();
-
-    public CompletableFuture<Void> reloadStarred() {
-        return this.starredList.refreshAsync();
-    }
-
     public ListStore<GSongInfo> getStarredList() {
         return this.starredList.getStore();
-    }
-
-    public StarredListStore getStarredListStore() {
-        return this.starredList;
     }
 
     public ListStore<GQueueItem> getPlayQueueListStore() {

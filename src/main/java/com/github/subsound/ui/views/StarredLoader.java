@@ -19,8 +19,6 @@ import java.util.function.Consumer;
 
 public class StarredLoader extends Box {
     private static final Logger log = LoggerFactory.getLogger(StarredLoader.class);
-    private final ThumbnailCache thumbLoader;
-    private final Consumer<AppNavigation.AppRoute> onNavigate;
 
     private final StarredListView starredView;
     private final AppManager appManager;
@@ -32,9 +30,7 @@ public class StarredLoader extends Box {
             Consumer<AppNavigation.AppRoute> onNavigate
     ) {
         super(Orientation.VERTICAL, 0);
-        this.thumbLoader = thumbLoader;
         this.appManager = appManager;
-        this.onNavigate = onNavigate;
         this.setHexpand(true);
         this.setVexpand(true);
         this.setHalign(Align.FILL);
@@ -46,8 +42,8 @@ public class StarredLoader extends Box {
             this.appManager.handleAction(new PlayerAction.StarRefresh(false));
         });
         this.starredView = new StarredListView(appManager.getStarredList(), appManager, onNavigate);
-        //this.onShow(this::refresh);
-        //this.onRealize(this::refresh);
+        // schedule a refresh of starred when we get shown
+        this.onShow(() -> this.appManager.handleAction(new PlayerAction.StarRefresh(true)));
         this.append(this.starredView);
     }
 

@@ -10,9 +10,13 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class StarredListStore {
@@ -21,8 +25,8 @@ public class StarredListStore {
     private final Object lock = new Object();
     private final ListStore<GSongInfo> store = new ListStore<>(GSongInfo.gtype);
     private final AppManager appManager;
-    private final ConcurrentHashMap<String, GSongInfo> deduped = new ConcurrentHashMap<>();
-    private AtomicBoolean isLoading = new AtomicBoolean(false);
+    private final ArrayList<String> backingIds = new ArrayList<>();
+    private final AtomicBoolean isLoading = new AtomicBoolean(false);
 
     public StarredListStore(AppManager appManager) {
         this.appManager = appManager;
@@ -30,21 +34,18 @@ public class StarredListStore {
 
     public void handleStarred(PlayerAction.Star2 star) {}
     public void handleStarred(PlayerAction.Star star) {}
+
     public void handleRefresh(PlayerAction.StarRefresh refresh) {
-        if (isLoading.get()) {
-            log.info("Ignoring refresh request while loading");
-            return;
-        }
         refreshAsync();
     }
 
-    public boolean getIsLoading() {
-        return isLoading.get();
-    }
-
-    public CompletableFuture<Void> refreshAsync() {
+    public record Diff(int total, int removals, int insertions) {}
+    // TODO: handle what should happen if we change server_id
+    // We should probably expose a clear() function and do refreshAsync with the new server_id
+    public CompletableFuture<Diff> refreshAsync() {
         return Utils.doAsync(() -> {
             if (!isLoading.compareAndSet(false, true)) {
+                log.info("Ignoring refresh request while loading");
                 // we are already loading
                 return null;
             }
@@ -52,21 +53,39 @@ public class StarredListStore {
             try {
                 var list = this.appManager.useClient(ServerClient::getStarred);
                 synchronized (lock) {
-                    var songs = list.songs();
-                    var items = new GSongInfo[songs.size()];
-                    int idx = 0;
-                    for (var song : songs) {
-                        var gSong = deduped.computeIfAbsent(song.id(), key -> GSongInfo.newInstance(song));
-                        // TODO: replace gSong.songInfo with new underlying data
-                        items[idx] = gSong;
-                        idx++;
-                    }
-                    Utils.runOnMainThreadFuture(() -> {
-                        store.removeAll();
-                        store.splice(0, 0, items);
+                    var newSongs = list.songs();
+                    var diff = mergeRefresh(backingIds, newSongs);
 
+                    var removalIndices = diff.removalIndices();
+                    var insertions = diff.insertions();
+
+                    // Apply mutations on main thread
+                    Utils.runOnMainThreadFuture(() -> {
+                        // Remove backwards to preserve indices
+                        for (int i = removalIndices.size() - 1; i >= 0; i--) {
+                            store.removeAt(removalIndices.get(i));
+                        }
+                        // Insert forwards — positions account for previous insertions
+                        for (var ins : insertions) {
+                            store.insert(ins.position(), ins.item());
+                        }
                     }).join();
-                    return null;
+
+
+                    // 7. Update backing state
+                    backingIds.clear();
+                    backingIds.ensureCapacity(newSongs.size());
+                    for (var song : newSongs) {
+                        backingIds.add(song.id());
+                    }
+                    log.info("mergeRefresh: total={} removals={} insertions={} updated={}",
+                            newSongs.size(),
+                            removalIndices.size(),
+                            insertions.size(),
+                            newSongs.size() - insertions.size()
+                    );
+
+                    return new Diff(newSongs.size(), removalIndices.size(), insertions.size());
                 }
             } finally {
                 isLoading.set(false);
@@ -74,33 +93,84 @@ public class StarredListStore {
         });
     }
 
+    /**
+     * Merges the API response into the ListStore with minimal mutations.
+     * Preserves existing GSongInfo instances and their GTK bindings.
+     * Must be called under synchronized(lock).
+     */
+    record Insertion(int position, GSongInfo item) {}
+    record Differences(
+            ArrayList<Integer> removalIndices,
+            ArrayList<Insertion> insertions
+    ) {}
+    private static Differences mergeRefresh(ArrayList<String> backingIds, List<SongInfo> newSongs) {
+        // 1. Build lookup preserving API order (starredAt desc)
+        var newById = new LinkedHashMap<String, SongInfo>(newSongs.size());
+        for (var song : newSongs) {
+            newById.put(song.id(), song);
+        }
+        final Map<String, GSongInfo> deduped = new HashMap<>();
+
+        // 2. Update existing GSongInfo data in-place, create new ones
+        for (var song : newSongs) {
+            var existing = deduped.get(song.id());
+            if (existing != null) {
+                existing.mutate(old -> song);
+            } else {
+                deduped.put(song.id(), GSongInfo.newInstance(song));
+            }
+        }
+
+        var currentIdSet = new HashSet<>(backingIds);
+
+        // 3. Compute removal indices — songs in current list but not in new
+        var removalIndices = new ArrayList<Integer>();
+        for (int i = 0; i < backingIds.size(); i++) {
+            if (!newById.containsKey(backingIds.get(i))) {
+                removalIndices.add(i);
+            }
+        }
+
+        // 4. Compute the remaining ID set after removals
+        var remainingIdSet = new HashSet<>(currentIdSet);
+        for (int i : removalIndices) {
+            remainingIdSet.remove(backingIds.get(i));
+        }
+
+        // 5. Compute insertions — walk new list in order, record positions for new items
+        var insertions = new ArrayList<Insertion>();
+        int cursor = 0;
+        for (var song : newSongs) {
+            if (!remainingIdSet.contains(song.id())) {
+                insertions.add(new Insertion(cursor, deduped.get(song.id())));
+            }
+            cursor++;
+        }
+
+        return new Differences(removalIndices, insertions);
+    }
+
     public void addStarred(SongInfo songInfo) {
-        // TODO: Consider storing the list in reverse order, and displaying it reversed order:
-        //  appending to 0th element could be slow when reaching 10k+ songs:
-        var song = deduped.computeIfAbsent(songInfo.id(), key -> GSongInfo.newInstance(songInfo));
+        var gSong = GSongInfo.newInstance(songInfo);
         synchronized (lock) {
-            song.setStarredAt(song.getSongInfo().starred().or(() -> Optional.of(Instant.now())));
-            Utils.runOnMainThreadFuture(() -> store.insert(0, song)).join();
+            gSong.setStarredAt(gSong.getSongInfo().starred().or(() -> Optional.of(Instant.now())));
+            backingIds.addFirst(songInfo.id());
+            Utils.runOnMainThreadFuture(() -> store.insert(0, gSong)).join();
         }
     }
 
     public void removeStarred(SongInfo a) {
         synchronized (lock) {
-            var it = this.store.iterator();
-            int idx = 0;
             var indices = new ArrayList<Integer>();
-            while (it.hasNext()) {
-                var s = it.next();
-                if (s.getSongInfo() == a || s.getSongInfo().id().equals(a.id())) {
-                    indices.add(idx);
+            for (int i = 0; i < backingIds.size(); i++) {
+                if (backingIds.get(i).equals(a.id())) {
+                    indices.add(i);
                 }
-                idx++;
             }
 
             Utils.runOnMainThreadFuture(() -> {
                 int count = 0;
                 for (int pos : indices) {
-                    // when removing multiple items, we need to adjust for shift in indices:
                     int adjustedIndex = pos - count;
                     var song = this.store.get(adjustedIndex);
                     song.setStarredAt(Optional.empty());
@@ -109,6 +179,11 @@ public class StarredListStore {
                 }
                 log.info("removed songId={} from {} positions", a.id(), count);
             }).join();
+
+            // Update backing list (backwards to preserve indices)
+            for (int i = indices.size() - 1; i >= 0; i--) {
+                backingIds.remove((int) indices.get(i));
+            }
         }
     }
 
