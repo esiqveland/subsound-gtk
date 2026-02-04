@@ -40,7 +40,8 @@ public class GSongInfo extends GObject {
     }
 
     public static GSongInfo newInstance(ServerClient.SongInfo value) {
-        return SONG_STORE.computeIfAbsent(
+        // TODO: replace with the updated SongInfo data
+        var gsong = SONG_STORE.computeIfAbsent(
                 value.id(),
                 (key) -> {
                     GSongInfo instance = GObject.newInstance(gtype);
@@ -48,6 +49,8 @@ public class GSongInfo extends GObject {
                     return instance;
                 }
         );
+        gsong.mutate(_ -> value);
+        return gsong;
     }
 
     @Property
