@@ -84,8 +84,8 @@ public class GSongInfo extends GObject {
             boolean isFavorite = this.songInfo.starred().isPresent();
             if (this.isFavorite.get() != isFavorite) {
                 this.isFavorite.set(isFavorite);
-                this.notify(Signal.IS_FAVORITE.signal);
-                //runOnMainThread(() -> this.notify(Signal.IS_FAVORITE.signal));
+                // notify always need to happen on the main thread, as it triggers signals in GTK objects that could trigger UI updates...
+                runOnMainThread(() -> this.notify(Signal.IS_FAVORITE.signal));
             }
         } finally {
             lock.unlock();
