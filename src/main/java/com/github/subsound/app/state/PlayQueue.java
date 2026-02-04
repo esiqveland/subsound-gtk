@@ -189,8 +189,15 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
                 .toArray(GQueueItem[]::new);
 
         synchronized (lock) {
+            // Clear isPlaying on the previously playing GSongInfo before replacing.
+            // GSongInfo instances are globally shared, so stale isPlaying=true would
+            // leak into the new queue if the same song appears at a different position.
+            int oldPos = this.position.orElse(-1);
             this.position = startPosition.filter(pos -> pos >= 0 && pos < newList.length);
             Utils.runOnMainThreadFuture(() -> {
+                if (oldPos >= 0 && oldPos < listStore.getNItems()) {
+                    listStore.getItem(oldPos).getSongInfo().setIsPlaying(false);
+                }
                 this.listStore.removeAll();
                 this.listStore.splice(0, 0, newList);
                 var pos = this.position.filter(p -> p >= 0 && p < listStore.getNItems());
