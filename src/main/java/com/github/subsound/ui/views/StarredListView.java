@@ -13,11 +13,12 @@ import com.github.subsound.utils.Utils;
 import org.gnome.gio.ListStore;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
+import org.gnome.gtk.EventControllerKey;
 import org.gnome.gtk.ListItem;
 import org.gnome.gtk.ListView;
+import org.gnome.gtk.MultiSelection;
 import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.SignalListItemFactory;
-import org.gnome.gtk.SingleSelection;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +45,8 @@ public class StarredListView extends Box implements AppManager.StateListener {
     private final ListStore<GSongInfo> listModel;
     private final ListView listView;
     private final ScrolledWindow scroll;
-    private final SingleSelection<GSongInfo> selectionModel;
+    private final MultiSelection<GSongInfo> selectionModel;
+    private final EventControllerKey keyController;
 
     private final ConcurrentHashMap<StarredItemRow, StarredItemRow> listeners = new ConcurrentHashMap<>();
 
@@ -128,7 +130,8 @@ public class StarredListView extends Box implements AppManager.StateListener {
             listitem.setChild(null);
         });
 
-        this.selectionModel = new SingleSelection<>(this.listModel);
+
+        this.selectionModel = new MultiSelection<>(this.listModel);
         this.listView = ListView.builder()
                 //.setCssClasses(cssClasses(Classes.richlist.className()))
                 //.setCssClasses(cssClasses("boxed-list"))
@@ -153,6 +156,33 @@ public class StarredListView extends Box implements AppManager.StateListener {
             List<SongInfo> songs = this.listModel.stream().map(GSongInfo::getSongInfo).toList();
             this.onAction.apply(new PlayerAction.PlayAndReplaceQueue(songs, index));
         });
+
+        // Key controller to handle Delete key for unstarring selected songs
+        keyController = new EventControllerKey();
+        keyController.onKeyPressed((keyval, keycode, state) -> {
+            // GDK_KEY_Delete = 0xFFFF (65535)
+            if (keyval == 0xFFFF) {
+                var selection = this.selectionModel.getSelection();
+                if (selection.isEmpty()) {
+                    return false;
+                }
+                int selectionSize = (int) selection.getSize();
+                log.info("Delete pressed, unstarring {} songs", selectionSize);
+                for (int i = 0; i < selectionSize; i++) {
+                    int idx = selection.getNth(i);
+                    var gSongInfo = this.listModel.getItem(idx);
+                    if (gSongInfo != null) {
+                        var song = gSongInfo.getSongInfo();
+                        if (song != null) {
+                            this.onAction.apply(new PlayerAction.Unstar(song));
+                        }
+                    }
+                }
+                return true;
+            }
+            return false;
+        });
+        this.listView.addController(keyController);
 
         var mapSignal = this.onMap(() -> {
             appManager.addOnStateChanged(this);
