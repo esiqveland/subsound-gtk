@@ -60,8 +60,23 @@ public class PlaylistsStore {
                     var removalIndices = diff.removalIndices();
                     var insertions = diff.insertions();
 
+                    // Build lookup map for updating existing items
+                    var playlistById = new HashMap<String, PlaylistSimple>(allPlaylists.size());
+                    for (var p : allPlaylists) {
+                        playlistById.put(p.id(), p);
+                    }
+
                     // Apply mutations on main thread
                     Utils.runOnMainThreadFuture(() -> {
+                        // Update existing items with fresh data before removals
+                        for (int i = 0; i < metaStore.getNItems(); i++) {
+                            var gPlaylist = metaStore.getItem(i);
+                            var fresh = playlistById.get(gPlaylist.getId());
+                            if (fresh != null) {
+                                gPlaylist.setValue(fresh);
+                            }
+                        }
+
                         // Remove backwards to preserve indices
                         for (int i = removalIndices.size() - 1; i >= 0; i--) {
                             metaStore.removeAt(removalIndices.get(i));
@@ -169,6 +184,11 @@ public class PlaylistsStore {
         }
         public PlaylistSimple getPlaylist() {
             return value;
+        }
+
+        public void setValue(PlaylistSimple value) {
+            this.value = value;
+            this.notify("name");
         }
 
         public static GPlaylist newInstance(PlaylistSimple value) {

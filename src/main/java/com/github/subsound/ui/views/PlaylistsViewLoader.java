@@ -39,15 +39,18 @@ public class PlaylistsViewLoader extends Box {
         this.playlistsListView.setValign(Align.FILL);
 
         var signal = this.onMap(() -> {
-            if (!this.isLoaded.compareAndSet(false, true)) {
-                return;
-            }
+            //log.info("PlaylistsViewLoader: onMap");
             // Initial load is done by AppManager when client is set
             // But we can trigger a refresh here if needed
             this.appManager.handleAction(new PlayerAction.RefreshPlaylists());
+
+            if (!this.isLoaded.compareAndSet(false, true)) {
+                return;
+            }
         });
         this.onShow(() -> {
-            if (!this.isLoaded.compareAndSet(true, true)) {
+            //log.info("PlaylistsViewLoader: onShow");
+            if (!this.isLoaded.get()) {
                 return;
             }
 

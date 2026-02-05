@@ -24,6 +24,7 @@ import org.gnome.gtk.SignalListItemFactory;
 import org.gnome.gtk.SingleSelection;
 import org.gnome.gtk.Widget;
 import org.gnome.pango.EllipsizeMode;
+import org.javagi.gobject.SignalConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,7 +95,7 @@ public class PlaylistsListView extends Box {
             }
             var child = listitem.getChild();
             if (child instanceof PlaylistRowWidget row) {
-                row.bind(item.getPlaylist());
+                row.bind(item);
             }
         });
 
@@ -212,7 +213,8 @@ public class PlaylistsListView extends Box {
         private final Box prefixBox;
         private final Label titleLabel;
         private final Label subtitleLabel;
-        private PlaylistSimple playlist;
+        private GPlaylist gPlaylist;
+        private SignalConnection<NotifyCallback> notifySignal;
 
         public PlaylistRowWidget(AppManager appManager) {
             super(HORIZONTAL, 12);
@@ -258,8 +260,18 @@ public class PlaylistsListView extends Box {
             this.append(contentBox);
         }
 
-        public void bind(PlaylistSimple playlist) {
-            this.playlist = playlist;
+        public void bind(GPlaylist gPlaylist) {
+            this.gPlaylist = gPlaylist;
+            updateFromPlaylist(this.gPlaylist.getPlaylist());
+
+            // Connect to notify signal to update when playlist data changes
+            this.notifySignal = this.gPlaylist.onNotify("name", _ -> {
+                log.info("gPlaylist.onNotify: name {}", this.gPlaylist.getPlaylist());
+                updateFromPlaylist(this.gPlaylist.getPlaylist());
+            });
+        }
+
+        private void updateFromPlaylist(PlaylistSimple playlist) {
             this.titleLabel.setLabel(playlist.name());
             this.subtitleLabel.setLabel(playlist.songCount() + " items");
 
@@ -296,7 +308,12 @@ public class PlaylistsListView extends Box {
         }
 
         public void unbind() {
-            this.playlist = null;
+            var notifySig = this.notifySignal;
+            if (notifySig != null) {
+                notifySig.disconnect();
+                this.notifySignal = null;
+            }
+            this.gPlaylist = null;
         }
     }
 }
