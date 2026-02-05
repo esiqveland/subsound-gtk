@@ -23,6 +23,7 @@ import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.SignalListItemFactory;
 import org.gnome.gtk.SingleSelection;
 import org.gnome.gtk.Widget;
+import org.gnome.pango.EllipsizeMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -240,6 +241,7 @@ public class PlaylistsListView extends Box {
                     .setXalign(0)
                     .build();
             this.titleLabel.setSingleLineMode(true);
+            this.titleLabel.setEllipsize(EllipsizeMode.END);
 
             this.subtitleLabel = Label.builder()
                     .setLabel("")
