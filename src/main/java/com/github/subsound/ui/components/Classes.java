@@ -46,6 +46,8 @@ public enum Classes {
     darken("darken"),
     rounded("rounded"),
     shadow("shadow"),
+    // starred gives a yellow font color for icons
+    starred("starred"),
     activatable("activatable"),
     queueAutomatic("queue-automatic");
 

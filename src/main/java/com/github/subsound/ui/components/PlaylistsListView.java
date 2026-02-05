@@ -1,112 +1,154 @@
 package com.github.subsound.ui.components;
 
 import com.github.subsound.app.state.AppManager;
+import com.github.subsound.app.state.PlaylistsStore.GPlaylist;
 import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.PlaylistKind;
 import com.github.subsound.integration.ServerClient.PlaylistSimple;
-import com.github.subsound.ui.views.PlaylistsViewLoader.PlaylistsData;
 import com.github.subsound.ui.views.PlaylistListView;
 import com.github.subsound.ui.views.StarredListView;
 import com.github.subsound.utils.Utils;
-import org.gnome.adw.ActionRow;
 import org.gnome.adw.NavigationPage;
 import org.gnome.adw.NavigationSplitView;
 import org.gnome.adw.StatusPage;
+import org.gnome.gio.ListStore;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Image;
 import org.gnome.gtk.Label;
-import org.gnome.gtk.ListBox;
+import org.gnome.gtk.ListItem;
+import org.gnome.gtk.ListView;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.ScrolledWindow;
-import org.gnome.gtk.StringList;
-import org.gnome.gtk.StringObject;
+import org.gnome.gtk.SignalListItemFactory;
+import org.gnome.gtk.SingleSelection;
+import org.gnome.gtk.Widget;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.github.subsound.utils.Utils.cssClasses;
 import static com.github.subsound.utils.Utils.doAsync;
+import static org.gnome.gtk.Align.CENTER;
+import static org.gnome.gtk.Align.FILL;
+import static org.gnome.gtk.Align.START;
+import static org.gnome.gtk.Orientation.HORIZONTAL;
+import static org.gnome.gtk.Orientation.VERTICAL;
 
 public class PlaylistsListView extends Box {
+    private static final Logger log = LoggerFactory.getLogger(PlaylistsListView.class);
+
     private final AppManager appManager;
-    private final PlaylistsData data;
-    private final Map<String, PlaylistSimple> cache;
-    private final ListBox list;
+    private final ListStore<GPlaylist> listModel;
+    private final ListView listView;
     private final NavigationSplitView view;
     private final NavigationPage initialPage;
     private final NavigationPage page1;
     private final StarredListView starredListView;
     private final NavigationPage starredListPage;
+    private final SingleSelection<GPlaylist> selectionModel;
 
-    public PlaylistsListView(AppManager appManager, PlaylistsData data) {
+    public PlaylistsListView(AppManager appManager) {
         super(Orientation.VERTICAL, 0);
         this.appManager = appManager;
-        this.data = data;
-        this.cache = this.data.playlistList().playlists().stream()
-                .collect(Collectors.toMap(PlaylistSimple::id, a -> a));
+        this.listModel = appManager.getPlaylistsListStore();
+
         this.starredListView = new StarredListView(appManager.getStarredList(), appManager, appManager::navigateTo);
         this.starredListView.setHalign(Align.FILL);
         this.starredListView.setValign(Align.FILL);
-        this.starredListPage = NavigationPage.builder().setTag("starred").setChild(this.starredListView).setTitle("Starred").setHexpand(true).build();
+        this.starredListPage = NavigationPage.builder()
+                .setTag("starred")
+                .setChild(this.starredListView)
+                .setTitle("Starred")
+                .setHexpand(true)
+                .build();
 
         var b = Box.builder().setValign(Align.CENTER).setHalign(Align.CENTER).build();
         b.append(Label.builder().setLabel("Select a playlist to view").setCssClasses(cssClasses("title-1")).build());
         var statusPage = StatusPage.builder().setChild(b).build();
         this.initialPage = NavigationPage.builder().setTag("page-2-initial").setChild(statusPage).build();
-        // https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/migrating-to-breakpoints.html#sidebar
-        this.view = NavigationSplitView.builder().setValign(Align.FILL).setHalign(Align.FILL).setHexpand(true).setVexpand(true).build();
 
-        list = ListBox.builder().setValign(Align.START).setVexpand(true).build();
-        list.addCssClass(Classes.boxedList.className());
-        var signal1 = list.onRowActivated(row -> {
-            var playlist = this.data.playlistList().playlists().get(row.getIndex());
-            System.out.println("PlaylistsListView: goto " + playlist.name());
-            //this.contentPage.setTitle(playlist.name());
+        this.view = NavigationSplitView.builder()
+                .setValign(Align.FILL)
+                .setHalign(Align.FILL)
+                .setHexpand(true)
+                .setVexpand(true)
+                .build();
+
+        var factory = new SignalListItemFactory();
+        factory.onSetup(object -> {
+            ListItem listitem = (ListItem) object;
+            listitem.setActivatable(true);
+            var row = new PlaylistRowWidget(appManager);
+            listitem.setChild(row);
+        });
+
+        factory.onBind(object -> {
+            ListItem listitem = (ListItem) object;
+            var item = (GPlaylist) listitem.getItem();
+            if (item == null) {
+                return;
+            }
+            var child = listitem.getChild();
+            if (child instanceof PlaylistRowWidget row) {
+                row.bind(item.getPlaylist());
+            }
+        });
+
+        factory.onUnbind(object -> {
+            ListItem listitem = (ListItem) object;
+            var child = listitem.getChild();
+            if (child instanceof PlaylistRowWidget row) {
+                row.unbind();
+            }
+        });
+
+        factory.onTeardown(object -> {
+            ListItem listitem = (ListItem) object;
+            listitem.setChild(null);
+        });
+
+        this.selectionModel = new SingleSelection<>(this.listModel);
+        this.listView = ListView.builder()
+                .setShowSeparators(false)
+                .setOrientation(VERTICAL)
+                .setHexpand(true)
+                .setVexpand(true)
+                .setHalign(FILL)
+                .setValign(FILL)
+                .setFocusOnClick(true)
+                .setSingleClickActivate(true)
+                .setFactory(factory)
+                .setModel(selectionModel)
+                .build();
+
+        var activateSignal = this.listView.onActivate(index -> {
+            var gPlaylist = this.listModel.getItem(index);
+            if (gPlaylist == null) {
+                return;
+            }
+            var playlist = gPlaylist.getPlaylist();
+            log.info("listView.onActivate: {} {}", index, playlist.name());
             this.setSelectedPlaylist(playlist);
         });
 
-        var stringList = StringList.builder().build();
-        this.data.playlistList().playlists().forEach(i -> stringList.append(i.id()));
-        list.bindModel(stringList, item -> {
-            // StringObject is the item type for a StringList ListModel type. StringObject is a GObject.
-            StringObject strObj = (StringObject) item;
-            var id = strObj.getString();
-            var playlist = this.cache.get(id);
-            var row = ActionRow.builder()
-                    .setTitle(playlist.name())
-                    .setTitleLines(1)
-                    .setSubtitle(playlist.songCount() + " items")
-                    .setUseMarkup(false)
-                    .setActivatable(true)
-                    .build();
-            if (playlist.kind() == PlaylistKind.DOWNLOADED) {
-                var icon = Image.fromIconName(Icons.FolderDownload.getIconName());
-                icon.setPixelSize(24);
-                icon.setHalign(Align.CENTER);
-                icon.setValign(Align.CENTER);
-                icon.setSizeRequest(48, 48);
-                row.addPrefix(icon);
-            } else {
-                row.addPrefix(RoundedAlbumArt.resolveCoverArt(
-                        appManager,
-                        playlist.coverArtId(),
-                        48,
-                        true
-                ));
-            }
-            return row;
-        });
-
         this.onDestroy(() -> {
-            signal1.disconnect();
+            activateSignal.disconnect();
         });
 
-        var playlistView = ScrolledWindow.builder().setChild(list).setHexpand(true).setVexpand(true).build();
-        // https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/migrating-to-breakpoints.html#sidebar
-        this.page1 = NavigationPage.builder().setTag("page-1").setChild(playlistView).setTitle("Playlists").build();
+        var playlistScrollView = ScrolledWindow.builder()
+                .setChild(listView)
+                .setHexpand(true)
+                .setVexpand(true)
+                .build();
+
+        this.page1 = NavigationPage.builder()
+                .setTag("page-1")
+                .setChild(playlistScrollView)
+                .setTitle("Playlists")
+                .build();
         this.view.setSidebar(this.page1);
         this.view.setMaxSidebarWidth(300);
         this.view.setShowContent(true);
@@ -143,18 +185,116 @@ public class PlaylistsListView extends Box {
             }
 
             if (data.isEmpty()) {
-                return this.data.starredList();
+                return Optional.<List<ServerClient.SongInfo>>empty();
             }
 
             var next = new PlaylistListView(new ServerClient.ListStarred(data.get()), appManager, appManager::navigateTo);
             next.setHalign(Align.FILL);
             next.setValign(Align.FILL);
-            var page = NavigationPage.builder().setTag("page-2").setChild(next).setTitle(playlist.name()).setHexpand(true).build();
+            var page = NavigationPage.builder()
+                    .setTag("page-2")
+                    .setChild(next)
+                    .setTitle(playlist.name())
+                    .setHexpand(true)
+                    .build();
             Utils.runOnMainThread(() -> {
                 this.view.setContent(page);
             });
             return data;
         });
+    }
 
+    private static class PlaylistRowWidget extends Box {
+        private static final int ICON_SIZE = 48;
+
+        private final AppManager appManager;
+        private final Box prefixBox;
+        private final Label titleLabel;
+        private final Label subtitleLabel;
+        private PlaylistSimple playlist;
+
+        public PlaylistRowWidget(AppManager appManager) {
+            super(HORIZONTAL, 12);
+            this.appManager = appManager;
+
+            this.setMarginTop(8);
+            this.setMarginBottom(8);
+            this.setMarginStart(12);
+            this.setMarginEnd(12);
+
+            // Prefix box for icon/cover art
+            this.prefixBox = new Box(HORIZONTAL, 0);
+            this.prefixBox.setHalign(CENTER);
+            this.prefixBox.setValign(CENTER);
+            this.prefixBox.setSizeRequest(ICON_SIZE, ICON_SIZE);
+
+            // Content box for title and subtitle
+            var contentBox = new Box(VERTICAL, 2);
+            contentBox.setHalign(START);
+            contentBox.setValign(CENTER);
+            contentBox.setHexpand(true);
+
+            this.titleLabel = Label.builder()
+                    .setLabel("")
+                    .setHalign(START)
+                    .setXalign(0)
+                    .build();
+            this.titleLabel.setSingleLineMode(true);
+
+            this.subtitleLabel = Label.builder()
+                    .setLabel("")
+                    .setHalign(START)
+                    .setXalign(0)
+                    .setCssClasses(cssClasses(Classes.labelDim.className(), Classes.caption.className()))
+                    .build();
+            this.subtitleLabel.setSingleLineMode(true);
+
+            contentBox.append(titleLabel);
+            contentBox.append(subtitleLabel);
+
+            this.append(prefixBox);
+            this.append(contentBox);
+        }
+
+        public void bind(PlaylistSimple playlist) {
+            this.playlist = playlist;
+            this.titleLabel.setLabel(playlist.name());
+            this.subtitleLabel.setLabel(playlist.songCount() + " items");
+
+            // Clear existing prefix content
+            Widget child = this.prefixBox.getFirstChild();
+            while (child != null) {
+                Widget next = child.getNextSibling();
+                this.prefixBox.remove(child);
+                child = next;
+            }
+
+            // Add new prefix content
+            if (playlist.kind() == PlaylistKind.DOWNLOADED) {
+                var icon = Image.fromIconName(Icons.FolderDownload.getIconName());
+                icon.setPixelSize(24);
+                icon.setHalign(CENTER);
+                icon.setValign(CENTER);
+                this.prefixBox.append(icon);
+            } else if (playlist.kind() == PlaylistKind.STARRED) {
+                var icon = Image.fromIconName(Icons.Starred.getIconName());
+                icon.setPixelSize(24);
+                icon.setHalign(CENTER);
+                icon.setValign(CENTER);
+                icon.addCssClass(Classes.starred.className());
+                this.prefixBox.append(icon);
+            } else {
+                this.prefixBox.append(RoundedAlbumArt.resolveCoverArt(
+                        appManager,
+                        playlist.coverArtId(),
+                        ICON_SIZE,
+                        true
+                ));
+            }
+        }
+
+        public void unbind() {
+            this.playlist = null;
+        }
     }
 }

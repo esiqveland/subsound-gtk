@@ -69,6 +69,7 @@ public class AppManager {
     private final CopyOnWriteArrayList<StateListener> listeners = new CopyOnWriteArrayList<>();
     //private final ListStore<GSongInfo> starredList = new ListStore<>(GSongInfo.gtype);
     private final StarredListStore starredList;
+    private final PlaylistsStore playlistsStore;
     private final ScheduledExecutorService preferenceSaveScheduler = Executors.newSingleThreadScheduledExecutor();
     private final Database database;
     private final DatabaseServerService dbService;
@@ -136,7 +137,11 @@ public class AppManager {
         }
 
         this.starredList = new StarredListStore(this);
-        client.ifPresent(c -> this.starredList.refreshAsync());
+        this.playlistsStore = new PlaylistsStore(this);
+        client.ifPresent(c -> {
+            this.starredList.refreshAsync();
+            this.playlistsStore.refreshListAsync();
+        });
         this.downloadManager = new DownloadManager(
                 dbService,
                 songCache
@@ -612,6 +617,10 @@ public class AppManager {
 
     public ListStore<GSongInfo> getStarredList() {
         return this.starredList.getStore();
+    }
+
+    public ListStore<PlaylistsStore.GPlaylist> getPlaylistsListStore() {
+        return this.playlistsStore.playlistsListStore();
     }
 
     public ListStore<GQueueItem> getPlayQueueListStore() {
