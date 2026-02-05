@@ -35,6 +35,7 @@ public sealed interface PlayerAction {
     record Unstar(SongInfo song) implements PlayerAction {}
     record AddToPlaylist(SongInfo song) implements PlayerAction {}
     record AddToDownloadQueue(SongInfo song) implements PlayerAction {}
+    record RefreshPlaylists() implements PlayerAction {}
 
     // not strictly player actions:
     record SaveConfig(SettingsInfo next) implements PlayerAction {}

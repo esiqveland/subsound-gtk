@@ -47,8 +47,10 @@ public class PlaylistsStore {
             }
 
             try {
-                var serverPlaylists = this.appManager.useClient(ServerClient::getPlaylists);
-                var starredList = this.appManager.useClient(ServerClient::getStarred);
+                var task1 = Utils.doAsync(() -> this.appManager.useClient(ServerClient::getPlaylists));
+                var task2 = Utils.doAsync(() -> this.appManager.useClient(ServerClient::getStarred));
+                var serverPlaylists = task1.join();
+                var starredList = task2.join();
 
                 synchronized (lock) {
                     // Build the full playlist list with synthetic entries first

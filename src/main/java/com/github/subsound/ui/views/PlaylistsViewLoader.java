@@ -1,6 +1,7 @@
 package com.github.subsound.ui.views;
 
 import com.github.subsound.app.state.AppManager;
+import com.github.subsound.app.state.PlayerAction;
 import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.ui.components.AppNavigation;
 import com.github.subsound.ui.components.PlaylistsListView;
@@ -38,11 +39,13 @@ public class PlaylistsViewLoader extends Box {
         this.playlistsListView.setValign(Align.FILL);
 
         var signal = this.onMap(() -> {
-            if (this.isLoaded.compareAndSet(false, true)) {
-                // Initial load is done by AppManager when client is set
-                // But we can trigger a refresh here if needed
-            }
+            // Initial load is done by AppManager when client is set
+            // But we can trigger a refresh here if needed
         });
+        this.onShow(() -> {
+            this.appManager.handleAction(new PlayerAction.StarRefresh())
+        })
+
         this.onDestroy(() -> signal.disconnect());
 
         this.append(playlistsListView);
