@@ -315,7 +315,7 @@ public class MainApplication {
         // Pack everything together, and show the window
         var window = ApplicationWindow.builder()
                 .setApplication(app)
-                .setDefaultWidth(1040).setDefaultHeight(850)
+                .setDefaultWidth(1250).setDefaultHeight(950)
                 .setContent(toolbarView)
                 .build();
         window.addController(shortcutController);
