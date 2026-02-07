@@ -223,6 +223,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
         skipForwardButton.onClicked(this::onNext);
         shuffleModeButton = Button.builder().setIconName(Icons.PlaylistShuffle.getIconName()).build();
         shuffleModeButton.addCssClass("circular");
+        shuffleModeButton.setTooltipText("Shuffle");
         shuffleModeButton.onClicked(() -> {
             AppState state = this.appManager.getState();
             var currentMode = state.queue().playMode();
@@ -237,6 +238,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
 
         repeatModeButton = Button.builder().setIconName(Icons.PlaylistRepeatSong.getIconName()).build();
         repeatModeButton.addCssClass("circular");
+        repeatModeButton.setTooltipText("Repeat song");
         repeatModeButton.onClicked(() -> {
             AppState state = this.appManager.getState();
             var currentMode = state.queue().playMode();
