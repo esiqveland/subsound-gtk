@@ -56,6 +56,13 @@ public class Utils {
             .registerTypeAdapter(Instant.class, new InstantAdapter())
             .create();
 
+    // Test mode flag: when true, runOnMainThread executes synchronously instead of using GLib main loop
+    private static volatile boolean testMode = false;
+
+    public static void setTestMode(boolean enabled) {
+        testMode = enabled;
+    }
+
     public static <T> CompletableFuture<T> doAsync(Supplier<T> supplier) {
         return CompletableFuture.supplyAsync(supplier, ASYNC_EXECUTOR);
     }
@@ -65,6 +72,12 @@ public class Utils {
     }
 
     public static void runOnMainThread(SourceOnceFunc fn) {
+        // TODO: find a better way to deal with GTK main thread in tests
+        if (testMode) {
+            // In test mode, execute synchronously (no GTK main loop available)
+            fn.run();
+            return;
+        }
         // Have to add a return GLib.SOURCE_REMOVE at the end of the callback to make sure it only runs once.
         // GLib.idleAdd calls g_idle_add_full which has proper memory management with a DestroyNotify callback.
         // Java-GI uses that to free the upcall allocation.

@@ -8,7 +8,10 @@ import com.github.subsound.sound.PlaybinPlayer.Source;
 import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.sound.Player;
 import com.github.subsound.ui.models.GSongInfo;
+import com.github.subsound.utils.Utils;
+import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -28,11 +31,17 @@ public class PlayQueueTest {
 
     @Before
     public void setUp() {
+        Utils.setTestMode(true);
         player = new StubPlayer();
         stateChangedRecorder = new PlayQueueStateRecorder();
         playRecorder = new SongInfoRecorder();
-        
+
         playQueue = new PlayQueue(player, stateChangedRecorder, playRecorder);
+    }
+
+    @After
+    public void tearDown() {
+        Utils.setTestMode(false);
     }
 
     @Test
