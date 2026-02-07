@@ -52,7 +52,7 @@ public class PlayQueueTest {
                 SongInfoFactory.createRandomSongInfo(),
                 SongInfoFactory.createRandomSongInfo()
         );
-        playQueue.replaceQueue(songs, 1);
+        playQueue.replaceQueue(songs, 1).join();
 
         PlayQueue.PlayQueueState state = playQueue.getState();
         assertThat(state.position()).hasValue(1);
@@ -67,7 +67,7 @@ public class PlayQueueTest {
                 SongInfoFactory.createRandomSongInfo(),
                 SongInfoFactory.createRandomSongInfo()
         );
-        playQueue.replaceQueue(songs);
+        playQueue.replaceQueue(songs, 0).join();
         playQueue.playPosition(1);
 
         assertThat(playQueue.getState().position()).hasValue(1);
@@ -80,7 +80,7 @@ public class PlayQueueTest {
                 SongInfoFactory.createRandomSongInfo(),
                 SongInfoFactory.createRandomSongInfo()
         );
-        playQueue.replaceQueue(songs, 0);
+        playQueue.replaceQueue(songs, 0).join();
         playQueue.attemptPlayNext();
 
         assertThat(playQueue.getState().position()).hasValue(1);
@@ -90,7 +90,7 @@ public class PlayQueueTest {
     @Test
     public void testAttemptPlayNextAtEnd() {
         List<SongInfo> songs = List.of(SongInfoFactory.createRandomSongInfo());
-        playQueue.replaceQueue(songs, 0);
+        playQueue.replaceQueue(songs, 0).join();
         playRecorder.songs.clear();
         playQueue.attemptPlayNext();
 
@@ -106,7 +106,7 @@ public class PlayQueueTest {
                 SongInfoFactory.createRandomSongInfo()
         );
         var song = songs.getFirst();
-        playQueue.replaceQueue(songs, 0);
+        playQueue.replaceQueue(songs, 0).join();
 
         player.currentState = new PlayerState(
                 PlayerStates.PLAYING,
@@ -129,7 +129,7 @@ public class PlayQueueTest {
                 SongInfoFactory.createRandomSongInfo(),
                 SongInfoFactory.createRandomSongInfo()
         );
-        playQueue.replaceQueue(songs, 1);
+        playQueue.replaceQueue(songs, 1).join();
 
         player.currentState = new PlayerState(
                 PlayerStates.PLAYING,
@@ -155,7 +155,7 @@ public class PlayQueueTest {
                 SongInfoFactory.createRandomSongInfo(),
                 SongInfoFactory.createRandomSongInfo()
         );
-        playQueue.replaceQueue(songs, 0);
+        playQueue.replaceQueue(songs, 0).join();
 
         PlayerState endOfStreamState = new PlayerState(
                 PlayerStates.END_OF_STREAM,
@@ -176,7 +176,7 @@ public class PlayQueueTest {
                 SongInfoFactory.createRandomSongInfo(),
                 SongInfoFactory.createRandomSongInfo()
         );
-        playQueue.replaceQueue(songs, 0);
+        playQueue.replaceQueue(songs, 0).join();
 
         SongInfo enqueued = SongInfoFactory.createRandomSongInfo();
         playQueue.enqueue(enqueued);
@@ -196,7 +196,7 @@ public class PlayQueueTest {
                 SongInfoFactory.createRandomSongInfo(),
                 SongInfoFactory.createRandomSongInfo()
         );
-        playQueue.replaceQueue(songs, 0);
+        playQueue.replaceQueue(songs, 0).join();
 
         // Enqueue a user-queued song via enqueue (Play Next)
         SongInfo userSong = SongInfoFactory.createRandomSongInfo();
@@ -222,7 +222,7 @@ public class PlayQueueTest {
                 SongInfoFactory.createRandomSongInfo(),
                 SongInfoFactory.createRandomSongInfo()
         );
-        playQueue.replaceQueue(songs, 0);
+        playQueue.replaceQueue(songs, 0).join();
 
         SongInfo lastSong = SongInfoFactory.createRandomSongInfo();
         playQueue.enqueueLast(lastSong);
@@ -239,7 +239,7 @@ public class PlayQueueTest {
                 SongInfoFactory.createRandomSongInfo(),
                 SongInfoFactory.createRandomSongInfo()
         );
-        playQueue.replaceQueue(songs, 0);
+        playQueue.replaceQueue(songs, 0).join();
 
         // Add multiple user-queued songs
         SongInfo user1 = SongInfoFactory.createRandomSongInfo();
@@ -272,7 +272,7 @@ public class PlayQueueTest {
                 SongInfoFactory.createRandomSongInfo(),
                 SongInfoFactory.createRandomSongInfo()
         );
-        playQueue.replaceQueue(songs, 1);
+        playQueue.replaceQueue(songs, 1).join();
         playRecorder.songs.clear();
 
         // Remove the currently playing song (index 1)
@@ -296,7 +296,7 @@ public class PlayQueueTest {
                 SongInfoFactory.createRandomSongInfo(),
                 SongInfoFactory.createRandomSongInfo()
         );
-        playQueue.replaceQueue(songs, 1);
+        playQueue.replaceQueue(songs, 1).join();
         playRecorder.songs.clear();
 
         playQueue.removeAt(1);
@@ -315,7 +315,7 @@ public class PlayQueueTest {
                 SongInfoFactory.createRandomSongInfo(),
                 SongInfoFactory.createRandomSongInfo()
         );
-        playQueue.replaceQueue(songs, 0);
+        playQueue.replaceQueue(songs, 0).join();
         playRecorder.songs.clear();
 
         playQueue.removeAt(0);
@@ -336,7 +336,7 @@ public class PlayQueueTest {
                 SongInfoFactory.createRandomSongInfo(),
                 SongInfoFactory.createRandomSongInfo()
         );
-        playQueue.replaceQueue(songs, 1);
+        playQueue.replaceQueue(songs, 1).join();
         playRecorder.songs.clear();
 
         playQueue.removeAt(1);
