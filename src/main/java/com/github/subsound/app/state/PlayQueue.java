@@ -82,7 +82,10 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
         return Utils.doAsync(() -> {
             this.replaceQueue(a.queue(), a.position()).join();
             // Use actual position from queue state (may differ from a.position() after shuffle)
-            int positionToPlay = this.position.orElse(a.position());
+            int positionToPlay;
+            synchronized (lock) {
+                positionToPlay = this.position.orElse(a.position());
+            }
             this.playPosition(positionToPlay);
         });
     }
