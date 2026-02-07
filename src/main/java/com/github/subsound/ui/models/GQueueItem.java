@@ -18,6 +18,8 @@ public class GQueueItem extends GObject {
 
     private GSongInfo gSongInfo;
     private QueueKind queueKind = QueueKind.AUTOMATIC;
+    private int originalOrder;   // Position when added to queue (for unshuffle)
+    private int shuffleOrder;    // Random number for shuffle sorting
 
     public static Type getType() {
         return gtype;
@@ -43,6 +45,22 @@ public class GQueueItem extends GObject {
         return queueKind;
     }
 
+    public int getOriginalOrder() {
+        return originalOrder;
+    }
+
+    public void setOriginalOrder(int order) {
+        this.originalOrder = order;
+    }
+
+    public int getShuffleOrder() {
+        return shuffleOrder;
+    }
+
+    public void setShuffleOrder(int order) {
+        this.shuffleOrder = order;
+    }
+
     @Property
     // should be available as 'is-user-queued' in GTK component
     public boolean getIsUserQueued() {
@@ -50,17 +68,26 @@ public class GQueueItem extends GObject {
     }
 
     public static GQueueItem newInstance(SongInfo value) {
-        return newInstance(GSongInfo.newInstance(value), QueueKind.AUTOMATIC);
+        return newInstance(GSongInfo.newInstance(value), QueueKind.AUTOMATIC, 0);
     }
 
     public static GQueueItem newInstance(SongInfo value, QueueKind queueKind) {
-        return newInstance(GSongInfo.newInstance(value), queueKind);
+        return newInstance(GSongInfo.newInstance(value), queueKind, 0);
+    }
+
+    public static GQueueItem newInstance(SongInfo value, QueueKind queueKind, int originalOrder) {
+        return newInstance(GSongInfo.newInstance(value), queueKind, originalOrder);
     }
 
     public static GQueueItem newInstance(GSongInfo gSongInfo, QueueKind queueKind) {
+        return newInstance(gSongInfo, queueKind, 0);
+    }
+
+    public static GQueueItem newInstance(GSongInfo gSongInfo, QueueKind queueKind, int originalOrder) {
         GQueueItem instance = GObject.newInstance(gtype);
         instance.gSongInfo = gSongInfo;
         instance.queueKind = queueKind;
+        instance.originalOrder = originalOrder;
         return instance;
     }
 }

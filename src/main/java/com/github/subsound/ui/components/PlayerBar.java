@@ -29,6 +29,7 @@ import static com.github.subsound.app.state.AppManager.NowPlaying.State.LOADING;
 import static com.github.subsound.integration.ServerClient.CoverArt;
 import static com.github.subsound.ui.components.PlayerBar.CoverArtDiff.CHANGED;
 import static com.github.subsound.ui.components.PlayerBar.CoverArtDiff.SAME;
+import static com.github.subsound.utils.Utils.runOnMainThread;
 import static com.github.subsound.utils.Utils.withinEpsilon;
 
 public class PlayerBar extends Box implements AppManager.StateListener {
@@ -52,6 +53,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
     private final Button skipBackwardButton;
     private final Button playPauseButton;
     private final Button skipForwardButton;
+    private final Button shuffleModeButton;
     private final PlayerScrubber playerScrubber;
     private final MenuButton queueButton;
     private final PlayQueuePopover queuePopover;
@@ -65,6 +67,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
     // playing state helps control the play/pause button
     private PlayingState playingState = PlayingState.IDLE;
     private Optional<CoverArt> currentCoverArt = Optional.empty();
+    private final AtomicLong updateCounter = new AtomicLong();
 
     enum PlayingState {
         IDLE,
@@ -217,6 +220,19 @@ public class PlayerBar extends Box implements AppManager.StateListener {
         skipForwardButton = Button.builder().setIconName(Icons.SkipForward.getIconName()).build();
         skipForwardButton.addCssClass("circular");
         skipForwardButton.onClicked(this::onNext);
+        shuffleModeButton = Button.builder().setIconName(Icons.PlaylistShuffle.getIconName()).build();
+        shuffleModeButton.addCssClass("circular");
+        shuffleModeButton.onClicked(() -> {
+            AppState state = this.appManager.getState();
+            var currentMode = state.queue().playMode();
+            var mode = switch (currentMode) {
+                case SHUFFLE -> PlayerAction.PlayMode.NORMAL;
+                case NORMAL -> PlayerAction.PlayMode.SHUFFLE;
+            };
+            // optimistically update the UI:
+            this.updatePlayMode(mode);
+            this.appManager.handleAction(new PlayerAction.SetPlayMode(mode));
+        });
 
         playPauseButton = Button.builder().setIconName(Icons.PLAY.getIconName()).build();
         playPauseButton.addCssClass("circular");
@@ -236,6 +252,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
         playerControls.append(skipBackwardButton);
         playerControls.append(playPauseButton);
         playerControls.append(skipForwardButton);
+        playerControls.append(shuffleModeButton);
 
         Box centerWidget = Box.builder().setOrientation(Orientation.VERTICAL).setSpacing(2).build();
         centerWidget.append(playerControls);
@@ -279,6 +296,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
     public void onStateChanged(@Nullable AppState prevState, AppState state) {
         var player = state.player();
         var playing = state.nowPlaying();
+        var queue = state.queue();
 
         Optional<CoverArt> nextCover = playing.flatMap(st -> st.song().coverArt());
         try {
@@ -296,6 +314,12 @@ public class PlayerBar extends Box implements AppManager.StateListener {
                             this::placeholderCover
                     );
                 }
+            }
+
+            var playMode = queue.playMode();
+            var prevPlayMode = prevState.queue().playMode();
+            if (playMode != prevPlayMode) {
+                this.updatePlayMode(playMode);
             }
 
             PlayingState nextPlayingState = toPlayingState(player.state());
@@ -363,6 +387,15 @@ public class PlayerBar extends Box implements AppManager.StateListener {
             isStateChanging.set(false);
             currentState.set(state);
         }
+    }
+
+    private void updatePlayMode(PlayerAction.PlayMode playMode) {
+        runOnMainThread(() -> {
+            switch (playMode) {
+                case NORMAL -> this.shuffleModeButton.removeCssClass(Classes.colorAccent.className());
+                case SHUFFLE -> this.shuffleModeButton.addCssClass(Classes.colorAccent.className());
+            }
+        });
     }
 
     private void updatePlayingState(PlayingState nextPlayingState) {

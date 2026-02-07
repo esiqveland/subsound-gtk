@@ -1,9 +1,10 @@
 package com.github.subsound.app.state;
 
-import com.github.subsound.sound.Player;
+import com.github.subsound.app.state.PlayerAction.PlayMode;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.sound.PlaybinPlayer.Source;
+import com.github.subsound.sound.Player;
 import com.github.subsound.ui.models.GQueueItem;
 import com.github.subsound.ui.models.GSongInfo;
 import com.github.subsound.utils.Utils;
@@ -12,8 +13,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.function.Consumer;
 
 import static com.github.subsound.sound.PlaybinPlayer.PlayerStates.END_OF_STREAM;
@@ -31,6 +35,7 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     private final Consumer<GSongInfo> onPlay;
     private final ListStore<GQueueItem> listStore = new ListStore<>(GQueueItem.gtype);
     private Optional<Integer> position = Optional.empty();
+    private PlayMode playMode = PlayMode.NORMAL;
 
     public PlayQueue(
             Player player,
@@ -49,7 +54,7 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
 
     public PlayQueueState getState() {
         synchronized (lock) {
-            return new PlayQueueState(position);
+            return new PlayQueueState(position, playMode);
         }
     }
 
@@ -73,7 +78,8 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     }
 
     public record PlayQueueState (
-            Optional<Integer> position
+            Optional<Integer> position,
+            PlayMode playMode
     ){}
     private void notifyState() {
         var next = getState();
@@ -184,11 +190,15 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     }
 
     public void replaceQueue(List<SongInfo> newQueue, Optional<Integer> startPosition) {
-        var newList = newQueue.stream()
-                .map(GQueueItem::newInstance)
-                .toArray(GQueueItem[]::new);
+        var newList = new GQueueItem[newQueue.size()];
+        for (int i = 0; i < newQueue.size(); i++) {
+            newList[i] = GQueueItem.newInstance(newQueue.get(i), GQueueItem.QueueKind.AUTOMATIC, i);
+        }
 
         synchronized (lock) {
+            // TODO: FIXME: check for playmode and shuffle the newQueue if playmode is already shuffle
+
+            playMode = PlayMode.NORMAL;
             // Clear isPlaying on the previously playing GSongInfo before replacing.
             // GSongInfo instances are globally shared, so stale isPlaying=true would
             // leak into the new queue if the same song appears at a different position.
@@ -228,6 +238,81 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
                 log.info("updateCurrentItemStyling: nextItem={}", nextItem.getId());
             }
         });
+    }
+
+    public void shuffle() {
+        synchronized (lock) {
+            playMode = PlayMode.SHUFFLE;
+            if (listStore.getNItems() <= 1) {
+                return;
+            }
+
+            int oldPos = position.orElse(-1);
+            GQueueItem currentItem = oldPos >= 0 ? listStore.getItem(oldPos) : null;
+
+            // Assign random positive shuffle numbers to all items
+            var random = new Random();
+            for (int i = 0; i < listStore.getNItems(); i++) {
+                // Use absolute value to ensure positive, add 1 to avoid 0
+                listStore.getItem(i).setShuffleOrder(random.nextInt(1, Integer.MAX_VALUE));
+            }
+
+            // Set current song's shuffle order to minimum so it sorts first
+            if (currentItem != null) {
+                currentItem.setShuffleOrder(Integer.MIN_VALUE);
+            }
+
+            // Extract items and sort by shuffleOrder (current song will be first)
+            var items = new ArrayList<GQueueItem>();
+            for (int i = 0; i < listStore.getNItems(); i++) {
+                items.add(listStore.getItem(i));
+            }
+            items.sort(Comparator.comparingInt(GQueueItem::getShuffleOrder));
+
+            Utils.runOnMainThreadFuture(() -> {
+                listStore.removeAll();
+                listStore.splice(0, 0, items.toArray(GQueueItem[]::new));
+            }).join();
+
+            // Current song is now at position 0
+            if (currentItem != null) {
+                position = Optional.of(0);
+            }
+
+            notifyState();
+        }
+    }
+
+    public void unshuffle() {
+        synchronized (lock) {
+            if (playMode == PlayMode.NORMAL || listStore.getNItems() <= 1) {
+                return;
+            }
+
+            // Extract items, sort by originalOrder, rebuild store
+            var items = new ArrayList<GQueueItem>();
+            for (int i = 0; i < listStore.getNItems(); i++) {
+                items.add(listStore.getItem(i));
+            }
+            items.sort(Comparator.comparingInt(GQueueItem::getOriginalOrder));
+
+            // Find new position of currently playing song
+            int oldPos = position.orElse(-1);
+            GQueueItem currentItem = oldPos >= 0 ? listStore.getItem(oldPos) : null;
+
+            Utils.runOnMainThreadFuture(() -> {
+                listStore.removeAll();
+                listStore.splice(0, 0, items.toArray(GQueueItem[]::new));
+            }).join();
+
+            // Update position to track the same song
+            if (currentItem != null) {
+                position = Optional.of(items.indexOf(currentItem));
+            }
+
+            playMode = PlayMode.NORMAL;
+            notifyState();
+        }
     }
 
     @Override

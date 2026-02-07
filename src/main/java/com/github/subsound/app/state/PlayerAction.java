@@ -13,6 +13,13 @@ public sealed interface PlayerAction {
     record Pause() implements PlayerAction {}
     record PlayPrev() implements PlayerAction {}
     record PlayNext() implements PlayerAction {}
+    enum PlayMode {
+        NORMAL,
+        SHUFFLE,
+        //REPEAT_ONE,
+        //REPEAT_ALL,
+    }
+    record SetPlayMode(PlayMode mode) implements PlayerAction {}
     record SeekTo(Duration position) implements PlayerAction {}
     record PlayAndReplaceQueue(List<SongInfo> queue, int position) implements PlayerAction {
         @Override
