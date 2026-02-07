@@ -18,6 +18,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static com.github.subsound.sound.PlaybinPlayer.PlayerStates.END_OF_STREAM;
@@ -75,6 +76,15 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
             this.onPlay.accept(newItem.getSongInfo());
             this.notifyState();
         }
+    }
+
+    public CompletableFuture<Void> playAndReplaceQueue(PlayerAction.PlayAndReplaceQueue a) {
+        return Utils.doAsync(() -> {
+            this.replaceQueue(a.queue(), a.position()).join();
+            // Use actual position from queue state (may differ from a.position() after shuffle)
+            int positionToPlay = this.position.orElse(a.position());
+            this.playPosition(positionToPlay);
+        });
     }
 
     public record PlayQueueState (
@@ -189,47 +199,53 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
         }
     }
 
-    public void replaceQueue(List<SongInfo> newQueue, Optional<Integer> startPosition) {
-        var newList = new GQueueItem[newQueue.size()];
-        for (int i = 0; i < newQueue.size(); i++) {
-            newList[i] = GQueueItem.newInstance(newQueue.get(i), GQueueItem.QueueKind.AUTOMATIC, i);
-        }
+    public CompletableFuture<Void> replaceQueue(List<SongInfo> newQueue, Optional<Integer> startPosition) {
+        return Utils.doAsync(() -> {
+            var newList = new GQueueItem[newQueue.size()];
+            for (int i = 0; i < newQueue.size(); i++) {
+                newList[i] = GQueueItem.newInstance(newQueue.get(i), GQueueItem.QueueKind.AUTOMATIC, i);
+            }
 
-        synchronized (lock) {
-            // TODO: FIXME: check for playmode and shuffle the newQueue if playmode is already shuffle
+            synchronized (lock) {
+                boolean isShuffleMode = playMode == PlayMode.SHUFFLE;
 
-            playMode = PlayMode.NORMAL;
-            // Clear isPlaying on the previously playing GSongInfo before replacing.
-            // GSongInfo instances are globally shared, so stale isPlaying=true would
-            // leak into the new queue if the same song appears at a different position.
-            int oldPos = this.position.orElse(-1);
-            this.position = startPosition.filter(pos -> pos >= 0 && pos < newList.length);
-            Utils.runOnMainThreadFuture(() -> {
-                if (oldPos >= 0 && oldPos < listStore.getNItems()) {
-                    listStore.getItem(oldPos).getSongInfo().setIsPlaying(false);
+                // Clear isPlaying on the previously playing GSongInfo before replacing.
+                // GSongInfo instances are globally shared, so stale isPlaying=true would
+                // leak into the new queue if the same song appears at a different position.
+                int oldPos = this.position.orElse(-1);
+                this.position = startPosition.filter(pos -> pos >= 0 && pos < newList.length);
+                Utils.runOnMainThreadFuture(() -> {
+                    // TODO: updating prev song is-playing should probably be done in AppState and AppManager by the switch to a new song
+                    if (oldPos >= 0 && oldPos < listStore.getNItems()) {
+                        listStore.getItem(oldPos).getSongInfo().setIsPlaying(false);
+                    }
+                    this.listStore.removeAll();
+                    this.listStore.splice(0, 0, newList);
+                    var pos = this.position.filter(p -> p >= 0 && p < listStore.getNItems());
+                    if (pos.isPresent()) {
+                        listStore.getItem(pos.get()).getSongInfo().setIsPlaying(true);
+                    }
+                }).join();
+
+                if (isShuffleMode) {
+                    shuffle(false);
                 }
-                this.listStore.removeAll();
-                this.listStore.splice(0, 0, newList);
-                var pos = this.position.filter(p -> p >= 0 && p < listStore.getNItems());
-                if (pos.isPresent()) {
-                    listStore.getItem(pos.get()).getSongInfo().setIsPlaying(true);
-                }
-            }).join();
-            this.notifyState();
-        }
+                this.notifyState();
+            }
+        });
     }
 
     public void replaceQueue(List<SongInfo> queue) {
         replaceQueue(queue, Optional.empty());
     }
 
-    public void replaceQueue(List<SongInfo> queue, int startPosition) {
-        replaceQueue(queue, Optional.of(startPosition));
+    public CompletableFuture<Void> replaceQueue(List<SongInfo> queue, int startPosition) {
+        return replaceQueue(queue, Optional.of(startPosition));
     }
 
     private void updateCurrentItemStyling(int oldPosition, int newPosition) {
         Utils.runOnMainThread(() -> {
-            if (oldPosition >= 0 && oldPosition < listStore.getNItems()) {
+            if (oldPosition != newPosition && oldPosition >= 0 && oldPosition < listStore.getNItems()) {
                 listStore.getItem(oldPosition).getSongInfo().setIsPlaying(false);
             }
             if (newPosition >= 0 && newPosition < listStore.getNItems()) {
@@ -241,6 +257,10 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     }
 
     public void shuffle() {
+        shuffle(true);
+    }
+
+    private void shuffle(boolean doNotify) {
         synchronized (lock) {
             playMode = PlayMode.SHUFFLE;
             if (listStore.getNItems() <= 1) {
@@ -279,7 +299,9 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
                 position = Optional.of(0);
             }
 
-            notifyState();
+            if (doNotify) {
+                notifyState();
+            }
         }
     }
 

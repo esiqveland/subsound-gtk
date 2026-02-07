@@ -433,10 +433,7 @@ public class AppManager {
                 case PlayerAction.EnqueueLast a -> this.playQueue.enqueueLast(a.song());
                 case PlayerAction.RemoveFromQueue a -> this.playQueue.removeAt(a.position());
                 case PlayPositionInQueue a -> this.playQueue.playPosition(a.position());
-                case PlayerAction.PlayAndReplaceQueue a -> {
-                    this.playQueue.replaceQueue(a.queue(), a.position());
-                    this.playQueue.playPosition(a.position());
-                }
+                case PlayerAction.PlayAndReplaceQueue a -> this.playQueue.playAndReplaceQueue(a);
                 case PlayerAction.Pause a -> this.pause();
                 case PlayerAction.Play a -> this.play();
                 case PlayerAction.PlayNext a -> this.playQueue.attemptPlayNext();
@@ -462,7 +459,7 @@ public class AppManager {
                     this.downloadManager.enqueue(a.song());
                     this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Added to download queue")));
                 }
-                case PlayerAction.SyncDatabase s -> {
+                case PlayerAction.SyncDatabase _ -> {
                     var syncService = new com.github.subsound.persistence.database.SyncService(
                             this.client.get(), this.dbService, UUID.fromString(SERVER_ID)
                     );
