@@ -66,6 +66,17 @@ public class Main {
             app.onShutdown(() -> {
                 var mainApp = mainAppRef.get();
                 if (mainApp != null) {
+                    // Save window size before shutdown
+                    var size = mainApp.getLastWindowSize();
+                    if (size != null) {
+                        this.config.windowWidth = size.width();
+                        this.config.windowHeight = size.height();
+                        try {
+                            config.saveToFile();
+                        } catch (Exception e) {
+                            log.warn("Failed to save config", e);
+                        }
+                    }
                     mainApp.shutdown();
                 }
                 mprisController.stop();

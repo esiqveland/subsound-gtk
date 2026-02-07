@@ -61,6 +61,8 @@ public class MainApplication {
     private final AppManager appManager;
     private final ThumbnailCache thumbLoader;
     private final String cssMain;
+    private ApplicationWindow window;
+    private WindowSize lastWindowSize;
 
     private final ViewStack viewStack = ViewStack.builder().build();
     private final NavigationView navigationView = NavigationView.builder().setPopOnEscape(true).setAnimateTransitions(true).build();
@@ -313,12 +315,19 @@ public class MainApplication {
         shortcutController.setScope(ShortcutScope.GLOBAL);
 
         // Pack everything together, and show the window
-        var window = ApplicationWindow.builder()
+        this.window = ApplicationWindow.builder()
                 .setApplication(app)
-                .setDefaultWidth(1250).setDefaultHeight(950)
+                .setDefaultWidth(cfg.windowWidth).setDefaultHeight(cfg.windowHeight)
                 .setContent(toolbarView)
                 .build();
         window.addController(shortcutController);
+
+        // Capture window size before it's destroyed
+        window.onCloseRequest(() -> {
+            this.lastWindowSize = new WindowSize(window.getWidth(), window.getHeight());
+            return false; // Allow window to close
+        });
+
         window.present();
     }
 
@@ -348,6 +357,12 @@ public class MainApplication {
                 .setHalign(Align.CENTER)
                 .setVexpand(true)
                 .setHexpand(true);
+    }
+
+    public record WindowSize(int width, int height) {}
+
+    public WindowSize getLastWindowSize() {
+        return lastWindowSize;
     }
 
     public void shutdown() {

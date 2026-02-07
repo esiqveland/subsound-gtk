@@ -19,10 +19,15 @@ public class Config {
     private static final Logger log = LoggerFactory.getLogger(Config.class);
 
     private final Path configFilePath;
+    public static final int DEFAULT_WINDOW_WIDTH = 1250;
+    public static final int DEFAULT_WINDOW_HEIGHT = 950;
+
     public final boolean isTestpageEnabled = "true".equals(System.getenv("SUBSOUND_TESTPAGE_ENABLED"));
     public Path dataDir = defaultStorageDir();
     public ServerConfig serverConfig;
     public OnboardingState onboarding;
+    public int windowWidth = DEFAULT_WINDOW_WIDTH;
+    public int windowHeight = DEFAULT_WINDOW_HEIGHT;
 
 
     public Config(Path configFilePath) {
@@ -34,6 +39,7 @@ public class Config {
         this.configFilePath.getParent().toFile().mkdirs();
         var dto = toFileFormat();
         var jsonStr = Utils.toJson(dto);
+        log.info("saving config to file: {} width={} height={}", this.configFilePath, dto.windowWidth, dto.windowHeight);
         Files.writeString(this.configFilePath, jsonStr, StandardCharsets.UTF_8);
     }
 
@@ -44,6 +50,8 @@ public class Config {
     private ConfigurationDTO toFileFormat() {
         var d = new ConfigurationDTO();
         d.onboarding = this.onboarding;
+        d.windowWidth = this.windowWidth;
+        d.windowHeight = this.windowHeight;
         if (this.serverConfig != null) {
             d.server = new ServerConfigDTO(
                     this.serverConfig.id(),
@@ -79,6 +87,12 @@ public class Config {
                         cfg -> {
                             log.debug("read config file at path={}", configFilePath);
                             config.onboarding = cfg.onboarding;
+                            if (cfg.windowWidth != null && cfg.windowWidth > 0) {
+                                config.windowWidth = cfg.windowWidth;
+                            }
+                            if (cfg.windowHeight != null && cfg.windowHeight > 0) {
+                                config.windowHeight = cfg.windowHeight;
+                            }
                             if (cfg.server != null) {
                                 config.onboarding = OnboardingState.DONE;
                                 config.serverConfig = new ServerConfig(
@@ -110,6 +124,10 @@ public class Config {
         public ServerConfigDTO server;
         @SerializedName("onboarding")
         public OnboardingState onboarding;
+        @SerializedName("windowWidth")
+        public Integer windowWidth;
+        @SerializedName("windowHeight")
+        public Integer windowHeight;
         public enum OnboardingState {
             DONE,
         }
