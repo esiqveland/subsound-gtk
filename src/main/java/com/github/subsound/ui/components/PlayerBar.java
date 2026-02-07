@@ -54,6 +54,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
     private final Button playPauseButton;
     private final Button skipForwardButton;
     private final Button shuffleModeButton;
+    private final Button repeatModeButton;
     private final PlayerScrubber playerScrubber;
     private final MenuButton queueButton;
     private final PlayQueuePopover queuePopover;
@@ -227,8 +228,21 @@ public class PlayerBar extends Box implements AppManager.StateListener {
             var currentMode = state.queue().playMode();
             var mode = switch (currentMode) {
                 case SHUFFLE -> PlayerAction.PlayMode.NORMAL;
-                case NORMAL -> PlayerAction.PlayMode.SHUFFLE;
+                case NORMAL, REPEAT_ONE -> PlayerAction.PlayMode.SHUFFLE;
             };
+            // optimistically update the UI:
+            this.updatePlayMode(mode);
+            this.appManager.handleAction(new PlayerAction.SetPlayMode(mode));
+        });
+
+        repeatModeButton = Button.builder().setIconName(Icons.PlaylistRepeatSong.getIconName()).build();
+        repeatModeButton.addCssClass("circular");
+        repeatModeButton.onClicked(() -> {
+            AppState state = this.appManager.getState();
+            var currentMode = state.queue().playMode();
+            var mode = currentMode == PlayerAction.PlayMode.REPEAT_ONE
+                    ? PlayerAction.PlayMode.NORMAL
+                    : PlayerAction.PlayMode.REPEAT_ONE;
             // optimistically update the UI:
             this.updatePlayMode(mode);
             this.appManager.handleAction(new PlayerAction.SetPlayMode(mode));
@@ -249,10 +263,11 @@ public class PlayerBar extends Box implements AppManager.StateListener {
                 .setHalign(Align.CENTER)
                 .setVexpand(true)
                 .build();
+        playerControls.append(shuffleModeButton);
         playerControls.append(skipBackwardButton);
         playerControls.append(playPauseButton);
         playerControls.append(skipForwardButton);
-        playerControls.append(shuffleModeButton);
+        playerControls.append(repeatModeButton);
 
         Box centerWidget = Box.builder().setOrientation(Orientation.VERTICAL).setSpacing(2).build();
         centerWidget.append(playerControls);
@@ -391,9 +406,17 @@ public class PlayerBar extends Box implements AppManager.StateListener {
 
     private void updatePlayMode(PlayerAction.PlayMode playMode) {
         runOnMainThread(() -> {
-            switch (playMode) {
-                case NORMAL -> this.shuffleModeButton.removeCssClass(Classes.colorAccent.className());
-                case SHUFFLE -> this.shuffleModeButton.addCssClass(Classes.colorAccent.className());
+            // Update shuffle button
+            if (playMode == PlayerAction.PlayMode.SHUFFLE) {
+                this.shuffleModeButton.addCssClass(Classes.colorAccent.className());
+            } else {
+                this.shuffleModeButton.removeCssClass(Classes.colorAccent.className());
+            }
+            // Update repeat button
+            if (playMode == PlayerAction.PlayMode.REPEAT_ONE) {
+                this.repeatModeButton.addCssClass(Classes.colorAccent.className());
+            } else {
+                this.repeatModeButton.removeCssClass(Classes.colorAccent.className());
             }
         });
     }

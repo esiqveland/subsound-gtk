@@ -16,7 +16,7 @@ public sealed interface PlayerAction {
     enum PlayMode {
         NORMAL,
         SHUFFLE,
-        //REPEAT_ONE,
+        REPEAT_ONE,
         //REPEAT_ALL,
     }
     record SetPlayMode(PlayMode mode) implements PlayerAction {}

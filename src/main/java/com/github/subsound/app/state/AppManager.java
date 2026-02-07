@@ -440,10 +440,10 @@ public class AppManager {
                 case PlayerAction.PlayPrev a -> this.playQueue.attemptPlayPrev();
                 case PlayerAction.SeekTo seekTo -> this.player.seekTo(seekTo.position());
                 case PlayerAction.SetPlayMode a -> {
-                    if (a.mode() == PlayerAction.PlayMode.SHUFFLE) {
-                        this.playQueue.shuffle();
-                    } else {
-                        this.playQueue.unshuffle();
+                    switch (a.mode()) {
+                        case SHUFFLE -> this.playQueue.shuffle();
+                        case NORMAL -> this.playQueue.unshuffle();
+                        case REPEAT_ONE -> this.playQueue.setPlayMode(a.mode());
                     }
                 }
 

@@ -112,6 +112,18 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
             if (listStore.isEmpty()) {
                 return;
             }
+
+            // REPEAT_ONE: replay current song
+            if (playMode == PlayMode.REPEAT_ONE) {
+                int currentIdx = position.orElse(-1);
+                if (currentIdx >= 0 && currentIdx < listStore.getNItems()) {
+                    var queueItem = listStore.get(currentIdx);
+                    this.onPlay.accept(queueItem.getSongInfo());
+                    // No position change, no state notification needed
+                    return;
+                }
+            }
+
             int oldIdx = position.orElse(-1);
             int nextIdx = oldIdx + 1;
             if (nextIdx >= listStore.getNItems()) {
@@ -305,6 +317,13 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
             if (doNotify) {
                 notifyState();
             }
+        }
+    }
+
+    public void setPlayMode(PlayMode mode) {
+        synchronized (lock) {
+            this.playMode = mode;
+            notifyState();
         }
     }
 
