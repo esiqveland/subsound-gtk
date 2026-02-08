@@ -274,7 +274,7 @@ public class StarredItemRow extends Box implements PlaylistListView.UpdateListen
         this.songInfo = songInfo.getSongInfo();
         var connection = this.gSongInfo.onNotify(
                 GSongInfo.Signal.IS_PLAYING.getId(),
-                _ -> this.update(miniState)
+                _ -> this.updateFromGSongInfo()
         );
         var old = this.signal1.getAndSet(connection);
         if (old != null) {
@@ -340,7 +340,7 @@ public class StarredItemRow extends Box implements PlaylistListView.UpdateListen
         this.starredButton.setStarredAt(songInfo.starred());
     }
 
-    private NowPlayingState playingState = NowPlayingState.NONE;
+    private volatile NowPlayingState playingState = NowPlayingState.NONE;
 
     @Override
     public void update(MiniState n) {
@@ -376,5 +376,30 @@ public class StarredItemRow extends Box implements PlaylistListView.UpdateListen
                 return NowPlayingState.NONE;
             }
         }).orElse(NowPlayingState.NONE);
+    }
+
+    private void updateFromGSongInfo() {
+        boolean isPlaying = this.gSongInfo.getIsPlaying();
+        var next = isPlaying ? NowPlayingState.PLAYING : NowPlayingState.NONE;
+        if (next == this.playingState) {
+            return;
+        }
+        this.playingState = next;
+        Utils.runOnMainThread(() -> {
+            this.nowPlayingOverlayIcon.addCssClass("darken");
+            this.trackNumberIcon.setPlayingState(this.playingState);
+            switch (this.playingState) {
+                case LOADING, PAUSED, PLAYING -> {
+                    this.trackNumberLabel.setVisible(false);
+                    this.trackNumberIcon.setVisible(true);
+                    this.titleLabel.addCssClass(Classes.colorAccent.className());
+                }
+                case NONE -> {
+                    this.trackNumberLabel.setVisible(true);
+                    this.trackNumberIcon.setVisible(false);
+                    this.titleLabel.removeCssClass(Classes.colorAccent.className());
+                }
+            }
+        });
     }
 }

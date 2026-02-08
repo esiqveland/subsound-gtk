@@ -215,17 +215,11 @@ public class PlaylistListView extends Box implements AppManager.StateListener {
         if (prev == null) {
             return new MiniState(npSong, nowPlayingState);
         }
-        if (prev.songInfo == npSong && prev.nowPlayingState == nowPlayingState) {
+        // Use equals() for proper Optional/String comparison instead of reference equality
+        var prevSongId = prev.songInfo().map(SongInfo::id).orElse("");
+        var nextSongId = npSong.map(SongInfo::id).orElse("");
+        if (prevSongId.equals(nextSongId) && prev.nowPlayingState() == nowPlayingState) {
             return prev;
-        }
-        if (npSong.isPresent()) {
-            if (npSong.get().id().equals(prev.songInfo.map(SongInfo::id).orElse(""))) {
-                if (prev.nowPlayingState == nowPlayingState) {
-                    return prev;
-                } else {
-                    return new MiniState(npSong, nowPlayingState);
-                }
-            }
         }
         return new MiniState(npSong, nowPlayingState);
     }
