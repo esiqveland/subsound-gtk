@@ -137,24 +137,6 @@ public class AlbumInfoPage extends Box {
                     .build();
 
             var menuPopover = getPopover();
-//            var menuPopover = new SongContextMenu(action -> {
-//                int idx = this.index;
-//
-//                PlayerAction playerAction = switch (action) {
-//                    case SongContextAction.Play _ -> PlayerAction.PlayAndReplaceQueue.of(this.albumInfo.songs(), idx);
-//                    case SongContextAction.Action raw -> raw.action();
-//                    case SongContextAction.PlayNext playNext -> new PlayerAction.Enqueue(songInfo);
-//                    case SongContextAction.PlayLast playLast -> new PlayerAction.EnqueueLast(songInfo);
-//                    case SongContextAction.Star star -> new PlayerAction.Star(songInfo);
-//                    case SongContextAction.Unstar unstar -> new PlayerAction.Unstar(songInfo);
-//                    case SongContextAction.AddToDownload addToDownload -> new PlayerAction.AddToDownloadQueue(songInfo);
-//                    case SongContextAction.AddToPlaylist addToPlaylist -> new PlayerAction.AddToPlaylist(songInfo);
-//                };
-//                if (playerAction != null) {
-//                    this.onAction.apply(playerAction);
-//                }
-//            });
-
             var menuButton = MenuButton.builder()
                     .setIconName(Icons.OpenMenu.getIconName())
                     .setPopover(menuPopover)

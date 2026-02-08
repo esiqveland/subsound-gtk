@@ -2,21 +2,35 @@ package com.github.subsound.ui.components;
 
 import com.github.subsound.app.state.PlayerAction;
 import com.github.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier;
-import org.gnome.adw.SplitButton;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
 import org.gnome.gtk.Label;
-import org.gnome.gtk.MenuButton;
 import org.gnome.gtk.Popover;
 
-import java.lang.foreign.MemorySegment;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static org.gnome.gtk.Orientation.VERTICAL;
 
+//            var menuPopover = new SongContextMenu(action -> {
+//                int idx = this.index;
+//
+//                PlayerAction playerAction = switch (action) {
+//                    case SongContextAction.Play _ -> PlayerAction.PlayAndReplaceQueue.of(this.albumInfo.songs(), idx);
+//                    case SongContextAction.Action raw -> raw.action();
+//                    case SongContextAction.PlayNext playNext -> new PlayerAction.Enqueue(songInfo);
+//                    case SongContextAction.PlayLast playLast -> new PlayerAction.EnqueueLast(songInfo);
+//                    case SongContextAction.Star star -> new PlayerAction.Star(songInfo);
+//                    case SongContextAction.Unstar unstar -> new PlayerAction.Unstar(songInfo);
+//                    case SongContextAction.AddToDownload addToDownload -> new PlayerAction.AddToDownloadQueue(songInfo);
+//                    case SongContextAction.AddToPlaylist addToPlaylist -> new PlayerAction.AddToPlaylist(songInfo);
+//                };
+//                if (playerAction != null) {
+//                    this.onAction.apply(playerAction);
+//                }
+//            });
 public class SongContextMenu extends Popover {
     private final Popover menuPopover;
     private Box menuContent;
