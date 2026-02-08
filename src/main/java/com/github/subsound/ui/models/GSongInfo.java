@@ -38,6 +38,10 @@ public class GSongInfo extends GObject {
     public ServerClient.SongInfo getSongInfo() {
         return songInfo;
     }
+    @Property
+    public String getId() {
+        return songInfo.id();
+    }
 
     public static GSongInfo newInstance(ServerClient.SongInfo value) {
         // TODO: replace with the updated SongInfo data
@@ -95,7 +99,17 @@ public class GSongInfo extends GObject {
         }
     }
 
+    @Property
+    public boolean getIsStarred() {
+        return this.isFavorite.get();
+    }
+
+    public Optional<Instant> getStarredAt() {
+        return this.songInfo.starred();
+    }
+
     public enum Signal {
+        NAME("name"),
         IS_PLAYING("is-playing"),
         IS_FAVORITE("is-favorite");
         private final String signal;

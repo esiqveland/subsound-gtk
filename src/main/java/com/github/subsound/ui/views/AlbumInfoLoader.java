@@ -1,8 +1,8 @@
 package com.github.subsound.ui.views;
 
 import com.github.subsound.app.state.AppManager;
+import com.github.subsound.app.state.AppManager.AlbumInfo;
 import com.github.subsound.app.state.PlayerAction;
-import com.github.subsound.integration.ServerClient.AlbumInfo;
 import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.ui.components.BoxHolder;
 import com.github.subsound.ui.components.FutureLoader;
@@ -51,16 +51,7 @@ public class AlbumInfoLoader extends Box implements AutoCloseable, AppManager.St
 
     private void doLoad(String albumId) {
         this.albumId.set(albumId);
-        var future =  CompletableFuture.supplyAsync(() -> {
-            var info = this.appManager.useClient(client -> client.getAlbumInfo(albumId));
-
-            return info;
-        });
-
-        // just make sure we didnt change albumId in the meantime we were loading data:
-        if (!albumId.equals(this.albumId.get())) {
-            return;
-        }
+        var future = this.appManager.getAlbumInfoAsync(albumId);
 
         var loader = new FutureLoader<>(future, albumInfo -> new AlbumInfoPage(
                 this.appManager,

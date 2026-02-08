@@ -56,9 +56,12 @@ public class StarButton extends Button {
 
     public void setStarredAt(Optional<Instant> starredAt) {
         this.starredAt = starredAt;
-        Utils.runOnMainThread(() -> this.setLabel(getIcon(starredAt)));
+        Utils.runOnMainThread(() -> this.setLabel(getIcon(this.starredAt)));
     }
 
+    public boolean isStarred() {
+        return starredAt != null && starredAt.isPresent();
+    }
     private static String getIcon(Optional<Instant> starredAt) {
         return getIcon(starredAt.isPresent());
     }

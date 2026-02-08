@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -249,6 +250,19 @@ public class AppManager {
 
     public Optional<Duration> getPlayerPosition() {
         return this.player.getCurrentPosition();
+    }
+
+    public record AlbumInfo(
+            ServerClient.AlbumInfo album,
+            List<GSongInfo> songs
+    ){}
+    public CompletableFuture<AlbumInfo> getAlbumInfoAsync(String albumId) {
+        return Utils.doAsync(() -> {
+            var data = this.useClient(serverClient -> serverClient.getAlbumInfo(albumId));
+
+            var songs = data.songs().stream().map(GSongInfo::newInstance).toList();
+            return new AlbumInfo(data, songs);
+        });
     }
 
     public interface StateListener {

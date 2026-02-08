@@ -122,6 +122,16 @@ public interface ServerClient {
         record ArtistIdentifier(String artistId) implements ObjectIdentifier {}
         record AlbumIdentifier(String albumId) implements ObjectIdentifier {}
         record PlaylistIdentifier(String playlistId) implements ObjectIdentifier {}
+        //record SongIdentifier(String songId) implements ObjectIdentifier {}
+        static ArtistIdentifier ofArtist(String artistId) {
+            return new ArtistIdentifier(artistId);
+        }
+        static AlbumIdentifier ofAlbum(String albumId) {
+            return new AlbumIdentifier(albumId);
+        }
+        static PlaylistIdentifier ofPlaylist(String playlistId) {
+            return new PlaylistIdentifier(playlistId);
+        }
     }
 
 

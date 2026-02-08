@@ -4,6 +4,9 @@
 Merge GSongInfo and GQueueItem:
  - this is to have a single place to update the currently playing and if the song is favorited via GObject signals.
 
+GSongInfo:
+ - [ ] extend is-playing to a richer playing state
+
 - Find a way to add the context menu to the items in the playlist page + button to remove from playlist
 
 - AlbumPage: Add a button to download all songs in the album ("make available offline")

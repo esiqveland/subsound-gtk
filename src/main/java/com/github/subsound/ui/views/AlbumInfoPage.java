@@ -1,10 +1,11 @@
 package com.github.subsound.ui.views;
 
 import com.github.subsound.app.state.AppManager;
+import com.github.subsound.app.state.AppManager.AlbumInfo;
 import com.github.subsound.app.state.AppManager.AppState;
 import com.github.subsound.app.state.AppManager.NowPlaying;
 import com.github.subsound.app.state.PlayerAction;
-import com.github.subsound.integration.ServerClient.AlbumInfo;
+import com.github.subsound.app.state.PlayerAction.PlayAndReplaceQueue;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.ui.components.Classes;
@@ -12,7 +13,10 @@ import com.github.subsound.ui.components.Icons;
 import com.github.subsound.ui.components.NowPlayingOverlayIcon;
 import com.github.subsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
 import com.github.subsound.ui.components.RoundedAlbumArt;
+import com.github.subsound.ui.components.SongContextMenu;
+import com.github.subsound.ui.components.SongContextMenu.SongContextAction;
 import com.github.subsound.ui.components.StarButton;
+import com.github.subsound.ui.models.GSongInfo;
 import com.github.subsound.utils.ImageUtils;
 import com.github.subsound.utils.Utils;
 import org.gnome.adw.ActionRow;
@@ -26,7 +30,6 @@ import org.gnome.gtk.Gtk;
 import org.gnome.gtk.Justification;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListBox;
-import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Popover;
 import org.gnome.gtk.Revealer;
 import org.gnome.gtk.RevealerTransitionType;
@@ -34,7 +37,10 @@ import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.StateFlags;
 import org.gnome.gtk.Widget;
 import org.gnome.pango.EllipsizeMode;
+import org.javagi.gobject.SignalConnection;
+import org.jspecify.annotations.NonNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -56,14 +62,14 @@ public class AlbumInfoPage extends Box {
     private final AppManager appManager;
 
     //private final ArtistInfo artistInfo;
-    private final AlbumInfo albumInfo;
+    private final AlbumInfo info;
     private final AtomicReference<AppState> prevState = new AtomicReference<>(null);
 
     private final Box headerBox;
     private final ScrolledWindow scroll;
     private final Box mainContainer;
     private final Box albumInfoBox;
-    private final ListBox list;
+    private final ListBox listView;
     private final List<AlbumSongActionRow> rows;
     private final Widget artistImage;
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
@@ -71,20 +77,33 @@ public class AlbumInfoPage extends Box {
     private static final CssProvider COLOR_PROVIDER = CssProvider.builder().build();
     private static final AtomicBoolean isProviderInit = new AtomicBoolean(false);
 
+    public void updateAppState(AppState state) {
+
+    }
+
     public static class AlbumSongActionRow extends ActionRow {
+        private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AlbumSongActionRow.class);
         private final AlbumInfo albumInfo;
+        public final GSongInfo gSongInfo;
         public final SongInfo songInfo;
+        private final int index;
         private final Function<PlayerAction, CompletableFuture<Void>> onAction;
         public final NowPlayingOverlayIcon icon;
+        private final StarButton starredButton;
+        private SignalConnection<NotifyCallback> signalPlaying;
+        private SignalConnection<NotifyCallback> signalFavorited;
 
         public AlbumSongActionRow(
                 AlbumInfo albumInfo,
-                SongInfo songInfo,
+                int index,
+                GSongInfo gSongInfo,
                 Function<PlayerAction, CompletableFuture<Void>> onAction
         ) {
             super();
             this.albumInfo = albumInfo;
-            this.songInfo = songInfo;
+            this.index = index;
+            this.gSongInfo = gSongInfo;
+            this.songInfo = gSongInfo.getSongInfo();
             this.onAction = onAction;
             this.addCssClass(Classes.rounded.className());
             this.addCssClass("AlbumSongActionRow");
@@ -102,7 +121,7 @@ public class AlbumInfoPage extends Box {
                     .setSpacing(8)
                     .build();
 
-            var starredButton = new StarButton(
+            starredButton = new StarButton(
                     songInfo.starred(),
                     newValue -> {
                         var action = newValue ? new PlayerAction.Star(songInfo) : new PlayerAction.Unstar(songInfo);
@@ -117,71 +136,24 @@ public class AlbumInfoPage extends Box {
                     .setSpacing(8)
                     .build();
 
-            // Context menu popover
-            var menuContent = Box.builder()
-                    .setOrientation(VERTICAL)
-                    .setSpacing(2)
-                    .setMarginTop(4)
-                    .setMarginBottom(4)
-                    .setMarginStart(4)
-                    .setMarginEnd(4)
-                    .build();
-
-            var menuPopover = Popover.builder()
-                    .setChild(menuContent)
-                    .build();
-
-            var playMenuItem = menuItem("Play");
-            playMenuItem.onClicked(() -> {
-                menuPopover.popdown();
-                var idx = getIdx(songInfo.id(), this.albumInfo.songs());
-                this.onAction.apply(new PlayerAction.PlayAndReplaceQueue(
-                        this.albumInfo.songs(),
-                        idx
-                ));
-            });
-
-            var playNextMenuItem = menuItem("Play Next");
-            playNextMenuItem.onClicked(() -> {
-                menuPopover.popdown();
-                this.onAction.apply(new PlayerAction.Enqueue(songInfo));
-            });
-
-            var addToQueueMenuItem = menuItem("Add to Queue");
-            addToQueueMenuItem.onClicked(() -> {
-                menuPopover.popdown();
-                this.onAction.apply(new PlayerAction.EnqueueLast(songInfo));
-            });
-
-            var favoriteMenuItem = menuItem(songInfo.isStarred() ? "Unfavorite" : "Favorite");
-            favoriteMenuItem.onClicked(() -> {
-                menuPopover.popdown();
-                var action = songInfo.isStarred()
-                        ? new PlayerAction.Unstar(songInfo)
-                        : new PlayerAction.Star(songInfo);
-                this.onAction.apply(action);
-            });
-
-            var addToPlaylistMenuItem = menuItem("Add to Playlist\u2026");
-            addToPlaylistMenuItem.setTooltipText("TODO");
-            addToPlaylistMenuItem.setSensitive(false);
-            addToPlaylistMenuItem.onClicked(() -> {
-                menuPopover.popdown();
-                this.onAction.apply(new PlayerAction.AddToPlaylist(songInfo));
-            });
-
-            var downloadMenuItem = menuItem("Download");
-            downloadMenuItem.onClicked(() -> {
-                menuPopover.popdown();
-                this.onAction.apply(new PlayerAction.AddToDownloadQueue(songInfo));
-            });
-
-            menuContent.append(playMenuItem);
-            menuContent.append(playNextMenuItem);
-            menuContent.append(addToQueueMenuItem);
-            menuContent.append(favoriteMenuItem);
-            menuContent.append(addToPlaylistMenuItem);
-            menuContent.append(downloadMenuItem);
+            var menuPopover = getPopover();
+//            var menuPopover = new SongContextMenu(action -> {
+//                int idx = this.index;
+//
+//                PlayerAction playerAction = switch (action) {
+//                    case SongContextAction.Play _ -> PlayerAction.PlayAndReplaceQueue.of(this.albumInfo.songs(), idx);
+//                    case SongContextAction.Action raw -> raw.action();
+//                    case SongContextAction.PlayNext playNext -> new PlayerAction.Enqueue(songInfo);
+//                    case SongContextAction.PlayLast playLast -> new PlayerAction.EnqueueLast(songInfo);
+//                    case SongContextAction.Star star -> new PlayerAction.Star(songInfo);
+//                    case SongContextAction.Unstar unstar -> new PlayerAction.Unstar(songInfo);
+//                    case SongContextAction.AddToDownload addToDownload -> new PlayerAction.AddToDownloadQueue(songInfo);
+//                    case SongContextAction.AddToPlaylist addToPlaylist -> new PlayerAction.AddToPlaylist(songInfo);
+//                };
+//                if (playerAction != null) {
+//                    this.onAction.apply(playerAction);
+//                }
+//            });
 
             var menuButton = MenuButton.builder()
                     .setIconName(Icons.OpenMenu.getIconName())
@@ -207,7 +179,7 @@ public class AlbumInfoPage extends Box {
             bitRateLabel.ifPresent(hoverBox::append);
             fileFormatLabel.ifPresent(hoverBox::append);
             hoverBox.append(fileSizeLabel);
-            var menuButtonBox = Box.builder().setMarginStart(6).setMarginEnd(6).setVexpand(true).setValign(Align.CENTER).build();
+            var menuButtonBox = Box.builder().setMarginStart(6).setMarginEnd(6).setVexpand(true).setValign(CENTER).build();
             menuButtonBox.append(menuButton);
             hoverBox.append(menuButtonBox);
 
@@ -218,7 +190,7 @@ public class AlbumInfoPage extends Box {
                     .build();
 
             suffix.append(revealer);
-            var starredButtonBox = Box.builder().setMarginStart(6).setMarginEnd(6).setVexpand(true).setValign(Align.CENTER).build();
+            var starredButtonBox = Box.builder().setMarginStart(6).setMarginEnd(6).setVexpand(true).setValign(CENTER).build();
             starredButtonBox.append(starredButton);
             suffix.append(starredButtonBox);
 
@@ -258,17 +230,138 @@ public class AlbumInfoPage extends Box {
                 this.icon.setIsHover(hasFocus || hasHover);
             });
 
+            this.onMap(() -> {
+                signalPlaying = this.gSongInfo.onNotify(
+                        GSongInfo.Signal.IS_PLAYING.getId(),
+                        cb -> {
+                            log.info("{}: isPlaying={}", this.gSongInfo.getTitle(), this.gSongInfo.getIsPlaying());
+                            this.updateUI();
+                        }
+                );
+                signalFavorited = this.gSongInfo.onNotify(
+                        GSongInfo.Signal.IS_FAVORITE.getId(),
+                        cb -> this.updateUI()
+                );
+                this.updateUI();
+            });
+            this.onUnmap(() -> {
+                //log.info("disconnect gSongInfo signals");
+                if (signalPlaying != null) {
+                    signalPlaying.disconnect();
+                    signalPlaying = null;
+                }
+                if (signalFavorited != null) {
+                    signalFavorited.disconnect();
+                    signalFavorited = null;
+                }
+            });
             this.addPrefix(icon);
             this.addSuffix(suffix);
             this.setTitle(songInfo.title());
             this.setSubtitle(subtitle);
         }
 
+        private void updateUI() {
+            Utils.runOnMainThread(() -> {
+                this.updateRow(new RowState(this.gSongInfo.getIsPlaying(), this.gSongInfo.getIsStarred()));
+            });
+        }
+
+        record RowState(boolean isPlaying, boolean isStarred){}
+        private void updateRow(RowState next) {
+            boolean isPlaying = next.isPlaying;
+            if (isPlaying) {
+                this.addCssClass(Classes.colorAccent.className());
+                this.icon.setPlayingState(NowPlayingState.PLAYING);
+                // TODO: get a richer is-playing state
+                //switch (next.player().state()) {
+                //    case PAUSED, INIT -> row.icon.setPlayingState(NowPlayingState.PAUSED);
+                //    case PLAYING, BUFFERING, READY, END_OF_STREAM -> row.icon.setPlayingState(NowPlayingState.PLAYING);
+                //}
+
+            } else {
+                this.removeCssClass(Classes.colorAccent.className());
+                this.icon.setPlayingState(NowPlayingState.NONE);
+            }
+            if (next.isStarred != this.starredButton.isStarred()) {
+                this.starredButton.setStarredAt(this.gSongInfo.getStarredAt());
+            }
+        }
+
+        private @NonNull Popover getPopover() {
+            // Context menu popover
+            var menuContent = Box.builder()
+                    .setOrientation(VERTICAL)
+                    .setSpacing(2)
+                    .setMarginTop(4)
+                    .setMarginBottom(4)
+                    .setMarginStart(4)
+                    .setMarginEnd(4)
+                    .build();
+
+            var menuPopover = Popover.builder()
+                    .setChild(menuContent)
+                    .build();
+
+            var playMenuItem = menuItem("Play");
+            playMenuItem.onClicked(() -> {
+                menuPopover.popdown();
+                int idx = this.index;
+                this.onAction.apply(PlayAndReplaceQueue.of(
+                        this.albumInfo.songs(),
+                        idx
+                ));
+            });
+
+            var playNextMenuItem = menuItem("Play Next");
+            playNextMenuItem.onClicked(() -> {
+                menuPopover.popdown();
+                this.onAction.apply(new PlayerAction.Enqueue(songInfo));
+            });
+
+            var addToQueueMenuItem = menuItem("Add to Queue");
+            addToQueueMenuItem.onClicked(() -> {
+                menuPopover.popdown();
+                this.onAction.apply(new PlayerAction.EnqueueLast(songInfo));
+            });
+
+            var favoriteMenuItem = menuItem(songInfo.isStarred() ? "Unstar" : "Add to Starred");
+            favoriteMenuItem.onClicked(() -> {
+                menuPopover.popdown();
+                var action = songInfo.isStarred()
+                        ? new PlayerAction.Unstar(songInfo)
+                        : new PlayerAction.Star(songInfo);
+                this.onAction.apply(action);
+            });
+
+            var addToPlaylistMenuItem = menuItem("Add to Playlist\u2026");
+            addToPlaylistMenuItem.setTooltipText("TODO");
+            addToPlaylistMenuItem.setSensitive(false);
+            addToPlaylistMenuItem.onClicked(() -> {
+                menuPopover.popdown();
+                this.onAction.apply(new PlayerAction.AddToPlaylist(songInfo));
+            });
+
+            var downloadMenuItem = menuItem("Download");
+            downloadMenuItem.onClicked(() -> {
+                menuPopover.popdown();
+                this.onAction.apply(new PlayerAction.AddToDownloadQueue(songInfo));
+            });
+
+            menuContent.append(playMenuItem);
+            menuContent.append(playNextMenuItem);
+            menuContent.append(addToQueueMenuItem);
+            menuContent.append(favoriteMenuItem);
+            menuContent.append(addToPlaylistMenuItem);
+            menuContent.append(downloadMenuItem);
+            return menuPopover;
+        }
+
         private static Button menuItem(String label) {
             var button = Button.builder().setLabel(label).build();
             button.addCssClass("flat");
             if (button.getChild() instanceof Label child) {
-                child.setHalign(Align.START);
+                child.setHalign(START);
                 child.addCssClass("body");
             }
             return button;
@@ -278,17 +371,17 @@ public class AlbumInfoPage extends Box {
 
     public AlbumInfoPage(
             AppManager appManager,
-            AlbumInfo albumInfo,
+            AlbumInfo info,
             Function<PlayerAction, CompletableFuture<Void>> onAction
     ) {
-        super(Orientation.VERTICAL, 0);
+        super(VERTICAL, 0);
         this.appManager = appManager;
-        this.albumInfo = albumInfo;
+        this.info = info;
         this.onAction = onAction;
         if (isProviderInit.compareAndSet(false, true)) {
             Gtk.styleContextAddProviderForDisplay(Display.getDefault(), COLOR_PROVIDER, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
         }
-        this.artistImage = this.albumInfo.coverArt()
+        this.artistImage = this.info.album().coverArt()
                 .map(coverArt -> new RoundedAlbumArt(
                         coverArt,
                         this.appManager,
@@ -302,8 +395,8 @@ public class AlbumInfoPage extends Box {
                 .map(artwork -> (Widget) artwork)
                 .orElseGet(() -> RoundedAlbumArt.placeholderImage(COVER_SIZE));
 
-        this.list = ListBox.builder()
-                .setValign(Align.START)
+        this.listView = ListBox.builder()
+                .setValign(START)
                 .setHalign(Align.FILL)
                 .setHexpand(true)
                 // require double click to activate:
@@ -315,44 +408,45 @@ public class AlbumInfoPage extends Box {
                 .setShowSeparators(false)
                 .build();
 
-        this.list.onRowActivated(row -> {
-            var songInfo = this.albumInfo.songs().get(row.getIndex());
-            System.out.println("AlbumInfoBox: play " + songInfo.title() + " (%s)".formatted(songInfo.id()));
-            this.onAction.apply(new PlayerAction.PlayAndReplaceQueue(
-                    this.albumInfo.songs(),
+        this.listView.onRowActivated(row -> {
+            var songInfo = this.info.songs().get(row.getIndex());
+            System.out.println("AlbumInfoBox: play " + songInfo.getTitle() + " (%s)".formatted(songInfo.getId()));
+            this.onAction.apply(new PlayAndReplaceQueue(
+                    this.info.songs().stream().map(GSongInfo::getSongInfo).toList(),
                     row.getIndex()
             ));
         });
 
-        this.rows = this.albumInfo.songs().stream().map(songInfo -> {
-            var row = new AlbumSongActionRow(this.albumInfo, songInfo, this.onAction);
-            return row;
-        }).toList();
+        this.rows = new ArrayList<>(this.info.songs().size());
+        int idx = 0;
+        for (var songInfo : this.info.songs()) {
+            var row = new AlbumSongActionRow(this.info, idx, songInfo, this.onAction);
+            this.rows.add(row);
+            this.listView.append(row);
+        }
 
-        rows.forEach(this.list::append);
-
-        this.headerBox = Box.builder().setHalign(Align.BASELINE_FILL).setSpacing(0).setValign(START).setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).build();
+        this.headerBox = Box.builder().setHalign(BASELINE_FILL).setSpacing(0).setValign(START).setOrientation(VERTICAL).setHexpand(true).setVexpand(true).build();
         this.headerBox.addCssClass("album-info-main");
 
-        this.mainContainer = Box.builder().setHalign(BASELINE_FILL).setSpacing(8).setValign(START).setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).setMarginBottom(10).setHomogeneous(false).build();
-        this.albumInfoBox = Box.builder().setHalign(CENTER).setSpacing(4).setValign(START).setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).setMarginBottom(10).build();
-        this.albumInfoBox.append(infoLabel(this.albumInfo.name(), Classes.titleLarge2.add()));
-        this.albumInfoBox.append(infoLabel(this.albumInfo.artistName(), Classes.titleLarge3.add()));
-        this.albumInfoBox.append(infoLabel(this.albumInfo.year().map(String::valueOf).orElse(""), Classes.labelDim.add(Classes.bodyText)));
-        this.albumInfoBox.append(infoLabel("%d songs, %s".formatted(this.albumInfo.songCount(), formatDurationMedium(this.albumInfo.totalPlayTime())), Classes.labelDim.add(Classes.bodyText)));
+        this.mainContainer = Box.builder().setHalign(BASELINE_FILL).setSpacing(8).setValign(START).setOrientation(VERTICAL).setHexpand(true).setVexpand(true).setMarginBottom(10).setHomogeneous(false).build();
+        this.albumInfoBox = Box.builder().setHalign(CENTER).setSpacing(4).setValign(START).setOrientation(VERTICAL).setHexpand(true).setVexpand(true).setMarginBottom(10).build();
+        this.albumInfoBox.append(infoLabel(this.info.album().name(), Classes.titleLarge2.add()));
+        this.albumInfoBox.append(infoLabel(this.info.album().artistName(), Classes.titleLarge3.add()));
+        this.albumInfoBox.append(infoLabel(this.info.album().year().map(String::valueOf).orElse(""), Classes.labelDim.add(Classes.bodyText)));
+        this.albumInfoBox.append(infoLabel("%d songs, %s".formatted(this.info.album().songCount(), formatDurationMedium(this.info.album().totalPlayTime())), Classes.labelDim.add(Classes.bodyText)));
         //this.albumInfoBox.append(infoLabel("%s playtime".formatted(formatDurationMedium(this.albumInfo.totalPlayTime())), Classes.labelDim.add(Classes.bodyText)));
         this.headerBox.append(this.artistImage);
         this.headerBox.append(this.albumInfoBox);
         this.mainContainer.append(this.headerBox);
         var listHolder = Box.builder().setOrientation(VERTICAL).setHalign(CENTER).setValign(START).build();
-        listHolder.append(list);
+        listHolder.append(listView);
         this.mainContainer.append(listHolder);
 
         this.scroll = ScrolledWindow.builder().setChild(mainContainer).setHexpand(true).setVexpand(true).build();
         this.setHexpand(true);
         this.setVexpand(true);
         this.append(this.scroll);
-        this.onMap(() -> this.appManager.getThumbnailCache().loadPixbuf(this.albumInfo.coverArt().get(), COVER_SIZE).thenAccept(this::switchPallete));
+        this.onMap(() -> this.appManager.getThumbnailCache().loadPixbuf(this.info.album().coverArt().get(), COVER_SIZE).thenAccept(this::switchPallete));
     }
 
     private void switchPallete(ThumbnailCache.CachedTexture cachedTexture) {
@@ -363,57 +457,6 @@ public class AlbumInfoPage extends Box {
             colors.append("@define-color background_color_%d %s;\n".formatted(i, colorValue.rgba().toString()));
         }
         COLOR_PROVIDER.loadFromString(colors.toString());
-    }
-
-    public void updateAppState(AppState next) {
-        var prev = prevState.get();
-        prevState.set(next);
-        final boolean isOutdated = needsUpdate(prev, next);
-        if (!isOutdated) {
-            return;
-        }
-        for (AlbumSongActionRow row : this.rows) {
-            boolean isPlaying = next.nowPlaying().map(np -> np.song().id().equals(row.songInfo.id())).orElse(false);
-            if (isPlaying) {
-                row.addCssClass(Classes.colorAccent.className());
-                switch (next.player().state()) {
-                    case PAUSED, INIT -> row.icon.setPlayingState(NowPlayingState.PAUSED);
-                    case PLAYING, BUFFERING, READY, END_OF_STREAM -> row.icon.setPlayingState(NowPlayingState.PLAYING);
-                }
-            } else {
-                row.removeCssClass(Classes.colorAccent.className());
-                row.icon.setPlayingState(NowPlayingState.NONE);
-            }
-        }
-    }
-
-    private boolean needsUpdate(AppState prev, AppState next) {
-        if (prev == null) {
-            return true;
-        }
-        if (prev.nowPlaying().isPresent() != next.nowPlaying().isPresent()) {
-            return true;
-        }
-        var prevSongId = prev.nowPlaying().map(NowPlaying::song).map(SongInfo::id).orElse("");
-        var nextSongId = next.nowPlaying().map(NowPlaying::song).map(SongInfo::id).orElse("");
-        if (!prevSongId.equals(nextSongId)) {
-            return true;
-        }
-        int oldPos = prev.queue().position().orElse(0);
-        int newPos = next.queue().position().orElse(0);
-        if (oldPos != newPos) {
-            return true;
-        }
-        return false;
-    }
-
-    private static int getIdx(String id, List<SongInfo> songs) {
-        for (int i = 0; i < songs.size(); i++) {
-            if (id.equals(songs.get(i).id())) {
-                return i;
-            }
-        }
-        throw new IllegalStateException("songs does not contain id=%s".formatted(id));
     }
 
     public static Label infoLabel(String label, String[] cssClazz) {

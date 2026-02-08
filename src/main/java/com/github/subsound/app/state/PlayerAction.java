@@ -22,6 +22,9 @@ public sealed interface PlayerAction {
     record SetPlayMode(PlayMode mode) implements PlayerAction {}
     record SeekTo(Duration position) implements PlayerAction {}
     record PlayAndReplaceQueue(List<SongInfo> queue, int position) implements PlayerAction {
+        public static PlayAndReplaceQueue of(List<GSongInfo> queue, int position) {
+            return new PlayAndReplaceQueue(queue.stream().map(GSongInfo::getSongInfo).toList(), position);
+        }
         @Override
         public String toString() {
             return "PlayQueue(position=%d, size=%d)".formatted(position, this.queue.size());
