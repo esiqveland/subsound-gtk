@@ -1,8 +1,29 @@
 package com.github.subsound.persistence;
 
 import com.github.subsound.integration.ServerClient;
+import com.github.subsound.persistence.database.Album;
+import com.github.subsound.persistence.database.Artist;
+import com.github.subsound.persistence.database.DatabaseServerService;
+import com.github.subsound.persistence.database.PlaylistRow;
+import com.github.subsound.persistence.database.Song;
+import net.beardbot.subsonic.client.api.playlist.UpdatePlaylistParams;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.net.URI;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static com.github.subsound.persistence.ThumbnailCache.toCachePath;
 
 public class CachingClient implements ServerClient {
+    private static final Logger log = LoggerFactory.getLogger(CachingClient.class);
+
     private final ServerClient delegate;
     public CachingClient(ServerClient delegate) {
         this.delegate = delegate;
@@ -41,6 +62,12 @@ public class CachingClient implements ServerClient {
     @Override
     public SongInfo getSong(String songId) {
         return delegate.getSong(songId);
+    }
+
+    @Override
+    public AddSongToPlaylist addToPlaylist(AddSongToPlaylist req) {
+        this.delegate.addToPlaylist(req);
+        return req;
     }
 
     @Override

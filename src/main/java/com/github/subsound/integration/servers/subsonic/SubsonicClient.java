@@ -16,6 +16,7 @@ import net.beardbot.subsonic.client.api.lists.AlbumListParams;
 import net.beardbot.subsonic.client.api.lists.AlbumListType;
 import net.beardbot.subsonic.client.api.media.CoverArtParams;
 import net.beardbot.subsonic.client.api.media.StreamParams;
+import net.beardbot.subsonic.client.api.playlist.UpdatePlaylistParams;
 import net.beardbot.subsonic.client.base.ApiParams;
 import okhttp3.HttpUrl;
 import org.subsonic.restapi.Child;
@@ -217,6 +218,12 @@ public class SubsonicClient implements ServerClient {
                 toCoverArt(album.getCoverArtId(), new AlbumIdentifier(album.getId())),
                 toSongInfo(album.getSongs())
         );
+    }
+
+    @Override
+    public AddSongToPlaylist addToPlaylist(AddSongToPlaylist req) {
+        this.client.playlists().updatePlaylist(req.playlistId(), UpdatePlaylistParams.create().addSong(req.songId()));
+        return req;
     }
 
     @Override
