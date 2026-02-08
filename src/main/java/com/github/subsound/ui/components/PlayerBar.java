@@ -123,7 +123,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
         });
         songTitle.setHalign(Align.START);
         songTitle.setMaxWidthChars(30);
-        songTitle.setEllipsize(EllipsizeMode.END);
+        songTitle.setEllipsize(EllipsizeMode.MIDDLE);
         songTitle.addCssClass(Classes.heading.className());
 
         artistTitle = new ClickLabel("Artist title", () -> {
