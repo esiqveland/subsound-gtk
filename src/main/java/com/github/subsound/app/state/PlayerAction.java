@@ -43,7 +43,7 @@ public sealed interface PlayerAction {
     record Star2(GSongInfo song) implements PlayerAction {}
     record StarRefresh(boolean forced) implements PlayerAction {}
     record Unstar(SongInfo song) implements PlayerAction {}
-    record AddToPlaylist(SongInfo song) implements PlayerAction {}
+    record AddToPlaylist(SongInfo song, String playlistId, String playlistName) implements PlayerAction {}
     record AddToDownloadQueue(SongInfo song) implements PlayerAction {}
     record RefreshPlaylists() implements PlayerAction {}
 

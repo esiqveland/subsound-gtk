@@ -5,6 +5,8 @@ import com.github.subsound.app.state.AppManager.AlbumInfo;
 import com.github.subsound.app.state.AppManager.AppState;
 import com.github.subsound.app.state.AppManager.NowPlaying;
 import com.github.subsound.app.state.PlayerAction;
+import com.github.subsound.app.state.PlaylistsStore.GPlaylist;
+import com.github.subsound.integration.ServerClient.PlaylistKind;
 import com.github.subsound.app.state.PlayerAction.PlayAndReplaceQueue;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.persistence.ThumbnailCache;
@@ -34,6 +36,8 @@ import org.gnome.gtk.Popover;
 import org.gnome.gtk.Revealer;
 import org.gnome.gtk.RevealerTransitionType;
 import org.gnome.gtk.ScrolledWindow;
+import org.gnome.gtk.Separator;
+import org.gnome.gtk.Stack;
 import org.gnome.gtk.StateFlags;
 import org.gnome.gtk.Widget;
 import org.gnome.pango.EllipsizeMode;
@@ -83,6 +87,7 @@ public class AlbumInfoPage extends Box {
 
     public static class AlbumSongActionRow extends ActionRow {
         private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AlbumSongActionRow.class);
+        private final AppManager appManager;
         private final AlbumInfo albumInfo;
         public final GSongInfo gSongInfo;
         public final SongInfo songInfo;
@@ -94,12 +99,14 @@ public class AlbumInfoPage extends Box {
         private SignalConnection<NotifyCallback> signalFavorited;
 
         public AlbumSongActionRow(
+                AppManager appManager,
                 AlbumInfo albumInfo,
                 int index,
                 GSongInfo gSongInfo,
                 Function<PlayerAction, CompletableFuture<Void>> onAction
         ) {
             super();
+            this.appManager = appManager;
             this.albumInfo = albumInfo;
             this.index = index;
             this.gSongInfo = gSongInfo;
@@ -271,7 +278,10 @@ public class AlbumInfoPage extends Box {
         }
 
         private @NonNull Popover getPopover() {
-            // Context menu popover
+            // Context menu popover with Stack for submenu navigation
+            var stack = new Stack();
+
+            // Main menu content
             var menuContent = Box.builder()
                     .setOrientation(VERTICAL)
                     .setSpacing(2)
@@ -282,7 +292,7 @@ public class AlbumInfoPage extends Box {
                     .build();
 
             var menuPopover = Popover.builder()
-                    .setChild(menuContent)
+                    .setChild(stack)
                     .build();
 
             var playMenuItem = menuItem("Play");
@@ -317,11 +327,8 @@ public class AlbumInfoPage extends Box {
             });
 
             var addToPlaylistMenuItem = menuItem("Add to Playlist\u2026");
-            addToPlaylistMenuItem.setTooltipText("TODO");
-            addToPlaylistMenuItem.setSensitive(false);
             addToPlaylistMenuItem.onClicked(() -> {
-                menuPopover.popdown();
-                this.onAction.apply(new PlayerAction.AddToPlaylist(songInfo));
+                stack.setVisibleChildName("playlists");
             });
 
             var downloadMenuItem = menuItem("Download");
@@ -336,6 +343,49 @@ public class AlbumInfoPage extends Box {
             menuContent.append(favoriteMenuItem);
             menuContent.append(addToPlaylistMenuItem);
             menuContent.append(downloadMenuItem);
+
+            // Playlist selection submenu
+            var playlistsView = Box.builder()
+                    .setOrientation(VERTICAL)
+                    .setSpacing(2)
+                    .setMarginTop(4)
+                    .setMarginBottom(4)
+                    .setMarginStart(4)
+                    .setMarginEnd(4)
+                    .build();
+
+            var backButton = menuItem("\u2190 Back");
+            backButton.onClicked(() -> stack.setVisibleChildName("main"));
+            playlistsView.append(backButton);
+            playlistsView.append(new Separator(org.gnome.gtk.Orientation.HORIZONTAL));
+
+            // Populate playlist buttons from cache
+            var playlists = this.appManager.getPlaylistsListStore();
+            for (int i = 0; i < playlists.getNItems(); i++) {
+                GPlaylist gPlaylist = playlists.getItem(i);
+                // Skip synthetic playlists (Starred, Downloaded)
+                if (gPlaylist.getPlaylist().kind() != PlaylistKind.NORMAL) {
+                    continue;
+                }
+                String playlistId = gPlaylist.getId();
+                String playlistName = gPlaylist.getName();
+                var btn = menuItem(playlistName);
+                btn.onClicked(() -> {
+                    menuPopover.popdown();
+                    this.onAction.apply(new PlayerAction.AddToPlaylist(
+                            songInfo, playlistId, playlistName
+                    ));
+                });
+                playlistsView.append(btn);
+            }
+
+            stack.addNamed(menuContent, "main");
+            stack.addNamed(playlistsView, "playlists");
+            stack.setVisibleChildName("main");
+
+            // Reset to main menu when popover closes
+            menuPopover.onClosed(() -> stack.setVisibleChildName("main"));
+
             return menuPopover;
         }
 
@@ -402,7 +452,7 @@ public class AlbumInfoPage extends Box {
         this.rows = new ArrayList<>(this.info.songs().size());
         int idx = 0;
         for (var songInfo : this.info.songs()) {
-            var row = new AlbumSongActionRow(this.info, idx, songInfo, this.onAction);
+            var row = new AlbumSongActionRow(this.appManager, this.info, idx, songInfo, this.onAction);
             this.rows.add(row);
             this.listView.append(row);
         }

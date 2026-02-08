@@ -468,7 +468,10 @@ public class AppManager {
                 case PlayerAction.Unstar a -> this.unstarSong(a);
                 case PlayerAction.PlaySong playSong -> this.loadSource(playSong);
                 case PlayerAction.RefreshPlaylists _ -> this.playlistsStore.refreshListAsync();
-                case PlayerAction.AddToPlaylist _ -> this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Add to playlist: not implemented yet")));
+                case PlayerAction.AddToPlaylist a -> {
+                    this.useClient(c -> c.addToPlaylist(new ServerClient.AddSongToPlaylist(a.playlistId(), a.song().id())));
+                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Added to " + a.playlistName())));
+                }
                 case PlayerAction.AddToDownloadQueue a -> {
                     this.downloadManager.enqueue(a.song());
                     this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Added to download queue")));
