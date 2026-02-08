@@ -1,4 +1,13 @@
+.playerbar {
+    /*background-color: red;*/
+    /*border-top: 1px solid black;*/
+    border-top: 1px solid var(--border-color);
 
+    background-color: var(--view-bg-color);
+    color: var(--view-fg-color);
+    /*background-color: var(--window-bg-color);
+    color: var(--window-fg-color);*/
+}
 .now-playing-overlay-icon {
     /*background-color: red;*/
     background-color: rgba(1, 1, 0, 0.4);

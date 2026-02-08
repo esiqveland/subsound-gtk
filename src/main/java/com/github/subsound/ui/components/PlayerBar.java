@@ -9,6 +9,7 @@ import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.utils.Utils;
 import org.gnome.gtk.ActionBar;
 import org.gnome.gtk.Align;
+import org.gnome.gtk.Border;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
 import org.gnome.gtk.MenuButton;
@@ -136,8 +137,8 @@ public class PlayerBar extends Box implements AppManager.StateListener {
             });
         });
         artistTitle.setHalign(Align.START);
-        artistTitle.setMaxWidthChars(28);
-        artistTitle.setEllipsize(EllipsizeMode.END);
+        artistTitle.setMaxWidthChars(25);
+        artistTitle.setEllipsize(EllipsizeMode.MIDDLE);
         artistTitle.addCssClass(Classes.labelDim.className());
         songInfoBox.append(songTitle);
         songInfoBox.append(artistTitle);
@@ -280,6 +281,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
         mainBar.setCenterWidget(centerWidget);
         mainBar.packEnd(volumeBox);
         this.append(mainBar);
+        this.addCssClass("playerbar");
 
         // make sure we update if a state with something playing was already loaded at start:
         var startState = this.currentState.get();
