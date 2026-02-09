@@ -1,5 +1,6 @@
 package com.github.subsound.app.state;
 
+import com.github.subsound.app.state.NetworkMonitoring.NetworkState;
 import com.github.subsound.app.state.PlayerAction.Enqueue;
 import com.github.subsound.app.state.PlayerAction.PlayPositionInQueue;
 import com.github.subsound.configuration.Config;
@@ -76,6 +77,7 @@ public class AppManager {
     private final DatabaseServerService dbService;
     private final PlayerConfigService playerConfigService;
     private final DownloadManager downloadManager;
+    private final NetworkMonitoring networkMonitor;
     private volatile ScheduledFuture<?> pendingPreferenceSave;
 
     private ToastOverlay toastOverlay;
@@ -92,6 +94,7 @@ public class AppManager {
         this.player = player;
         this.songCache = songCache;
         this.thumbnailCache = thumbnailCache;
+        this.networkMonitor = new GioNetworkStatusMonitor(this::updateNetworkState);
         this.playQueue = new PlayQueue(
                 player,
                 nextState -> this.setState(old -> old.withQueue(nextState)),
@@ -149,6 +152,11 @@ public class AppManager {
         );
     }
 
+    private void updateNetworkState(Void unused) {
+        var next = this.networkMonitor.getState();
+        this.setState(appState -> appState.withNetworkState(next));
+    }
+
     /**
      * Asynchronously restores the last playing song from the server without auto-playing.
      */
@@ -184,7 +192,7 @@ public class AppManager {
     }
 
     private AppState buildState() {
-        return new AppState(Optional.empty(), this.player.getState(), this.playQueue.getState());
+        return new AppState(Optional.empty(), this.player.getState(), this.playQueue.getState(), this.networkMonitor.getState());
     }
 
     public AppState getState() {
@@ -297,9 +305,9 @@ public class AppManager {
     public record AppState(
             Optional<NowPlaying> nowPlaying,
             PlaybinPlayer.PlayerState player,
-            PlayQueue.PlayQueueState queue
-    ) implements AppManagerAppStateBuilder.With {
-    }
+            PlayQueue.PlayQueueState queue,
+            NetworkState networkState
+    ) implements AppManagerAppStateBuilder.With {}
 
     public void enqueue(SongInfo songInfo) {
         this.playQueue.enqueue(songInfo);
