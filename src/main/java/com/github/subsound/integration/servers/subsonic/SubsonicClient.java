@@ -539,7 +539,7 @@ public class SubsonicClient implements ServerClient {
     private List<SongInfo> toSongInfo(List<Child> songs) {
         return songs.stream()
                 .filter(child -> !child.isDir())
-                .filter(child -> child.isVideo() != null && !child.isVideo())
+                .filter(child -> child.isVideo() == null || !child.isVideo())
                 .map(this::toSongInfo).toList();
     }
 

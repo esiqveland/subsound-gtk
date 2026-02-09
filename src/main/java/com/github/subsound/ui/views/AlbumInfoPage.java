@@ -455,6 +455,7 @@ public class AlbumInfoPage extends Box {
             var row = new AlbumSongActionRow(this.appManager, this.info, idx, songInfo, this.onAction);
             this.rows.add(row);
             this.listView.append(row);
+            idx++;
         }
 
         this.headerBox = Box.builder().setHalign(BASELINE_FILL).setSpacing(0).setValign(START).setOrientation(VERTICAL).setHexpand(true).setVexpand(true).build();
