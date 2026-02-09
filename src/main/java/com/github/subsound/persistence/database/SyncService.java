@@ -30,8 +30,19 @@ public class SyncService {
     public SyncStats syncAll() {
         logger.info("Starting full sync for server: {}", serverId);
         try {
+            // Step 1: Fetch artists first to verify server is online before deleting
             var artists = serverClient.getArtists().list();
-            logger.info("Fetched {} artists", artists.size());
+            logger.info("Fetched {} artists from server", artists.size());
+
+            // Step 2: Truncate existing data (server confirmed online)
+            logger.info("Truncating existing data for server: {}", serverId);
+            databaseServerService.deleteAllPlaylistSongs();
+            databaseServerService.deleteAllPlaylists();
+            databaseServerService.deleteAllSongs();
+            databaseServerService.deleteAllAlbums();
+            databaseServerService.deleteAllArtists();
+
+            // Step 3: Sync all data from server
             var stats = new SyncStats(0, 0, 0, 0);
             for (ArtistEntry artistEntry : artists) {
                 var s = syncArtist(artistEntry.id());
@@ -44,6 +55,13 @@ public class SyncService {
             }
             int playlistCount = syncPlaylists();
             stats = new SyncStats(stats.artists, stats.albums, stats.songs, playlistCount);
+
+            // Step 4: Verify and clean up orphaned downloads
+            int orphanedDownloads = databaseServerService.removeOrphanedDownloads();
+            if (orphanedDownloads > 0) {
+                logger.warn("Cleaned up {} orphaned download references", orphanedDownloads);
+            }
+
             logger.info("Synced {} artists, {} albums, {} songs, {} playlists", stats.artists, stats.albums, stats.songs, stats.playlists);
             logger.info("Full sync completed for server: {}", serverId);
             return stats;
@@ -135,7 +153,7 @@ public class SyncService {
                         java.time.Instant.now()
                 );
                 databaseServerService.insert(row);
-                databaseServerService.deletePlaylistSongs(playlist.id());
+                // Note: playlist_songs already deleted at start of syncAll()
                 for (int i = 0; i < playlist.songs().size(); i++) {
                     databaseServerService.insertPlaylistSong(playlist.id(), playlist.songs().get(i).id(), i);
                 }

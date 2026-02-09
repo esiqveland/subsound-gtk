@@ -454,6 +454,92 @@ public class DatabaseServerService {
         }
     }
 
+    public void deleteAllArtists() {
+        String sql = "DELETE FROM artists WHERE server_id = ?";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            int deleted = pstmt.executeUpdate();
+            logger.info("Deleted {} artists for server {}", deleted, serverId);
+        } catch (SQLException e) {
+            logger.error("Failed to delete artists", e);
+            throw new RuntimeException("Failed to delete artists", e);
+        }
+    }
+
+    public void deleteAllAlbums() {
+        String sql = "DELETE FROM albums WHERE server_id = ?";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            int deleted = pstmt.executeUpdate();
+            logger.info("Deleted {} albums for server {}", deleted, serverId);
+        } catch (SQLException e) {
+            logger.error("Failed to delete albums", e);
+            throw new RuntimeException("Failed to delete albums", e);
+        }
+    }
+
+    public void deleteAllSongs() {
+        String sql = "DELETE FROM songs WHERE server_id = ?";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            int deleted = pstmt.executeUpdate();
+            logger.info("Deleted {} songs for server {}", deleted, serverId);
+        } catch (SQLException e) {
+            logger.error("Failed to delete songs", e);
+            throw new RuntimeException("Failed to delete songs", e);
+        }
+    }
+
+    public void deleteAllPlaylists() {
+        String sql = "DELETE FROM playlists WHERE server_id = ?";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            int deleted = pstmt.executeUpdate();
+            logger.info("Deleted {} playlists for server {}", deleted, serverId);
+        } catch (SQLException e) {
+            logger.error("Failed to delete playlists", e);
+            throw new RuntimeException("Failed to delete playlists", e);
+        }
+    }
+
+    public void deleteAllPlaylistSongs() {
+        String sql = "DELETE FROM playlist_songs WHERE server_id = ?";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            int deleted = pstmt.executeUpdate();
+            logger.info("Deleted {} playlist_songs for server {}", deleted, serverId);
+        } catch (SQLException e) {
+            logger.error("Failed to delete playlist_songs", e);
+            throw new RuntimeException("Failed to delete playlist_songs", e);
+        }
+    }
+
+    public int removeOrphanedDownloads() {
+        String sql = """
+            DELETE FROM download_queue
+            WHERE server_id = ?
+            AND song_id NOT IN (SELECT id FROM songs WHERE server_id = ?)
+            """;
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            pstmt.setString(2, this.serverId.toString());
+            int deleted = pstmt.executeUpdate();
+            if (deleted > 0) {
+                logger.warn("Removed {} orphaned downloads for server {}", deleted, serverId);
+            }
+            return deleted;
+        } catch (SQLException e) {
+            logger.error("Failed to remove orphaned downloads", e);
+            throw new RuntimeException("Failed to remove orphaned downloads", e);
+        }
+    }
+
     public List<PlaylistRow> listPlaylists() {
         List<PlaylistRow> playlists = new ArrayList<>();
         String sql = "SELECT * FROM playlists WHERE server_id = ? ORDER BY name";
