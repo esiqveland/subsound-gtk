@@ -5,6 +5,7 @@ import com.github.subsound.app.state.PlayerAction;
 import com.github.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
 import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.ui.components.AppNavigation;
+import com.github.subsound.ui.components.Classes;
 import com.github.subsound.ui.components.Icons;
 import com.github.subsound.ui.components.OnboardingOverlay;
 import com.github.subsound.ui.components.PlayerBar;
@@ -65,6 +66,7 @@ public class MainApplication {
     private WindowSize lastWindowSize;
 
     private final ViewStack viewStack = ViewStack.builder().build();
+    private final Button backButton;
     private final NavigationView navigationView = NavigationView.builder().setPopOnEscape(true).setAnimateTransitions(true).build();
     private final ToastOverlay toastOverlay = ToastOverlay.builder().setChild(this.navigationView).build();
     private ToolbarView toolbarView;
@@ -144,12 +146,24 @@ public class MainApplication {
                 .setStack(viewStack)
                 .build();
 
+        this.backButton = Button.builder()
+                .setIconName("go-previous-symbolic")
+                .setTooltipText("Back")
+                .build();
+        this.backButton.addCssClass(Classes.flat.className());
+        this.backButton.setVisible(false);
+        this.backButton.onClicked(() -> navigationView.pop());
+
         headerBar = HeaderBar.builder()
                 .setHexpand(true)
                 .setTitleWidget(viewSwitcher)
                 .setShowBackButton(true)
                 .build();
+        headerBar.packStart(this.backButton);
         headerBar.packEnd(settingsButton);
+        // TODO: these classes were an attempt to find better background colors to blend different parts of the UI
+        //headerBar.addCssClass("background");
+        //headerBar.addCssClass("view");
 
         playerBar = new PlayerBar(appManager);
         bottomBar = new Box(Orientation.VERTICAL, 2);
@@ -164,9 +178,25 @@ public class MainApplication {
             var visibleChild = viewStack.getVisibleChildName();
             System.out.println("viewSwitcher.Pages.SelectionModel.onSelectionChanged.visibleChild: " + visibleChild);
         });
+        navigationView.onPushed(() -> {
+            int size = navigationView.getNavigationStack().getNItems();
+            log.info("navigationView.push: size={}", size);
+            boolean canPop = size > 1;
+            this.backButton.setVisible(canPop);
+            //headerBar.setShowBackButton(canPop);
+        });
+
         navigationView.onPopped(page -> {
-            log.info("navigationView.pop: page={} child={}", page.getClass().getName(), page.getChild().getClass().getName());
-            //boolean canPop = navigationView.getNavigationStack().getNItems() > 1;
+            int size = navigationView.getNavigationStack().getNItems();
+            log.info("navigationView.pop: size={} page={} child={}", size, page.getClass().getName(), page.getChild().getClass().getName());
+            boolean canPop = size > 1;
+            //  When navigating to an album or artist page via RouteAlbumInfo or RouteArtistInfo, a NavigationPage is pushed onto the NavigationView,
+            //  but there's no back button in the header bar to pop the page.
+            //  The AdwHeaderBar is placed outside the NavigationView in a global ToolbarView.
+            //  The automatic back button behavior from libadwaita only works when HeaderBar is inside each NavigationPage.
+            //  Moving it inside would require restructuring and duplicating the HeaderBar for each page view,
+            //  so I am not certain of the trade-offs here. Its also very nice that the HeaderBar is always the same HeaderBar.
+            this.backButton.setVisible(canPop);
             //headerBar.setShowBackButton(canPop);
         });
 
