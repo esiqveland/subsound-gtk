@@ -7,6 +7,7 @@ import com.github.subsound.configuration.Config;
 import com.github.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
 import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.SongInfo;
+import com.github.subsound.persistence.CachingClient;
 import com.github.subsound.persistence.DownloadManager;
 import com.github.subsound.persistence.SongCache;
 import com.github.subsound.persistence.SongCache.CacheSong;
@@ -66,7 +67,7 @@ public class AppManager {
     private final PlayQueue playQueue;
     private final SongCache songCache;
     private final ThumbnailCache thumbnailCache;
-    private final AtomicReference<ServerClient> client;
+    private final AtomicReference<CachingClient> client;
     private final BehaviorSubject<AppState> currentState;
     private final CopyOnWriteArrayList<StateListener> listeners = new CopyOnWriteArrayList<>();
     //private final ListStore<GSongInfo> starredList = new ListStore<>(GSongInfo.gtype);
@@ -155,6 +156,10 @@ public class AppManager {
     private void updateNetworkState(Void unused) {
         var next = this.networkMonitor.getState();
         this.setState(appState -> appState.withNetworkState(next));
+
+        // Update CachingClient with network status
+        var client = this.client.get();
+        client.setNetworkStatus(next.status());
     }
 
     /**
@@ -538,10 +543,12 @@ public class AppManager {
         }
     }
 
-    private ServerClient wrapWithCaching(ServerClient raw) {
-        return new com.github.subsound.persistence.CachingClient(
+    private CachingClient wrapWithCaching(ServerClient raw) {
+        var cachingClient = new CachingClient(
                 raw, this.dbService, SERVER_ID, this.config.dataDir
         );
+        cachingClient.setNetworkStatus(this.networkMonitor.getState().status());
+        return cachingClient;
     }
 
     /**
