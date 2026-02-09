@@ -112,9 +112,9 @@ A few samples of what the UI looks like:
 - Proper navigation
   - [X] store the currently playing song and current mute/volume between app restarts
   - [ ] store the playqueue or at least playcontext (position in a playlist?) between app restarts
-  - [ ] fix back button in albumview
+  - [X] fix back button in albumview
   - [ ] fix the navigationview. something is still wrong with app navigation...
-  - [ ] fix back button in headerbar
+  - [X] fix back button in headerbar
   - AdwNavigationView ?
   - AdwLeaflet + AdwClamp? see https://gitlab.gnome.org/GNOME/gnome-music/-/blob/master/data/ui/ArtistAlbumsWidget.ui
 - [X] set up a sqlite database with migrations
@@ -148,12 +148,12 @@ A few samples of what the UI looks like:
 - [ ] Playlist support
   - [X] move Starred as a fake playlist under the playlists view
   - [X] browsing playlists
-  - [ ] keep a cache of available playlists in AppState for quick access
-  - [ ] add song to a playlist
+  - [X] keep a cache of available playlists in AppState for quick access
+  - [X] add song to a playlist
+  - [ ] remove song from playlist
+  - [ ] create playlist
   - [ ] rename playlist
   - [ ] delete playlist
-  - [ ] create playlist
-  - [ ] remove song from playlist
 - [X] Mpris support
     - [X] thumbnail - needs to give the path to our downloaded copy on disk, or do a loooot of resizing to send it over dbus
     - [X] play/pause
