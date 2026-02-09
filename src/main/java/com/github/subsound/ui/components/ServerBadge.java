@@ -1,6 +1,8 @@
 package com.github.subsound.ui.components;
 
 import com.github.subsound.app.state.AppManager;
+import com.github.subsound.app.state.NetworkMonitoring.NetworkState;
+import com.github.subsound.app.state.NetworkMonitoring.NetworkStatus;
 import com.github.subsound.integration.ServerClient;
 import com.github.subsound.utils.Utils;
 import com.github.subsound.app.state.PlayerAction;
@@ -23,7 +25,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-public class ServerBadge extends Box {
+public class ServerBadge extends Box implements AppManager.StateListener {
     private static final Logger log = LoggerFactory.getLogger(ServerBadge.class);
 
     private final AppManager appManager;
@@ -33,8 +35,10 @@ public class ServerBadge extends Box {
     private final Label statsLabelFolders;
     private final Label statsLabelAppVersion;
     private final Label statusDot;
+    private final Label networkStatusLabel;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private ScheduledFuture<?> pingTask;
+    private volatile NetworkStatus currentNetworkStatus = NetworkStatus.ONLINE;
 
     public ServerBadge(AppManager appManager) {
         super(Orientation.VERTICAL, 4);
@@ -67,6 +71,14 @@ public class ServerBadge extends Box {
                 .build();
         this.statusDot.setTooltipText("Checking...");
         this.statusDot.addCssClass("dim-label");
+
+        // Network status label (shows system network connectivity)
+        this.networkStatusLabel = Label.builder()
+                .setLabel("")
+                .setHalign(Align.START)
+                .build();
+        this.networkStatusLabel.addCssClass("dim-label");
+        this.networkStatusLabel.addCssClass("caption");
 
         var textBox = Box.builder()
                 .setOrientation(Orientation.VERTICAL)
@@ -126,12 +138,20 @@ public class ServerBadge extends Box {
         this.append(statsLabelSongs);
         this.append(statsLabelFolders);
         this.append(statsLabelAppVersion);
+        this.append(networkStatusLabel);
         this.append(syncButton);
 
         // Start periodic ping
         this.pingTask = scheduler.scheduleWithFixedDelay(this::checkConnectivity, 0, 30, TimeUnit.SECONDS);
 
+        // Listen for network state changes
+        this.appManager.addOnStateChanged(this);
+
+        // Initialize network status from current state
+        updateNetworkStatus(this.appManager.getState().networkState());
+
         this.onDestroy(() -> {
+            this.appManager.removeOnStateChanged(this);
             if (pingTask != null) {
                 pingTask.cancel(false);
             }
@@ -260,5 +280,29 @@ public class ServerBadge extends Box {
             pingTask.cancel(false);
         }
         scheduler.shutdown();
+    }
+
+    @Override
+    public void onStateChanged(AppManager.AppState state) {
+        var networkState = state.networkState();
+        if (networkState.status() != this.currentNetworkStatus) {
+            this.currentNetworkStatus = networkState.status();
+            Utils.runOnMainThread(() -> updateNetworkStatus(networkState));
+        }
+    }
+
+    private void updateNetworkStatus(NetworkState networkState) {
+        switch (networkState.status()) {
+            case ONLINE -> {
+                networkStatusLabel.setLabel("Network: Online");
+                networkStatusLabel.removeCssClass("error");
+                networkStatusLabel.addCssClass("success");
+            }
+            case OFFLINE -> {
+                networkStatusLabel.setLabel("Network: Offline");
+                networkStatusLabel.removeCssClass("success");
+                networkStatusLabel.addCssClass("error");
+            }
+        }
     }
 }
