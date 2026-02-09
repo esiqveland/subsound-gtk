@@ -97,6 +97,9 @@ A few samples of what the UI looks like:
     - [ ] Find a reasonable way to include the artistinfo text, without making it so dominant
   - [ ] a blurred paintable background ?
     - Something like: https://github.com/neithern/g4music/blob/master/src/ui/paintables.vala#L357
+    - ThumbHash instead of the css basedc gradient based on dominant colors. ThumbHash could even be stored in db.
+      - [ ] implement initial support for generating ThumbHashes
+      - [ ] implement ThumbHash storing in db?
 - Make AlbumView page prettier with:
   - [ ] better design
   - [ ] a blurred paintable background ?
