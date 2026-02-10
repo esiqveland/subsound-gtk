@@ -1,5 +1,7 @@
 package com.github.subsound.app.state;
 
+import java.util.Optional;
+
 public interface NetworkMonitoring {
     enum NetworkStatus {
         OFFLINE,
@@ -11,4 +13,5 @@ public interface NetworkMonitoring {
             NetworkStatus status
     ) {}
     NetworkState getState();
+    void setOverrideState(Optional<NetworkStatus> a);
 }

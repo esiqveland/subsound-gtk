@@ -36,6 +36,7 @@ public class ServerBadge extends Box implements AppManager.StateListener {
     private final Label statsLabelAppVersion;
     private final Label statusDot;
     private final Label networkStatusLabel;
+    private final Button buttonGoOffline;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private ScheduledFuture<?> pingTask;
     private volatile NetworkStatus currentNetworkStatus = NetworkStatus.ONLINE;
@@ -117,6 +118,22 @@ public class ServerBadge extends Box implements AppManager.StateListener {
         this.statsLabelFolders = newStatsLabel();
         this.statsLabelAppVersion = newStatsLabel();
 
+        this.buttonGoOffline = Button.builder()
+                .setLabel("Go offline")
+                .setTooltipText("Mostly useful for testing offline mode")
+                .build();
+        this.buttonGoOffline.addCssClass("flat");
+        this.buttonGoOffline.onClicked(() -> {
+            switch (this.currentNetworkStatus) {
+                case ONLINE -> {
+                    this.appManager.handleAction(new PlayerAction.OverrideNetworkStatus(Optional.of(NetworkStatus.OFFLINE)));
+                }
+                case OFFLINE -> {
+                    this.appManager.handleAction(new PlayerAction.OverrideNetworkStatus(Optional.empty()));
+                }
+            }
+        });
+
         var syncButton = Button.builder()
                 .setLabel("Sync library")
                 .build();
@@ -140,6 +157,7 @@ public class ServerBadge extends Box implements AppManager.StateListener {
         this.append(statsLabelAppVersion);
         this.append(networkStatusLabel);
         this.append(syncButton);
+        this.append(buttonGoOffline);
 
         // Start periodic ping
         this.pingTask = scheduler.scheduleWithFixedDelay(this::checkConnectivity, 0, 30, TimeUnit.SECONDS);
@@ -297,11 +315,13 @@ public class ServerBadge extends Box implements AppManager.StateListener {
                 networkStatusLabel.setLabel("Network: Online");
                 networkStatusLabel.removeCssClass("error");
                 networkStatusLabel.addCssClass("success");
+                buttonGoOffline.setLabel("Go offline");
             }
             case OFFLINE -> {
                 networkStatusLabel.setLabel("Network: Offline");
                 networkStatusLabel.removeCssClass("success");
                 networkStatusLabel.addCssClass("error");
+                buttonGoOffline.setLabel("Disable offline mode");
             }
         }
     }

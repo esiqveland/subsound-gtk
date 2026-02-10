@@ -7,6 +7,7 @@ import org.gnome.adw.Toast;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
 public sealed interface PlayerAction {
     record Play() implements PlayerAction {}
@@ -51,4 +52,5 @@ public sealed interface PlayerAction {
     record SaveConfig(SettingsInfo next) implements PlayerAction {}
     record Toast(org.gnome.adw.Toast toast) implements PlayerAction {}
     record SyncDatabase() implements PlayerAction {}
+    record OverrideNetworkStatus(Optional<NetworkMonitoring.NetworkStatus> overrideStatus) implements PlayerAction {}
 }

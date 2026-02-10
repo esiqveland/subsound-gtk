@@ -489,6 +489,9 @@ public class AppManager {
                     this.downloadManager.enqueue(a.song());
                     this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Added to download queue")));
                 }
+                case PlayerAction.OverrideNetworkStatus(var a) -> {
+                    this.networkMonitor.setOverrideState(a);
+                }
                 case PlayerAction.SyncDatabase _ -> {
                     var syncService = new com.github.subsound.persistence.database.SyncService(
                             this.client.get(), this.dbService, UUID.fromString(SERVER_ID)
