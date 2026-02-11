@@ -137,14 +137,6 @@ public class ThumbnailCache {
 
                 byte[] body = res.body();
                 return new ThumbLoaded(cachehPath, body);
-//                if (contentType.contains("vp9") || contentType.contains("webp")) {
-//                    // convert to jpeg, Pixbuf does not support vp9 / webp:
-//                    return new ThumbLoaded(
-//                            cachehPath,
-//                            convertWebpToJpeg(body)
-//                    );
-//                } else {
-//                }
             } catch (IOException e) {
                 throw new RuntimeException("error loading: " + coverArt.coverArtLink().toString(), e);
             } catch (InterruptedException e) {
