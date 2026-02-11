@@ -15,7 +15,7 @@ import java.util.Arrays;
 
 import static com.github.subsound.utils.Utils.sha256;
 
-public class SongCache {
+public class SongCache implements SongCacheChecker {
     private static final Logger log = LoggerFactory.getLogger(SongCache.class);
 
     private final Path root;
@@ -34,6 +34,7 @@ public class SongCache {
         this.root = cacheDir;
     }
 
+    public record SongCacheQuery(String serverId, String songId, String streamFormat) {}
     public record CacheSong(
             String serverId,
             String songId,
@@ -191,12 +192,23 @@ public class SongCache {
     }
 
     private CachehPath cachePath(CacheSong songData) {
-        var songId = songData.songId;
+        return cachePath(new SongCacheQuery(songData.serverId, songData.songId, songData.transcodeInfo.streamFormat()));
+    }
+
+    private CachehPath cachePath(SongCacheQuery query) {
+        var songId = query.songId();
         var key = toCacheKey(songId);
-        var fileName = "%s.%s".formatted(songId, songData.transcodeInfo.streamFormat());
-        var cachePath = joinPath(root, songData.serverId, "songs", key.part1, key.part2, key.part3, fileName);
+        var fileName = "%s.%s".formatted(songId, query.streamFormat());
+        var cachePath = joinPath(root, query.serverId(), "songs", key.part1, key.part2, key.part3, fileName);
         var cachePathTmp = joinPath(cachePath.getParent(), fileName + ".tmp");
         return new CachehPath(cachePath, cachePathTmp);
+    }
+
+    @Override
+    public boolean isCached(SongCacheQuery query) {
+        var path = cachePath(query).cachePath();
+        var file = path.toAbsolutePath().toFile();
+        return file.exists() && file.length() > 1;
     }
 
     public static Path joinPath(Path base, String... elements) {

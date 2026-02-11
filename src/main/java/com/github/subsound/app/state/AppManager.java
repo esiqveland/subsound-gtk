@@ -494,7 +494,7 @@ public class AppManager {
                 }
                 case PlayerAction.SyncDatabase _ -> {
                     var syncService = new com.github.subsound.persistence.database.SyncService(
-                            this.client.get(), this.dbService, UUID.fromString(SERVER_ID), this.thumbnailCache
+                            this.client.get(), this.dbService, UUID.fromString(SERVER_ID), this.thumbnailCache, this.songCache
                     );
                     var stats = syncService.syncAll();
                     this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(

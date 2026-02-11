@@ -7,6 +7,8 @@ import com.github.subsound.integration.ServerClient.ArtistEntry;
 import com.github.subsound.integration.ServerClient.ArtistInfo;
 import com.github.subsound.integration.ServerClient.CoverArt;
 import com.github.subsound.integration.ServerClient.SongInfo;
+import com.github.subsound.persistence.SongCache;
+import com.github.subsound.persistence.SongCacheChecker;
 import com.github.subsound.persistence.ThumbnailCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,14 +30,16 @@ public class SyncService {
     private final DatabaseServerService databaseServerService;
     private final UUID serverId;
     private final ThumbnailCache thumbnailCache;
+    private final SongCacheChecker songCacheChecker;
     private final ExecutorService executor = Executors.newFixedThreadPool(2);
     private final List<CoverArt> collectedCoverArts = new CopyOnWriteArrayList<>();
 
-    public SyncService(ServerClient serverClient, DatabaseServerService databaseServerService, UUID serverId, ThumbnailCache thumbnailCache) {
+    public SyncService(ServerClient serverClient, DatabaseServerService databaseServerService, UUID serverId, ThumbnailCache thumbnailCache, SongCacheChecker songCacheChecker) {
         this.serverClient = serverClient;
         this.databaseServerService = databaseServerService;
         this.serverId = serverId;
         this.thumbnailCache = thumbnailCache;
+        this.songCacheChecker = songCacheChecker;
     }
 
     public record SyncStats(int artists, int albums, int songs, int playlists) {}
@@ -81,7 +85,21 @@ public class SyncService {
                 logger.warn("Cleaned up {} orphaned download references", orphanedDownloads);
             }
 
-            // Step 5: Cache all collected thumbnails
+            // Step 5: Verify remaining downloads are still cached on disk, re-queue any missing
+            var completedDownloads = databaseServerService.listDownloadQueue(List.of(DownloadQueueItem.DownloadStatus.COMPLETED));
+            int requeued = 0;
+            for (var item : completedDownloads) {
+                var query = new SongCache.SongCacheQuery(item.serverId().toString(), item.songId(), item.streamFormat());
+                if (!songCacheChecker.isCached(query)) {
+                    databaseServerService.updateDownloadProgress(item.songId(), DownloadQueueItem.DownloadStatus.PENDING, 0.0, null);
+                    requeued++;
+                }
+            }
+            if (requeued > 0) {
+                logger.info("Re-queued {} downloads with missing cache files", requeued);
+            }
+
+            // Step 6: Cache all collected thumbnails
             logger.info("Caching {} thumbnails", collectedCoverArts.size());
             List<CompletableFuture<Void>> thumbFutures = collectedCoverArts.stream()
                     .distinct()
