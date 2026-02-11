@@ -485,9 +485,24 @@ public class AppManager {
                     this.useClient(c -> c.addToPlaylist(new ServerClient.AddSongToPlaylist(a.playlistId(), a.song().id())));
                     this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Added to " + a.playlistName())));
                 }
+                case PlayerAction.AddManyToPlaylist a -> {
+                    Utils.doAsync(() -> {
+                        for (var song : a.songs()) {
+                            this.useClient(c -> c.addToPlaylist(new ServerClient.AddSongToPlaylist(a.playlistId(), song.getId())));
+                        }
+                    });
+                    String msg = "Adding %d items to %s".formatted(a.songs().size(), a.playlistName());
+                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(msg)));
+                }
                 case PlayerAction.AddToDownloadQueue a -> {
                     this.downloadManager.enqueue(a.song());
                     this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Added to download queue")));
+                }
+                case PlayerAction.AddManyToDownloadQueue a -> {
+                    for (var song : a.songs()) {
+                        this.downloadManager.enqueue(song.getSongInfo());
+                    }
+                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Added %d items to download queue".formatted(a.songs().size()))));
                 }
                 case PlayerAction.OverrideNetworkStatus(var a) -> {
                     this.networkMonitor.setOverrideState(a);

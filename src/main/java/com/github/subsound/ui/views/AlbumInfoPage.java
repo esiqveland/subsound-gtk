@@ -69,7 +69,6 @@ public class AlbumInfoPage extends Box {
 
     //private final ArtistInfo artistInfo;
     private final AlbumInfo info;
-    private final AtomicReference<AppState> prevState = new AtomicReference<>(null);
 
     private final Box headerBox;
     private final ScrolledWindow scroll;
@@ -83,10 +82,6 @@ public class AlbumInfoPage extends Box {
     private static final int COVER_SIZE = 300;
     private static final CssProvider COLOR_PROVIDER = CssProvider.builder().build();
     private static final AtomicBoolean isProviderInit = new AtomicBoolean(false);
-
-    public void updateAppState(AppState state) {
-
-    }
 
     public static class AlbumSongActionRow extends ActionRow {
         private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AlbumSongActionRow.class);
@@ -486,9 +481,8 @@ public class AlbumInfoPage extends Box {
                 .build();
         downloadAllButton.addCssClass("flat");
         downloadAllButton.onClicked(() -> {
-            for (var gSong : this.info.songs()) {
-                this.onAction.apply(new PlayerAction.AddToDownloadQueue(gSong.getSongInfo()));
-            }
+            var songs = this.info.songs();
+            this.onAction.apply(new PlayerAction.AddManyToDownloadQueue(songs));
         });
         this.playlistPopover = buildPlaylistPopover();
         var addToPlaylistButton = MenuButton.builder()
@@ -526,11 +520,10 @@ public class AlbumInfoPage extends Box {
         return new com.github.subsound.ui.components.PlaylistChooser(
                 this.appManager.getPlaylistsListStore(),
                 (playlistId, playlistName) -> {
-                    for (var gSong : this.info.songs()) {
-                        this.onAction.apply(new PlayerAction.AddToPlaylist(
-                                gSong.getSongInfo(), playlistId, playlistName
-                        ));
-                    }
+                    var songs = this.info.songs();
+                    this.onAction.apply(new PlayerAction.AddManyToPlaylist(
+                            songs, playlistId, playlistName
+                    ));
                 }
         );
     }
