@@ -10,9 +10,11 @@ Very early project still, but it works ok for basic playback and browsing.
 
 A few samples of what the UI looks like:
 
-![Artists listing](screenshots/artists.png)
+![Artists listing](screenshots/artistsv2.png)
 
-![Starred playlist](screenshots/starredv4.png)
+![Playlists view](screenshots/playlistsv1.png)
+
+![Starred playlist](screenshots/starredv5.png)
 
 ### TODO
 
