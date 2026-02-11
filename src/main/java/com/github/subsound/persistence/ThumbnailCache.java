@@ -80,7 +80,8 @@ public class ThumbnailCache {
                         var loadSize = 2 * k.size;
                         var p = Pixbuf.fromFileAtSize(path, loadSize, loadSize);
                         var scaledOut = new Out<byte[]>();
-                        boolean success = p.saveToBufferv(scaledOut, "jpeg", null, null);
+                        var outputFormat = p.getHasAlpha() ? "png" : "jpeg";
+                        boolean success = p.saveToBufferv(scaledOut, outputFormat, null, null);
                         if (!success) {
                             throw new RuntimeException("halp");
                         }
@@ -93,6 +94,7 @@ public class ThumbnailCache {
                 });
                 return pixbuf;
             } catch (Throwable t) {
+                log.error("error loading pixbuf: val={} size={}", coverArt, size, t);
                 throw new RuntimeException(t);
             } finally {
                 semaphorePixbuf.release(1);
@@ -100,14 +102,14 @@ public class ThumbnailCache {
         });
     }
 
-    record ThumbLoaded(
+    public record ThumbLoaded(
             CachehPath path,
             byte[] blob
     ) {
     }
 
     // TODO: since we are using Pixbuf.fromFileAtSize anyway, we dont need the blob in memory any more.
-    private CompletableFuture<ThumbLoaded> loadThumbAsync(CoverArt coverArt) {
+    public CompletableFuture<ThumbLoaded> loadThumbAsync(CoverArt coverArt) {
         var cachehPath = toCachePath(this.root, coverArt.serverId(), coverArt.coverArtId());
         var cacheAbsPath = cachehPath.cachePath().toAbsolutePath();
         var cacheFile = cacheAbsPath.toFile();
@@ -127,22 +129,22 @@ public class ThumbnailCache {
                 if (res.statusCode() != 200) {
                     throw new RuntimeException("error loading: status=" + res.statusCode() + " link=" + link.toString());
                 }
-                String contentType = res.headers().firstValue("content-type").orElse("");
+                String contentType = res.headers().firstValue("content-type").orElse("image/webp");
                 if (contentType.isEmpty() || contentType.contains("xml") || contentType.contains("html") || contentType.contains("json")) {
                     // response does not look like binary music data...
                     throw new RuntimeException("error: statusCode=%d uri=%s contentType=%s".formatted(res.statusCode(), link.toString(), contentType));
                 }
 
                 byte[] body = res.body();
-                if (contentType.contains("vp9") || contentType.contains("webp")) {
-                    // convert to jpeg, Pixbuf does not support vp9 / webp:
-                    return new ThumbLoaded(
-                            cachehPath,
-                            convertWebpToJpeg(body)
-                    );
-                } else {
-                    return new ThumbLoaded(cachehPath, body);
-                }
+                return new ThumbLoaded(cachehPath, body);
+//                if (contentType.contains("vp9") || contentType.contains("webp")) {
+//                    // convert to jpeg, Pixbuf does not support vp9 / webp:
+//                    return new ThumbLoaded(
+//                            cachehPath,
+//                            convertWebpToJpeg(body)
+//                    );
+//                } else {
+//                }
             } catch (IOException e) {
                 throw new RuntimeException("error loading: " + coverArt.coverArtLink().toString(), e);
             } catch (InterruptedException e) {
