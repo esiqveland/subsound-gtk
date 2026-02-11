@@ -14,6 +14,7 @@ import com.github.subsound.ui.components.Classes;
 import com.github.subsound.ui.components.Icons;
 import com.github.subsound.ui.components.NowPlayingOverlayIcon;
 import com.github.subsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
+import com.github.subsound.ui.components.PlaylistChooser;
 import com.github.subsound.ui.components.RoundedAlbumArt;
 import com.github.subsound.ui.components.SongContextMenu;
 import com.github.subsound.ui.components.SongContextMenu.SongContextAction;
@@ -23,6 +24,7 @@ import com.github.subsound.utils.ImageUtils;
 import com.github.subsound.utils.Utils;
 import org.gnome.adw.ActionRow;
 import org.gnome.gdk.Display;
+import org.gnome.gio.MenuModel;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
@@ -77,6 +79,7 @@ public class AlbumInfoPage extends Box {
     private final List<AlbumSongActionRow> rows;
     private final Widget artistImage;
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
+    private final Popover playlistPopover;
     private static final int COVER_SIZE = 300;
     private static final CssProvider COLOR_PROVIDER = CssProvider.builder().build();
     private static final AtomicBoolean isProviderInit = new AtomicBoolean(false);
@@ -468,10 +471,47 @@ public class AlbumInfoPage extends Box {
         this.albumInfoBox.append(infoLabel(this.info.album().year().map(String::valueOf).orElse(""), Classes.labelDim.add(Classes.bodyText)));
         this.albumInfoBox.append(infoLabel("%d songs, %s".formatted(this.info.album().songCount(), formatDurationMedium(this.info.album().totalPlayTime())), Classes.labelDim.add(Classes.bodyText)));
         //this.albumInfoBox.append(infoLabel("%s playtime".formatted(formatDurationMedium(this.albumInfo.totalPlayTime())), Classes.labelDim.add(Classes.bodyText)));
+
+        var downloadAllButtonContent = Box.builder()
+                .setOrientation(HORIZONTAL)
+                .setSpacing(6)
+                .build();
+        downloadAllButtonContent.append(Label.builder().setLabel("Download all").build());
+        downloadAllButtonContent.append(org.gnome.gtk.Image.fromIconName(Icons.FolderDownload.getIconName()));
+        var downloadAllButton = Button.builder()
+                //.setLabel("Download All")
+                //.setIconName(Icons.FolderDownload.getIconName())
+                .setChild(downloadAllButtonContent)
+                .setHalign(CENTER)
+                .build();
+        downloadAllButton.addCssClass("flat");
+        downloadAllButton.onClicked(() -> {
+            for (var gSong : this.info.songs()) {
+                this.onAction.apply(new PlayerAction.AddToDownloadQueue(gSong.getSongInfo()));
+            }
+        });
+        this.playlistPopover = buildPlaylistPopover();
+        var addToPlaylistButton = MenuButton.builder()
+                .setLabel("Add to Playlist\u2026")
+                .setIconName(Icons.Playlists.getIconName())
+                .setPopover(this.playlistPopover)
+                .setHalign(CENTER)
+                .build();
+        addToPlaylistButton.addCssClass("flat");
+
+        var actionButtonsBox = Box.builder()
+                .setOrientation(HORIZONTAL)
+                .setHalign(Align.END)
+                .setSpacing(8)
+                .build();
+        actionButtonsBox.append(downloadAllButton);
+        actionButtonsBox.append(addToPlaylistButton);
+
         this.headerBox.append(this.artistImage);
         this.headerBox.append(this.albumInfoBox);
         this.mainContainer.append(this.headerBox);
         var listHolder = Box.builder().setOrientation(VERTICAL).setHalign(CENTER).setValign(START).build();
+        listHolder.append(actionButtonsBox);
         listHolder.append(listView);
         this.mainContainer.append(listHolder);
 
@@ -480,6 +520,19 @@ public class AlbumInfoPage extends Box {
         this.setVexpand(true);
         this.append(this.scroll);
         this.onMap(() -> this.appManager.getThumbnailCache().loadPixbuf(this.info.album().coverArt().get(), COVER_SIZE).thenAccept(this::switchPallete));
+    }
+
+    private PlaylistChooser buildPlaylistPopover() {
+        return new com.github.subsound.ui.components.PlaylistChooser(
+                this.appManager.getPlaylistsListStore(),
+                (playlistId, playlistName) -> {
+                    for (var gSong : this.info.songs()) {
+                        this.onAction.apply(new PlayerAction.AddToPlaylist(
+                                gSong.getSongInfo(), playlistId, playlistName
+                        ));
+                    }
+                }
+        );
     }
 
     private void switchPallete(ThumbnailCache.CachedTexture cachedTexture) {
