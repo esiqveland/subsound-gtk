@@ -7,10 +7,19 @@ import com.github.subsound.integration.ServerClient.ArtistEntry;
 import com.github.subsound.integration.ServerClient.ArtistInfo;
 import com.github.subsound.integration.ServerClient.CoverArt;
 import com.github.subsound.integration.ServerClient.SongInfo;
+import com.github.subsound.persistence.ThumbnailCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class SyncService {
     private static final Logger logger = LoggerFactory.getLogger(SyncService.class);
@@ -18,11 +27,15 @@ public class SyncService {
     private final ServerClient serverClient;
     private final DatabaseServerService databaseServerService;
     private final UUID serverId;
+    private final ThumbnailCache thumbnailCache;
+    private final ExecutorService executor = Executors.newFixedThreadPool(2);
+    private final List<CoverArt> collectedCoverArts = new CopyOnWriteArrayList<>();
 
-    public SyncService(ServerClient serverClient, DatabaseServerService databaseServerService, UUID serverId) {
+    public SyncService(ServerClient serverClient, DatabaseServerService databaseServerService, UUID serverId, ThumbnailCache thumbnailCache) {
         this.serverClient = serverClient;
         this.databaseServerService = databaseServerService;
         this.serverId = serverId;
+        this.thumbnailCache = thumbnailCache;
     }
 
     public record SyncStats(int artists, int albums, int songs, int playlists) {}
@@ -42,10 +55,16 @@ public class SyncService {
             databaseServerService.deleteAllAlbums();
             databaseServerService.deleteAllArtists();
 
-            // Step 3: Sync all data from server
-            var stats = new SyncStats(0, 0, 0, 0);
+            // Step 3: Sync all data from server in parallel
+            collectedCoverArts.clear();
+            List<Future<SyncStats>> futures = new ArrayList<>();
             for (ArtistEntry artistEntry : artists) {
-                var s = syncArtist(artistEntry.id());
+                futures.add(executor.submit(() -> syncArtist(artistEntry.id())));
+            }
+            // Wait for all and aggregate stats
+            var stats = new SyncStats(0, 0, 0, 0);
+            for (Future<SyncStats> future : futures) {
+                var s = future.get();
                 stats = new SyncStats(
                         stats.artists + s.artists,
                         stats.albums + s.albums,
@@ -62,12 +81,23 @@ public class SyncService {
                 logger.warn("Cleaned up {} orphaned download references", orphanedDownloads);
             }
 
+            // Step 5: Cache all collected thumbnails
+            logger.info("Caching {} thumbnails", collectedCoverArts.size());
+            List<CompletableFuture<Void>> thumbFutures = collectedCoverArts.stream()
+                    .distinct()
+                    .map(ca -> thumbnailCache.loadThumbAsync(ca).thenAccept(loaded -> {}))
+                    .toList();
+            CompletableFuture.allOf(thumbFutures.toArray(new CompletableFuture[0])).join();
+            logger.info("Finished caching thumbnails");
+
             logger.info("Synced {} artists, {} albums, {} songs, {} playlists", stats.artists, stats.albums, stats.songs, stats.playlists);
             logger.info("Full sync completed for server: {}", serverId);
             return stats;
         } catch (Exception e) {
             logger.error("Error during full sync", e);
             throw new RuntimeException("Sync failed", e);
+        } finally {
+            executor.shutdown();
         }
     }
 
@@ -84,6 +114,9 @@ public class SyncService {
         );
         databaseServerService.insert(artist);
 
+        // Collect artist cover art for thumbnail caching
+        artistInfo.coverArt().ifPresent(collectedCoverArts::add);
+
         int songs = 0;
         for (ArtistAlbumInfo albumInfoSimple : artistInfo.albums()) {
             songs += syncAlbum(albumInfoSimple.id(), albumInfoSimple.genre());
@@ -93,6 +126,9 @@ public class SyncService {
 
     private int syncAlbum(String albumId, java.util.Optional<String> genre) {
         AlbumInfo albumInfo = serverClient.getAlbumInfo(albumId);
+        if (albumId.contains("al-5CcViuxlnidLI1TGKZcjjN")) {
+            System.out.println("Album: %s %s %s".formatted(albumInfo.id(), albumInfo.name(), albumInfo.artistName()));
+        }
         Album album = new Album(
                 albumInfo.id(),
                 serverId,
@@ -108,6 +144,11 @@ public class SyncService {
                 genre
         );
         databaseServerService.insert(album);
+
+        // Collect album cover art for thumbnail caching
+        albumInfo.coverArt().ifPresent(collectedCoverArts::add);
+
+        var start = System.nanoTime();
 
         for (SongInfo songInfo : albumInfo.songs()) {
             Song song = new Song(
@@ -130,7 +171,12 @@ public class SyncService {
                     songInfo.suffix()
             );
             databaseServerService.insert(song);
+
+            // Collect song cover art for thumbnail caching
+            songInfo.coverArt().ifPresent(collectedCoverArts::add);
         }
+        var elapsedMillis = Duration.ofNanos(System.nanoTime() - start).toMillis();
+        logger.info("syncing: songs={} for album {} in {}ms", albumInfo.songs().size(), albumInfo.id(), elapsedMillis);
         return albumInfo.songs().size();
     }
 

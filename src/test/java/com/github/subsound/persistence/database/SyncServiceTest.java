@@ -44,7 +44,7 @@ public class SyncServiceTest {
         Database db = new Database(url);
         serverId = UUID.randomUUID();
         databaseServerService = new DatabaseServerService(serverId, db);
-        syncService = new SyncService(serverClient, databaseServerService, serverId);
+        syncService = new SyncService(serverClient, databaseServerService, serverId, null);
     }
 
     @Test
