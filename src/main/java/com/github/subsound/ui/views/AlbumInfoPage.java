@@ -497,6 +497,7 @@ public class AlbumInfoPage extends Box {
                 .setOrientation(HORIZONTAL)
                 .setHalign(Align.END)
                 .setSpacing(8)
+                .setMarginBottom(4)
                 .build();
         actionButtonsBox.append(downloadAllButton);
         actionButtonsBox.append(addToPlaylistButton);
