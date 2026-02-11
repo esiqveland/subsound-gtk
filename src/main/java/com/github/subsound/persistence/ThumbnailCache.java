@@ -202,7 +202,7 @@ public class ThumbnailCache {
 
     public static CachehPath toCachePath(Path root, String serverId, String coverArtId) {
         var key = toCacheKey(coverArtId);
-        var fileName = "%s.%s".formatted(coverArtId, "jpg");
+        var fileName = "%s".formatted(coverArtId);
         var cachePath = joinPath(root, serverId, "thumbs", key.part1, key.part2, key.part3, fileName);
         var cachePathTmp = joinPath(cachePath.getParent(), fileName + ".tmp");
         return new CachehPath(cachePath, cachePathTmp);
