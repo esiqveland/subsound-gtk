@@ -4,12 +4,14 @@ import com.github.subsound.app.state.PlaylistsStore.GPlaylist;
 import com.github.subsound.integration.ServerClient.PlaylistKind;
 import org.gnome.gio.ListStore;
 import org.gnome.gtk.Box;
-import org.gnome.gtk.Button;
+import org.gnome.gtk.CustomFilter;
+import org.gnome.gtk.FilterListModel;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListBox;
+import org.gnome.gtk.ListBoxRow;
 import org.gnome.gtk.Popover;
 import org.gnome.gtk.ScrolledWindow;
-import org.gnome.gtk.Widget;
+import org.gnome.gtk.Separator;
 
 import java.util.function.BiConsumer;
 
@@ -24,59 +26,76 @@ public class PlaylistChooser extends Popover {
     private final ListStore<GPlaylist> playlistsStore;
     private final BiConsumer<String, String> onSelected;
     private final ListBox listBox;
+    private final Box contentBox;
+    private final FilterListModel<GPlaylist> normalPlaylists;
 
     public PlaylistChooser(
             ListStore<GPlaylist> playlistsStore,
             BiConsumer<String, String> onSelected
     ) {
         super();
+        this.contentBox = new Box(VERTICAL, 2);
         this.playlistsStore = playlistsStore;
         this.onSelected = onSelected;
+        this.normalPlaylists = new FilterListModel<>(
+                this.playlistsStore,
+                new CustomFilter(item -> {
+                    if (item instanceof GPlaylist gPlaylist) {
+                        return gPlaylist.getPlaylist().kind() == PlaylistKind.NORMAL;
+                    }
+                    return false;
+                }
+        ));
 
-        this.listBox = ListBox.builder()
-                .setActivateOnSingleClick(true)
-                .build();
-        listBox.addCssClass("navigation-sidebar");
+        this.listBox = new ListBox();
+        this.listBox.setActivateOnSingleClick(true);
+        this.listBox.addCssClass("navigation-sidebar");
+        var signal = this.listBox.onRowActivated(row -> {
+            this.popdown();
+            var item = this.normalPlaylists.getItem(row.getIndex());
+            this.onSelected.accept(item.getId(), item.getName());
+        });
+
+        this.listBox.bindModel(
+                this.normalPlaylists,
+                item -> {
+                    if (item instanceof GPlaylist playlist) {
+                        var row = new ListBoxRow();
+                        var label1 = new Label(playlist.getName());
+                        label1.setHalign(START);
+                        label1.addCssClass("body");
+                        row.setChild(label1);
+                        return row;
+                    } else {
+                        return new Label("something is broken");
+                    }
+                }
+        );
 
         var scrolledWindow = ScrolledWindow.builder()
                 .setChild(listBox)
-                .setMinContentHeight(100)
-                .setMaxContentHeight(300)
+                .setMinContentHeight(200)
+                .setMaxContentHeight(450)
                 .setMinContentWidth(200)
                 .setPropagateNaturalHeight(true)
                 .build();
 
-        this.setChild(scrolledWindow);
-        this.onMap(this::refreshEntries);
+        var label = new Label("Add all to playlist:");
+        label.setHalign(START);
+        label.addCssClass("body");
+        var box = new Box(VERTICAL, 2);
+        box.setMarginStart(8);
+        box.setMarginTop(4);
+        box.setMarginBottom(4);
+        box.setMarginEnd(8);
+        box.append(label);
+
+        this.contentBox.append(box);
+        this.contentBox.append(new Separator(org.gnome.gtk.Orientation.HORIZONTAL));
+        this.contentBox.append(scrolledWindow);
+
+        this.setChild(this.contentBox);
+        this.onDestroy(signal::disconnect);
     }
 
-    private void refreshEntries() {
-        // Remove all existing rows
-        Widget child;
-        while ((child = listBox.getFirstChild()) != null) {
-            listBox.remove(child);
-        }
-
-        for (int i = 0; i < playlistsStore.getNItems(); i++) {
-            var gPlaylist = playlistsStore.getItem(i);
-            if (gPlaylist.getPlaylist().kind() != PlaylistKind.NORMAL) {
-                continue;
-            }
-            String playlistId = gPlaylist.getId();
-            String playlistName = gPlaylist.getName();
-            var btn = Button.builder().setLabel(playlistName).build();
-            btn.addCssClass("flat");
-            if (btn.getChild() instanceof Label label) {
-                label.setHalign(START);
-                label.addCssClass("body");
-            }
-            btn.onClicked(() -> {
-                this.popdown();
-                onSelected.accept(playlistId, playlistName);
-            });
-            var row = Box.builder().setOrientation(VERTICAL).build();
-            row.append(btn);
-            listBox.append(row);
-        }
-    }
 }
