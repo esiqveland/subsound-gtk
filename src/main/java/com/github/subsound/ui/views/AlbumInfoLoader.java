@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
-public class AlbumInfoLoader extends Box implements AutoCloseable, AppManager.StateListener {
+public class AlbumInfoLoader extends Box {
     private final AppManager appManager;
     private final AtomicReference<String> albumId = new AtomicReference<>("");
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
@@ -31,8 +31,6 @@ public class AlbumInfoLoader extends Box implements AutoCloseable, AppManager.St
         this.thumbLoader = thumbLoader;
         this.appManager = appManager;
         this.onAction = onAction;
-        this.onMap(() -> this.appManager.addOnStateChanged(this));
-        this.onUnmap(() -> this.appManager.removeOnStateChanged(this));
         this.setHexpand(true);
         this.setVexpand(true);
         this.setHalign(Align.FILL);
@@ -59,21 +57,5 @@ public class AlbumInfoLoader extends Box implements AutoCloseable, AppManager.St
                 this.onAction
         ));
         this.viewHolder.setChild(loader);
-    }
-
-    @Override
-    public void close() throws Exception {
-        this.appManager.removeOnStateChanged(this);
-    }
-
-    @Override
-    public void onStateChanged(AppManager.AppState state) {
-        var child = this.viewHolder.getChild();
-        if (child == null) {
-            return;
-        }
-        child.getMainWidget().ifPresent(albumInfoPage -> {
-            albumInfoPage.updateAppState(state);
-        });
     }
 }
