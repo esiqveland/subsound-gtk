@@ -7,6 +7,7 @@ import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.ui.models.GSongInfo;
 import com.github.subsound.utils.Utils;
 import org.gnome.gdk.ModifierType;
+import org.gnome.glib.GLib;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.EventControllerKey;
@@ -39,6 +40,7 @@ public class CommandPalette extends Overlay {
     private final ListView resultsList;
     private final SearchResultStore searchStore;
     private boolean shown = false;
+    private int searchGeneration = 0;
 
     public CommandPalette(
             AppManager appManager,
@@ -129,18 +131,25 @@ public class CommandPalette extends Overlay {
             hide();
         });
 
-        // Connect search entry to search store
+        // Connect search entry to search store (debounced via generation counter)
         this.searchEntry.onSearchChanged(() -> {
+            var generation = ++searchGeneration;
             var query = searchEntry.getText();
             if (query == null || query.isBlank()) {
                 searchStore.clear();
                 resultsList.setVisible(false);
                 return;
             }
-            searchStore.searchAsync(query).thenAccept(result -> {
-                Utils.runOnMainThread(() -> {
-                    resultsList.setVisible(searchStore.getStore().getNItems() > 0);
+            GLib.timeoutAdd(GLib.PRIORITY_DEFAULT, 300, () -> {
+                if (generation != searchGeneration) {
+                    return GLib.SOURCE_REMOVE;
+                }
+                searchStore.searchAsync(query).thenAccept(result -> {
+                    Utils.runOnMainThread(() -> {
+                        resultsList.setVisible(searchStore.getStore().getNItems() > 0);
+                    });
                 });
+                return GLib.SOURCE_REMOVE;
             });
         });
 
@@ -192,6 +201,7 @@ public class CommandPalette extends Overlay {
     public void hide() {
         if (!shown) return;
         shown = false;
+        searchGeneration++;
         this.removeOverlay(backdrop);
         searchEntry.setText("");
         searchStore.clear();
