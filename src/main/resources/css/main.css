@@ -147,6 +147,14 @@ scale slider {
   border-radius: 12px;
 }
 
+.search-type-badge {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: @accent_color;
+  font-weight: 600;
+}
+
 .album-info-main {
   background: linear-gradient(to bottom, @background_color_0, @window_bg_color 96%);
 }

@@ -3,8 +3,9 @@ package com.github.subsound.ui.components;
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.app.state.PlayerAction;
 import com.github.subsound.app.state.SearchResultStore;
+import com.github.subsound.integration.ServerClient.ArtistAlbumInfo;
 import com.github.subsound.integration.ServerClient.SongInfo;
-import com.github.subsound.ui.models.GSongInfo;
+import com.github.subsound.ui.models.GSearchResultItem;
 import com.github.subsound.utils.Utils;
 import org.gnome.gdk.ModifierType;
 import org.gnome.glib.GLib;
@@ -99,9 +100,9 @@ public class CommandPalette extends Overlay {
         factory.onBind(item -> {
             var listItem = (ListItem) item;
             var row = (SearchResultRow) listItem.getChild();
-            var gSongInfo = (GSongInfo) listItem.getItem();
-            if (row != null && gSongInfo != null) {
-                row.bind(gSongInfo, appManager);
+            var resultItem = (GSearchResultItem) listItem.getItem();
+            if (row != null && resultItem != null) {
+                row.bind(resultItem, appManager);
             }
         });
         factory.onUnbind(item -> {
@@ -125,10 +126,24 @@ public class CommandPalette extends Overlay {
         this.resultsList.setVisible(false);
 
         this.resultsList.onActivate(index -> {
-            var gSongInfo = (GSongInfo) searchStore.getStore().getItem(index);
-            if (gSongInfo == null) return;
-            appManager.handleAction(new PlayerAction.PlaySong(gSongInfo.getSongInfo()));
-            hide();
+            var resultItem = searchStore.getStore().getItem(index);
+            if (resultItem == null) {
+                return;
+            }
+            switch (resultItem.getEntry()) {
+                case GSearchResultItem.SearchEntry.ArtistEntry artistEntry -> {
+                    appManager.navigateTo(new AppNavigation.AppRoute.RouteArtistInfo(artistEntry.artist().id()));
+                    hide();
+                }
+                case GSearchResultItem.SearchEntry.AlbumEntry albumEntry -> {
+                    appManager.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(albumEntry.album().id()));
+                    hide();
+                }
+                case GSearchResultItem.SearchEntry.SongEntry songEntry -> {
+                    appManager.handleAction(new PlayerAction.PlaySong(songEntry.song()));
+                    hide();
+                }
+            }
         });
 
         // Connect search entry to search store (debounced via generation counter)
@@ -186,10 +201,6 @@ public class CommandPalette extends Overlay {
         this.addController(keyController);
     }
 
-    public void startSearch(String query) {
-        this.searchStore.searchAsync(query);
-    }
-
     public void show() {
         if (shown) return;
         shown = true;
@@ -226,7 +237,9 @@ public class CommandPalette extends Overlay {
         private final Box albumArtBox;
         private final Label titleLabel;
         private final Label artistLabel;
+        private final Label separatorLabel;
         private final Label durationLabel;
+        private final Label typeBadge;
 
         SearchResultRow() {
             super(HORIZONTAL, 8);
@@ -261,9 +274,9 @@ public class CommandPalette extends Overlay {
             this.artistLabel.setHalign(START);
             this.artistLabel.setSingleLineMode(true);
             this.artistLabel.setEllipsize(EllipsizeMode.END);
-            this.artistLabel.setMaxWidthChars(30);
+            this.artistLabel.setMaxWidthChars(25);
 
-            var separatorLabel = infoLabel("\u2022", Classes.labelDim.add(Classes.caption));
+            this.separatorLabel = infoLabel("\u2022", Classes.labelDim.add(Classes.caption));
 
             this.durationLabel = infoLabel("", Classes.labelDim.add(Classes.caption));
             this.durationLabel.setHalign(START);
@@ -276,16 +289,22 @@ public class CommandPalette extends Overlay {
             contentBox.append(titleLabel);
             contentBox.append(subtitleBox);
 
+            this.typeBadge = Label.builder()
+                    .setLabel("Album")
+                    .setHalign(Align.END)
+                    .setValign(CENTER)
+                    .build();
+            this.typeBadge.setSingleLineMode(true);
+            this.typeBadge.addCssClass(Classes.caption.className());
+            this.typeBadge.addCssClass("search-type-badge");
+            this.typeBadge.setVisible(false);
+
             this.append(albumArtBox);
             this.append(contentBox);
+            this.append(typeBadge);
         }
 
-        void bind(GSongInfo gSongInfo, AppManager appManager) {
-            SongInfo songInfo = gSongInfo.getSongInfo();
-            this.titleLabel.setLabel(songInfo.title());
-            this.artistLabel.setLabel(songInfo.artist());
-            this.durationLabel.setLabel(Utils.formatDurationShort(songInfo.duration()));
-
+        void bind(GSearchResultItem resultItem, AppManager appManager) {
             // Clear old album art
             Widget child = this.albumArtBox.getFirstChild();
             while (child != null) {
@@ -293,13 +312,56 @@ public class CommandPalette extends Overlay {
                 this.albumArtBox.remove(child);
                 child = next;
             }
-            var albumArt = RoundedAlbumArt.resolveCoverArt(
-                    appManager,
-                    songInfo.coverArt(),
-                    ALBUM_ART_SIZE,
-                    false
-            );
-            this.albumArtBox.append(albumArt);
+
+            switch (resultItem.getEntry()) {
+                case GSearchResultItem.SearchEntry.ArtistEntry artistEntry -> {
+                    var artist = artistEntry.artist();
+                    this.titleLabel.setLabel(artist.name());
+                    this.artistLabel.setLabel("Artist");
+                    this.durationLabel.setLabel("%d albums".formatted(artist.albumCount()));
+                    this.typeBadge.setLabel("Artist");
+                    this.typeBadge.setVisible(true);
+                    this.separatorLabel.setVisible(true);
+                    var albumArt = RoundedAlbumArt.resolveCoverArt(
+                            appManager,
+                            artist.coverArt(),
+                            ALBUM_ART_SIZE,
+                            false
+                    );
+                    this.albumArtBox.append(albumArt);
+                }
+                case GSearchResultItem.SearchEntry.AlbumEntry albumEntry -> {
+                    ArtistAlbumInfo album = albumEntry.album();
+                    this.titleLabel.setLabel(album.name());
+                    this.artistLabel.setLabel(album.artistName());
+                    this.durationLabel.setLabel(album.year().map(String::valueOf).orElse(""));
+                    this.typeBadge.setLabel("Album");
+                    this.typeBadge.setVisible(true);
+                    this.separatorLabel.setVisible(true);
+                    var albumArt = RoundedAlbumArt.resolveCoverArt(
+                            appManager,
+                            album.coverArt(),
+                            ALBUM_ART_SIZE,
+                            false
+                    );
+                    this.albumArtBox.append(albumArt);
+                }
+                case GSearchResultItem.SearchEntry.SongEntry songEntry -> {
+                    SongInfo songInfo = songEntry.song();
+                    this.titleLabel.setLabel(songInfo.title());
+                    this.artistLabel.setLabel(songInfo.artist());
+                    this.durationLabel.setLabel(Utils.formatDurationShort(songInfo.duration()));
+                    this.typeBadge.setVisible(false);
+                    this.separatorLabel.setVisible(true);
+                    var albumArt = RoundedAlbumArt.resolveCoverArt(
+                            appManager,
+                            songInfo.coverArt(),
+                            ALBUM_ART_SIZE,
+                            false
+                    );
+                    this.albumArtBox.append(albumArt);
+                }
+            }
         }
 
         void unbind() {

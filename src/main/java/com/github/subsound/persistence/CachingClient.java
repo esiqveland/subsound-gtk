@@ -254,7 +254,8 @@ public class CachingClient implements ServerClient {
                 artist.id(),
                 artist.name(),
                 artist.albumCount(),
-                artist.coverArtId().flatMap(id -> toCoverArt(id, new ObjectIdentifier.ArtistIdentifier(artist.id())))
+                artist.coverArtId().flatMap(id -> toCoverArt(id, new ObjectIdentifier.ArtistIdentifier(artist.id()))),
+                artist.starredAt()
         );
     }
 

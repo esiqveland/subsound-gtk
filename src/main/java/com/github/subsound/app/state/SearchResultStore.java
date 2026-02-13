@@ -1,7 +1,7 @@
 package com.github.subsound.app.state;
 
 import com.github.subsound.integration.ServerClient;
-import com.github.subsound.ui.models.GSongInfo;
+import com.github.subsound.ui.models.GSearchResultItem;
 import com.github.subsound.utils.LevenshteinSearch;
 import com.github.subsound.utils.Utils;
 import org.gnome.gio.ListStore;
@@ -14,12 +14,13 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class SearchResultStore {
     private static final Logger log = LoggerFactory.getLogger(SearchResultStore.class);
 
     private final Object lock = new Object();
-    private final ListStore<GSongInfo> store = new ListStore<>(GSongInfo.gtype);
+    private final ListStore<GSearchResultItem> store = new ListStore<>(GSearchResultItem.gtype);
     private final Supplier<ServerClient> client;
 
     private volatile SearchStatus currentStatus = SearchStatus.INITIAL;
@@ -54,8 +55,12 @@ public class SearchResultStore {
                     return searchResult;
                 }
                 log.info("searchAsync: status={} query={}, id={} songs={}", currentStatus, query, id, searchResult.songs().size());
-                var sorted = sortByRelevance(searchResult.songs(), query);
-                var sortedResult = new ServerClient.SearchResult(sorted, searchResult.albums());
+                var songs = sortByRelevance(searchResult.songs(), query);
+                var sortedResult = new ServerClient.SearchResult(
+                        searchResult.artists(),
+                        searchResult.albums(),
+                        songs
+                );
                 this.setResults(sortedResult);
                 return sortedResult;
             } catch (Exception e) {
@@ -68,17 +73,21 @@ public class SearchResultStore {
 
     public void setResults(ServerClient.SearchResult result) {
         synchronized (lock) {
-            var songs = result.songs();
-            var items = songs.stream()
-                    .map(GSongInfo::newInstance)
-                    .toArray(GSongInfo[]::new);
+            var artistItems = result.artists().stream()
+                    .map(GSearchResultItem::ofArtist);
+            var albumItems = result.albums().stream()
+                    .map(GSearchResultItem::ofAlbum);
+            var songItems = result.songs().stream()
+                    .map(GSearchResultItem::ofSong);
+            var items = Stream.concat(Stream.concat(artistItems, albumItems), songItems)
+                    .toArray(GSearchResultItem[]::new);
 
             Utils.runOnMainThreadFuture(() -> {
                 store.removeAll();
                 store.splice(0, 0, items);
             }).join();
 
-            log.info("setResults: count={}", songs.size());
+            log.info("setResults: albums={} songs={}", result.albums().size(), result.songs().size());
         }
     }
 
@@ -86,7 +95,7 @@ public class SearchResultStore {
         return Utils.runOnMainThreadFuture(() -> store.removeAll());
     }
 
-    public ListStore<GSongInfo> getStore() {
+    public ListStore<GSearchResultItem> getStore() {
         return store;
     }
 

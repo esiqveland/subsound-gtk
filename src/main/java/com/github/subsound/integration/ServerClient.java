@@ -39,8 +39,9 @@ public interface ServerClient {
     SearchResult search(String query);
 
     record SearchResult(
-            List<SongInfo> songs,
-            List<ArtistAlbumInfo> albums
+            List<ArtistEntry> artists,
+            List<ArtistAlbumInfo> albums,
+            List<SongInfo> songs
     ) {}
 
     record ServerInfo(
@@ -209,7 +210,8 @@ public interface ServerClient {
             String id,
             String name,
             int albumCount,
-            Optional<CoverArt> coverArt
+            Optional<CoverArt> coverArt,
+            Optional<Instant> starredAt
     ) {
     }
 

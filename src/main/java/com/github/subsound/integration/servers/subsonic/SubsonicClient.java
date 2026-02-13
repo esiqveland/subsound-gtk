@@ -21,6 +21,7 @@ import net.beardbot.subsonic.client.api.search.SearchParams;
 import net.beardbot.subsonic.client.base.ApiParams;
 import okhttp3.HttpUrl;
 import org.subsonic.restapi.AlbumID3;
+import org.subsonic.restapi.ArtistID3;
 import org.subsonic.restapi.Child;
 import org.subsonic.restapi.PlaylistWithSongs;
 import org.subsonic.restapi.SearchResult3;
@@ -85,12 +86,7 @@ public class SubsonicClient implements ServerClient {
         var res = this.client.browsing().getArtists();
         var list = res.stream()
                 .flatMap(s -> s.getArtists().stream())
-                .map(artist -> new ArtistEntry(
-                        artist.getId(),
-                        artist.getName(),
-                        artist.getAlbumCount(),
-                        toCoverArt(artist.getCoverArtId(), new ArtistIdentifier(artist.getId()))
-                )).toList();
+                .map(this::toArtistInfo).toList();
         return new ListArtists(list);
     }
 
@@ -300,9 +296,20 @@ public class SubsonicClient implements ServerClient {
     @Override
     public SearchResult search(String query) {
         SearchResult3 searchResult3 = this.client.searching().search3(query, SearchParams.create());
-        var songs = searchResult3.getSongs().stream().map(this::toSongInfo).toList();
+        var artists = searchResult3.getArtists().stream().map(this::toArtistInfo).toList();
         var albums = searchResult3.getAlbums().stream().map(this::toAlbumInfoList).toList();
-        return new SearchResult(songs, albums);
+        var songs = searchResult3.getSongs().stream().map(this::toSongInfo).toList();
+        return new SearchResult(artists, albums, songs);
+    }
+
+    private ArtistEntry toArtistInfo(ArtistID3 artistID3) {
+        return new ArtistEntry(
+                artistID3.getId(),
+                artistID3.getName(),
+                artistID3.getAlbumCount(),
+                toCoverArt(artistID3.getCoverArtId(), new ArtistIdentifier(artistID3.getId())),
+                Optional.ofNullable(artistID3.getStarred()).map(d -> d.toInstant(ZoneOffset.UTC))
+        );
     }
 
 
