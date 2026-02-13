@@ -17,10 +17,13 @@ import net.beardbot.subsonic.client.api.lists.AlbumListType;
 import net.beardbot.subsonic.client.api.media.CoverArtParams;
 import net.beardbot.subsonic.client.api.media.StreamParams;
 import net.beardbot.subsonic.client.api.playlist.UpdatePlaylistParams;
+import net.beardbot.subsonic.client.api.search.SearchParams;
 import net.beardbot.subsonic.client.base.ApiParams;
 import okhttp3.HttpUrl;
+import org.subsonic.restapi.AlbumID3;
 import org.subsonic.restapi.Child;
 import org.subsonic.restapi.PlaylistWithSongs;
+import org.subsonic.restapi.SearchResult3;
 import org.subsonic.restapi.Starred2;
 
 import java.io.IOException;
@@ -200,6 +203,21 @@ public class SubsonicClient implements ServerClient {
                 .toList();
     }
 
+    private ArtistAlbumInfo toAlbumInfoList(AlbumID3 album) {
+        return new ArtistAlbumInfo(
+                album.getId(),
+                album.getName(),
+                album.getSongCount(),
+                album.getArtistId(),
+                album.getArtist(),
+                Duration.ofSeconds(album.getDuration()),
+                ofNullable(album.getGenre()).filter(s -> !s.isBlank()),
+                ofNullable(album.getYear()),
+                ofNullable(album.getStarred()).map(d -> d.toInstant(ZoneOffset.UTC)),
+                toCoverArt(album.getCoverArtId(), new AlbumIdentifier(album.getId()))
+        );
+    }
+
     @Override
     public AlbumInfo getAlbumInfo(String albumId) {
         var task1 = Utils.doAsync(() -> this.client.browsing().getAlbum(albumId));
@@ -277,6 +295,14 @@ public class SubsonicClient implements ServerClient {
         Optional<Instant> lastScan = scanStatus.lastScan != null ? Optional.of(scanStatus.lastScan) : Optional.empty();
         Optional<String> serverVersion = scanStatusResponse.serverVersion != null ? Optional.of(scanStatusResponse.serverVersion) : Optional.empty();
         return new ServerInfo(apiVersion, count, folderCount, lastScan, serverVersion);
+    }
+
+    @Override
+    public SearchResult search(String query) {
+        SearchResult3 searchResult3 = this.client.searching().search3(query, SearchParams.create());
+        var songs = searchResult3.getSongs().stream().map(this::toSongInfo).toList();
+        var albums = searchResult3.getAlbums().stream().map(this::toAlbumInfoList).toList();
+        return new SearchResult(songs, albums);
     }
 
 

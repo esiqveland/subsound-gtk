@@ -242,6 +242,11 @@ public class CachingClient implements ServerClient {
         return delegate.getServerInfo();
     }
 
+    @Override
+    public SearchResult search(String query) {
+        return delegate.search(query);
+    }
+
     // Conversion methods: database records -> ServerClient types
 
     private ArtistEntry toArtistEntry(Artist artist) {

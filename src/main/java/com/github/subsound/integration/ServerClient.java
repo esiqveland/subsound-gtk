@@ -36,6 +36,12 @@ public interface ServerClient {
     ServerType getServerType();
     boolean testConnection();
     ServerInfo getServerInfo();
+    SearchResult search(String query);
+
+    record SearchResult(
+            List<SongInfo> songs,
+            List<ArtistAlbumInfo> albums
+    ) {}
 
     record ServerInfo(
             String apiVersion,

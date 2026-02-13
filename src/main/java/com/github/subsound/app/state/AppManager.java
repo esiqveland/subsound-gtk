@@ -73,6 +73,7 @@ public class AppManager {
     //private final ListStore<GSongInfo> starredList = new ListStore<>(GSongInfo.gtype);
     private final StarredListStore starredList;
     private final PlaylistsStore playlistsStore;
+    private final SearchResultStore searchResultStore;
     private final ScheduledExecutorService preferenceSaveScheduler = Executors.newSingleThreadScheduledExecutor();
     private final Database database;
     private final DatabaseServerService dbService;
@@ -143,6 +144,8 @@ public class AppManager {
 
         this.starredList = new StarredListStore(this);
         this.playlistsStore = new PlaylistsStore(this);
+        this.searchResultStore = new SearchResultStore(this.client::get);
+
         client.ifPresent(c -> {
             this.starredList.refreshAsync();
             this.playlistsStore.refreshListAsync();
@@ -263,6 +266,10 @@ public class AppManager {
 
     public Optional<Duration> getPlayerPosition() {
         return this.player.getCurrentPosition();
+    }
+
+    public SearchResultStore getSearchResultStore() {
+        return this.searchResultStore;
     }
 
     public record AlbumInfo(
@@ -630,6 +637,7 @@ public class AppManager {
     private void unstarSong(PlayerAction.Unstar a) {
         this.starredList.removeStarred(a.song());
         this.client.get().unStarId(a.song().id());
+        this.playlistsStore.updateStarredCount(this.starredList.getStore().getNItems());
         setState(appState -> appState.nowPlaying()
                 .map(nowPlaying -> {
                     var song = nowPlaying.song();
@@ -658,6 +666,7 @@ public class AppManager {
             this.starredList.removeStarred(song);
             throw e;
         }
+        this.playlistsStore.updateStarredCount(this.starredList.getStore().getNItems());
         setState(appState -> appState.nowPlaying()
                 .map(nowPlaying -> {
                     var currentSong = nowPlaying.song();
