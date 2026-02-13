@@ -2,11 +2,14 @@ package com.github.subsound.app.state;
 
 import com.github.subsound.integration.ServerClient;
 import com.github.subsound.ui.models.GSongInfo;
+import com.github.subsound.utils.LevenshteinSearch;
 import com.github.subsound.utils.Utils;
 import org.gnome.gio.ListStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -51,8 +54,10 @@ public class SearchResultStore {
                     return searchResult;
                 }
                 log.info("searchAsync: status={} query={}, id={} songs={}", currentStatus, query, id, searchResult.songs().size());
-                this.setResults(searchResult);
-                return searchResult;
+                var sorted = sortByRelevance(searchResult.songs(), query);
+                var sortedResult = new ServerClient.SearchResult(sorted, searchResult.albums());
+                this.setResults(sortedResult);
+                return sortedResult;
             } catch (Exception e) {
                 this.currentStatus = SearchStatus.DONE;
                 log.info("searchAsync: status={} query={}, id={}", currentStatus, query, id, e);
@@ -83,5 +88,30 @@ public class SearchResultStore {
 
     public ListStore<GSongInfo> getStore() {
         return store;
+    }
+
+    static int scoreTitle(String title, String query) {
+        var lowerTitle = title.toLowerCase();
+        var lowerQuery = query.toLowerCase();
+        for (int len = lowerQuery.length(); len > 0; len--) {
+            for (int start = 0; start + len <= lowerQuery.length(); start++) {
+                if (lowerTitle.contains(lowerQuery.substring(start, start + len))) {
+                    return len;
+                }
+            }
+        }
+        // TODO: ok, it does not make all that much sense to distance the entire title against the query,
+        // but at least its a little better than the default result ranking
+        return LevenshteinSearch.DamerauLevenshtein.calculateDistance(lowerTitle, lowerQuery);
+    }
+
+    static List<ServerClient.SongInfo> sortByRelevance(List<ServerClient.SongInfo> songs, String query) {
+        var lowerQuery = query.toLowerCase();
+        return songs.stream()
+                .sorted(Comparator
+                        .comparingInt((ServerClient.SongInfo s) -> scoreTitle(s.title(), query)).reversed()
+                        .thenComparing((ServerClient.SongInfo s) -> !s.title().toLowerCase().startsWith(lowerQuery))
+                )
+                .toList();
     }
 }
