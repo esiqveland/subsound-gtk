@@ -212,6 +212,11 @@ public class CachingClient implements ServerClient {
     }
 
     @Override
+    public void scrobble(ScrobbleRequest req) {
+        this.delegate.scrobble(req);
+    }
+
+    @Override
     public void starId(String id) {
         if (isOffline()) {
             throw new IllegalStateException("Cannot star while offline");

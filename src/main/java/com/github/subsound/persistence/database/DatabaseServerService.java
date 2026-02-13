@@ -3,6 +3,7 @@ package com.github.subsound.persistence.database;
 import com.github.subsound.persistence.database.Artist.Biography;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.persistence.database.DownloadQueueItem.DownloadStatus;
+import com.github.subsound.persistence.database.ScrobbleEntry.ScrobbleStatus;
 import com.github.subsound.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -712,5 +713,83 @@ public class DatabaseServerService {
             logger.error("Failed to remove song from download queue: {}", songId, e);
             throw new RuntimeException("Failed to remove song from download queue", e);
         }
+    }
+
+    // Scrobble methods
+
+    public void insertScrobble(String songId, Instant playedAt) {
+        String sql = "INSERT INTO scrobbles (server_id, song_id, played_at_ms, status) VALUES (?, ?, ?, ?)";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            pstmt.setString(2, songId);
+            pstmt.setLong(3, playedAt.toEpochMilli());
+            pstmt.setString(4, ScrobbleStatus.PENDING.name());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Failed to insert scrobble for song: {}", songId, e);
+            throw new RuntimeException("Failed to insert scrobble", e);
+        }
+    }
+
+    public List<ScrobbleEntry> listPendingScrobbles() {
+        List<ScrobbleEntry> entries = new ArrayList<>();
+        String sql = "SELECT * FROM scrobbles WHERE server_id = ? AND status IN (?, ?) ORDER BY played_at_ms ASC";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            pstmt.setString(2, ScrobbleStatus.PENDING.name());
+            pstmt.setString(3, ScrobbleStatus.FAILED.name());
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    entries.add(mapResultSetToScrobble(rs));
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to list pending scrobbles for server: {}", serverId, e);
+            throw new RuntimeException("Failed to list pending scrobbles", e);
+        }
+        return entries;
+    }
+
+    public void updateScrobbleStatus(long id, ScrobbleStatus status) {
+        String sql = "UPDATE scrobbles SET status = ? WHERE id = ? AND server_id = ?";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, status.name());
+            pstmt.setLong(2, id);
+            pstmt.setString(3, this.serverId.toString());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Failed to update scrobble status for id: {}", id, e);
+            throw new RuntimeException("Failed to update scrobble status", e);
+        }
+    }
+
+    public void deleteSubmittedScrobbles() {
+        String sql = "DELETE FROM scrobbles WHERE server_id = ? AND status = ?";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            pstmt.setString(2, ScrobbleStatus.SUBMITTED.name());
+            int deleted = pstmt.executeUpdate();
+            if (deleted > 0) {
+                logger.info("Deleted {} submitted scrobbles for server {}", deleted, serverId);
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to delete submitted scrobbles", e);
+            throw new RuntimeException("Failed to delete submitted scrobbles", e);
+        }
+    }
+
+    private ScrobbleEntry mapResultSetToScrobble(ResultSet rs) throws SQLException {
+        return new ScrobbleEntry(
+                rs.getLong("id"),
+                UUID.fromString(rs.getString("server_id")),
+                rs.getString("song_id"),
+                rs.getLong("played_at_ms"),
+                rs.getLong("created_at_ms"),
+                ScrobbleStatus.valueOf(rs.getString("status"))
+        );
     }
 }

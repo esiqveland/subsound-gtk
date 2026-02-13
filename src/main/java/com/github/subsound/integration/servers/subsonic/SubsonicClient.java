@@ -302,6 +302,11 @@ public class SubsonicClient implements ServerClient {
         return new SearchResult(artists, albums, songs);
     }
 
+    @Override
+    public void scrobble(ScrobbleRequest req) {
+        this.client.annotation().scrobble(req.songId(), req.playedAt().toEpochMilli());
+    }
+
     private ArtistEntry toArtistInfo(ArtistID3 artistID3) {
         return new ArtistEntry(
                 artistID3.getId(),

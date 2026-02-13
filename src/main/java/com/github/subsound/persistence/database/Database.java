@@ -111,6 +111,7 @@ public class Database {
         migrations.add(new MigrationV6());
         migrations.add(new MigrationV7());
         migrations.add(new MigrationV8());
+        migrations.add(new MigrationV9());
         return migrations;
     }
 
@@ -333,6 +334,30 @@ public class Database {
                         PRIMARY KEY (playlist_id, server_id, song_id)
                     )
                 """);
+            }
+        }
+    }
+
+    private static class MigrationV9 implements Migration {
+        @Override
+        public int version() {
+            return 9;
+        }
+
+        @Override
+        public void apply(Connection conn) throws SQLException {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS scrobbles (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        server_id TEXT NOT NULL,
+                        song_id TEXT NOT NULL,
+                        played_at_ms INTEGER NOT NULL,
+                        created_at_ms INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
+                        status TEXT NOT NULL DEFAULT 'PENDING'
+                    )
+                """);
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_scrobbles_server_status ON scrobbles (server_id, status)");
             }
         }
     }

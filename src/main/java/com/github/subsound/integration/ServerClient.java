@@ -6,6 +6,7 @@ import com.github.subsound.utils.Utils;
 import io.soabase.recordbuilder.core.RecordBuilder;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
 import org.subsonic.restapi.AlbumID3;
+import org.subsonic.restapi.ArtistInfo;
 
 import java.net.URI;
 import java.nio.file.Path;
@@ -37,7 +38,9 @@ public interface ServerClient {
     boolean testConnection();
     ServerInfo getServerInfo();
     SearchResult search(String query);
+    void scrobble(ScrobbleRequest req);
 
+    record ScrobbleRequest(String songId, Instant playedAt) {}
     record SearchResult(
             List<ArtistEntry> artists,
             List<ArtistAlbumInfo> albums,
