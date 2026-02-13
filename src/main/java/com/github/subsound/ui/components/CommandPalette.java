@@ -2,7 +2,6 @@ package com.github.subsound.ui.components;
 
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.app.state.SearchResultStore;
-import com.github.subsound.ui.models.GSongInfo;
 import org.gnome.gdk.ModifierType;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
@@ -23,7 +22,7 @@ public class CommandPalette extends Overlay {
     private final Box paletteCard;
     private final SearchEntry searchEntry;
     private final ListView resultsList;
-    private final SearchResultStore resultStore;
+    private final SearchResultStore searchStore;
     private boolean shown = false;
 
     public CommandPalette(
@@ -32,7 +31,7 @@ public class CommandPalette extends Overlay {
     ) {
         super();
         this.appManager = appManager;
-        this.resultStore = this.appManager.getSearchResultStore();
+        this.searchStore = this.appManager.getSearchResultStore();
         this.setChild(child);
 
         // Backdrop: semi-transparent overlay that fills the entire area
@@ -73,7 +72,7 @@ public class CommandPalette extends Overlay {
                 .setPlaceholderText("Search...")
                 .build();
         // Results list backed by the store
-        var selectionModel = new NoSelection<>(resultStore.getStore());
+        var selectionModel = new NoSelection<>(searchStore.getStore());
         var factory = new SignalListItemFactory();
         this.resultsList = ListView.builder()
                 .setModel(selectionModel)
@@ -107,6 +106,10 @@ public class CommandPalette extends Overlay {
         this.addController(keyController);
     }
 
+    public void startSearch(String query) {
+        this.searchStore.searchAsync(query);
+    }
+
     public void show() {
         if (shown) return;
         shown = true;
@@ -120,7 +123,7 @@ public class CommandPalette extends Overlay {
         shown = false;
         this.removeOverlay(backdrop);
         searchEntry.setText("");
-        resultStore.clear();
+        searchStore.clear();
         resultsList.setVisible(false);
     }
 
@@ -134,9 +137,5 @@ public class CommandPalette extends Overlay {
 
     public boolean isShown() {
         return shown;
-    }
-
-    public SearchResultStore getResultStore() {
-        return resultStore;
     }
 }
