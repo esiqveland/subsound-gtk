@@ -37,6 +37,7 @@ public class PlaylistChooser extends Popover {
         this.contentBox = new Box(VERTICAL, 2);
         this.playlistsStore = playlistsStore;
         this.onSelected = onSelected;
+        // TODO: consider dropping this filter, and just making special rows for the special lists Starred + Downloaded
         this.normalPlaylists = new FilterListModel<>(
                 this.playlistsStore,
                 new CustomFilter(item -> {
