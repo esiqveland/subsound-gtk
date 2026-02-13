@@ -137,6 +137,16 @@ scale slider {
 @define-color background_color_4 rgb(178,132,151);
 */
 
+.command-palette-backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.command-palette {
+  margin-top: 80px;
+  min-width: 500px;
+  border-radius: 12px;
+}
+
 .album-info-main {
   background: linear-gradient(to bottom, @background_color_0, @window_bg_color 96%);
 }

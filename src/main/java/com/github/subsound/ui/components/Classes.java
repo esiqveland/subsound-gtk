@@ -49,7 +49,9 @@ public enum Classes {
     // starred gives a yellow font color for icons
     starred("starred"),
     activatable("activatable"),
-    queueAutomatic("queue-automatic");
+    queueAutomatic("queue-automatic"),
+    commandPalette("command-palette"),
+    commandPaletteBackdrop("command-palette-backdrop");
 
     private final String className;
     Classes(String className) {

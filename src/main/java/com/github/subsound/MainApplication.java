@@ -7,6 +7,7 @@ import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.ui.components.AppNavigation;
 import com.github.subsound.ui.components.Classes;
 import com.github.subsound.ui.components.Icons;
+import com.github.subsound.ui.components.CommandPalette;
 import com.github.subsound.ui.components.OnboardingOverlay;
 import com.github.subsound.ui.components.PlayerBar;
 import com.github.subsound.ui.components.ServerBadge;
@@ -77,6 +78,8 @@ public class MainApplication {
     private final PlayerBar playerBar;
     private final Box bottomBar;
     private final Shortcut playPauseShortcut;
+    private final Shortcut commandPaletteShortcut;
+    private final CommandPalette commandPalette;
     private final ServerBadge serverBadge;
     private AppNavigation appNavigation;
     private final CssProvider mainProvider = CssProvider.builder().build();
@@ -104,6 +107,16 @@ public class MainApplication {
             return true;
         });
         playPauseShortcut = Shortcut.builder().setTrigger(playPauseTrigger).setAction(playPauseAction).build();
+
+        this.toolbarView = ToolbarView.builder().build();
+        this.commandPalette = new CommandPalette(appManager, toolbarView);
+        var commandPaletteTrigger = ShortcutTrigger.parseString("<Control>k");
+        var commandPaletteAction = new CallbackAction((Widget widget, @Nullable Variant args) -> {
+            log.info("command palette toggle");
+            this.commandPalette.toggle();
+            return true;
+        });
+        commandPaletteShortcut = Shortcut.builder().setTrigger(commandPaletteTrigger).setAction(commandPaletteAction).build();
 
         // Create popover menu content
         var popoverContent = Box.builder()
@@ -169,7 +182,6 @@ public class MainApplication {
         bottomBar = new Box(Orientation.VERTICAL, 2);
         bottomBar.append(playerBar);
 
-        toolbarView = ToolbarView.builder().build();
         toolbarView.addTopBar(headerBar);
         toolbarView.setContent(toastOverlay);
         toolbarView.addBottomBar(bottomBar);
@@ -342,13 +354,14 @@ public class MainApplication {
 
         var shortcutController = new ShortcutController();
         shortcutController.addShortcut(playPauseShortcut);
+        shortcutController.addShortcut(commandPaletteShortcut);
         shortcutController.setScope(ShortcutScope.GLOBAL);
 
         // Pack everything together, and show the window
         this.window = ApplicationWindow.builder()
                 .setApplication(app)
                 .setDefaultWidth(cfg.windowWidth).setDefaultHeight(cfg.windowHeight)
-                .setContent(toolbarView)
+                .setContent(commandPalette)
                 .build();
         window.addController(shortcutController);
 

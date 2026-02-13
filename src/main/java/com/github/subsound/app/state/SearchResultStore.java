@@ -45,9 +45,7 @@ public class SearchResultStore {
     }
 
     public void clear() {
-        synchronized (lock) {
-            Utils.runOnMainThreadFuture(() -> store.removeAll()).join();
-        }
+        Utils.runOnMainThread(() -> store.removeAll());
     }
 
     public ListStore<GSongInfo> getStore() {
