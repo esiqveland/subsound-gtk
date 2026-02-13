@@ -1,5 +1,6 @@
 package com.github.subsound.persistence.database;
 
+import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.AlbumInfo;
 import com.github.subsound.integration.ServerClient.ArtistAlbumInfo;
@@ -44,7 +45,7 @@ public class SyncServiceTest {
         Database db = new Database(url);
         serverId = UUID.randomUUID();
         databaseServerService = new DatabaseServerService(serverId, db);
-        syncService = new SyncService(serverClient, databaseServerService, serverId, null, query -> true);
+        syncService = new SyncService(serverClient, databaseServerService, serverId, mock(ThumbnailCache.class), query -> true);
     }
 
     @Test
