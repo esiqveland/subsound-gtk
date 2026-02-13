@@ -34,6 +34,7 @@ public class PlaylistsStore {
     private final ArrayList<String> backingIds = new ArrayList<>();
     private final AtomicBoolean isLoading = new AtomicBoolean(false);
     private final Object lock = new Object();
+    private GPlaylist starredPlaylist;
 
     public PlaylistsStore(AppManager appManager) {
         this.appManager = appManager;
@@ -86,6 +87,11 @@ public class PlaylistsStore {
                             metaStore.insert(ins.position(), ins.item());
                         }
                     }).join();
+
+                    // Capture starred playlist reference on first load
+                    if (starredPlaylist == null && metaStore.getNItems() > 0) {
+                        starredPlaylist = metaStore.getItem(0);
+                    }
 
                     // Update backing state
                     backingIds.clear();
@@ -154,6 +160,17 @@ public class PlaylistsStore {
         }
 
         return new Differences(indexDiff.removalIndices(), insertions);
+    }
+
+    public void updateStarredCount(int count) {
+        var sp = this.starredPlaylist;
+        if (sp == null) {
+            return;
+        }
+        var old = sp.getPlaylist();
+        Utils.runOnMainThread(() -> sp.setValue(new PlaylistSimple(
+                old.id(), old.name(), old.kind(), old.coverArtId(), count, old.created()
+        )));
     }
 
     public ListStore<GPlaylist> playlistsListStore() {
