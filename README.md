@@ -14,7 +14,7 @@ A few samples of what the UI looks like:
 
 ![Playlists view](screenshots/playlistsv1.png)
 
-![Starred playlist](screenshots/starredv5.png)
+![Search modal ( Ctrl+K )](screenshots/searchv1.png)
 
 ### TODO
 
