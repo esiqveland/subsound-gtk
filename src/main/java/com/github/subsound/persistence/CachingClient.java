@@ -217,6 +217,26 @@ public class CachingClient implements ServerClient {
     }
 
     @Override
+    public PlaylistSimple playlistCreate(PlaylistCreateRequest req) {
+        return this.delegate.playlistCreate(req);
+    }
+
+    @Override
+    public void playlistRename(PlaylistRenameRequest req) {
+        this.delegate.playlistRename(req);
+    }
+
+    @Override
+    public void playlistDelete(PlaylistDeleteRequest req) {
+        this.delegate.playlistDelete(req);
+    }
+
+    @Override
+    public void playlistRemove(PlaylistRemoveSongRequest req) {
+        this.delegate.playlistRemove(req);
+    }
+
+    @Override
     public void starId(String id) {
         if (isOffline()) {
             throw new IllegalStateException("Cannot star while offline");

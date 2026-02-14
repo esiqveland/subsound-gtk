@@ -5,6 +5,7 @@ import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.ObjectIdentifier.AlbumIdentifier;
 import com.github.subsound.integration.ServerClient.ObjectIdentifier.ArtistIdentifier;
 import com.github.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier;
+import com.github.subsound.integration.servers.subsonic.SubsonicClient.CreatePlaylistResponseJson.PlaylistJson;
 import com.github.subsound.integration.servers.subsonic.SubsonicClient.SubsonicResponseJson.SubsonicResponse;
 import com.github.subsound.utils.Utils;
 import com.github.subsound.utils.javahttp.LoggingHttpClient;
@@ -32,6 +33,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -625,5 +628,99 @@ public class SubsonicClient implements ServerClient {
     public static SubsonicClient create(ServerConfig cfg) {
         var settings = createSettings(cfg);
         return new SubsonicClient(cfg.id(), cfg.dataDir(), settings);
+    }
+
+    // JSON response models for /rest/createPlaylist
+    public static class CreatePlaylistResponseJson {
+        @SerializedName("subsonic-response")
+        public CreatePlaylistResponseJsonInner subsonicResponse;
+        public static class CreatePlaylistResponseJsonInner {
+            public String status;
+            public PlaylistJson playlist;
+        }
+        //     "playlist": {
+        //      "id": "800000075",
+        //      "name": "testcreate",
+        //      "owner": "user",
+        //      "public": true,
+        //      "created": "2023-03-16T03:18:41+00:00",
+        //      "changed": "2023-03-16T03:18:41+00:00",
+        //      "songCount": 1,
+        //      "duration": 304,
+        public static class PlaylistJson {
+            public String id;
+            public String name;
+            public String owner;
+            @SerializedName("public")
+            public Boolean isPublic;
+            public int songCount;
+            @SerializedName("duration")
+            public Integer durationSeconds;
+            public String coverArt;
+            public Instant created;
+            public Instant changed;
+            public List<ChildJson> entry = List.of();
+        }
+    }
+    public static class ChildJson {
+        @SerializedName("id")
+        public String songId;
+        public String coverArt;
+    }
+
+    @Override
+    public PlaylistSimple playlistCreate(PlaylistCreateRequest request) {
+        try {
+            URI link = getServerUri("/rest/createPlaylist", ResponseFormat.JSON, Map.of("name", request.name()));
+            var req = HttpRequest.newBuilder().POST(BodyPublishers.noBody()).uri(link).build();
+            HttpResponse<byte[]> res = this.httpClient.send(req, HttpResponse.BodyHandlers.ofByteArray());
+            var bodyString = new String(res.body(), StandardCharsets.UTF_8);
+            if (res.statusCode() >= 200 && res.statusCode() < 300) {
+                var parsed = Utils.fromJson(bodyString, CreatePlaylistResponseJson.class);
+                if ("ok".equalsIgnoreCase(parsed.subsonicResponse.status)) {
+                    var pl = parsed.subsonicResponse.playlist;
+                    return toPlaylistSimple(pl);
+                }
+            }
+            throw new RuntimeException("playlistCreate: error: status=" + res.statusCode() + " body=" + bodyString);
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private PlaylistSimple toPlaylistSimple(PlaylistJson pl) {
+        return new PlaylistSimple(
+                pl.id,
+                pl.name,
+                PlaylistKind.NORMAL,
+                toCoverArt(pl.coverArt, new PlaylistIdentifier(pl.id))
+                        .or(() -> Optional.ofNullable(pl.entry).flatMap(child -> child.stream()
+                                .filter(c -> c.coverArt != null && !c.coverArt.isBlank())
+                                .findFirst()
+                                .flatMap(c -> toCoverArt(c.coverArt, new ObjectIdentifier.SongIdentifier(c.songId)))
+                        )),
+                pl.songCount,
+                pl.created
+        );
+    }
+
+    @Override
+    public void playlistRename(PlaylistRenameRequest req) {
+        this.client.playlists().updatePlaylist(req.id(), UpdatePlaylistParams.create().name(req.newName()));
+    }
+
+    @Override
+    public void playlistDelete(PlaylistDeleteRequest req) {
+        this.client.playlists().deletePlaylist(req.id());
+    }
+
+    @Override
+    public void playlistRemove(PlaylistRemoveSongRequest req) {
+        var songs = req.songIds();
+        UpdatePlaylistParams params = UpdatePlaylistParams.create();
+        for (var song : songs) {
+            params = params.removeSong(song.indexInPlaylist());
+        }
+        this.client.playlists().updatePlaylist(req.playlistId(), params);
     }
 }

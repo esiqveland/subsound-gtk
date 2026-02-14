@@ -132,7 +132,7 @@ public interface ServerClient {
         record ArtistIdentifier(String artistId) implements ObjectIdentifier {}
         record AlbumIdentifier(String albumId) implements ObjectIdentifier {}
         record PlaylistIdentifier(String playlistId) implements ObjectIdentifier {}
-        //record SongIdentifier(String songId) implements ObjectIdentifier {}
+        record SongIdentifier(String songId) implements ObjectIdentifier {}
         static ArtistIdentifier ofArtist(String artistId) {
             return new ArtistIdentifier(artistId);
         }
@@ -291,4 +291,14 @@ public interface ServerClient {
             String playlistId,
             String songId
     ){}
+
+    PlaylistSimple playlistCreate(PlaylistCreateRequest req);
+    record PlaylistCreateRequest(String name){}
+    void playlistRename(PlaylistRenameRequest req);
+    record PlaylistRenameRequest(String id, String newName) {}
+    void playlistDelete(PlaylistDeleteRequest req);
+    record PlaylistDeleteRequest(String id) {}
+    void playlistRemove(PlaylistRemoveSongRequest req);
+    record SongRemoval(int indexInPlaylist, String songId) {}
+    record PlaylistRemoveSongRequest(String playlistId, List<SongRemoval> songIds) {}
 }
