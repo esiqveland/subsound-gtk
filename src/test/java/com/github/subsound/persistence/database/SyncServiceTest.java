@@ -51,7 +51,7 @@ public class SyncServiceTest {
     @Test
     public void testSyncAll() {
         // Mock Artists
-        ArtistEntry artistEntry = new ArtistEntry("artist-1", "Artist One", 1, Optional.empty());
+        ArtistEntry artistEntry = new ArtistEntry("artist-1", "Artist One", 1, Optional.empty(), Optional.empty());
         when(serverClient.getArtists()).thenReturn(new ListArtists(List.of(artistEntry)));
 
         // Mock Artist Info

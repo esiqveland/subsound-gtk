@@ -81,6 +81,7 @@ public class AppManager {
     private final DownloadManager downloadManager;
     private final NetworkMonitoring networkMonitor;
     private volatile ScheduledFuture<?> pendingPreferenceSave;
+    private volatile UUID scrobbledForRequestId = null;
 
     private ToastOverlay toastOverlay;
     private AppNavigation navigator;
@@ -122,6 +123,7 @@ public class AppManager {
 
         player.onStateChanged(next -> {
             this.setState(old -> old.withPlayer(next));
+            this.checkScrobble(next);
         });
 
         this.currentState = BehaviorSubject.createDefault(buildState());
@@ -706,6 +708,67 @@ public class AppManager {
             }
         } finally {
             lock.unlock();
+        }
+    }
+
+    //TODO: consider if this is better implemented in the PlayQueue
+    private void checkScrobble(PlaybinPlayer.PlayerState playerState) {
+        var nowPlaying = getState().nowPlaying();
+        if (nowPlaying.isEmpty()) {
+            this.scrobbledForRequestId = null;
+            return;
+        }
+        var np = nowPlaying.get();
+        var requestId = np.requestId();
+
+        // Already scrobbled this playback instance
+        if (requestId.equals(this.scrobbledForRequestId)) {
+            return;
+        }
+
+        var source = playerState.source();
+        if (source.isEmpty()) {
+            return;
+        }
+
+        var dur = source.get().duration();
+        if (dur.isEmpty()) {
+            return;
+        }
+        long durMs = dur.get().toMillis();
+        if (durMs <= 0) {
+            return;
+        }
+        var now = System.currentTimeMillis();
+        var playedStartedAt = playerState.playbackStartedAt().map(Instant::toEpochMilli).orElse(now);
+        long posMs = now - playedStartedAt;
+
+        boolean thresholdMet;
+        if (durMs < 30_000) {
+            // Short tracks: must play nearly the full track:
+            thresholdMet = posMs >= (durMs * 0.95);
+        } else {
+            // Normal tracks: 50% of track or 4 minutes, whichever comes first
+            thresholdMet = posMs >= durMs / 2 || posMs >= 4 * 60 * 1000;
+        }
+
+        if (thresholdMet) {
+            scrobbledForRequestId = requestId;
+            double durationSecond = durMs / 1000.0;
+            double playedForSecond = posMs / 1000.0;
+            double playedPercentage = playedForSecond / durationSecond;
+            String playedPercentageStr = "%.1f".formatted(100 * playedPercentage);
+            var songId = np.song().id();
+            var title = np.song().title();
+            Utils.doAsync(() -> {
+                try {
+
+                    dbService.insertScrobble(songId, Instant.ofEpochMilli(playedStartedAt));
+                    log.info("Scrobble recorded for song: duration={}s playback={}s playedPercentage={} songId={} title={}", durationSecond, playedForSecond, playedPercentageStr, songId, title);
+                } catch (Exception e) {
+                    log.error("Failed to record scrobble for song: {}", songId, e);
+                }
+            });
         }
     }
 

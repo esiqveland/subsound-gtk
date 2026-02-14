@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -56,10 +57,12 @@ public class PlaybinPlayer implements Player {
                 Optional.ofNullable(this.position),
                 Optional.ofNullable(this.duration)
         ));
+        long startedAtMillis = this.playbackStartedAtMillis;
         return new PlayerState(
                 this.playerStates,
                 this.currentVolume,
                 this.muteState.get(),
+                startedAtMillis > 0 ? Optional.of(Instant.ofEpochMilli(startedAtMillis)) : Optional.empty(),
                 source
         );
     }
@@ -70,6 +73,7 @@ public class PlaybinPlayer implements Player {
             PlayerStates state,
             double volume,
             boolean muted,
+            Optional<Instant> playbackStartedAt,
             Optional<Source> source
     ) implements PlaybinPlayerPlayerStateBuilder.With {
     }
@@ -118,7 +122,8 @@ public class PlaybinPlayer implements Player {
     private URI currentUri;
     private double currentVolume = 1.0;
     private Duration duration;
-    private Duration position;
+    private volatile Duration position;
+    private volatile long playbackStartedAtMillis;
     private AtomicBoolean muteState = new AtomicBoolean(false);
     // pipeline state tracks the current state of the GstPipeline
     State pipelineState = State.NULL;
@@ -150,6 +155,7 @@ public class PlaybinPlayer implements Player {
 
     public void setSource(URI uri, boolean startPlaying) {
         this.currentUri = uri;
+        this.playbackStartedAtMillis = 0;
         var fileUri = uri.toString();
         if ("file".equals(uri.getScheme())) {
             fileUri = fileUri.replace("file:/", "file:///");
@@ -359,6 +365,7 @@ public class PlaybinPlayer implements Player {
 
     public void seekTo(Duration position) {
         //playbin.seek(1.0, Format.TIME, SeekFlags.FLUSH, SeekType.SET, 0, SeekType.NONE, 0);
+        this.playbackStartedAtMillis = 0;
         playbinEl.seekSimple(Format.TIME, Set.of(SeekFlags.ACCURATE, SeekFlags.FLUSH), position.toNanos());
         this.notifyState();
     }
@@ -396,12 +403,16 @@ public class PlaybinPlayer implements Player {
         ) {
         }
         var p = new PlayState(this.pipelineState, this.playerStates);
-        this.playerStates = switch (p.pipelineState) {
+        var nextPlayerState = switch (p.pipelineState) {
             case NULL, VOID_PENDING -> INIT;
             case READY -> READY;
             case PAUSED -> PAUSED;
             case PLAYING -> PLAYING;
         };
+        this.playerStates = nextPlayerState;
+        if (nextPlayerState == PLAYING && this.playbackStartedAtMillis == 0) {
+            this.playbackStartedAtMillis = System.currentTimeMillis();
+        }
         this.notifyState();
     }
 
