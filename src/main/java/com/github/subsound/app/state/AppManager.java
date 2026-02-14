@@ -9,6 +9,7 @@ import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.persistence.CachingClient;
 import com.github.subsound.persistence.DownloadManager;
+import com.github.subsound.persistence.ScrobbleService;
 import com.github.subsound.persistence.SongCache;
 import com.github.subsound.persistence.SongCache.CacheSong;
 import com.github.subsound.persistence.SongCache.LoadSongResult;
@@ -79,6 +80,7 @@ public class AppManager {
     private final DatabaseServerService dbService;
     private final PlayerConfigService playerConfigService;
     private final DownloadManager downloadManager;
+    private final ScrobbleService scrobbleService;
     private final NetworkMonitoring networkMonitor;
     private volatile ScheduledFuture<?> pendingPreferenceSave;
     private volatile UUID scrobbledForRequestId = null;
@@ -155,6 +157,11 @@ public class AppManager {
         this.downloadManager = new DownloadManager(
                 dbService,
                 songCache
+        );
+        this.scrobbleService = new ScrobbleService(
+                dbService,
+                () -> this.client.get(),
+                () -> this.getState().networkState()
         );
     }
 
@@ -262,6 +269,7 @@ public class AppManager {
         }
         this.preferenceSaveScheduler.shutdown();
         this.downloadManager.stop();
+        this.scrobbleService.stop();
         var elapsed = System.currentTimeMillis() - start;
         log.info("AppManager shutdown completed in %dms".formatted(elapsed));
     }
@@ -764,6 +772,7 @@ public class AppManager {
                 try {
 
                     dbService.insertScrobble(songId, Instant.ofEpochMilli(playedStartedAt));
+                    scrobbleService.triggerSubmit();
                     log.info("Scrobble recorded for song: duration={}s playback={}s playedPercentage={} songId={} title={}", durationSecond, playedForSecond, playedPercentageStr, songId, title);
                 } catch (Exception e) {
                     log.error("Failed to record scrobble for song: {}", songId, e);
