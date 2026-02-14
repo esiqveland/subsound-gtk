@@ -82,6 +82,12 @@ A few samples of what the UI looks like:
 - [X] Icons for top bar pages
     - [X] icon for Home page
     - [X] icon for starred page
+- Search:
+  - [X] search by artist
+  - [X] search by album
+  - [X] search by song title
+  - [X] search UI on ctrl+k
+  - [ ] find a place to put the search button for discovery
 - HomePage
   - [X] Reuse between page views so we dont lose state
   - [X] Refresh using button
@@ -123,8 +129,13 @@ A few samples of what the UI looks like:
   - AdwNavigationView ?
   - AdwLeaflet + AdwClamp? see https://gitlab.gnome.org/GNOME/gnome-music/-/blob/master/data/ui/ArtistAlbumsWidget.ui
 - [X] set up a sqlite database with migrations
-  - [ ] record what we have downloaded / want to keep offline
+  - [X] record what we have downloaded / want to keep offline
+  - [X] verify downloaded files against the database on full sync
 - Hotkeys
+  - [X] ctrl+k for command palette / search
+  - [ ] ctrl+s for shuffle modes
+  - [ ] ctrl+r to reload/refresh?
+  - [ ] ctrl+space for play/pause
   - [ ] space should always play/pause
     - this looks very hard to do since spacebar is also the activation key for buttons / list items in GTK4
 - Onboarding
@@ -165,9 +176,9 @@ A few samples of what the UI looks like:
     - [X] skip/prev
     - [X] App name / App icon
     - [X] Track info
-    - [X] Get Position
     - [X] Optimize updates for when we post a new state (hopefully we don't need more optimization here)
-    - [ ] Play position
+    - [X] Get Position
+    - [ ] Set position
 
 Releasing a Flatpak:
   - [X] make it work (org.gnome.Platform + Java Platform + java-gi + gradle)
@@ -191,20 +202,24 @@ Features:
 - [X] Browse albums
 - [X] Browse artists
 - [X] Plays any track!
+- [X] Fast Search UI with ctrl+k
 - [X] MPRIS support
 - [ ] Offline playback
+  - [X] Offline/Online mode
+  - [X] Offline mode detection/tracking
   - [X] Download songs to local cache
   - [X] Play songs from local cache
   - [X] Download album art to local cache
   - [X] Sync artist/song metadata for offline storage
-    - [ ] Make it fast
-  - [ ] Playlists
-  - [ ] Browse from offline storage only
-  - [ ] Download manager for offline available content
-    - This kind of already works, but there is no UI that shows status for it
+    - [ ] Make it fast. weird, it is very fast on macos, very slow on linux.
+  - [X] Playlists
+  - [X] Browse from offline storage only
+  - [ ] While online browsing, store the latest downloaded metadata locally as we browse. especially for playlists, but could be nice for new artists and albums added.
+  - [X] Record scrobbles offline --> sync later to server when we get back online
+  - [X] Download manager for offline available content
+    - This kind of already works, but there is no UI that shows status for each item
 
 Later goals:
- - [ ] Scrobble plays + offline storage --> sync later to server
  - [ ] Internationalize
 
 Eventually goals:
