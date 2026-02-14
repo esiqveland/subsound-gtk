@@ -59,17 +59,18 @@ public class ScrobbleService {
         if (client == null) {
             return;
         }
+
+        var pending = dbService.listPendingScrobbles();
+        if (pending.isEmpty()) {
+            return;
+        }
+
         var status = statusSupplier.get();
         switch (status.status()) {
             case OFFLINE -> {
                 log.info("Skipping scrobble submission: {}", status.status());
                 return;
             }
-        }
-
-        var pending = dbService.listPendingScrobbles();
-        if (pending.isEmpty()) {
-            return;
         }
 
         log.info("Processing {} pending scrobbles", pending.size());
