@@ -158,7 +158,8 @@ public class AppManager {
         });
         this.downloadManager = new DownloadManager(
                 dbService,
-                songCache
+                songCache,
+                downloadEvent -> {}
         );
         this.scrobbleService = new ScrobbleService(
                 dbService,

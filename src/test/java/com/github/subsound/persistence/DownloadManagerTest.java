@@ -3,6 +3,7 @@ package com.github.subsound.persistence;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.integration.ServerClient.TranscodeInfo;
 import com.github.subsound.integration.ServerClientSongInfoBuilder;
+import com.github.subsound.persistence.DownloadManager.DownloadManagerEvent;
 import com.github.subsound.persistence.database.Database;
 import com.github.subsound.persistence.database.DatabaseServerService;
 import com.github.subsound.persistence.database.DownloadQueueItem;
@@ -15,6 +16,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -35,8 +37,8 @@ public class DownloadManagerTest {
         UUID serverId = UUID.randomUUID();
         DatabaseServerService dbService = new DatabaseServerService(serverId, db);
         SongCache songCache = new SongCache(dataDir.toPath());
-        
-        DownloadManager downloadManager = new DownloadManager(dbService, songCache);
+        var eventList = new ArrayList<DownloadManagerEvent>();
+        DownloadManager downloadManager = new DownloadManager(dbService, songCache, eventList::add);
         
         SongInfo songInfo = ServerClientSongInfoBuilder.builder()
                 .id("song-1")

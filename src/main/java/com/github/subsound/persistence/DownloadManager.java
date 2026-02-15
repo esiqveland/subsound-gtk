@@ -1,33 +1,57 @@
 package com.github.subsound.persistence;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.integration.ServerClient.TranscodeInfo;
 import com.github.subsound.persistence.database.DatabaseServerService;
 import com.github.subsound.persistence.database.DownloadQueueItem;
 import com.github.subsound.persistence.database.DownloadQueueItem.DownloadStatus;
-import com.github.subsound.persistence.database.Song;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 public class DownloadManager {
     private static final Logger log = LoggerFactory.getLogger(DownloadManager.class);
     private final DatabaseServerService dbService;
     private final SongCache songCache;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final Consumer<DownloadManagerEvent> onEvent;
+    private final Cache<String, Optional<DownloadQueueItem>> songStatusCache = Caffeine.newBuilder()
+            .expireAfterAccess(Duration.ofMinutes(10))
+            .maximumSize(2000)
+            .build();
     private volatile boolean running = true;
 
-    public DownloadManager(DatabaseServerService dbService, SongCache songCache) {
+    public DownloadManager(
+            DatabaseServerService dbService,
+            SongCache songCache,
+            Consumer<DownloadManagerEvent> onEvent
+    ) {
         this.dbService = dbService;
         this.songCache = songCache;
+        this.onEvent = onEvent;
         startQueueProcessor();
+    }
+
+    public record DownloadManagerEvent(
+            Type type,
+            DownloadQueueItem item
+    ) {
+        public enum Type {
+            DOWNLOAD_PENDING,
+            DOWNLOAD_STARTED,
+            DOWNLOAD_COMPLETED,
+            DOWNLOAD_FAILED
+        }
     }
 
     private void startQueueProcessor() {
@@ -46,8 +70,33 @@ public class DownloadManager {
         });
     }
 
+    public Optional<DownloadQueueItem> getSongStatus(String songId) {
+        return songStatusCache.get(songId, this::loadSong);
+    }
+    private Optional<DownloadQueueItem> loadSong(String songId) {
+        return dbService.getDownloadQueueItem(songId);
+    }
+
     public void enqueue(SongInfo songInfo) {
         dbService.addToDownloadQueue(songInfo);
+        songStatusCache.invalidate(songInfo.id());
+        this.publishEvent(songInfo.id());
+    }
+
+    private void publishEvent(String songId) {
+        this.getSongStatus(songId).ifPresent(this::publishEvent);
+    }
+    private void publishEvent(DownloadQueueItem item) {
+        var eventOpt = new DownloadManagerEvent(
+                switch (item.status()) {
+                    case PENDING -> DownloadManagerEvent.Type.DOWNLOAD_PENDING;
+                    case DOWNLOADING -> DownloadManagerEvent.Type.DOWNLOAD_STARTED;
+                    case COMPLETED -> DownloadManagerEvent.Type.DOWNLOAD_COMPLETED;
+                    case FAILED -> DownloadManagerEvent.Type.DOWNLOAD_FAILED;
+                },
+                item
+        );
+        this.onEvent.accept(eventOpt);
     }
 
     private void processQueue() {
@@ -65,7 +114,9 @@ public class DownloadManager {
 
     private void downloadSong(DownloadQueueItem item) {
         try {
-            dbService.updateDownloadProgress(item.songId(), DownloadStatus.DOWNLOADING, item.progress(), null);
+            this.dbService.updateDownloadProgress(item.songId(), DownloadStatus.DOWNLOADING, item.progress(), null);
+            this.songStatusCache.invalidate(item.songId());
+            this.publishEvent(item.songId());
 
             var transcodeInfo = new TranscodeInfo(
                     item.originalBitRate(),
@@ -98,11 +149,15 @@ public class DownloadManager {
                 }
             }
 
-            dbService.updateDownloadProgress(item.songId(), DownloadStatus.COMPLETED, 1.0, null, checksum);
+            this.dbService.updateDownloadProgress(item.songId(), DownloadStatus.COMPLETED, 1.0, null, checksum);
+            this.songStatusCache.invalidate(item.songId());
+            this.publishEvent(item.songId());
             log.info("Downloaded song: {} with checksum: {}", item.songId(), checksum);
         } catch (Exception e) {
             log.error("Failed to download song: {}", item.songId(), e);
             dbService.updateDownloadProgress(item.songId(), DownloadStatus.FAILED, 0.0, e.getMessage());
+            this.songStatusCache.invalidate(item.songId());
+            this.publishEvent(item.songId());
         }
     }
 

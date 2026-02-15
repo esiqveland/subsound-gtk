@@ -636,6 +636,42 @@ public class DatabaseServerService {
         }
     }
 
+    public Optional<DownloadQueueItem> getDownloadQueueItem(String songId) {
+        String sql = "SELECT * FROM download_queue WHERE server_id = ? AND song_id = ?";
+        try (Connection conn = database.openConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            pstmt.setString(2, songId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapDownloadQueueItem(rs));
+                }
+            }
+            return Optional.empty();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static DownloadQueueItem mapDownloadQueueItem(ResultSet rs) throws SQLException {
+        int originalBitRate = rs.getInt("original_bitrate");
+        Optional<Integer> originalBitRateOpt = rs.wasNull() ? Optional.empty() : Optional.of(originalBitRate);
+
+        return new DownloadQueueItem(
+                rs.getString("song_id"),
+                UUID.fromString(rs.getString("server_id")),
+                DownloadQueueItem.DownloadStatus.valueOf(rs.getString("status")),
+                rs.getDouble("progress"),
+                rs.getString("error_message"),
+                rs.getString("stream_uri"),
+                rs.getString("stream_format"),
+                rs.getLong("original_size"),
+                originalBitRateOpt,
+                rs.getInt("estimated_bitrate"),
+                rs.getLong("duration_seconds"),
+                Optional.ofNullable(rs.getString("checksum"))
+        );
+    }
+
     public List<DownloadQueueItem> listDownloadQueue() {
         return listDownloadQueue(List.of(
                 DownloadStatus.PENDING,
@@ -643,6 +679,7 @@ public class DatabaseServerService {
                 DownloadStatus.FAILED
         ));
     }
+
     public List<DownloadQueueItem> listDownloadQueue(List<DownloadStatus> statuses) {
         List<DownloadQueueItem> items = new ArrayList<>();
         String placeholders = String.join(",", statuses.stream().map(s -> "?").toList());
@@ -655,23 +692,7 @@ public class DatabaseServerService {
             }
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    int originalBitRate = rs.getInt("original_bitrate");
-                    Optional<Integer> originalBitRateOpt = rs.wasNull() ? Optional.empty() : Optional.of(originalBitRate);
-
-                    items.add(new DownloadQueueItem(
-                            rs.getString("song_id"),
-                            UUID.fromString(rs.getString("server_id")),
-                            DownloadQueueItem.DownloadStatus.valueOf(rs.getString("status")),
-                            rs.getDouble("progress"),
-                            rs.getString("error_message"),
-                            rs.getString("stream_uri"),
-                            rs.getString("stream_format"),
-                            rs.getLong("original_size"),
-                            originalBitRateOpt,
-                            rs.getInt("estimated_bitrate"),
-                            rs.getLong("duration_seconds"),
-                            Optional.ofNullable(rs.getString("checksum"))
-                    ));
+                    items.add(mapDownloadQueueItem(rs));
                 }
             }
         } catch (SQLException e) {
