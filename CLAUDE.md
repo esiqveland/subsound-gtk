@@ -52,7 +52,8 @@ No linter or formatter is configured.
 
 **PlayerAction** (`app/state/PlayerAction.java`) — Sealed interface with record variants for every user action (Play, Pause, Enqueue, Star, AddToDownloadQueue, etc.). UI code dispatches these via `appManager::handleAction`.
 
-**ServerClient** (`integration/ServerClient.java`) — Interface abstracting the Subsonic API. Contains all shared data model records: `SongInfo`, `AlbumInfo`, `ArtistInfo`, `PlaylistSimple`, `CoverArt`, `TranscodeInfo`, etc. `SubsonicClient` implements it using `net.beardbot:subsonic-client`. `CachingClient` is a pass-through decorator.
+**ServerClient** (`integration/ServerClient.java`) — Interface abstracting the Subsonic API. Contains all shared data model records: `SongInfo`, `AlbumInfo`, `ArtistInfo`, `PlaylistSimple`, `CoverArt`, `TranscodeInfo`, etc. `SubsonicClient` implements it using `net.beardbot:subsonic-client`. 
+`CachingClient` is a pass-through decorator, but also falls back to the database for offline access if enabled or the server is unreachable.
 
 **PlaybinPlayer** (`sound/PlaybinPlayer.java`) — GStreamer playbin2 wrapper. Manages audio playback, position tracking via virtual thread, and state change notifications.
 
@@ -63,6 +64,13 @@ No linter or formatter is configured.
 ### Data Flow Pattern
 
 UI creates a `PlayerAction` record → `AppManager.handleAction()` switches on it → updates state / calls server / modifies queue → `BehaviorSubject` emits new `AppState` → listeners update UI on main thread via `Utils.runOnMainThread()`.
+
+### Offline Mode
+
+Offline data is built around the `SongCache`, which caches the actual music to disk, 
+and the `CachingClient` decorator which transparently serves stored metadata.
+If the server is unreachable, or we are in offline mode, 
+the client can load data from database instead of directly from the server.
 
 ### Async Patterns
 
