@@ -6,6 +6,7 @@ import com.github.subsound.integration.ServerClient.ListStarred;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.ui.components.AppNavigation;
+import com.github.subsound.ui.components.AppNavigation.AppRoute;
 import com.github.subsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
 import com.github.subsound.ui.components.StarredItemRow;
 import com.github.subsound.ui.models.GSongInfo;
@@ -40,12 +41,12 @@ import static org.gnome.gtk.Orientation.VERTICAL;
 public class PlaylistListView extends Box implements AppManager.StateListener {
     private static final Logger log = LoggerFactory.getLogger(PlaylistListView.class);
     private final AppManager appManager;
-    private final ListStarred data;
     private final ListView listView;
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private final ScrolledWindow scroll;
     private final AtomicReference<MiniState> prevState;
     private final Consumer<AppNavigation.AppRoute> onNavigate;
+    private final PlaylistViewData data;
     private final ListStore<GSongInfo> listModel = new ListStore<>();
     private final SingleSelection<GSongInfo> selectionModel;
 
@@ -55,10 +56,11 @@ public class PlaylistListView extends Box implements AppManager.StateListener {
     }
     private final ConcurrentHashMap<StarredItemRow, StarredItemRow> listeners = new ConcurrentHashMap<>();
 
+    public record PlaylistViewData(List<GSongInfo> songs){}
     public PlaylistListView(
-            ListStarred data,
+            PlaylistViewData data,
             AppManager appManager,
-            Consumer<AppNavigation.AppRoute> onNavigate
+            Consumer<AppRoute> onNavigate
     ) {
         super(VERTICAL, 0);
         this.data = data;
@@ -133,11 +135,9 @@ public class PlaylistListView extends Box implements AppManager.StateListener {
             this.listeners.remove(child);
         });
         Utils.runOnMainThread(() -> {
+            var items = data.songs().toArray(GSongInfo[]::new);
             // this needs to run on idle thread, otherwise it segfaults:
             this.listModel.removeAll();
-            var items = data.songs().stream()
-                    .map(GSongInfo::newInstance)
-                    .toArray(GSongInfo[]::new);
             this.listModel.splice(0, 0, items);
         });
 

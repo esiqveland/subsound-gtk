@@ -5,6 +5,7 @@ import com.github.subsound.integration.ServerClient.CoverArt;
 import com.github.subsound.integration.ServerClient.ObjectIdentifier.AlbumIdentifier;
 import com.github.subsound.integration.ServerClient.ObjectIdentifier.ArtistIdentifier;
 import com.github.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier;
+import com.github.subsound.integration.ServerClient.ObjectIdentifier.SongIdentifier;
 import com.github.subsound.ui.components.AppNavigation.AppRoute;
 import com.github.subsound.ui.components.AppNavigation.AppRoute.RouteAlbumInfo;
 import com.github.subsound.ui.components.AppNavigation.AppRoute.RouteArtistInfo;
@@ -24,7 +25,6 @@ import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Overflow;
 import org.gnome.gtk.Picture;
 import org.gnome.gtk.Widget;
-import org.javagi.gobject.SignalConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +33,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.github.subsound.utils.Utils.addClick;
 import static com.github.subsound.utils.Utils.addHover2;
@@ -130,6 +129,10 @@ public class RoundedAlbumArt extends Box {
                         case AlbumIdentifier a -> new RouteAlbumInfo(a.albumId());
                         case ArtistIdentifier a -> new RouteArtistInfo(a.artistId());
                         case PlaylistIdentifier p -> new RoutePlaylistsOverview(Optional.of(p.playlistId()));
+                        case SongIdentifier p -> {
+                            log.info("unhandled song click: p.songId() = {}", p.songId());
+                            yield null;
+                        }
                         case null -> null;
                     };
                     if (route != null) {

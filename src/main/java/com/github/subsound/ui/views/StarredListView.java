@@ -148,11 +148,11 @@ public class StarredListView extends Box implements AppManager.StateListener {
                 .build();
         var activateSignal = this.listView.onActivate(index -> {
             //var songInfo = this.data.songs().get(index);
-            var songInfo = this.listModel.getItem(index).getSongInfo();
+            var songInfo = this.listModel.getItem(index);
             if (songInfo == null) {
                 return;
             }
-            log.info("listView.onActivate: {} {}", index, songInfo.title());
+            log.info("listView.onActivate: {} {}", index, songInfo.getTitle());
             List<SongInfo> songs = this.listModel.stream().map(GSongInfo::getSongInfo).toList();
             this.onAction.apply(new PlayerAction.PlayAndReplaceQueue(songs, index));
         });

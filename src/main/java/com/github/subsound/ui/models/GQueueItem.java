@@ -67,18 +67,6 @@ public class GQueueItem extends GObject {
         return queueKind == QueueKind.USER_ADDED;
     }
 
-    public static GQueueItem newInstance(SongInfo value) {
-        return newInstance(GSongInfo.newInstance(value), QueueKind.AUTOMATIC, 0);
-    }
-
-    public static GQueueItem newInstance(SongInfo value, QueueKind queueKind) {
-        return newInstance(GSongInfo.newInstance(value), queueKind, 0);
-    }
-
-    public static GQueueItem newInstance(SongInfo value, QueueKind queueKind, int originalOrder) {
-        return newInstance(GSongInfo.newInstance(value), queueKind, originalOrder);
-    }
-
     public static GQueueItem newInstance(GSongInfo gSongInfo, QueueKind queueKind) {
         return newInstance(gSongInfo, queueKind, 0);
     }

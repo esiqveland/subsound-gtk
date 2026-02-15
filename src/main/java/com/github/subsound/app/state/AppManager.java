@@ -26,6 +26,7 @@ import com.github.subsound.sound.PlaybinPlayer.Source;
 import com.github.subsound.ui.components.AppNavigation;
 import com.github.subsound.ui.models.GQueueItem;
 import com.github.subsound.ui.models.GSongInfo;
+import com.github.subsound.ui.models.GSongInfo.GSongStore;
 import com.github.subsound.utils.Utils;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
@@ -71,7 +72,7 @@ public class AppManager {
     private final AtomicReference<CachingClient> client;
     private final BehaviorSubject<AppState> currentState;
     private final CopyOnWriteArrayList<StateListener> listeners = new CopyOnWriteArrayList<>();
-    //private final ListStore<GSongInfo> starredList = new ListStore<>(GSongInfo.gtype);
+    private final GSongStore gSongStore = new GSongStore();
     private final StarredListStore starredList;
     private final PlaylistsStore playlistsStore;
     private final SearchResultStore searchResultStore;
@@ -102,6 +103,7 @@ public class AppManager {
         this.networkMonitor = new GioNetworkStatusMonitor(this::updateNetworkState);
         this.playQueue = new PlayQueue(
                 player,
+                this.gSongStore,
                 nextState -> this.setState(old -> old.withQueue(nextState)),
                 songInfo -> loadSource(new PlayerAction.PlaySong(songInfo.getSongInfo()))
         );
@@ -282,6 +284,10 @@ public class AppManager {
         return this.searchResultStore;
     }
 
+    public GSongStore getSongStore() {
+        return this.gSongStore;
+    }
+
     public record AlbumInfo(
             ServerClient.AlbumInfo album,
             List<GSongInfo> songs
@@ -290,7 +296,7 @@ public class AppManager {
         return Utils.doAsync(() -> {
             var data = this.useClient(serverClient -> serverClient.getAlbumInfo(albumId));
 
-            var songs = data.songs().stream().map(GSongInfo::newInstance).toList();
+            var songs = data.songs().stream().map(gSongStore::newInstance).toList();
             return new AlbumInfo(data, songs);
         });
     }

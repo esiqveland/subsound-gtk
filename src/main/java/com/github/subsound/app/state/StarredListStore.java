@@ -3,6 +3,7 @@ package com.github.subsound.app.state;
 import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.ui.models.GSongInfo;
+import com.github.subsound.ui.models.GSongInfo.GSongStore;
 import com.github.subsound.utils.Utils;
 import org.gnome.gio.ListStore;
 import org.slf4j.Logger;
@@ -25,11 +26,13 @@ public class StarredListStore {
     private final Object lock = new Object();
     private final ListStore<GSongInfo> store = new ListStore<>(GSongInfo.gtype);
     private final AppManager appManager;
+    private final GSongStore songStore;
     private final ArrayList<String> backingIds = new ArrayList<>();
     private final AtomicBoolean isLoading = new AtomicBoolean(false);
 
     public StarredListStore(AppManager appManager) {
         this.appManager = appManager;
+        this.songStore = appManager.getSongStore();
     }
 
     public void handleStarred(PlayerAction.Star2 star) {}
@@ -67,7 +70,8 @@ public class StarredListStore {
                         }
                         // Insert forwards — positions account for previous insertions
                         for (var ins : insertions) {
-                            store.insert(ins.position(), ins.item());
+                            var gSong = this.songStore.newInstance(ins.item());
+                            store.insert(ins.position(), gSong);
                         }
                     }).join();
 
@@ -98,7 +102,7 @@ public class StarredListStore {
      * Preserves existing GSongInfo instances and their GTK bindings.
      * Must be called under synchronized(lock).
      */
-    record Insertion(int position, GSongInfo item) {}
+    record Insertion(int position, SongInfo item) {}
     record Differences(
             ArrayList<Integer> removalIndices,
             ArrayList<Insertion> insertions
@@ -108,11 +112,9 @@ public class StarredListStore {
         var indexDiff = computeDiff(backingIds, newIds);
 
         // Get or create GSongInfo instances and update their underlying data
-        final Map<String, GSongInfo> resolved = new HashMap<>(newSongs.size());
+        final Map<String, SongInfo> resolved = new HashMap<>(newSongs.size());
         for (var song : newSongs) {
-            var gSong = GSongInfo.newInstance(song);
-            gSong.mutate(old -> song);
-            resolved.put(song.id(), gSong);
+            resolved.put(song.id(), song);
         }
 
         var insertions = new ArrayList<Insertion>();
@@ -165,7 +167,7 @@ public class StarredListStore {
     }
 
     public void addStarred(SongInfo songInfo) {
-        var gSong = GSongInfo.newInstance(songInfo);
+        var gSong = songStore.newInstance(songInfo);
         synchronized (lock) {
             gSong.setStarredAt(gSong.getSongInfo().starred().or(() -> Optional.of(Instant.now())));
             backingIds.addFirst(songInfo.id());

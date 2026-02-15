@@ -1,6 +1,8 @@
 package com.github.subsound.ui.models;
 
 import com.github.subsound.integration.ServerClient;
+import com.github.subsound.integration.ServerClient.ObjectIdentifier.SongIdentifier;
+import com.github.subsound.integration.ServerClient.SongInfo;
 import org.gnome.glib.Type;
 import org.gnome.gobject.GObject;
 import org.javagi.gobject.annotations.Property;
@@ -14,12 +16,40 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.github.subsound.utils.Utils.runOnMainThread;
 
 public class GSongInfo extends GObject {
     public static final Type gtype = Types.register(GSongInfo.class);
-    public static final ConcurrentHashMap<String, GSongInfo> SONG_STORE = new ConcurrentHashMap<>();
+
+    public static class GSongStore {
+        private final ConcurrentHashMap<String, GSongInfo> store = new ConcurrentHashMap<>();
+        public GSongStore() {}
+
+
+        public GSongInfo get(SongInfo songInfo) {
+            return newInstance(songInfo);
+        }
+
+        public GSongInfo newInstance(SongInfo value) {
+            // TODO: replace with the updated SongInfo data
+            var gsong = store.computeIfAbsent(
+                    value.id(),
+                    (key) -> {
+                        GSongInfo instance = GObject.newInstance(gtype);
+                        instance.songInfo = value;
+                        return instance;
+                    }
+            );
+            gsong.mutate(_ -> value);
+            return gsong;
+        }
+
+        public int size() {
+            return store.size();
+        }
+    }
 
     private final AtomicBoolean isPlaying = new AtomicBoolean(false);
     private final AtomicBoolean isFavorite = new AtomicBoolean(false);
@@ -41,20 +71,6 @@ public class GSongInfo extends GObject {
     @Property
     public String getId() {
         return songInfo.id();
-    }
-
-    public static GSongInfo newInstance(ServerClient.SongInfo value) {
-        // TODO: replace with the updated SongInfo data
-        var gsong = SONG_STORE.computeIfAbsent(
-                value.id(),
-                (key) -> {
-                    GSongInfo instance = GObject.newInstance(gtype);
-                    instance.songInfo = value;
-                    return instance;
-                }
-        );
-        gsong.mutate(_ -> value);
-        return gsong;
     }
 
     @Property

@@ -5,7 +5,9 @@ import com.github.subsound.app.state.PlaylistsStore.GPlaylist;
 import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.PlaylistKind;
 import com.github.subsound.integration.ServerClient.PlaylistSimple;
+import com.github.subsound.ui.models.GSongInfo.GSongStore;
 import com.github.subsound.ui.views.PlaylistListView;
+import com.github.subsound.ui.views.PlaylistListView.PlaylistViewData;
 import com.github.subsound.ui.views.StarredListView;
 import com.github.subsound.utils.Utils;
 import org.gnome.adw.NavigationPage;
@@ -51,10 +53,12 @@ public class PlaylistsListView extends Box {
     private final StarredListView starredListView;
     private final NavigationPage starredListPage;
     private final SingleSelection<GPlaylist> selectionModel;
+    private final GSongStore songStore;
 
     public PlaylistsListView(AppManager appManager) {
         super(Orientation.VERTICAL, 0);
         this.appManager = appManager;
+        this.songStore = appManager.getSongStore();
         this.listModel = appManager.getPlaylistsListStore();
 
         this.starredListView = new StarredListView(appManager.getStarredList(), appManager, appManager::navigateTo);
@@ -190,7 +194,9 @@ public class PlaylistsListView extends Box {
                 return Optional.<List<ServerClient.SongInfo>>empty();
             }
 
-            var next = new PlaylistListView(new ServerClient.ListStarred(data.get()), appManager, appManager::navigateTo);
+            var songs = data.get().stream().map(songStore::newInstance).toList();
+            var viewData = new PlaylistViewData(songs);
+            var next = new PlaylistListView(viewData, appManager, appManager::navigateTo);
             next.setHalign(Align.FILL);
             next.setValign(Align.FILL);
             var page = NavigationPage.builder()

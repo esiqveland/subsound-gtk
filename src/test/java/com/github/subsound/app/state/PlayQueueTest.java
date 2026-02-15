@@ -8,6 +8,7 @@ import com.github.subsound.sound.PlaybinPlayer.Source;
 import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.sound.Player;
 import com.github.subsound.ui.models.GSongInfo;
+import com.github.subsound.ui.models.GSongInfo.GSongStore;
 import com.github.subsound.utils.Utils;
 import org.junit.After;
 import org.junit.Before;
@@ -36,7 +37,7 @@ public class PlayQueueTest {
         stateChangedRecorder = new PlayQueueStateRecorder();
         playRecorder = new SongInfoRecorder();
 
-        playQueue = new PlayQueue(player, stateChangedRecorder, playRecorder);
+        playQueue = new PlayQueue(player, new GSongStore(), stateChangedRecorder, playRecorder);
     }
 
     @After

@@ -7,6 +7,7 @@ import com.github.subsound.sound.PlaybinPlayer.Source;
 import com.github.subsound.sound.Player;
 import com.github.subsound.ui.models.GQueueItem;
 import com.github.subsound.ui.models.GSongInfo;
+import com.github.subsound.ui.models.GSongInfo.GSongStore;
 import com.github.subsound.utils.Utils;
 import org.gnome.gio.ListStore;
 import org.slf4j.Logger;
@@ -35,15 +36,18 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     private final Consumer<PlayQueueState> onStateChanged;
     private final Consumer<GSongInfo> onPlay;
     private final ListStore<GQueueItem> listStore = new ListStore<>(GQueueItem.gtype);
+    private final GSongStore songstore;
     private Optional<Integer> position = Optional.empty();
     private PlayMode playMode = PlayMode.NORMAL;
 
     public PlayQueue(
             Player player,
+            GSongStore songStore,
             Consumer<PlayQueueState> onStateChanged,
             Consumer<GSongInfo> onPlay
     ) {
         this.player = player;
+        this.songstore = songStore;
         this.onStateChanged = onStateChanged;
         this.onPlay = onPlay;
         this.player.onStateChanged(this);
@@ -171,7 +175,8 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     public void enqueue(SongInfo songInfo) {
         synchronized (lock) {
             int insertPosition = position.orElse(-1) + 1;
-            listStore.insert(insertPosition, GQueueItem.newInstance(songInfo, GQueueItem.QueueKind.USER_ADDED));
+            var song = this.songstore.newInstance(songInfo);
+            listStore.insert(insertPosition, GQueueItem.newInstance(song, GQueueItem.QueueKind.USER_ADDED));
             this.notifyState();
         }
     }
@@ -187,7 +192,8 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
                     break;
                 }
             }
-            listStore.insert(insertPos, GQueueItem.newInstance(songInfo, GQueueItem.QueueKind.USER_ADDED));
+            var song = this.songstore.newInstance(songInfo);
+            listStore.insert(insertPos, GQueueItem.newInstance(song, GQueueItem.QueueKind.USER_ADDED));
             this.notifyState();
         }
     }
@@ -218,7 +224,8 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
         return Utils.doAsync(() -> {
             var newList = new GQueueItem[newQueue.size()];
             for (int i = 0; i < newQueue.size(); i++) {
-                newList[i] = GQueueItem.newInstance(newQueue.get(i), GQueueItem.QueueKind.AUTOMATIC, i);
+                var song = this.songstore.newInstance(newQueue.get(i));
+                newList[i] = GQueueItem.newInstance(song, GQueueItem.QueueKind.AUTOMATIC, i);
             }
 
             synchronized (lock) {
