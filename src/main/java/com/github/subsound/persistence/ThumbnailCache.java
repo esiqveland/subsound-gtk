@@ -46,7 +46,7 @@ public class ThumbnailCache {
     private final Semaphore semaphore = new Semaphore(2);
     // A separate semaphore for querying the cache, so downloading new content does not block us from loading content we already have stored
     private final Semaphore semaphorePixbuf = new Semaphore(2);
-    private final Cache<PixbufCacheKey, CachedTexture> pixbufCache = Caffeine.newBuilder().maximumSize(2000).build();
+    private final Cache<PixbufCacheKey, CachedTexture> pixbufCache = Caffeine.newBuilder().maximumSize(5000).build();
 
     record PixbufCacheKey(
             CoverArt coverArt,
