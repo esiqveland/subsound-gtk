@@ -174,10 +174,10 @@ public class AlbumInfoPage extends Box {
 
             suffix.append(revealer);
             suffix.append(downloadStatusIcon);
-            var starredButtonBox = Box.builder().setMarginStart(6).setMarginEnd(6).setVexpand(true).setValign(CENTER).build();
+            var starredButtonBox = Box.builder().setMarginStart(2).setMarginEnd(2).setVexpand(true).setValign(CENTER).build();
             starredButtonBox.append(starredButton);
             suffix.append(starredButtonBox);
-            var menuButtonBox = Box.builder().setMarginStart(6).setMarginEnd(6).setVexpand(true).setValign(CENTER).build();
+            var menuButtonBox = Box.builder().setMarginStart(2).setMarginEnd(2).setVexpand(true).setValign(CENTER).build();
             menuButtonBox.append(menuButton);
             suffix.append(menuButtonBox);
 
