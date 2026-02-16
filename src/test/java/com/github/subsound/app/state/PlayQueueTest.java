@@ -12,7 +12,6 @@ import com.github.subsound.ui.models.GSongInfo.GSongStore;
 import com.github.subsound.utils.Utils;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -37,7 +36,12 @@ public class PlayQueueTest {
         stateChangedRecorder = new PlayQueueStateRecorder();
         playRecorder = new SongInfoRecorder();
 
-        playQueue = new PlayQueue(player, new GSongStore(), stateChangedRecorder, playRecorder);
+        playQueue = new PlayQueue(
+                player,
+                new GSongStore(key -> Optional.empty()),
+                stateChangedRecorder,
+                playRecorder
+        );
     }
 
     @After

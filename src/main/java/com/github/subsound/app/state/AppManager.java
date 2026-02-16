@@ -26,6 +26,7 @@ import com.github.subsound.sound.PlaybinPlayer.Source;
 import com.github.subsound.ui.components.AppNavigation;
 import com.github.subsound.ui.models.GQueueItem;
 import com.github.subsound.ui.models.GSongInfo;
+import com.github.subsound.ui.models.GDownloadState;
 import com.github.subsound.ui.models.GSongInfo.GSongStore;
 import com.github.subsound.utils.Utils;
 import io.reactivex.rxjava3.schedulers.Schedulers;
@@ -72,7 +73,7 @@ public class AppManager {
     private final AtomicReference<CachingClient> client;
     private final BehaviorSubject<AppState> currentState;
     private final CopyOnWriteArrayList<StateListener> listeners = new CopyOnWriteArrayList<>();
-    private final GSongStore gSongStore = new GSongStore();
+    private final GSongStore gSongStore;
     private final StarredListStore starredList;
     private final PlaylistsStore playlistsStore;
     private final SearchResultStore searchResultStore;
@@ -100,13 +101,6 @@ public class AppManager {
         this.player = player;
         this.songCache = songCache;
         this.thumbnailCache = thumbnailCache;
-        this.networkMonitor = new GioNetworkStatusMonitor(this::updateNetworkState);
-        this.playQueue = new PlayQueue(
-                player,
-                this.gSongStore,
-                nextState -> this.setState(old -> old.withQueue(nextState)),
-                songInfo -> loadSource(new PlayerAction.PlaySong(songInfo.getSongInfo()))
-        );
         this.database = new Database();
         this.playerConfigService = new PlayerConfigService(this.database);
         // Apply saved player preferences (volume/mute) from DB
@@ -120,6 +114,30 @@ public class AppManager {
         this.dbService = new DatabaseServerService(
                 UUID.fromString(savedServerId),
                 this.database
+        );
+        this.downloadManager = new DownloadManager(
+                dbService,
+                songCache,
+                downloadEvent -> {
+                    if (this.getSongStore() == null) {
+                        return;
+                    }
+                    var gsongOpt = this.getSongStore().getExisting(downloadEvent.item().songId());
+                    gsongOpt.ifPresent(gsong -> gsong.setDownloadStateEnum(switch (downloadEvent.type()) {
+                        case DOWNLOAD_PENDING -> GDownloadState.PENDING;
+                        case DOWNLOAD_STARTED -> GDownloadState.DOWNLOADING;
+                        case DOWNLOAD_COMPLETED -> GDownloadState.DOWNLOADED;
+                        case DOWNLOAD_FAILED -> GDownloadState.NONE;
+                    }));
+                }
+        );
+        this.gSongStore = new GSongStore(this.downloadManager::getSongStatus);
+        this.networkMonitor = new GioNetworkStatusMonitor(this::updateNetworkState);
+        this.playQueue = new PlayQueue(
+                player,
+                this.gSongStore,
+                nextState -> this.setState(old -> old.withQueue(nextState)),
+                songInfo -> loadSource(new PlayerAction.PlaySong(songInfo.getSongInfo()))
         );
 
         this.client = new AtomicReference<>();
@@ -156,11 +174,6 @@ public class AppManager {
             this.starredList.refreshAsync();
             this.playlistsStore.refreshListAsync();
         });
-        this.downloadManager = new DownloadManager(
-                dbService,
-                songCache,
-                downloadEvent -> {}
-        );
         this.scrobbleService = new ScrobbleService(
                 dbService,
                 () -> this.client.get(),

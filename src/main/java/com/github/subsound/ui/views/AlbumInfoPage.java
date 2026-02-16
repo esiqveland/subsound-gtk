@@ -2,8 +2,6 @@ package com.github.subsound.ui.views;
 
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.app.state.AppManager.AlbumInfo;
-import com.github.subsound.app.state.AppManager.AppState;
-import com.github.subsound.app.state.AppManager.NowPlaying;
 import com.github.subsound.app.state.PlayerAction;
 import com.github.subsound.app.state.PlaylistsStore.GPlaylist;
 import com.github.subsound.integration.ServerClient.PlaylistKind;
@@ -16,15 +14,15 @@ import com.github.subsound.ui.components.NowPlayingOverlayIcon;
 import com.github.subsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
 import com.github.subsound.ui.components.PlaylistChooser;
 import com.github.subsound.ui.components.RoundedAlbumArt;
-import com.github.subsound.ui.components.SongContextMenu;
-import com.github.subsound.ui.components.SongContextMenu.SongContextAction;
+import com.github.subsound.ui.components.SongDownloadStatusIcon;
 import com.github.subsound.ui.components.StarButton;
 import com.github.subsound.ui.models.GSongInfo;
+import com.github.subsound.ui.models.GDownloadState;
+import com.github.subsound.ui.models.GSongInfo.Signal;
 import com.github.subsound.utils.ImageUtils;
 import com.github.subsound.utils.Utils;
 import org.gnome.adw.ActionRow;
 import org.gnome.gdk.Display;
-import org.gnome.gio.MenuModel;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
@@ -51,7 +49,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import static com.github.subsound.utils.Utils.addHover;
@@ -93,8 +90,10 @@ public class AlbumInfoPage extends Box {
         private final Function<PlayerAction, CompletableFuture<Void>> onAction;
         public final NowPlayingOverlayIcon icon;
         private final StarButton starredButton;
+        private final SongDownloadStatusIcon downloadStatusIcon = new SongDownloadStatusIcon();
         private SignalConnection<NotifyCallback> signalPlaying;
         private SignalConnection<NotifyCallback> signalFavorited;
+        private SignalConnection<NotifyCallback> signalDownloadStatus;
 
         public AlbumSongActionRow(
                 AppManager appManager,
@@ -166,9 +165,6 @@ public class AlbumInfoPage extends Box {
             bitRateLabel.ifPresent(hoverBox::append);
             fileFormatLabel.ifPresent(hoverBox::append);
             hoverBox.append(fileSizeLabel);
-            var menuButtonBox = Box.builder().setMarginStart(6).setMarginEnd(6).setVexpand(true).setValign(CENTER).build();
-            menuButtonBox.append(menuButton);
-            hoverBox.append(menuButtonBox);
 
             var revealer = Revealer.builder()
                     .setChild(hoverBox)
@@ -177,9 +173,13 @@ public class AlbumInfoPage extends Box {
                     .build();
 
             suffix.append(revealer);
+            suffix.append(downloadStatusIcon);
             var starredButtonBox = Box.builder().setMarginStart(6).setMarginEnd(6).setVexpand(true).setValign(CENTER).build();
             starredButtonBox.append(starredButton);
             suffix.append(starredButtonBox);
+            var menuButtonBox = Box.builder().setMarginStart(6).setMarginEnd(6).setVexpand(true).setValign(CENTER).build();
+            menuButtonBox.append(menuButton);
+            suffix.append(menuButtonBox);
 
             String durationString = Utils.formatDurationShortest(songInfo.duration());
             String subtitle = durationString;
@@ -229,6 +229,10 @@ public class AlbumInfoPage extends Box {
                         GSongInfo.Signal.IS_FAVORITE.getId(),
                         cb -> this.updateUI()
                 );
+                signalDownloadStatus = this.gSongInfo.onNotify(
+                        Signal.DOWNLOAD_STATE.getId(),
+                        cb -> this.updateUI()
+                );
                 this.updateUI();
             });
             this.onUnmap(() -> {
@@ -241,6 +245,10 @@ public class AlbumInfoPage extends Box {
                     signalFavorited.disconnect();
                     signalFavorited = null;
                 }
+                if (signalDownloadStatus != null) {
+                    signalDownloadStatus.disconnect();
+                    signalDownloadStatus = null;
+                }
             });
             this.addPrefix(icon);
             this.addSuffix(suffix);
@@ -250,11 +258,11 @@ public class AlbumInfoPage extends Box {
 
         private void updateUI() {
             Utils.runOnMainThread(() -> {
-                this.updateRow(new RowState(this.gSongInfo.getIsPlaying(), this.gSongInfo.getIsStarred()));
+                this.updateRow(new RowState(this.gSongInfo.getIsPlaying(), this.gSongInfo.getIsStarred(), this.gSongInfo.getDownloadStateEnum()));
             });
         }
 
-        record RowState(boolean isPlaying, boolean isStarred){}
+        record RowState(boolean isPlaying, boolean isStarred, GDownloadState downloadState){}
         private void updateRow(RowState next) {
             boolean isPlaying = next.isPlaying;
             if (isPlaying) {
@@ -273,6 +281,7 @@ public class AlbumInfoPage extends Box {
             if (next.isStarred != this.starredButton.isStarred()) {
                 this.starredButton.setStarredAt(this.gSongInfo.getStarredAt());
             }
+            this.downloadStatusIcon.updateDownloadState(next.downloadState);
         }
 
         private @NonNull Popover getPopover() {

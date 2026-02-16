@@ -1,8 +1,8 @@
 package com.github.subsound.ui.models;
 
-import com.github.subsound.integration.ServerClient;
-import com.github.subsound.integration.ServerClient.ObjectIdentifier.SongIdentifier;
 import com.github.subsound.integration.ServerClient.SongInfo;
+import com.github.subsound.persistence.database.DownloadQueueItem;
+import com.github.subsound.persistence.database.DownloadQueueItem.DownloadStatus;
 import org.gnome.glib.Type;
 import org.gnome.gobject.GObject;
 import org.javagi.gobject.annotations.Property;
@@ -16,7 +16,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static com.github.subsound.utils.Utils.runOnMainThread;
 
@@ -25,9 +24,16 @@ public class GSongInfo extends GObject {
 
     public static class GSongStore {
         private final ConcurrentHashMap<String, GSongInfo> store = new ConcurrentHashMap<>();
-        public GSongStore() {}
+        private final Function<String, Optional<DownloadQueueItem>> downloadManager;
+
+        public GSongStore(Function<String, Optional<DownloadQueueItem>> downloadManager) {
+            this.downloadManager = downloadManager;
+        }
 
 
+        public Optional<GSongInfo> getExisting(String songId) {
+            return Optional.ofNullable(store.get(songId));
+        }
         public GSongInfo get(SongInfo songInfo) {
             return newInstance(songInfo);
         }
@@ -36,9 +42,11 @@ public class GSongInfo extends GObject {
             // TODO: replace with the updated SongInfo data
             var gsong = store.computeIfAbsent(
                     value.id(),
-                    (key) -> {
-                        GSongInfo instance = GObject.newInstance(gtype);
+                    key -> {
+                        GSongInfo instance = GObject.newInstance(getType());
                         instance.songInfo = value;
+                        var songStatus = this.downloadManager.apply(key);
+                        songStatus.ifPresent(item -> instance.setDownloadStateEnum(item.status()));
                         return instance;
                     }
             );
@@ -55,17 +63,19 @@ public class GSongInfo extends GObject {
     private final AtomicBoolean isFavorite = new AtomicBoolean(false);
     private final Lock lock = new ReentrantLock();
 
+    private volatile GDownloadState downloadState = GDownloadState.NONE;
+
     public static Type getType() {
         return gtype;
     }
 
-    private ServerClient.SongInfo songInfo;
+    private SongInfo songInfo;
 
     public GSongInfo(MemorySegment address) {
         super(address);
     }
 
-    public ServerClient.SongInfo getSongInfo() {
+    public SongInfo getSongInfo() {
         return songInfo;
     }
     @Property
@@ -76,6 +86,38 @@ public class GSongInfo extends GObject {
     @Property
     public boolean getIsPlaying() {
         return this.isPlaying.get();
+    }
+
+    @Property
+    // for some reason java-gi throws an exception on startup if we return the raw enum here:
+    public int getDownloadState() {
+        return this.downloadState.ordinal();
+    }
+    @Property
+    public void setDownloadState(int next) {
+        var nex = GDownloadState.fromOrdinal(next);
+        if (this.downloadState != nex) {
+            this.downloadState = nex;
+            runOnMainThread(() -> this.notify(Signal.DOWNLOAD_STATE.signal));
+        }
+    }
+    @Property(skip = true)
+    public GDownloadState getDownloadStateEnum() {
+        return this.downloadState;
+    }
+
+    @Property(skip = true)
+    public void setDownloadStateEnum(GDownloadState next) {
+        this.setDownloadState(next.ordinal());
+    }
+    @Property(skip = true)
+    public void setDownloadStateEnum(DownloadStatus next) {
+        this.setDownloadStateEnum(switch (next) {
+            case PENDING -> GDownloadState.PENDING;
+            case DOWNLOADING -> GDownloadState.DOWNLOADING;
+            case COMPLETED -> GDownloadState.DOWNLOADED;
+            case FAILED -> GDownloadState.NONE;
+        });
     }
 
     @Property
@@ -100,7 +142,7 @@ public class GSongInfo extends GObject {
         return this;
     }
 
-    public void mutate(Function<ServerClient.SongInfo, ServerClient.SongInfo> modifier) {
+    public void mutate(Function<SongInfo, SongInfo> modifier) {
         lock.lock();
         try {
             this.songInfo = modifier.apply(this.songInfo);
@@ -126,6 +168,7 @@ public class GSongInfo extends GObject {
 
     public enum Signal {
         NAME("name"),
+        DOWNLOAD_STATE("download-state"),
         IS_PLAYING("is-playing"),
         IS_FAVORITE("is-favorite");
         private final String signal;

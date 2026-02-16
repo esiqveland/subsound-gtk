@@ -24,7 +24,7 @@ public class StarredListStore {
     private static final Logger log = LoggerFactory.getLogger(StarredListStore.class);
 
     private final Object lock = new Object();
-    private final ListStore<GSongInfo> store = new ListStore<>(GSongInfo.gtype);
+    private final ListStore<GSongInfo> store;
     private final AppManager appManager;
     private final GSongStore songStore;
     private final ArrayList<String> backingIds = new ArrayList<>();
@@ -33,6 +33,7 @@ public class StarredListStore {
     public StarredListStore(AppManager appManager) {
         this.appManager = appManager;
         this.songStore = appManager.getSongStore();
+        this.store = new ListStore<>(GSongInfo.getType());
     }
 
     public void handleStarred(PlayerAction.Star2 star) {}

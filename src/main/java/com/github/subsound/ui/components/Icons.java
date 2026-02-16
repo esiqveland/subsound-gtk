@@ -8,7 +8,7 @@ public enum Icons {
     UserHome("user-home"),
     UserHomeSymbolic("user-home-symbolic"),
     ContentLoading("content-loading"),
-    ContentLoadingSymbolic("content-loading-symbolic"),
+    ContentLoadingSymbolic("content-loading-symbolic"), // looks like three horizontal dots
     Starred("starred"),
     StarredSymbolic("starred-symbolic"),
     AddStar("star-new"),
