@@ -131,7 +131,10 @@ public class AppManager {
                     }));
                 }
         );
-        this.gSongStore = new GSongStore(this.downloadManager::getSongStatus);
+        this.gSongStore = new GSongStore(
+                songId -> this.useClient(c -> c.getSong(songId)),
+                this.downloadManager::getSongStatus
+        );
         this.networkMonitor = new GioNetworkStatusMonitor(this::updateNetworkState);
         this.playQueue = new PlayQueue(
                 player,

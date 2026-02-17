@@ -28,6 +28,7 @@ public class PlayQueueTest {
     private PlayQueueStateRecorder stateChangedRecorder;
     private SongInfoRecorder playRecorder;
     private PlayQueue playQueue;
+    private SongInfoFactory songInfoFactory;
 
     @Before
     public void setUp() {
@@ -35,10 +36,14 @@ public class PlayQueueTest {
         player = new StubPlayer();
         stateChangedRecorder = new PlayQueueStateRecorder();
         playRecorder = new SongInfoRecorder();
+        songInfoFactory = new SongInfoFactory();
 
         playQueue = new PlayQueue(
                 player,
-                new GSongStore(key -> Optional.empty()),
+                new GSongStore(
+                        key -> this.songInfoFactory.getSongById(key),
+                        key -> Optional.empty()
+                ),
                 stateChangedRecorder,
                 playRecorder
         );
@@ -51,7 +56,7 @@ public class PlayQueueTest {
 
     @Test
     public void testEnqueue() {
-        SongInfo song = SongInfoFactory.createRandomSongInfo();
+        SongInfo song = songInfoFactory.newRandomSongInfo();
         playQueue.enqueue(song);
 
         PlayQueue.PlayQueueState state = playQueue.getState();
@@ -63,8 +68,8 @@ public class PlayQueueTest {
     @Test
     public void testReplaceQueue() {
         List<SongInfo> songs = List.of(
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo()
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
         );
         playQueue.replaceQueue(songs, 1).join();
 
@@ -78,8 +83,8 @@ public class PlayQueueTest {
     @Test
     public void testPlayPosition() {
         List<SongInfo> songs = List.of(
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo()
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
         );
         playQueue.replaceQueue(songs, 0).join();
         playQueue.playPosition(1);
@@ -91,8 +96,8 @@ public class PlayQueueTest {
     @Test
     public void testAttemptPlayNext() {
         List<SongInfo> songs = List.of(
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo()
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
         );
         playQueue.replaceQueue(songs, 0).join();
         playQueue.attemptPlayNext();
@@ -103,7 +108,7 @@ public class PlayQueueTest {
 
     @Test
     public void testAttemptPlayNextAtEnd() {
-        List<SongInfo> songs = List.of(SongInfoFactory.createRandomSongInfo());
+        List<SongInfo> songs = List.of(songInfoFactory.newRandomSongInfo());
         playQueue.replaceQueue(songs, 0).join();
         playRecorder.songs.clear();
         playQueue.attemptPlayNext();
@@ -115,9 +120,9 @@ public class PlayQueueTest {
     @Test
     public void testAttemptPlayPrevSeeksIfFarInSong() {
         var songs = List.of(
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo()
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
         );
         var song = songs.getFirst();
         playQueue.replaceQueue(songs, 0).join();
@@ -140,9 +145,9 @@ public class PlayQueueTest {
     @Test
     public void testAttemptPlayPrevGoesToPreviousSong() {
         List<SongInfo> songs = List.of(
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo()
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
         );
         playQueue.replaceQueue(songs, 1).join();
 
@@ -167,9 +172,9 @@ public class PlayQueueTest {
     @Test
     public void testOnEndOfStreamPlaysNext() {
         List<SongInfo> songs = List.of(
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo()
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
         );
         playQueue.replaceQueue(songs, 0).join();
 
@@ -190,12 +195,12 @@ public class PlayQueueTest {
     @Test
     public void testEnqueueMarksItemAsUserQueued() {
         List<SongInfo> songs = List.of(
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo()
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
         );
         playQueue.replaceQueue(songs, 0).join();
 
-        SongInfo enqueued = SongInfoFactory.createRandomSongInfo();
+        SongInfo enqueued = songInfoFactory.newRandomSongInfo();
         playQueue.enqueue(enqueued);
 
         // enqueue inserts at position+1 with userQueued=true
@@ -209,18 +214,18 @@ public class PlayQueueTest {
     @Test
     public void testEnqueueLastInsertsAfterUserQueuedBeforeAutoQueued() {
         List<SongInfo> songs = List.of(
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo()
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
         );
         playQueue.replaceQueue(songs, 0).join();
 
         // Enqueue a user-queued song via enqueue (Play Next)
-        SongInfo userSong = SongInfoFactory.createRandomSongInfo();
+        SongInfo userSong = songInfoFactory.newRandomSongInfo();
         playQueue.enqueue(userSong);
 
         // Now enqueueLast should insert after the user-queued song but before auto-queued
-        SongInfo lastSong = SongInfoFactory.createRandomSongInfo();
+        SongInfo lastSong = songInfoFactory.newRandomSongInfo();
         playQueue.enqueueLast(lastSong);
 
         // Queue should be: [song0(current)] [userSong] [lastSong] [song1] [song2]
@@ -236,12 +241,12 @@ public class PlayQueueTest {
     @Test
     public void testEnqueueLastWithNoUserQueuedInsertsAtPositionPlusOne() {
         List<SongInfo> songs = List.of(
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo()
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
         );
         playQueue.replaceQueue(songs, 0).join();
 
-        SongInfo lastSong = SongInfoFactory.createRandomSongInfo();
+        SongInfo lastSong = songInfoFactory.newRandomSongInfo();
         playQueue.enqueueLast(lastSong);
 
         // With no user-queued songs, should insert at position+1
@@ -253,19 +258,19 @@ public class PlayQueueTest {
     @Test
     public void testEnqueueLastWithMultipleUserQueuedInsertsAfterLastOne() {
         List<SongInfo> songs = List.of(
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo()
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
         );
         playQueue.replaceQueue(songs, 0).join();
 
         // Add multiple user-queued songs
-        SongInfo user1 = SongInfoFactory.createRandomSongInfo();
-        SongInfo user2 = SongInfoFactory.createRandomSongInfo();
+        SongInfo user1 = songInfoFactory.newRandomSongInfo();
+        SongInfo user2 = songInfoFactory.newRandomSongInfo();
         playQueue.enqueue(user2);
         playQueue.enqueue(user1);
         // After enqueue: [song0] [user1] [user2] [song1]
 
-        SongInfo lastSong = SongInfoFactory.createRandomSongInfo();
+        SongInfo lastSong = songInfoFactory.newRandomSongInfo();
         playQueue.enqueueLast(lastSong);
 
         // Should insert after user2 but before song1:
@@ -284,10 +289,10 @@ public class PlayQueueTest {
     @Test
     public void testRemoveCurrentThenPlayNextPlaysCorrectSong() {
         List<SongInfo> songs = List.of(
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo()
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
         );
         playQueue.replaceQueue(songs, 1).join();
         playRecorder.songs.clear();
@@ -309,9 +314,9 @@ public class PlayQueueTest {
     @Test
     public void testRemoveCurrentThenEndOfStreamPlaysCorrectSong() {
         List<SongInfo> songs = List.of(
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo()
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
         );
         playQueue.replaceQueue(songs, 1).join();
         playRecorder.songs.clear();
@@ -328,9 +333,9 @@ public class PlayQueueTest {
     @Test
     public void testRemoveCurrentAtStartThenPlayNext() {
         List<SongInfo> songs = List.of(
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo()
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
         );
         playQueue.replaceQueue(songs, 0).join();
         playRecorder.songs.clear();
@@ -350,8 +355,8 @@ public class PlayQueueTest {
     @Test
     public void testRemoveCurrentAtEndThenPlayNextDoesNothing() {
         List<SongInfo> songs = List.of(
-                SongInfoFactory.createRandomSongInfo(),
-                SongInfoFactory.createRandomSongInfo()
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
         );
         playQueue.replaceQueue(songs, 1).join();
         playRecorder.songs.clear();

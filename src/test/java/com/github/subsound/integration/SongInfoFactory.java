@@ -9,9 +9,23 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class SongInfoFactory {
+    public final ConcurrentHashMap<String, SongInfo> songs = new ConcurrentHashMap<>();
+
+    public SongInfoFactory() {}
+
+    public SongInfo getSongById(String key) {
+        return songs.get(key);
+    }
+
+    public SongInfo newRandomSongInfo() {
+        var songInfo = createRandomSongInfo();
+        songs.put(songInfo.id(), songInfo);
+        return songInfo;
+    }
 
     public static SongInfo createRandomSongInfo() {
         String id = UUID.randomUUID().toString();

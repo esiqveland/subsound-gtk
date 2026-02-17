@@ -1,5 +1,6 @@
 package com.github.subsound.ui.models;
 
+import com.github.subsound.integration.ServerClient.ObjectIdentifier.SongIdentifier;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.persistence.database.DownloadQueueItem;
 import com.github.subsound.persistence.database.DownloadQueueItem.DownloadStatus;
@@ -25,9 +26,24 @@ public class GSongInfo extends GObject {
     public static class GSongStore {
         private final ConcurrentHashMap<String, GSongInfo> store = new ConcurrentHashMap<>();
         private final Function<String, Optional<DownloadQueueItem>> downloadManager;
+        private final Function<String, SongInfo> songLoader;
 
-        public GSongStore(Function<String, Optional<DownloadQueueItem>> downloadManager) {
+        public GSongStore(
+                Function<String, SongInfo> songLoader,
+                Function<String, Optional<DownloadQueueItem>> downloadManager
+        ) {
             this.downloadManager = downloadManager;
+            this.songLoader = songLoader;
+        }
+
+        public GSongInfo getSongById(SongIdentifier id) {
+            return store.computeIfAbsent(id.songId(), key -> {
+                var song = songLoader.apply(key);
+                return this.newInstance(song);
+            });
+        }
+        public GSongInfo getSongById(String songId) {
+            return getSongById(new SongIdentifier(songId));
         }
 
 

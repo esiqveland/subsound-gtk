@@ -216,6 +216,7 @@ Features:
   - [X] Browse from offline storage only
   - [ ] While online browsing, store the latest downloaded metadata locally as we browse. especially for playlists, but could be nice for new artists and albums added.
   - [X] Record scrobbles offline --> sync later to server when we get back online
+  - [X] show a download status icon on each songrow if its on the download (available offline) list
   - [X] Download manager for offline available content
     - This kind of already works, but there is no UI that shows status for each item
 
