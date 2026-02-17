@@ -2,6 +2,8 @@ package com.github.subsound;
 
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.app.state.PlayerAction;
+import com.github.subsound.app.state.PlayerAction.Play;
+import com.github.subsound.app.state.PlayerAction.PlayMode;
 import com.github.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
 import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.ui.components.AppNavigation;
@@ -78,6 +80,7 @@ public class MainApplication {
     private final PlayerBar playerBar;
     private final Box bottomBar;
     private final Shortcut playPauseShortcut;
+    private final Shortcut shuffleModeShortCut;
     private final Shortcut commandPaletteShortcut;
     private final CommandPalette commandPalette;
     private final ServerBadge serverBadge;
@@ -98,7 +101,7 @@ public class MainApplication {
         //var playPauseTrigger = ShortcutTrigger.parseString("<Control>KP_Space");
         var playPauseTrigger = ShortcutTrigger.parseString("<Control>p");
         var playPauseAction = new CallbackAction((Widget widget, @Nullable Variant args) -> {
-            log.info("callback action");
+            log.info("playPauseAction: callback action");
             if (this.appManager.getState().player().state().isPlaying()) {
                 this.appManager.pause();
             } else {
@@ -106,7 +109,18 @@ public class MainApplication {
             }
             return true;
         });
-        playPauseShortcut = Shortcut.builder().setTrigger(playPauseTrigger).setAction(playPauseAction).build();
+        this.playPauseShortcut = Shortcut.builder().setTrigger(playPauseTrigger).setAction(playPauseAction).build();
+
+        var shuffleModeTrigger = ShortcutTrigger.parseString("<Control>s");
+        var shuffleModeShortCutAction = new CallbackAction((Widget widget, @Nullable Variant args) -> {
+            log.info("shuffleModeShortCutAction: callback action");
+            var current = this.appManager.getState().queue().playMode();
+            PlayMode next  = current == PlayMode.SHUFFLE ? PlayMode.NORMAL : PlayMode.SHUFFLE;
+            this.appManager.handleAction(new PlayerAction.SetPlayMode(next));
+            return true;
+        });
+        this.shuffleModeShortCut = Shortcut.builder().setTrigger(shuffleModeTrigger).setAction(shuffleModeShortCutAction).build();
+
 
         this.toolbarView = ToolbarView.builder().build();
         this.commandPalette = new CommandPalette(appManager, toolbarView);
@@ -353,8 +367,9 @@ public class MainApplication {
         }
 
         var shortcutController = new ShortcutController();
-        shortcutController.addShortcut(playPauseShortcut);
-        shortcutController.addShortcut(commandPaletteShortcut);
+        shortcutController.addShortcut(this.playPauseShortcut);
+        shortcutController.addShortcut(this.shuffleModeShortCut);
+        shortcutController.addShortcut(this.commandPaletteShortcut);
         shortcutController.setScope(ShortcutScope.GLOBAL);
 
         // Pack everything together, and show the window
