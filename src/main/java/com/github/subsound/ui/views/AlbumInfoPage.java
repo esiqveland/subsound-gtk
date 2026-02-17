@@ -2,6 +2,9 @@ package com.github.subsound.ui.views;
 
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.app.state.AppManager.AlbumInfo;
+import com.github.subsound.app.state.AppManager.AppState;
+import com.github.subsound.app.state.AppManager.StateListener;
+import com.github.subsound.app.state.NetworkMonitoring.NetworkStatus;
 import com.github.subsound.app.state.PlayerAction;
 import com.github.subsound.app.state.PlaylistsStore.GPlaylist;
 import com.github.subsound.integration.ServerClient.PlaylistKind;
@@ -61,7 +64,7 @@ import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
 
-public class AlbumInfoPage extends Box {
+public class AlbumInfoPage extends Box implements StateListener {
     private final AppManager appManager;
 
     //private final ArtistInfo artistInfo;
@@ -79,6 +82,7 @@ public class AlbumInfoPage extends Box {
     private static final int COVER_SIZE = 300;
     private static final CssProvider COLOR_PROVIDER = CssProvider.builder().build();
     private static final AtomicBoolean isProviderInit = new AtomicBoolean(false);
+    private volatile NetworkStatus networkStatus;
 
     public static class AlbumSongActionRow extends ActionRow {
         private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AlbumSongActionRow.class);
@@ -94,9 +98,11 @@ public class AlbumInfoPage extends Box {
         private SignalConnection<NotifyCallback> signalPlaying;
         private SignalConnection<NotifyCallback> signalFavorited;
         private SignalConnection<NotifyCallback> signalDownloadStatus;
+        private volatile NetworkStatus networkStatus;
 
         public AlbumSongActionRow(
                 AppManager appManager,
+                NetworkStatus networkStatus,
                 AlbumInfo albumInfo,
                 int index,
                 GSongInfo gSongInfo,
@@ -109,6 +115,7 @@ public class AlbumInfoPage extends Box {
             this.gSongInfo = gSongInfo;
             this.songInfo = gSongInfo.getSongInfo();
             this.onAction = onAction;
+            this.networkStatus = networkStatus;
             this.addCssClass(Classes.rounded.className());
             this.addCssClass("AlbumSongActionRow");
             this.setUseMarkup(false);
@@ -258,12 +265,21 @@ public class AlbumInfoPage extends Box {
 
         private void updateUI() {
             Utils.runOnMainThread(() -> {
-                this.updateRow(new RowState(this.gSongInfo.getIsPlaying(), this.gSongInfo.getIsStarred(), this.gSongInfo.getDownloadStateEnum()));
+                this.updateRow(new RowState(this.gSongInfo.getIsPlaying(), this.gSongInfo.getIsStarred(), this.gSongInfo.getDownloadStateEnum(), this.networkStatus));
             });
         }
 
-        record RowState(boolean isPlaying, boolean isStarred, GDownloadState downloadState){}
+        public void updateNetworkStatus(NetworkStatus networkStatus) {
+            if (this.networkStatus == networkStatus) {
+                return;
+            }
+            this.networkStatus = networkStatus;
+            this.updateUI();
+        }
+
+        record RowState(boolean isPlaying, boolean isStarred, GDownloadState downloadState, NetworkStatus networkStatus){}
         private void updateRow(RowState next) {
+            boolean isOffline = next.networkStatus == NetworkStatus.OFFLINE;
             boolean isPlaying = next.isPlaying;
             if (isPlaying) {
                 this.addCssClass(Classes.colorAccent.className());
@@ -282,6 +298,13 @@ public class AlbumInfoPage extends Box {
                 this.starredButton.setStarredAt(this.gSongInfo.getStarredAt());
             }
             this.downloadStatusIcon.updateDownloadState(next.downloadState);
+            if (isOffline && next.downloadState != GDownloadState.DOWNLOADED) {
+                this.setActivatable(false);
+                this.setSensitive(false);
+            } else {
+                this.setActivatable(true);
+                this.setSensitive(true);
+            }
         }
 
         private @NonNull Popover getPopover() {
@@ -456,10 +479,19 @@ public class AlbumInfoPage extends Box {
             ));
         });
 
+        var initialNetworkStatus = this.appManager.getState().networkState().status();
+        this.networkStatus = initialNetworkStatus;
         this.rows = new ArrayList<>(this.info.songs().size());
         int idx = 0;
         for (var songInfo : this.info.songs()) {
-            var row = new AlbumSongActionRow(this.appManager, this.info, idx, songInfo, this.onAction);
+            var row = new AlbumSongActionRow(
+                    this.appManager,
+                    initialNetworkStatus,
+                    this.info,
+                    idx,
+                    songInfo,
+                    this.onAction
+            );
             this.rows.add(row);
             this.listView.append(row);
             idx++;
@@ -523,7 +555,36 @@ public class AlbumInfoPage extends Box {
         this.setHexpand(true);
         this.setVexpand(true);
         this.append(this.scroll);
-        this.onMap(() -> this.appManager.getThumbnailCache().loadPixbuf(this.info.album().coverArt().get(), COVER_SIZE).thenAccept(this::switchPallete));
+        this.appManager.addOnStateChanged(this);
+        this.onMap(() -> {
+            this.appManager.addOnStateChanged(this);
+            this.appManager.getThumbnailCache().loadPixbuf(
+                    this.info.album().coverArt().get(),
+                    COVER_SIZE
+            ).thenAccept(this::switchPallete);
+        });
+        this.onUnmap(() -> {
+            this.appManager.removeOnStateChanged(this);
+        });
+    }
+
+    @Override
+    public void onStateChanged(AppState state) {
+        boolean isChanged = false;
+        var next = state.networkState().status();
+        if (next != this.networkStatus) {
+            this.networkStatus = next;
+            isChanged = true;
+        }
+        if (isChanged) {
+            this.updateUI();
+        }
+    }
+
+    private void updateUI() {
+        this.rows.forEach(row -> {
+            row.updateNetworkStatus(this.networkStatus);
+        });
     }
 
     private PlaylistChooser buildPlaylistPopover() {
