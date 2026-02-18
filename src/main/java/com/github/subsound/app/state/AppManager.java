@@ -24,11 +24,10 @@ import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.sound.PlaybinPlayer.AudioSource;
 import com.github.subsound.sound.PlaybinPlayer.Source;
 import com.github.subsound.ui.components.AppNavigation;
+import com.github.subsound.ui.models.GDownloadState;
 import com.github.subsound.ui.models.GQueueItem;
 import com.github.subsound.ui.models.GSongInfo;
-import com.github.subsound.ui.models.GDownloadState;
 import com.github.subsound.ui.models.GSongInfo.GSongStore;
-import com.github.subsound.utils.Utils;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
@@ -58,6 +57,9 @@ import java.util.function.Function;
 
 import static com.github.subsound.app.state.AppManager.NowPlaying.State.LOADING;
 import static com.github.subsound.app.state.AppManager.NowPlaying.State.READY;
+import static com.github.subsound.utils.Utils.doAsync;
+import static com.github.subsound.utils.Utils.runOnMainThread;
+import static com.github.subsound.utils.Utils.sha256;
 
 public class AppManager {
     private static final Logger log = LoggerFactory.getLogger(AppManager.class);
@@ -141,7 +143,7 @@ public class AppManager {
                 player,
                 this.gSongStore,
                 nextState -> this.setState(old -> old.withQueue(nextState)),
-                songInfo -> loadSource(new PlayerAction.PlaySong(songInfo.getSongInfo()))
+                songInfo -> loadSourceAsync(new PlayerAction.PlaySong(songInfo.getSongInfo()))
         );
 
         this.client = new AtomicReference<>();
@@ -214,7 +216,7 @@ public class AppManager {
                 throw new RuntimeException("Failed to restore last playing song: songId=%s".formatted(songId), e);
             }
         }, ASYNC_EXECUTOR)
-                .thenComposeAsync(songInfo -> this.loadSource(new PlayerAction.PlaySong(songInfo, true)).thenApply(v -> songInfo),
+                .thenComposeAsync(songInfo -> this.loadSourceAsync(new PlayerAction.PlaySong(songInfo, true)).thenApply(v -> songInfo),
                 ASYNC_EXECUTOR)
                 .thenComposeAsync(songInfo -> {
                     var position = Duration.ofMillis(storedPlayback.positionMillis());
@@ -311,7 +313,7 @@ public class AppManager {
             List<GSongInfo> songs
     ){}
     public CompletableFuture<AlbumInfo> getAlbumInfoAsync(String albumId) {
-        return Utils.doAsync(() -> {
+        return doAsync(() -> {
             var data = this.useClient(serverClient -> serverClient.getAlbumInfo(albumId));
 
             var songs = data.songs().stream().map(gSongStore::newInstance).toList();
@@ -360,11 +362,14 @@ public class AppManager {
     }
 
 
-    public CompletableFuture<LoadSongResult> loadSource(PlayerAction.PlaySong songInfo) {
+    public CompletableFuture<LoadSongResult> loadSourceAsync(PlayerAction.PlaySong songInfo) {
         return CompletableFuture.supplyAsync(
                 () -> this.loadSourceSync(songInfo),
                 ASYNC_EXECUTOR
-        );
+        ).exceptionally(throwable -> {
+            log.error("loadSourceAsync: failed to load: {} {}", songInfo.song().id(), songInfo.song().title(), throwable);
+            throw new RuntimeException(throwable);
+        });
     }
 
     public interface ProgressHandler {
@@ -378,7 +383,28 @@ public class AppManager {
 
     private LoadSongResult loadSourceSync(PlayerAction.PlaySong playCmd) {
         var songInfo = playCmd.song();
-        boolean startPaused = playCmd.startPaused();
+        // Resolve offline placeholder URIs to real stream URIs
+        if ("offline".equals(songInfo.transcodeInfo().streamUri().getScheme())) {
+            var streamUri = this.client.get().getStreamUri(songInfo.id());
+            songInfo = songInfo.withTranscodeInfo(new ServerClient.TranscodeInfo(
+                    songInfo.transcodeInfo().originalBitRate(),
+                    songInfo.transcodeInfo().estimatedBitRate(),
+                    songInfo.transcodeInfo().duration(),
+                    songInfo.transcodeInfo().streamFormat(),
+                    streamUri
+            ));
+        }
+        try {
+            return loadSourceSyncInner(songInfo, playCmd.startPaused());
+        } catch (Exception e) {
+            log.error("Failed to load song: id={} title={}", playCmd.song().id(), playCmd.song().title(), e);
+            this.setState(old -> old.withNowPlaying(Optional.empty()));
+            this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Failed to load song")));
+            throw e;
+        }
+    }
+
+    private LoadSongResult loadSourceSyncInner(SongInfo songInfo, boolean startPaused) {
         this.pause();
         UUID requestId = UUID.randomUUID();
         this.setState(old -> old.with()
@@ -428,7 +454,7 @@ public class AppManager {
         // Track this song as cached so it shows as available offline
         String checksum = null;
         try (var is = song.uri().toURL().openStream()) {
-            checksum = com.github.subsound.utils.Utils.sha256(is);
+            checksum = sha256(is);
         } catch (Exception e) {
             log.warn("Failed to calculate checksum for cached song: {}", songInfo.id(), e);
         }
@@ -497,7 +523,7 @@ public class AppManager {
     }
 
     public CompletableFuture<Void> handleAction(PlayerAction action) {
-        return Utils.doAsync(() -> {
+        return doAsync(() -> {
             log.info("handleAction: payload={}", action);
             switch (action) {
                 // config actions:
@@ -528,14 +554,14 @@ public class AppManager {
                 case PlayerAction.Star2 a -> this.starSong(a);
                 case PlayerAction.StarRefresh a -> this.starredList.handleRefresh(a);
                 case PlayerAction.Unstar a -> this.unstarSong(a);
-                case PlayerAction.PlaySong playSong -> this.loadSource(playSong);
+                case PlayerAction.PlaySong playSong -> this.loadSourceAsync(playSong);
                 case PlayerAction.RefreshPlaylists _ -> this.playlistsStore.refreshListAsync();
                 case PlayerAction.AddToPlaylist a -> {
                     this.useClient(c -> c.addToPlaylist(new ServerClient.AddSongToPlaylist(a.playlistId(), a.song().id())));
                     this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Added to " + a.playlistName())));
                 }
                 case PlayerAction.AddManyToPlaylist a -> {
-                    Utils.doAsync(() -> {
+                    doAsync(() -> {
                         for (var song : a.songs()) {
                             this.useClient(c -> c.addToPlaylist(new ServerClient.AddSongToPlaylist(a.playlistId(), song.getId())));
                         }
@@ -576,7 +602,7 @@ public class AppManager {
             log.warn("unable to toast because toastOverlay={}", this.toastOverlay);
             return;
         }
-        Utils.runOnMainThread(() -> {
+        runOnMainThread(() -> {
             this.toastOverlay.addToast(t.toast());
         });
     }
@@ -800,7 +826,7 @@ public class AppManager {
             String playedPercentageStr = "%.1f".formatted(100 * playedPercentage);
             var songId = np.song().id();
             var title = np.song().title();
-            Utils.doAsync(() -> {
+            doAsync(() -> {
                 try {
 
                     dbService.insertScrobble(songId, Instant.ofEpochMilli(playedStartedAt));

@@ -298,7 +298,7 @@ public class AlbumInfoPage extends Box implements StateListener {
                 this.starredButton.setStarredAt(this.gSongInfo.getStarredAt());
             }
             this.downloadStatusIcon.updateDownloadState(next.downloadState);
-            if (isOffline && next.downloadState != GDownloadState.DOWNLOADED) {
+            if (isOffline && !next.downloadState.isDownloaded()) {
                 this.setActivatable(false);
                 this.setSensitive(false);
             } else {

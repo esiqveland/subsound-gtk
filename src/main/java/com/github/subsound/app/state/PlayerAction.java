@@ -3,7 +3,7 @@ package com.github.subsound.app.state;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.ui.components.SettingsPage.SettingsInfo;
 import com.github.subsound.ui.models.GSongInfo;
-import org.gnome.adw.Toast;
+import org.jspecify.annotations.NonNull;
 
 import java.time.Duration;
 import java.util.List;
@@ -27,8 +27,8 @@ public sealed interface PlayerAction {
             return new PlayAndReplaceQueue(queue.stream().map(GSongInfo::getSongInfo).toList(), position);
         }
         @Override
-        public String toString() {
-            return "PlayQueue(position=%d, size=%d)".formatted(position, this.queue.size());
+        public @NonNull String toString() {
+            return "PlayAndReplaceQueue(position=%d, size=%d)".formatted(position, this.queue.size());
         }
     }
     record PlayPositionInQueue(int position) implements PlayerAction {}

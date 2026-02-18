@@ -310,6 +310,23 @@ public class SubsonicClient implements ServerClient {
         this.client.annotation().scrobble(req.songId(), req.playedAt().toEpochMilli());
     }
 
+    @Override
+    public URI getStreamUri(String songId) {
+        try {
+            var streamBitrate = this.client.getPreferences().getStreamBitRate();
+            var streamFormat = this.client.getPreferences().getStreamFormat();
+            var params = StreamParams.create()
+                    .maxBitRate(streamBitrate)
+                    .format(streamFormat);
+            return this.client.media()
+                    .stream(songId, params)
+                    .getUrl()
+                    .toURI();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private ArtistEntry toArtistInfo(ArtistID3 artistID3) {
         return new ArtistEntry(
                 artistID3.getId(),

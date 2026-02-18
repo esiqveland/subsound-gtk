@@ -10,7 +10,7 @@ public enum GDownloadState {
     DOWNLOADED, // song is in the download-list and completed
     CACHED; // song is in the cache from streaming, but not explicitly in the download list
 
-    private static Type gtype = Types.register(GDownloadState.class);
+    private static final Type gtype = Types.register(GDownloadState.class);
     public static Type getType() {
         return gtype;
     }
@@ -22,6 +22,13 @@ public enum GDownloadState {
             case 3 -> DOWNLOADED;
             case 4 -> CACHED;
             default -> throw new IllegalArgumentException("Invalid download state: " + ordinal);
+        };
+    }
+
+    public boolean isDownloaded() {
+        return switch (this) {
+            case NONE, DOWNLOADING, PENDING -> false;
+            case DOWNLOADED, CACHED -> true;
         };
     }
 }

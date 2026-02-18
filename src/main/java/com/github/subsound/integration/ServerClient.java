@@ -39,6 +39,7 @@ public interface ServerClient {
     ServerInfo getServerInfo();
     SearchResult search(String query);
     void scrobble(ScrobbleRequest req);
+    URI getStreamUri(String songId);
 
     record ScrobbleRequest(String songId, Instant playedAt) {}
     record SearchResult(

@@ -268,6 +268,11 @@ public class CachingClient implements ServerClient {
     }
 
     @Override
+    public URI getStreamUri(String songId) {
+        return delegate.getStreamUri(songId);
+    }
+
+    @Override
     public SearchResult search(String query) {
         return delegate.search(query);
     }

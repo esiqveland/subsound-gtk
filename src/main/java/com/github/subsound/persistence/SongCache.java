@@ -79,6 +79,10 @@ public class SongCache implements SongCacheChecker {
             return new LoadSongResult(CacheResult.HIT, cacheFile.toURI());
         }
 
+        if (!"http".equals(streamUri.getScheme()) && !"https".equals(streamUri.getScheme())) {
+            throw new RuntimeException("Cannot download song: unsupported URI scheme: " + streamUri);
+        }
+
         cachePath.tmpFilePath.getParent().toFile().mkdirs();
         var cacheTmpFile = cachePath.tmpFilePath.toAbsolutePath().toFile();
         if (cacheTmpFile.exists()) {
