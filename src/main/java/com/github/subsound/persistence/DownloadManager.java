@@ -50,7 +50,8 @@ public class DownloadManager {
             DOWNLOAD_PENDING,
             DOWNLOAD_STARTED,
             DOWNLOAD_COMPLETED,
-            DOWNLOAD_FAILED
+            DOWNLOAD_FAILED,
+            SONG_CACHED
         }
     }
 
@@ -83,6 +84,12 @@ public class DownloadManager {
         this.publishEvent(songInfo.id());
     }
 
+    public void markAsCached(SongInfo songInfo, String checksum) {
+        dbService.addToCacheTracking(songInfo, checksum);
+        songStatusCache.invalidate(songInfo.id());
+        this.publishEvent(songInfo.id());
+    }
+
     private void publishEvent(String songId) {
         this.getSongStatus(songId).ifPresent(this::publishEvent);
     }
@@ -93,6 +100,7 @@ public class DownloadManager {
                     case DOWNLOADING -> DownloadManagerEvent.Type.DOWNLOAD_STARTED;
                     case COMPLETED -> DownloadManagerEvent.Type.DOWNLOAD_COMPLETED;
                     case FAILED -> DownloadManagerEvent.Type.DOWNLOAD_FAILED;
+                    case CACHED -> DownloadManagerEvent.Type.SONG_CACHED;
                 },
                 item
         );

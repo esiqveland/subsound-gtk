@@ -99,6 +99,20 @@ public class SyncService {
                 logger.info("Re-queued {} downloads with missing cache files", requeued);
             }
 
+            // Step 5b: Clean up CACHED entries whose files are no longer on disk
+            var cachedEntries = databaseServerService.listDownloadQueue(List.of(DownloadQueueItem.DownloadStatus.CACHED));
+            int removedCached = 0;
+            for (var item : cachedEntries) {
+                var query = new SongCache.SongCacheQuery(item.serverId().toString(), item.songId(), item.streamFormat());
+                if (!songCacheChecker.isCached(query)) {
+                    databaseServerService.removeFromDownloadQueue(item.songId());
+                    removedCached++;
+                }
+            }
+            if (removedCached > 0) {
+                logger.info("Removed {} cached entries with missing cache files", removedCached);
+            }
+
             // Step 6: Cache all collected thumbnails
             logger.info("Caching {} thumbnails", collectedCoverArts.size());
             List<CompletableFuture<Void>> thumbFutures = collectedCoverArts.stream()

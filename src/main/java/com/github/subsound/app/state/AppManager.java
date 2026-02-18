@@ -128,6 +128,7 @@ public class AppManager {
                         case DOWNLOAD_STARTED -> GDownloadState.DOWNLOADING;
                         case DOWNLOAD_COMPLETED -> GDownloadState.DOWNLOADED;
                         case DOWNLOAD_FAILED -> GDownloadState.NONE;
+                        case SONG_CACHED -> GDownloadState.CACHED;
                     }));
                 }
         );
@@ -424,6 +425,14 @@ public class AppManager {
                 }
         ));
         log.info("cached: result={} id={} title={}", song.result().name(), songInfo.id(), songInfo.title());
+        // Track this song as cached so it shows as available offline
+        String checksum = null;
+        try (var is = song.uri().toURL().openStream()) {
+            checksum = com.github.subsound.utils.Utils.sha256(is);
+        } catch (Exception e) {
+            log.warn("Failed to calculate checksum for cached song: {}", songInfo.id(), e);
+        }
+        this.downloadManager.markAsCached(songInfo, checksum);
         AppState appState = this.currentState.getValue();
         var currentSongId = appState.nowPlaying().map(NowPlaying::song).map(SongInfo::id).orElse("");
         if (!currentSongId.equals(songInfo.id())) {

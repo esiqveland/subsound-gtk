@@ -39,7 +39,10 @@ public class SongDownloadStatusIcon extends Box {
                     this.icon.setFromIconName(Icons.ContentLoadingSymbolic.getIconName());
                     this.icon.setTooltipText("Downloading...");
                 }
-                //case NONE -> this.icon.setFromIconName(Icons.ContentLoadingSymbolic.getIconName());
+                case CACHED -> {
+                    this.icon.setFromIconName(Icons.FolderDownload.getIconName());
+                    this.icon.setTooltipText("Cached - available offline");
+                }
                 case NONE -> this.icon.setVisible(false);
             }
         });

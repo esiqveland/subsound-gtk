@@ -7,9 +7,8 @@ public enum GDownloadState {
     NONE, // ie. not downloaded. need to online and connected to server to play
     PENDING, // song is in the download-list and waiting for download to start
     DOWNLOADING, // song is in the download-list and is in progress
-    DOWNLOADED; // song is in the download-list and completed
-    //CACHED, // TODO: CACHED: track status of songs we have in the cache, but not explicitly in the download list
-    //ERROR, // song download attempt failed
+    DOWNLOADED, // song is in the download-list and completed
+    CACHED; // song is in the cache from streaming, but not explicitly in the download list
 
     private static Type gtype = Types.register(GDownloadState.class);
     public static Type getType() {
@@ -21,6 +20,7 @@ public enum GDownloadState {
             case 1 -> PENDING;
             case 2 -> DOWNLOADING;
             case 3 -> DOWNLOADED;
+            case 4 -> CACHED;
             default -> throw new IllegalArgumentException("Invalid download state: " + ordinal);
         };
     }

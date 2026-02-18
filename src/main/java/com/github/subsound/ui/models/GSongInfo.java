@@ -133,6 +133,7 @@ public class GSongInfo extends GObject {
             case DOWNLOADING -> GDownloadState.DOWNLOADING;
             case COMPLETED -> GDownloadState.DOWNLOADED;
             case FAILED -> GDownloadState.NONE;
+            case CACHED -> GDownloadState.CACHED;
         });
     }
 

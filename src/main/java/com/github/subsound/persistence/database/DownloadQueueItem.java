@@ -18,6 +18,6 @@ public record DownloadQueueItem(
         Optional<String> checksum
 ) {
     public enum DownloadStatus {
-        PENDING, DOWNLOADING, COMPLETED, FAILED
+        PENDING, DOWNLOADING, COMPLETED, FAILED, CACHED
     }
 }

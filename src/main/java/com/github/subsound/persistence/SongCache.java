@@ -211,6 +211,15 @@ public class SongCache implements SongCacheChecker {
         return file.exists() && file.length() > 1;
     }
 
+    public boolean deleteCached(SongCacheQuery query) {
+        var path = cachePath(query).cachePath();
+        var file = path.toAbsolutePath().toFile();
+        if (file.exists()) {
+            return file.delete();
+        }
+        return false;
+    }
+
     public static Path joinPath(Path base, String... elements) {
         return Arrays.stream(elements).map(Path::of).reduce(base, Path::resolve);
     }

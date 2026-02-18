@@ -613,7 +613,20 @@ public class DatabaseServerService {
     }
 
     public void addToDownloadQueue(SongInfo songInfo) {
-        String sql = "INSERT OR IGNORE INTO download_queue (song_id, server_id, status, stream_uri, stream_format, original_size, original_bitrate, estimated_bitrate, duration_seconds) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = """
+                INSERT INTO download_queue (song_id, server_id, status, stream_uri, stream_format, original_size, original_bitrate, estimated_bitrate, duration_seconds)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(song_id, server_id) DO UPDATE SET
+                    status = ?,
+                    progress = 0.0,
+                    stream_uri = excluded.stream_uri,
+                    stream_format = excluded.stream_format,
+                    original_size = excluded.original_size,
+                    original_bitrate = excluded.original_bitrate,
+                    estimated_bitrate = excluded.estimated_bitrate,
+                    duration_seconds = excluded.duration_seconds
+                WHERE download_queue.status = 'CACHED'
+                """;
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, songInfo.id());
@@ -629,11 +642,68 @@ public class DatabaseServerService {
             }
             pstmt.setInt(8, songInfo.transcodeInfo().estimatedBitRate());
             pstmt.setLong(9, songInfo.transcodeInfo().duration().toSeconds());
+            // ON CONFLICT DO UPDATE SET status = ?
+            pstmt.setString(10, DownloadQueueItem.DownloadStatus.PENDING.name());
             pstmt.executeUpdate();
         } catch (SQLException e) {
             logger.error("Failed to add song to download queue: {}", songInfo.id(), e);
             throw new RuntimeException("Failed to add song to download queue", e);
         }
+    }
+
+    public void addToCacheTracking(SongInfo songInfo, String checksum) {
+        String sql = "INSERT OR IGNORE INTO download_queue (song_id, server_id, status, progress, stream_uri, stream_format, original_size, original_bitrate, estimated_bitrate, duration_seconds, checksum) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, songInfo.id());
+            pstmt.setString(2, this.serverId.toString());
+            pstmt.setString(3, DownloadQueueItem.DownloadStatus.CACHED.name());
+            pstmt.setDouble(4, 1.0);
+            pstmt.setString(5, songInfo.transcodeInfo().streamUri().toString());
+            pstmt.setString(6, songInfo.transcodeInfo().streamFormat());
+            pstmt.setLong(7, songInfo.size());
+            if (songInfo.transcodeInfo().originalBitRate().isPresent()) {
+                pstmt.setInt(8, songInfo.transcodeInfo().originalBitRate().get());
+            } else {
+                pstmt.setNull(8, Types.INTEGER);
+            }
+            pstmt.setInt(9, songInfo.transcodeInfo().estimatedBitRate());
+            pstmt.setLong(10, songInfo.transcodeInfo().duration().toSeconds());
+            if (checksum != null) {
+                pstmt.setString(11, checksum);
+            } else {
+                pstmt.setNull(11, Types.VARCHAR);
+            }
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Failed to add song to cache tracking: {}", songInfo.id(), e);
+            throw new RuntimeException("Failed to add song to cache tracking", e);
+        }
+    }
+
+    public List<String> clearCachedSongs() {
+        List<String> deletedSongIds = new ArrayList<>();
+        String selectSql = "SELECT song_id FROM download_queue WHERE server_id = ? AND status = 'CACHED'";
+        String deleteSql = "DELETE FROM download_queue WHERE server_id = ? AND status = 'CACHED'";
+        try (Connection conn = database.openConnection()) {
+            try (PreparedStatement pstmt = conn.prepareStatement(selectSql)) {
+                pstmt.setString(1, this.serverId.toString());
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) {
+                        deletedSongIds.add(rs.getString("song_id"));
+                    }
+                }
+            }
+            try (PreparedStatement pstmt = conn.prepareStatement(deleteSql)) {
+                pstmt.setString(1, this.serverId.toString());
+                int deleted = pstmt.executeUpdate();
+                logger.info("Cleared {} cached songs for server {}", deleted, serverId);
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to clear cached songs", e);
+            throw new RuntimeException("Failed to clear cached songs", e);
+        }
+        return deletedSongIds;
     }
 
     public Optional<DownloadQueueItem> getDownloadQueueItem(String songId) {
