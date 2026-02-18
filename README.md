@@ -133,11 +133,19 @@ A few samples of what the UI looks like:
   - [X] verify downloaded files against the database on full sync
 - Hotkeys
   - [X] ctrl+k for command palette / search
-  - [ ] ctrl+s for shuffle modes
+  - [X] ctrl+s for shuffle modes
   - [ ] ctrl+r to reload/refresh?
-  - [ ] ctrl+space for play/pause
+  - [X] ctrl+space for play/pause
   - [ ] space should always play/pause
     - this looks very hard to do since spacebar is also the activation key for buttons / list items in GTK4
+- Offline Mode
+  - [ ] While online browsing, store the latest downloaded metadata locally as we browse. especially for playlists, but could be nice for new artists and albums added.
+  - [X] Record scrobbles offline --> sync later to server when we get back online
+  - [X] show a download status icon on each songrow if its on the download (available offline) list
+    - [ ] find a prettier icon/way to show download status
+  - [X] when in offline mode, show each row not in the downloaded set as greyed/disabled rows
+  - [ ] when in offline mode, show each row not in the song cache as greyed/disabled rows
+  - [ ] show download status on the playlist song rows
 - Onboarding
   - [X] Launch without crashing on zero config
   - [X] Detect we are first launch / have no configuration to load
@@ -204,8 +212,8 @@ Features:
 - [X] Plays any track!
 - [X] Fast Search UI with ctrl+k
 - [X] MPRIS support
-- [ ] Offline playback
-  - [X] Offline/Online mode
+- Offline mode
+  - [X] Force Offline/Online mode
   - [X] Offline mode detection/tracking
   - [X] Download songs to local cache
   - [X] Play songs from local cache
@@ -214,9 +222,6 @@ Features:
     - [ ] Make it fast. weird, it is very fast on macos, very slow on linux.
   - [X] Playlists
   - [X] Browse from offline storage only
-  - [ ] While online browsing, store the latest downloaded metadata locally as we browse. especially for playlists, but could be nice for new artists and albums added.
-  - [X] Record scrobbles offline --> sync later to server when we get back online
-  - [X] show a download status icon on each songrow if its on the download (available offline) list
   - [X] Download manager for offline available content
     - This kind of already works, but there is no UI that shows status for each item
 

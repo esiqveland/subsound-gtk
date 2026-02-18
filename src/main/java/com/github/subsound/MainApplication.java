@@ -124,7 +124,7 @@ public class MainApplication {
 
         this.toolbarView = ToolbarView.builder().build();
         this.commandPalette = new CommandPalette(appManager, toolbarView);
-        var commandPaletteTrigger = ShortcutTrigger.parseString("<Control>k");
+        var commandPaletteTrigger = ShortcutTrigger.parseString("<Control>k|<Meta>k");
         var commandPaletteAction = new CallbackAction((Widget widget, @Nullable Variant args) -> {
             log.info("command palette toggle");
             this.commandPalette.toggle();

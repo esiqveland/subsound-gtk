@@ -1,19 +1,23 @@
 package com.github.subsound;
 
-import com.github.subsound.integration.platform.mpriscontroller.MPrisController;
-import com.github.subsound.utils.LogUtils;
-import com.github.subsound.utils.Utils;
-import org.javagi.base.Out;
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.configuration.Config;
 import com.github.subsound.integration.ServerClient;
+import com.github.subsound.integration.platform.mpriscontroller.MPrisController;
 import com.github.subsound.persistence.SongCache;
 import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.sound.PlaybinPlayer;
+import com.github.subsound.ui.models.GDownloadState;
+import com.github.subsound.ui.models.GQueueItem;
+import com.github.subsound.ui.models.GSongInfo;
+import com.github.subsound.utils.LogUtils;
+import com.github.subsound.utils.Utils;
 import org.freedesktop.gstreamer.gst.Gst;
 import org.gnome.adw.Application;
 import org.gnome.gdkpixbuf.Pixbuf;
 import org.gnome.gio.ApplicationFlags;
+import org.javagi.base.Out;
+import org.javagi.gobject.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;

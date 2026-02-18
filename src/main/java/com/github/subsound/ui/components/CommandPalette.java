@@ -192,7 +192,7 @@ public class CommandPalette extends Overlay {
                 return true;
             }
             // Ctrl+K = 0x6B with CONTROL_MASK
-            if (keyval == 0x6B && state.contains(ModifierType.CONTROL_MASK)) {
+            if (keyval == 0x6B && (state.contains(ModifierType.CONTROL_MASK) || state.contains(ModifierType.META_MASK))) {
                 hide();
                 return true;
             }
