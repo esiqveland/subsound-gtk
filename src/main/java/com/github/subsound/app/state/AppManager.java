@@ -7,6 +7,7 @@ import com.github.subsound.configuration.Config;
 import com.github.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
 import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.SongInfo;
+import com.github.subsound.integration.ServerClient.TranscodedStream;
 import com.github.subsound.persistence.CachingClient;
 import com.github.subsound.persistence.DownloadManager;
 import com.github.subsound.persistence.ScrobbleService;
@@ -37,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -95,13 +97,11 @@ public class AppManager {
     public AppManager(
             Config config,
             PlaybinPlayer player,
-            SongCache songCache,
             ThumbnailCache thumbnailCache,
             Optional<ServerClient> client
     ) {
         this.config = config;
         this.player = player;
-        this.songCache = songCache;
         this.thumbnailCache = thumbnailCache;
         this.database = new Database();
         this.playerConfigService = new PlayerConfigService(this.database);
@@ -116,6 +116,13 @@ public class AppManager {
         this.dbService = new DatabaseServerService(
                 UUID.fromString(savedServerId),
                 this.database
+        );
+        this.songCache = new SongCache(
+                config.dataDir,
+                transcodeInfo -> {
+                    var uri = this.useClient(c -> c.getStreamUri(transcodeInfo.songId()));
+                    return new TranscodedStream(transcodeInfo.songId(), uri);
+                }
         );
         this.downloadManager = new DownloadManager(
                 dbService,
@@ -383,21 +390,6 @@ public class AppManager {
 
     private LoadSongResult loadSourceSync(PlayerAction.PlaySong playCmd) {
         var songInfo = playCmd.song();
-        // Resolve missing stream URIs (e.g. from offline-loaded data)
-        // TODO: we should probably redesign this to always re-resolve the stream-uri:
-        // - authentication in the url may have been changed since it was generated
-        // - transcode settings my have changed since it was generated
-        if (songInfo.transcodeInfo().streamUri().isEmpty()) {
-            var streamUri = this.client.get().getStreamUri(songInfo.id());
-            songInfo = songInfo.withTranscodeInfo(new ServerClient.TranscodeInfo(
-                    songInfo.id(),
-                    songInfo.transcodeInfo().originalBitRate(),
-                    songInfo.transcodeInfo().estimatedBitRate(),
-                    songInfo.transcodeInfo().duration(),
-                    songInfo.transcodeInfo().streamFormat(),
-                    Optional.of(streamUri)
-            ));
-        }
         try {
             return loadSourceSyncInner(songInfo, playCmd.startPaused());
         } catch (Exception e) {
@@ -411,6 +403,11 @@ public class AppManager {
     private LoadSongResult loadSourceSyncInner(SongInfo songInfo, boolean startPaused) {
         this.pause();
         UUID requestId = UUID.randomUUID();
+        // resolve the songUri:
+        // - authentication in the url may have been changed since it was generated
+        // - transcode settings my have changed since it was generated
+        URI songUri = this.useClient(client -> client.getStreamUri(songInfo.id()));
+
         this.setState(old -> old.with()
                 .nowPlaying(Optional.of(new NowPlaying(
                         songInfo,
@@ -420,14 +417,14 @@ public class AppManager {
                         Optional.empty()
                 )))
                 .player(old.player.withSource(Optional.of(new Source(
-                        songInfo.transcodeInfo().streamUri().orElseThrow(),
+                        songUri,
                         Optional.of(Duration.ZERO),
                         Optional.of(songInfo.duration())
                 ))))
                 .build()
         );
         AtomicBoolean isCancelled = new AtomicBoolean(false);
-        LoadSongResult song = songCache.getSong(new CacheSong(
+        LoadSongResult cachedSong = songCache.getSong(new CacheSong(
                 SERVER_ID,
                 songInfo.id(),
                 songInfo.transcodeInfo(),
@@ -454,10 +451,10 @@ public class AppManager {
                     });
                 }
         ));
-        log.info("cached: result={} id={} title={}", song.result().name(), songInfo.id(), songInfo.title());
+        log.info("cached: result={} id={} title={}", cachedSong.result().name(), songInfo.id(), songInfo.title());
         // Track this song as cached so it shows as available offline
         String checksum = null;
-        try (var is = song.uri().toURL().openStream()) {
+        try (var is = cachedSong.uri().toURL().openStream()) {
             checksum = sha256(is);
         } catch (Exception e) {
             log.warn("Failed to calculate checksum for cached song: {}", songInfo.id(), e);
@@ -467,11 +464,11 @@ public class AppManager {
         var currentSongId = appState.nowPlaying().map(NowPlaying::song).map(SongInfo::id).orElse("");
         if (!currentSongId.equals(songInfo.id())) {
             // we changed song while loading. Ignore this and do nothing:
-            return song;
+            return cachedSong;
         }
         boolean startPlaying = !startPaused;
         this.player.setSource(
-                new AudioSource(song.uri(), songInfo.duration()),
+                new AudioSource(cachedSong.uri(), songInfo.duration()),
                 startPlaying
         );
 
@@ -480,7 +477,7 @@ public class AppManager {
                 READY,
                 requestId,
                 new BufferingProgress(1000, 1000),
-                Optional.of(song)
+                Optional.of(cachedSong)
         ))));
 
         // block after updating UI NowPlaying state
@@ -488,7 +485,7 @@ public class AppManager {
             // Block until GStreamer has prerolled (reached PAUSED), so subsequent seeks work.
             this.player.waitUntilReady();
         }
-        return song;
+        return cachedSong;
     }
 
     public void play() {

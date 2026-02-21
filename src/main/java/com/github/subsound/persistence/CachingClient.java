@@ -343,8 +343,8 @@ public class CachingClient implements ServerClient {
                 song.bitRate(),
                 song.bitRate().orElse(0),
                 song.duration(),
-                song.suffix().isEmpty() ? "mp3" : song.suffix(),
-                Optional.empty()
+                song.suffix().isEmpty() ? "mp3" : song.suffix()
+                //, Optional.empty()
         );
         return new SongInfo(
                 song.id(),

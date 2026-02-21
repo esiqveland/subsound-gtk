@@ -628,12 +628,11 @@ public class DatabaseServerService {
                     duration_seconds = excluded.duration_seconds
                 WHERE download_queue.status = 'CACHED'
                 """;
-        try (Connection conn = database.openConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = database.openConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, songInfo.id());
             pstmt.setString(2, this.serverId.toString());
             pstmt.setString(3, DownloadQueueItem.DownloadStatus.PENDING.name());
-            pstmt.setString(4, songInfo.transcodeInfo().streamUri().map(URI::toString).orElse(""));
+            pstmt.setNull(4, Types.VARCHAR); // songUri must be resolved by server client anyway
             pstmt.setString(5, songInfo.transcodeInfo().streamFormat());
             pstmt.setLong(6, songInfo.size());
             if (songInfo.transcodeInfo().originalBitRate().isPresent()) {
@@ -660,7 +659,7 @@ public class DatabaseServerService {
             pstmt.setString(2, this.serverId.toString());
             pstmt.setString(3, DownloadQueueItem.DownloadStatus.CACHED.name());
             pstmt.setDouble(4, 1.0);
-            pstmt.setString(5, songInfo.transcodeInfo().streamUri().map(URI::toString).orElse(""));
+            pstmt.setNull(5, Types.VARCHAR); // songUri must be resolved by server client anyway
             pstmt.setString(6, songInfo.transcodeInfo().streamFormat());
             pstmt.setLong(7, songInfo.size());
             if (songInfo.transcodeInfo().originalBitRate().isPresent()) {

@@ -45,11 +45,10 @@ public class Main {
         });
 
         this.config = Config.createDefault();
-        var songCache = new SongCache(config.dataDir);
         var thumbnailCache = new ThumbnailCache(config.dataDir);
         var client = Optional.ofNullable(config.serverConfig).map(ServerClient::create);
         var player = new PlaybinPlayer();
-        this.appManager = new AppManager(this.config, player, songCache, thumbnailCache, client);
+        this.appManager = new AppManager(this.config, player, thumbnailCache, client);
         this.mprisController = new MPrisController(appManager);
         Utils.doAsync(() -> {
             try {

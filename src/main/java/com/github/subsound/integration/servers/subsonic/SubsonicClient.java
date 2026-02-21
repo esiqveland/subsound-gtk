@@ -315,6 +315,11 @@ public class SubsonicClient implements ServerClient {
             var streamBitrate = this.client.getPreferences().getStreamBitRate();
             var streamFormat = this.client.getPreferences().getStreamFormat();
             var params = StreamParams.create()
+                    // estimateContentLength breaks java httpclient when the content-length
+                    // is shorter than the file ends up being ie. the server has over-estimated the final file size.
+                    // So instead we use a custom way to estimate some content size after transcoding based on the
+                    // wanted bitrate and duration.
+                    //.estimateContentLength(true)
                     .maxBitRate(streamBitrate)
                     .format(streamFormat);
             return this.client.media()
@@ -520,30 +525,17 @@ public class SubsonicClient implements ServerClient {
     }
 
     private SongInfo toSongInfo(Child song) {
-        try {
             var duration = Duration.ofSeconds(song.getDuration());
             var downloadUri = toDownloadUri(client, song);
             var streamBitrate = this.client.getPreferences().getStreamBitRate();
             var streamFormat = this.client.getPreferences().getStreamFormat();
-            var params = StreamParams.create()
-                    // estimateContentLength breaks java httpclient when the content-length
-                    // is shorter than the file ends up being ie. the server has over-estimated the final file size.
-                    // So instead we use a custom way to estimate some content size after transcoding based on the
-                    // wanted bitrate and duration.
-                    //.estimateContentLength(true)
-                    .maxBitRate(streamBitrate)
-                    .format(streamFormat);
-            URI streamUri = this.client.media()
-                    .stream(song.getId(), params)
-                    .getUrl().toURI();
 
             var transcodeInfo = new TranscodeInfo(
                     song.getId(),
                     ofNullable(song.getBitRate()),
                     streamBitrate,
                     duration,
-                    streamFormat,
-                    Optional.of(streamUri)
+                    streamFormat
             );
 
             return new SongInfo(
@@ -568,9 +560,6 @@ public class SubsonicClient implements ServerClient {
                     transcodeInfo,
                     downloadUri
             );
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private URI toDownloadUri(Subsonic client, Child song) {

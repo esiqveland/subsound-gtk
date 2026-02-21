@@ -13,12 +13,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.URI;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static com.github.subsound.integration.ServerClient.*;
+import static com.github.subsound.integration.ServerClient.TranscodeInfo;
 import static com.github.subsound.utils.Utils.sha256;
 
 public class TestPlayerPage extends Box {
@@ -122,7 +123,8 @@ public class TestPlayerPage extends Box {
             String title,
             URI uri,
             long size,
-            String suffix
+            String suffix,
+            Path absolutePath
     ) {
         public SongInfo toSongInfo() {
             return new SongInfo(
@@ -149,15 +151,14 @@ public class TestPlayerPage extends Box {
                             Optional.of(192),
                             192,
                             Duration.ofSeconds(121),
-                            suffix,
-                            Optional.of(uri)
+                            suffix
                     ),
                     uri
             );
         }
     }
 
-    private static List<Sample> loadSamples(String dirPath) {
+    public static List<Sample> loadSamples(String dirPath) {
         File dir = new File(dirPath);
         if (!dir.exists()) {
             log.info("no samples to load from dir={}", dirPath);
@@ -174,7 +175,7 @@ public class TestPlayerPage extends Box {
             var uri = file.toURI();
             var name = file.getName();
             var size = file.length();
-            return new Sample(id, name, uri, size, suffix);
+            return new Sample(id, name, uri, size, suffix, Path.of(file.getAbsolutePath()));
         }).toList();
     }
 

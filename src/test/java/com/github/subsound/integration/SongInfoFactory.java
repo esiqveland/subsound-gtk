@@ -60,8 +60,7 @@ public class SongInfoFactory {
                         Optional.of(320),
                         128,
                         Duration.ofSeconds(random.nextInt(120, 600)),
-                        "mp3",
-                        Optional.of(URI.create("https://example.com/stream/" + id))
+                        "mp3"
                 ))
                 .downloadUri(URI.create("https://example.com/download/" + id))
                 .build();

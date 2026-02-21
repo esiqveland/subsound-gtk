@@ -287,8 +287,7 @@ public class DatabaseServerServiceTest {
                         Optional.of(320),
                         128,
                         Duration.ofMinutes(3),
-                        "mp3",
-                        Optional.of(URI.create("http://example.com/stream"))
+                        "mp3"
                 ))
                 .downloadUri(URI.create("http://example.com/download"))
                 .build();

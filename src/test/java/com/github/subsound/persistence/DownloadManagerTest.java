@@ -4,22 +4,32 @@ import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.integration.ServerClient.TranscodeInfo;
 import com.github.subsound.integration.ServerClientSongInfoBuilder;
 import com.github.subsound.persistence.DownloadManager.DownloadManagerEvent;
+import com.github.subsound.persistence.MockMusicServer.SampleSong;
 import com.github.subsound.persistence.database.Database;
 import com.github.subsound.persistence.database.DatabaseServerService;
 import com.github.subsound.persistence.database.DownloadQueueItem;
 import org.assertj.core.api.Assertions;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static com.github.subsound.ui.views.TestPlayerPage.loadSamples;
+
 public class DownloadManagerTest {
+    private static List<SampleSong> samples = sampleSongs();
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
@@ -32,10 +42,7 @@ public class DownloadManagerTest {
         
         UUID serverId = UUID.randomUUID();
         DatabaseServerService dbService = new DatabaseServerService(serverId, db);
-        SongCache songCache = new SongCache(dataDir.toPath());
-        var eventList = new ArrayList<DownloadManagerEvent>();
-        DownloadManager downloadManager = new DownloadManager(dbService, songCache, eventList::add);
-        var songId = UUID.randomUUID().toString();
+        var songId = samples.stream().findAny().orElseThrow().songId();
         SongInfo songInfo = ServerClientSongInfoBuilder.builder()
                 .id(songId)
                 .title("Song One")
@@ -51,12 +58,14 @@ public class DownloadManagerTest {
                         Optional.of(320),
                         128,
                         Duration.ofMinutes(3),
-                        "mp3",
-                        Optional.of(URI.create("file:///dev/null")) // Use a file URI for testing if possible or mock
+                        "mp3"
                 ))
                 .downloadUri(URI.create("file:///dev/null"))
                 .build();
-        
+
+        var eventList = new ArrayList<DownloadManagerEvent>();
+        SongCache songCache = new SongCache(dataDir.toPath(), transcodeInfo -> this.mockMusicServer.getTranscodeStream(transcodeInfo.songId()));
+        DownloadManager downloadManager = new DownloadManager(dbService, songCache, eventList::add);
         // Enqueue
         downloadManager.enqueue(songInfo);
         

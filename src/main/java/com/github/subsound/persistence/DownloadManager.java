@@ -10,7 +10,6 @@ import com.github.subsound.persistence.database.DownloadQueueItem.DownloadStatus
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -131,8 +130,7 @@ public class DownloadManager {
                     item.originalBitRate(),
                     item.estimatedBitRate(),
                     Duration.ofSeconds(item.durationSeconds()),
-                    item.streamFormat(),
-                    Optional.of(URI.create(item.streamUri()))
+                    item.streamFormat()
             );
 
             var cacheSong = new SongCache.CacheSong(

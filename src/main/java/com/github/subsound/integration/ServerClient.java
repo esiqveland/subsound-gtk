@@ -6,7 +6,6 @@ import com.github.subsound.utils.Utils;
 import io.soabase.recordbuilder.core.RecordBuilder;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
 import org.subsonic.restapi.AlbumID3;
-import org.subsonic.restapi.ArtistInfo;
 
 import java.net.URI;
 import java.nio.file.Path;
@@ -56,6 +55,11 @@ public interface ServerClient {
             Optional<String> serverVersion
     ) {}
 
+    record TranscodedStream(
+            String songId,
+            URI streamUri
+            // Map<String, String> headers
+    ){}
     record TranscodeInfo(
             String songId,
             Optional<Integer> originalBitRate,
@@ -64,7 +68,6 @@ public interface ServerClient {
             // the streamFormat is the format we will receive when loading streamUri
             // "mp3" | "ogg"
             String streamFormat
-            , Optional<URI> streamUri
     ) {
         public long estimateContentSize() {
             return Utils.estimateContentLength(duration.getSeconds(), estimatedBitRate);
