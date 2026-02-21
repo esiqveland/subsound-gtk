@@ -127,11 +127,12 @@ public class DownloadManager {
             this.publishEvent(item.songId());
 
             var transcodeInfo = new TranscodeInfo(
+                    item.songId(),
                     item.originalBitRate(),
                     item.estimatedBitRate(),
                     Duration.ofSeconds(item.durationSeconds()),
                     item.streamFormat(),
-                    URI.create(item.streamUri())
+                    Optional.of(URI.create(item.streamUri()))
             );
 
             var cacheSong = new SongCache.CacheSong(

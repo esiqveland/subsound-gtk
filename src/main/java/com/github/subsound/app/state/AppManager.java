@@ -383,15 +383,19 @@ public class AppManager {
 
     private LoadSongResult loadSourceSync(PlayerAction.PlaySong playCmd) {
         var songInfo = playCmd.song();
-        // Resolve offline placeholder URIs to real stream URIs
-        if ("offline".equals(songInfo.transcodeInfo().streamUri().getScheme())) {
+        // Resolve missing stream URIs (e.g. from offline-loaded data)
+        // TODO: we should probably redesign this to always re-resolve the stream-uri:
+        // - authentication in the url may have been changed since it was generated
+        // - transcode settings my have changed since it was generated
+        if (songInfo.transcodeInfo().streamUri().isEmpty()) {
             var streamUri = this.client.get().getStreamUri(songInfo.id());
             songInfo = songInfo.withTranscodeInfo(new ServerClient.TranscodeInfo(
+                    songInfo.id(),
                     songInfo.transcodeInfo().originalBitRate(),
                     songInfo.transcodeInfo().estimatedBitRate(),
                     songInfo.transcodeInfo().duration(),
                     songInfo.transcodeInfo().streamFormat(),
-                    streamUri
+                    Optional.of(streamUri)
             ));
         }
         try {
@@ -416,7 +420,7 @@ public class AppManager {
                         Optional.empty()
                 )))
                 .player(old.player.withSource(Optional.of(new Source(
-                        songInfo.transcodeInfo().streamUri(),
+                        songInfo.transcodeInfo().streamUri().orElseThrow(),
                         Optional.of(Duration.ZERO),
                         Optional.of(songInfo.duration())
                 ))))

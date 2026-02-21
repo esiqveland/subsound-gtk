@@ -8,6 +8,7 @@ import com.github.subsound.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -632,7 +633,7 @@ public class DatabaseServerService {
             pstmt.setString(1, songInfo.id());
             pstmt.setString(2, this.serverId.toString());
             pstmt.setString(3, DownloadQueueItem.DownloadStatus.PENDING.name());
-            pstmt.setString(4, songInfo.transcodeInfo().streamUri().toString());
+            pstmt.setString(4, songInfo.transcodeInfo().streamUri().map(URI::toString).orElse(""));
             pstmt.setString(5, songInfo.transcodeInfo().streamFormat());
             pstmt.setLong(6, songInfo.size());
             if (songInfo.transcodeInfo().originalBitRate().isPresent()) {
@@ -659,7 +660,7 @@ public class DatabaseServerService {
             pstmt.setString(2, this.serverId.toString());
             pstmt.setString(3, DownloadQueueItem.DownloadStatus.CACHED.name());
             pstmt.setDouble(4, 1.0);
-            pstmt.setString(5, songInfo.transcodeInfo().streamUri().toString());
+            pstmt.setString(5, songInfo.transcodeInfo().streamUri().map(URI::toString).orElse(""));
             pstmt.setString(6, songInfo.transcodeInfo().streamFormat());
             pstmt.setLong(7, songInfo.size());
             if (songInfo.transcodeInfo().originalBitRate().isPresent()) {

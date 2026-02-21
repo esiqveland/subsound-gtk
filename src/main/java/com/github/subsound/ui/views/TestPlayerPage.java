@@ -145,11 +145,12 @@ public class TestPlayerPage extends Box {
                     Optional.empty(),
                     suffix,
                     new TranscodeInfo(
+                            id,
                             Optional.of(192),
                             192,
                             Duration.ofSeconds(121),
                             suffix,
-                            uri
+                            Optional.of(uri)
                     ),
                     uri
             );

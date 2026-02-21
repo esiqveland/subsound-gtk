@@ -5,7 +5,11 @@ import com.github.subsound.utils.javahttp.LoggingHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -21,7 +25,9 @@ public class SongCache implements SongCacheChecker {
     private final Path root;
     private final HttpClient client = new LoggingHttpClient(HttpClient.newBuilder().build());
 
-    public SongCache(Path cacheDir) {
+    public SongCache(
+            Path cacheDir
+    ) {
         var f = cacheDir.toFile();
         if (!f.exists()) {
             if (!f.mkdirs()) {
@@ -54,18 +60,17 @@ public class SongCache implements SongCacheChecker {
     public record LoadSongResult(
             CacheResult result,
             URI uri
-    ) {
-    }
+    ) {}
 
     public LoadSongResult getSong(CacheSong songData) {
-        var streamUri = songData.transcodeInfo.streamUri();
-        switch (streamUri.getScheme()) {
-            case "http", "https":
-                break;
-            case "file":
-                return new LoadSongResult(CacheResult.HIT, streamUri);
+
+        var streamUriOpt = songData.transcodeInfo.streamUri();
+        // Handle file:// URIs directly (local files)
+        if (streamUriOpt.isPresent() && "file".equals(streamUriOpt.get().getScheme())) {
+            return new LoadSongResult(CacheResult.HIT, streamUriOpt.get());
         }
 
+        // Check cache
         var cachePath = this.cachePath(songData);
         var cacheFile = cachePath.cachePath.toAbsolutePath().toFile();
         if (cacheFile.isDirectory()) {
@@ -75,9 +80,12 @@ public class SongCache implements SongCacheChecker {
             cacheFile.delete();
         }
         if (cacheFile.exists()) {
-            // serve this !
             return new LoadSongResult(CacheResult.HIT, cacheFile.toURI());
         }
+
+        // On cache miss, require a valid HTTP URI
+        var streamUri = streamUriOpt.orElseThrow(() ->
+                new RuntimeException("Cannot download song: no stream URI available for songId=" + songData.songId));
 
         if (!"http".equals(streamUri.getScheme()) && !"https".equals(streamUri.getScheme())) {
             throw new RuntimeException("Cannot download song: unsupported URI scheme: " + streamUri);
@@ -97,7 +105,7 @@ public class SongCache implements SongCacheChecker {
         try {
             long estimatedContentSize = songData.transcodeInfo.estimateContentSize();
             long downloadSize = downloadTo(
-                    songData.transcodeInfo.streamUri(),
+                    streamUri,
                     new FileOutputStream(cacheTmpFile),
                     songData.originalSize,
                     estimatedContentSize,

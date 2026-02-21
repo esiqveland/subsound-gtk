@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -270,8 +271,9 @@ public class DatabaseServerServiceTest {
         UUID serverId = UUID.randomUUID();
         DatabaseServerService service = new DatabaseServerService(serverId, db);
 
+        var songId = "song-1";
         SongInfo songInfo = ServerClientSongInfoBuilder.builder()
-                .id("song-1")
+                .id(songId)
                 .title("Song One")
                 .artistId("artist-1")
                 .artist("Artist Name")
@@ -281,13 +283,14 @@ public class DatabaseServerServiceTest {
                 .size(1000L)
                 .suffix("mp3")
                 .transcodeInfo(new TranscodeInfo(
+                        songId,
                         Optional.of(320),
                         128,
                         Duration.ofMinutes(3),
                         "mp3",
-                        java.net.URI.create("http://example.com/stream")
+                        Optional.of(URI.create("http://example.com/stream"))
                 ))
-                .downloadUri(java.net.URI.create("http://example.com/download"))
+                .downloadUri(URI.create("http://example.com/download"))
                 .build();
 
         // Test addToDownloadQueue

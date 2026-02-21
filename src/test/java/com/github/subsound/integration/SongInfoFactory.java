@@ -1,6 +1,5 @@
 package com.github.subsound.integration;
 
-import com.github.subsound.integration.ServerClient.CoverArt;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.integration.ServerClient.TranscodeInfo;
 
@@ -57,11 +56,12 @@ public class SongInfoFactory {
                 .coverArt(Optional.empty())
                 .suffix("mp3")
                 .transcodeInfo(new TranscodeInfo(
+                        id,
                         Optional.of(320),
                         128,
                         Duration.ofSeconds(random.nextInt(120, 600)),
                         "mp3",
-                        URI.create("https://example.com/stream/" + id)
+                        Optional.of(URI.create("https://example.com/stream/" + id))
                 ))
                 .downloadUri(URI.create("https://example.com/download/" + id))
                 .build();

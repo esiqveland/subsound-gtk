@@ -337,13 +337,14 @@ public class CachingClient implements ServerClient {
 
     private SongInfo toSongInfo(Song song) {
         // For offline mode, transcodeInfo and downloadUri are unavailable
-        // We create placeholder values since playback requires the SongCache anyway
+        // streamUri is empty and will be resolved at play time if needed
         var transcodeInfo = new TranscodeInfo(
+                song.id(),
                 song.bitRate(),
                 song.bitRate().orElse(0),
                 song.duration(),
                 song.suffix().isEmpty() ? "mp3" : song.suffix(),
-                URI.create("offline://unavailable/" + song.id())
+                Optional.empty()
         );
         return new SongInfo(
                 song.id(),

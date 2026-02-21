@@ -57,13 +57,14 @@ public interface ServerClient {
     ) {}
 
     record TranscodeInfo(
+            String songId,
             Optional<Integer> originalBitRate,
             int estimatedBitRate,
             Duration duration,
             // the streamFormat is the format we will receive when loading streamUri
             // "mp3" | "ogg"
-            String streamFormat,
-            URI streamUri
+            String streamFormat
+            , Optional<URI> streamUri
     ) {
         public long estimateContentSize() {
             return Utils.estimateContentLength(duration.getSeconds(), estimatedBitRate);

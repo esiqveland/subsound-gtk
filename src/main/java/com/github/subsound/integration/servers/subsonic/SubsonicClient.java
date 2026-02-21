@@ -33,7 +33,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
@@ -539,11 +538,12 @@ public class SubsonicClient implements ServerClient {
                     .getUrl().toURI();
 
             var transcodeInfo = new TranscodeInfo(
+                    song.getId(),
                     ofNullable(song.getBitRate()),
                     streamBitrate,
                     duration,
                     streamFormat,
-                    streamUri
+                    Optional.of(streamUri)
             );
 
             return new SongInfo(
