@@ -1,9 +1,34 @@
 package com.github.subsound.utils;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 
 public class ThumbHashUtils {
 
+    public static ThumbHash getThumbHash(BufferedImage img, int maxSize) {
+        if (img.getWidth() > maxSize || img.getHeight() > maxSize) {
+            // scale and maintain aspect ratio
+            double scale = Math.min(100.0 / img.getWidth(), 100.0 / img.getHeight());
+            int newW = (int) (img.getWidth() * scale);
+            int newH = (int) (img.getHeight() * scale);
+
+            BufferedImage scaled = new BufferedImage(newW, newH, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = scaled.createGraphics();
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g.drawImage(img, 0, 0, newW, newH, null);
+            g.dispose();
+            img = scaled;
+        }
+
+        int width = img.getWidth();
+        int height = img.getHeight();
+        byte[] rgba = ImageUtils.bufferedImageToRgbaBytes(img);
+        return rgbaToThumbHash(width, height, rgba);
+    }
+
+    public record ThumbHash(
+            byte[] rawValue
+    ){}
     /**
      * Encodes an RGBA image to a ThumbHash. RGB should not be premultiplied by A.
      *
@@ -12,7 +37,7 @@ public class ThumbHashUtils {
      * @param rgba The pixels in the input image, row-by-row. Must have w*h*4 elements.
      * @return The ThumbHash as a byte array.
      */
-    public static byte[] rgbaToThumbHash(int w, int h, byte[] rgba) {
+    public static ThumbHash rgbaToThumbHash(int w, int h, byte[] rgba) {
         // Encoding an image larger than 100x100 is slow with no benefit
         if (w > 100 || h > 100) {
             throw new IllegalArgumentException(w + "x" + h + " doesn't fit in 100x100");
@@ -88,8 +113,10 @@ public class ThumbHashUtils {
         ac_index = l_channel.writeTo(hash, ac_start, ac_index);
         ac_index = p_channel.writeTo(hash, ac_start, ac_index);
         ac_index = q_channel.writeTo(hash, ac_start, ac_index);
-        if (hasAlpha) a_channel.writeTo(hash, ac_start, ac_index);
-        return hash;
+        if (hasAlpha) {
+            a_channel.writeTo(hash, ac_start, ac_index);
+        }
+        return new ThumbHash(hash);
     }
 
     /**

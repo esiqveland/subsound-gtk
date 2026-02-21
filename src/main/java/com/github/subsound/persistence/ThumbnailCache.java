@@ -85,7 +85,7 @@ public class ThumbnailCache {
                         if (!success) {
                             throw new RuntimeException("halp");
                         }
-                        var palette = ImageUtils.getPalette(scaledOut.get());
+                        var palette = ImageUtils.processImage(scaledOut.get());
                         var texture = Texture.forPixbuf(p);
                         return new CachedTexture(texture, palette);
                     } catch (Throwable e) {

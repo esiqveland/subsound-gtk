@@ -1,5 +1,6 @@
 package com.github.subsound.utils;
 
+import com.github.subsound.utils.ThumbHashUtils.ThumbHash;
 import de.androidpit.colorthief.ColorThief;
 import de.androidpit.colorthief.MMCQ.CMap;
 import de.androidpit.colorthief.MMCQ.VBox;
@@ -78,6 +79,25 @@ public class ImageUtils {
         }
     }
 
+    public record ImageResult(
+            List<ColorValue> palette,
+            ThumbHash thumbHash
+    ) {
+    }
+    public static ImageResult processImage(byte[] jpegBlob) {
+        try {
+            var img = ImageIO.read(new ByteArrayInputStream(jpegBlob));
+            var colorPallette = getPalette(img);
+            var thumbHash = ThumbHashUtils.getThumbHash(img, 100);
+            return new ImageResult(
+                    colorPallette,
+                    thumbHash
+            );
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     // See: https://github.com/SvenWoltmann/color-thief-java/blob/master/src/test/java/de/androidpit/colorthief/test/ColorThiefTest.java
     public static List<ColorValue> getPalette(BufferedImage img) {
         // The dominant color is taken from a 5-map
@@ -130,4 +150,20 @@ public class ImageUtils {
         return "#" + rgbHex;
     }
 
+    public static byte[] bufferedImageToRgbaBytes(BufferedImage img) {
+        int width = img.getWidth();
+        int height = img.getHeight();
+        int[] pixels = img.getRGB(0, 0, width, height, null, 0, width);
+        byte[] rgba = new byte[width * height * 4];
+
+        for (int i = 0; i < pixels.length; i++) {
+            int argb = pixels[i];
+            rgba[i * 4    ] = (byte) ((argb >> 16) & 0xFF); // R
+            rgba[i * 4 + 1] = (byte) ((argb >>  8) & 0xFF); // G
+            rgba[i * 4 + 2] = (byte) ( argb        & 0xFF); // B
+            rgba[i * 4 + 3] = (byte) ((argb >> 24) & 0xFF); // A
+        }
+
+        return rgba;
+    }
 }
