@@ -1,8 +1,6 @@
 package com.github.subsound.utils;
 
 import org.gnome.gdk.Texture;
-import org.gnome.gdkpixbuf.Pixbuf;
-import org.gnome.gio.MemoryInputStream;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -33,10 +31,7 @@ public class ThumbHashUtils {
             var baos = new ByteArrayOutputStream();
             ImageIO.write(buffered, "png", baos);
             byte[] pngBytes = baos.toByteArray();
-            try (var stream = MemoryInputStream.fromData(pngBytes)) {
-                var pixbuf = Pixbuf.fromStream(stream, null);
-                return Texture.forPixbuf(pixbuf);
-            }
+            return Texture.fromBytes(pngBytes);
         } catch (Exception e) {
             throw new RuntimeException("Failed to convert ThumbHash to Texture", e);
         }
