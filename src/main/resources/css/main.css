@@ -156,5 +156,5 @@ scale slider {
 }
 
 .album-info-main {
-  background: linear-gradient(to bottom, @background_color_0, @window_bg_color 96%);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.25) 40%, @window_bg_color 96%);
 }

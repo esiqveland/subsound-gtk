@@ -6,6 +6,7 @@ import org.javagi.base.Out;
 import com.github.subsound.integration.ServerClient.CoverArt;
 import com.github.subsound.utils.ImageUtils;
 import com.github.subsound.utils.ImageUtils.ColorValue;
+import com.github.subsound.utils.ThumbHashUtils;
 import com.github.subsound.utils.Utils;
 import com.github.subsound.utils.javahttp.LoggingHttpClient;
 import org.gnome.gdk.Texture;
@@ -61,7 +62,8 @@ public class ThumbnailCache {
 
     public record CachedTexture(
             Texture texture,
-            List<ColorValue> palette
+            List<ColorValue> palette,
+            Texture backdropTexture
     ) {}
 
     public CompletableFuture<CachedTexture> loadPixbuf(CoverArt coverArt, int size) {
@@ -85,9 +87,15 @@ public class ThumbnailCache {
                         if (!success) {
                             throw new RuntimeException("halp");
                         }
-                        var palette = ImageUtils.processImage(scaledOut.get());
+                        var imageResult = ImageUtils.processImage(scaledOut.get());
                         var texture = Texture.forPixbuf(p);
-                        return new CachedTexture(texture, palette);
+                        Texture backdropTexture = null;
+                        try {
+                            backdropTexture = ThumbHashUtils.thumbHashToTexture(imageResult.thumbHash());
+                        } catch (Exception e) {
+                            log.warn("Failed to generate ThumbHash backdrop", e);
+                        }
+                        return new CachedTexture(texture, imageResult.palette(), backdropTexture);
                     } catch (Throwable e) {
                         throw new RuntimeException("unable to create pixbuf from path='%s'".formatted(path), e);
                     }

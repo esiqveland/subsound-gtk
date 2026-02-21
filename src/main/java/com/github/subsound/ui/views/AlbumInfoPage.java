@@ -29,12 +29,16 @@ import org.gnome.gdk.Display;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
+import org.gnome.gtk.ContentFit;
 import org.gnome.gtk.CssProvider;
 import org.gnome.gtk.MenuButton;
 import org.gnome.gtk.Gtk;
 import org.gnome.gtk.Justification;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListBox;
+import org.gnome.gtk.Overflow;
+import org.gnome.gtk.Overlay;
+import org.gnome.gtk.Picture;
 import org.gnome.gtk.Popover;
 import org.gnome.gtk.Revealer;
 import org.gnome.gtk.RevealerTransitionType;
@@ -71,6 +75,8 @@ public class AlbumInfoPage extends Box implements StateListener {
     private final AlbumInfo info;
 
     private final Box headerBox;
+    private final Picture backdropPicture;
+    private final Overlay headerOverlay;
     private final ScrolledWindow scroll;
     private final Box mainContainer;
     private final Box albumInfoBox;
@@ -545,7 +551,19 @@ public class AlbumInfoPage extends Box implements StateListener {
 
         this.headerBox.append(this.artistImage);
         this.headerBox.append(this.albumInfoBox);
-        this.mainContainer.append(this.headerBox);
+
+        this.backdropPicture = new Picture();
+        this.backdropPicture.setContentFit(ContentFit.COVER);
+        this.backdropPicture.setCanShrink(true);
+
+        this.headerOverlay = new Overlay();
+        this.headerOverlay.setChild(this.backdropPicture);
+        this.headerOverlay.addOverlay(this.headerBox);
+        this.headerOverlay.setMeasureOverlay(this.headerBox, true);
+        this.headerOverlay.setOverflow(Overflow.HIDDEN);
+        this.headerOverlay.setHexpand(true);
+
+        this.mainContainer.append(this.headerOverlay);
         var listHolder = Box.builder().setOrientation(VERTICAL).setHalign(CENTER).setValign(START).build();
         listHolder.append(actionButtonsBox);
         listHolder.append(listView);
@@ -561,7 +579,7 @@ public class AlbumInfoPage extends Box implements StateListener {
             this.appManager.getThumbnailCache().loadPixbuf(
                     this.info.album().coverArt().get(),
                     COVER_SIZE
-            ).thenAccept(this::switchPallete);
+            ).thenAccept(this::switchBackdrop);
         });
         this.onUnmap(() -> {
             this.appManager.removeOnStateChanged(this);
@@ -599,14 +617,20 @@ public class AlbumInfoPage extends Box implements StateListener {
         );
     }
 
-    private void switchPallete(ThumbnailCache.CachedTexture cachedTexture) {
-        StringBuilder colors = new StringBuilder();
-        List<ImageUtils.ColorValue> palette = cachedTexture.palette();
-        for (int i = 0; i < palette.size(); i++) {
-            ImageUtils.ColorValue colorValue = palette.get(i);
-            colors.append("@define-color background_color_%d %s;\n".formatted(i, colorValue.rgba().toString()));
+    private void switchBackdrop(ThumbnailCache.CachedTexture cachedTexture) {
+        var backdrop = cachedTexture.backdropTexture();
+        if (backdrop == null) {
+            // Fallback: use palette-based CSS gradient
+            StringBuilder colors = new StringBuilder();
+            List<ImageUtils.ColorValue> palette = cachedTexture.palette();
+            for (int i = 0; i < palette.size(); i++) {
+                ImageUtils.ColorValue colorValue = palette.get(i);
+                colors.append("@define-color background_color_%d %s;\n".formatted(i, colorValue.rgba().toString()));
+            }
+            COLOR_PROVIDER.loadFromString(colors.toString());
+            return;
         }
-        COLOR_PROVIDER.loadFromString(colors.toString());
+        Utils.runOnMainThread(() -> this.backdropPicture.setPaintable(backdrop));
     }
 
     public static Label infoLabel(String label, String[] cssClazz) {

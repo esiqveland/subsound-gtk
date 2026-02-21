@@ -1,9 +1,46 @@
 package com.github.subsound.utils;
 
+import org.gnome.gdk.Texture;
+import org.gnome.gdkpixbuf.Pixbuf;
+import org.gnome.gio.MemoryInputStream;
+
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 
 public class ThumbHashUtils {
+
+    public static Texture thumbHashToTexture(ThumbHash thumbHash) {
+        Image image = thumbHashToRGBA(thumbHash.rawValue());
+        int w = image.width;
+        int h = image.height;
+        byte[] rgba = image.rgba;
+
+        BufferedImage buffered = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                int i = (y * w + x) * 4;
+                int r = rgba[i] & 0xFF;
+                int g = rgba[i + 1] & 0xFF;
+                int b = rgba[i + 2] & 0xFF;
+                int a = rgba[i + 3] & 0xFF;
+                buffered.setRGB(x, y, (a << 24) | (r << 16) | (g << 8) | b);
+            }
+        }
+
+        try {
+            var baos = new ByteArrayOutputStream();
+            ImageIO.write(buffered, "png", baos);
+            byte[] pngBytes = baos.toByteArray();
+            try (var stream = MemoryInputStream.fromData(pngBytes)) {
+                var pixbuf = Pixbuf.fromStream(stream, null);
+                return Texture.forPixbuf(pixbuf);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to convert ThumbHash to Texture", e);
+        }
+    }
 
     public static ThumbHash getThumbHash(BufferedImage img, int maxSize) {
         if (img.getWidth() > maxSize || img.getHeight() > maxSize) {
