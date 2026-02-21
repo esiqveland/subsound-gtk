@@ -4,7 +4,6 @@ import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.integration.ServerClient.TranscodeInfo;
 import com.github.subsound.integration.ServerClientSongInfoBuilder;
 import com.github.subsound.persistence.DownloadManager.DownloadManagerEvent;
-import com.github.subsound.persistence.MockMusicServer.SampleSong;
 import com.github.subsound.persistence.database.Database;
 import com.github.subsound.persistence.database.DatabaseServerService;
 import com.github.subsound.persistence.database.DownloadQueueItem;
@@ -16,23 +15,27 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static com.github.subsound.ui.views.TestPlayerPage.loadSamples;
-
 public class DownloadManagerTest {
-    private static List<SampleSong> samples = sampleSongs();
-
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
+
+    public MockMusicServer mockMusicServer;
+    @Before
+    public void before() {
+        mockMusicServer = new MockMusicServer();
+    }
+
+    @After
+    public void tearDown() {
+        mockMusicServer.stop();
+        mockMusicServer = null;
+    }
 
     @Test
     public void testDownloadQueueFlow() throws Exception {
@@ -42,7 +45,7 @@ public class DownloadManagerTest {
         
         UUID serverId = UUID.randomUUID();
         DatabaseServerService dbService = new DatabaseServerService(serverId, db);
-        var songId = samples.stream().findAny().orElseThrow().songId();
+        var songId = mockMusicServer.getSamples().stream().findAny().orElseThrow().songId();
         SongInfo songInfo = ServerClientSongInfoBuilder.builder()
                 .id(songId)
                 .title("Song One")

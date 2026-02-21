@@ -9,17 +9,26 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+import static com.github.subsound.ui.views.TestPlayerPage.loadSamples;
+
 public class MockMusicServer {
+    private static final List<SampleSong> defaultSamples = sampleSongs();
 
     private final int port;
     private final Map<String, SampleSong> songIdMapping;
     private final HttpServer server;
 
+    public MockMusicServer() {
+        this(defaultSamples);
+    }
     public MockMusicServer(List<SampleSong> songIdMapping) {
         this.songIdMapping = songIdMapping.stream().collect(Collectors.toMap(
                 sampleSong -> sampleSong.songId,
@@ -67,6 +76,10 @@ public class MockMusicServer {
         }
     }
 
+    public Collection<SampleSong> getSamples() {
+        return this.songIdMapping.values();
+    }
+
     public record SampleSong(
             String songId,
             byte[] data
@@ -84,5 +97,25 @@ public class MockMusicServer {
 
     public void stop() {
         server.stop(0);
+    }
+
+
+    private static List<SampleSong> sampleSongs() {
+        var knownSongs = loadSamples("src/main/resources/samples");
+        return knownSongs.stream().map(known -> {
+            byte[] bytes = readAllBytes(known.absolutePath());
+            return new SampleSong(
+                    known.id(),
+                    bytes
+            );
+        }).toList();
+    }
+
+    public static byte[] readAllBytes(Path path) {
+        try {
+            return Files.readAllBytes(path);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read file path=" + path, e);
+        }
     }
 }
