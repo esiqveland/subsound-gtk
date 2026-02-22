@@ -503,11 +503,11 @@ public class AlbumInfoPage extends Box implements StateListener {
             idx++;
         }
 
-        this.headerBox = Box.builder().setHalign(BASELINE_FILL).setSpacing(0).setValign(START).setOrientation(VERTICAL).setHexpand(true).setVexpand(true).build();
+        this.headerBox = Box.builder().setHalign(BASELINE_FILL).setSpacing(0).setValign(START).setOrientation(VERTICAL).setHexpand(true).build();
         this.headerBox.addCssClass("album-info-main");
 
         this.mainContainer = Box.builder().setHalign(BASELINE_FILL).setSpacing(8).setValign(START).setOrientation(VERTICAL).setHexpand(true).setVexpand(true).setMarginBottom(10).setHomogeneous(false).build();
-        this.albumInfoBox = Box.builder().setHalign(CENTER).setSpacing(4).setValign(START).setOrientation(VERTICAL).setHexpand(true).setVexpand(true).setMarginBottom(10).build();
+        this.albumInfoBox = Box.builder().setHalign(CENTER).setSpacing(4).setValign(START).setOrientation(VERTICAL).setHexpand(true).setMarginBottom(10).build();
         this.albumInfoBox.append(infoLabel(this.info.album().name(), Classes.titleLarge2.add()));
         this.albumInfoBox.append(infoLabel(this.info.album().artistName(), Classes.titleLarge3.add()));
         this.albumInfoBox.append(infoLabel(this.info.album().year().map(String::valueOf).orElse(""), Classes.labelDim.add(Classes.bodyText)));
@@ -557,14 +557,18 @@ public class AlbumInfoPage extends Box implements StateListener {
         this.backdropPicture.setCanShrink(true);
 
         this.headerOverlay = new Overlay();
-        this.headerOverlay.setChild(this.backdropPicture);
+        // Use an empty box as the child so the backdrop texture size doesn't
+        // inflate the overlay. Only headerBox (via measureOverlay) determines height.
+        var overlayChild = new Box(VERTICAL, 0);
+        this.headerOverlay.setChild(overlayChild);
+        this.headerOverlay.addOverlay(this.backdropPicture);
         this.headerOverlay.addOverlay(this.headerBox);
         this.headerOverlay.setMeasureOverlay(this.headerBox, true);
         this.headerOverlay.setOverflow(Overflow.HIDDEN);
         this.headerOverlay.setHexpand(true);
 
         this.mainContainer.append(this.headerOverlay);
-        var listHolder = Box.builder().setOrientation(VERTICAL).setHalign(CENTER).setValign(START).build();
+        var listHolder = Box.builder().setOrientation(VERTICAL).setHalign(CENTER).setValign(START).setVexpand(true).build();
         listHolder.append(actionButtonsBox);
         listHolder.append(listView);
         this.mainContainer.append(listHolder);
