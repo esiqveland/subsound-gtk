@@ -38,10 +38,10 @@ public class FutureLoader<T, WIDGET extends Widget> extends Box {
                     this.append(StatusPage.builder().setChild(new Label("Error loading: %s".formatted(exception.getMessage()))).build());
                 });
             } else {
-                var widget = this.builder.apply(value);
-                this.widget = widget;
-                log.info("FutureLoader hello {}", widget.getClass().getName());
                 Utils.runOnMainThread(() -> {
+                    var widget = this.builder.apply(value);
+                    this.widget = widget;
+                    log.info("FutureLoader hello {}", widget.getClass().getName());
                     this.remove(statusPage);
                     this.append(widget);
                 });
