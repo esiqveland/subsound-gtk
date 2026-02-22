@@ -2,7 +2,6 @@ package com.github.subsound.ui.views;
 
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.app.state.PlayerAction;
-import com.github.subsound.integration.ServerClient.ListStarred;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.ui.components.AppNavigation;
@@ -46,7 +45,6 @@ public class PlaylistListView extends Box implements AppManager.StateListener {
     private final ScrolledWindow scroll;
     private final AtomicReference<MiniState> prevState;
     private final Consumer<AppNavigation.AppRoute> onNavigate;
-    private final PlaylistViewData data;
     private final ListStore<GSongInfo> listModel = new ListStore<>();
     private final SingleSelection<GSongInfo> selectionModel;
 
@@ -56,14 +54,11 @@ public class PlaylistListView extends Box implements AppManager.StateListener {
     }
     private final ConcurrentHashMap<StarredItemRow, StarredItemRow> listeners = new ConcurrentHashMap<>();
 
-    public record PlaylistViewData(List<GSongInfo> songs){}
     public PlaylistListView(
-            PlaylistViewData data,
             AppManager appManager,
             Consumer<AppRoute> onNavigate
     ) {
         super(VERTICAL, 0);
-        this.data = data;
         this.appManager = appManager;
         this.onAction = appManager::handleAction;
         this.prevState = new AtomicReference<>(selectState(null, appManager.getState()));
@@ -72,7 +67,6 @@ public class PlaylistListView extends Box implements AppManager.StateListener {
         this.setValign(START);
         this.setHexpand(true);
         this.setVexpand(true);
-        log.info("StarredListView: item count={}", this.data.songs().size());
 
         var factory = new SignalListItemFactory();
         factory.onSetup(object -> {
@@ -135,13 +129,6 @@ public class PlaylistListView extends Box implements AppManager.StateListener {
             this.listeners.remove(child);
             listitem.setChild(null);
         });
-        Utils.runOnMainThread(() -> {
-            var items = data.songs().toArray(GSongInfo[]::new);
-            // this needs to run on idle thread, otherwise it segfaults:
-            this.listModel.removeAll();
-            this.listModel.splice(0, 0, items);
-        });
-
         this.selectionModel = new SingleSelection<>(this.listModel);
         this.listView = ListView.builder()
                 //.setCssClasses(cssClasses(Classes.richlist.className()))
@@ -167,14 +154,13 @@ public class PlaylistListView extends Box implements AppManager.StateListener {
             this.onAction.apply(new PlayerAction.PlayAndReplaceQueue(songs, index));
         });
 
-        var mapSignal = this.onMap(() -> {
-            //this.listView.setModel(selectionModel);
-            appManager.addOnStateChanged(this);
-        });
+        var mapSignal = this.onMap(() -> appManager.addOnStateChanged(this));
+        var unmapSignal = this.onUnmap(() -> appManager.removeOnStateChanged(this));
         this.onDestroy(() -> {
-            log.info("StarredListView: onDestroy");
+            log.info("PlaylistListView: onDestroy");
             appManager.removeOnStateChanged(this);
             mapSignal.disconnect();
+            unmapSignal.disconnect();
             activateSignal.disconnect();
         });
 
@@ -194,6 +180,14 @@ public class PlaylistListView extends Box implements AppManager.StateListener {
 //        this.scroll.setChild(clamp);
         this.scroll.setChild(this.listView);
         this.append(this.scroll);
+    }
+
+    public void setSongs(List<GSongInfo> songs) {
+        var items = songs.toArray(GSongInfo[]::new);
+        Utils.runOnMainThread(() -> {
+            this.listModel.removeAll();
+            this.listModel.splice(0, 0, items);
+        });
     }
 
     @Override

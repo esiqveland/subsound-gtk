@@ -7,7 +7,6 @@ import com.github.subsound.integration.ServerClient.PlaylistKind;
 import com.github.subsound.integration.ServerClient.PlaylistSimple;
 import com.github.subsound.ui.models.GSongInfo.GSongStore;
 import com.github.subsound.ui.views.PlaylistListView;
-import com.github.subsound.ui.views.PlaylistListView.PlaylistViewData;
 import com.github.subsound.ui.views.StarredListView;
 import com.github.subsound.utils.Utils;
 import org.gnome.adw.NavigationPage;
@@ -52,6 +51,8 @@ public class PlaylistsListView extends Box {
     private final NavigationPage page1;
     private final StarredListView starredListView;
     private final NavigationPage starredListPage;
+    private final PlaylistListView playlistListView;
+    private final NavigationPage playlistPage;
     private final SingleSelection<GPlaylist> selectionModel;
     private final GSongStore songStore;
 
@@ -68,6 +69,16 @@ public class PlaylistsListView extends Box {
                 .setTag("starred")
                 .setChild(this.starredListView)
                 .setTitle("Starred")
+                .setHexpand(true)
+                .build();
+
+        this.playlistListView = new PlaylistListView(appManager, appManager::navigateTo);
+        this.playlistListView.setHalign(Align.FILL);
+        this.playlistListView.setValign(Align.FILL);
+        this.playlistPage = NavigationPage.builder()
+                .setTag("page-2")
+                .setChild(this.playlistListView)
+                .setTitle("")
                 .setHexpand(true)
                 .build();
 
@@ -195,18 +206,10 @@ public class PlaylistsListView extends Box {
             }
 
             var songs = data.get().stream().map(songStore::newInstance).toList();
-            var viewData = new PlaylistViewData(songs);
+            this.playlistListView.setSongs(songs);
             Utils.runOnMainThread(() -> {
-                var next = new PlaylistListView(viewData, appManager, appManager::navigateTo);
-                next.setHalign(Align.FILL);
-                next.setValign(Align.FILL);
-                var page = NavigationPage.builder()
-                        .setTag("page-2")
-                        .setChild(next)
-                        .setTitle(playlist.name())
-                        .setHexpand(true)
-                        .build();
-                this.view.setContent(page);
+                this.playlistPage.setTitle(playlist.name());
+                this.view.setContent(this.playlistPage);
             });
             return data;
         });
