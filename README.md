@@ -55,11 +55,12 @@ A few samples of what the UI looks like:
   - [X] switch load directly from cached file?
   - [X] reuse the pixbuf for albumart (in memory cache)
   - [X] make resize retain aspect ratio
-- [X] cache mp3 variant on disk
+- [X] cache transcoded variant on disk
   - [X] fix song cache storing with original suffix instead of transcode format suffix
     - This caused us to save mp3 transcoded flac data with .flac extension
-  - [ ] find a way to handle difference between original and stream (transcoded) data better
+  - [ ] find a way to handle difference between original and stream (transcode) data better
   - [ ] transcode configurable
+  - [ ] a way to clear transcode cache. need to trigger download sync after clearing cache
   - [ ] we should only transcode flac/wav or bitrate > X kbps. f.ex. a 193kbps mp3 should not be transcoded, and probably not a 320kbps mp3 either. mp3 should probably not be transcoded to opus f.ex.
 - [X] replace gtk.image with gtk.picture? https://docs.gtk.org/gtk4/class.Picture.html
 - [X] PlayerBar: title/album
@@ -100,11 +101,10 @@ A few samples of what the UI looks like:
 - Make ArtistInfo page coverart prettier with:
   - [X] better design
     - [ ] Find a reasonable way to include the artistinfo text, without making it so dominant
-  - [ ] a blurred paintable background ?
-    - Something like: https://github.com/neithern/g4music/blob/master/src/ui/paintables.vala#L357
-    - ThumbHash instead of the css basedc gradient based on dominant colors. ThumbHash could even be stored in db.
-      - [ ] implement initial support for generating ThumbHashes
+  - [x] a blurred paintable background ?
+    - [X] ThumbHash instead of the css basedc gradient based on dominant colors. ThumbHash could even be stored in db.
       - [ ] implement ThumbHash storing in db?
+    - Something like: https://github.com/neithern/g4music/blob/master/src/ui/paintables.vala#L357
 - Make AlbumView page prettier with:
   - [ ] better design
   - [ ] a blurred paintable background ?
@@ -141,7 +141,7 @@ A few samples of what the UI looks like:
   - [X] show a download status icon on each songrow if its on the download (available offline) list
     - [ ] find a prettier icon/way to show download status
   - [X] when in offline mode, show each row not in the downloaded set as greyed/disabled rows
-  - [ ] when in offline mode, show each row not in the song cache as greyed/disabled rows
+  - [X] when in offline mode, show each row not in the song cache as greyed/disabled rows
   - [ ] show download status on the playlist song rows
 - Onboarding
   - [X] Launch without crashing on zero config
@@ -216,7 +216,7 @@ Features:
   - [X] Play songs from local cache
   - [X] Download album art to local cache
   - [X] Sync artist/song metadata for offline storage
-    - [ ] Make it fast. weird, it is very fast on macos, very slow on linux.
+    - [X] Make it fast
   - [X] Playlists
   - [X] Browse from offline storage only
   - [X] Download manager for offline available content
