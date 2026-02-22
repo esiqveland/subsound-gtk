@@ -145,6 +145,7 @@ public class TestPlayerPage extends Box {
                     Duration.ofSeconds(121),
                     Optional.empty(),
                     Optional.empty(),
+                    Optional.empty(),
                     suffix,
                     new TranscodeInfo(
                             id,

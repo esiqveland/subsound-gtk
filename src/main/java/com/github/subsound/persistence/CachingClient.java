@@ -173,7 +173,7 @@ public class CachingClient implements ServerClient {
                 var playlistSongs = playlist.songs();
                 for (int i = 0; i < playlistSongs.size(); i++) {
                     var song = playlistSongs.get(i);
-                    dbService.insertPlaylistSong(playlist.id(), song.id(), i, song);
+                    dbService.insertPlaylistSong(playlist.id(), song.id(), i);
                 }
             } catch (Exception e) {
                 log.warn("Failed to persist playlist {} to database", playlist.id(), e);
@@ -396,6 +396,7 @@ public class CachingClient implements ServerClient {
                 "", // album name not stored in song record
                 song.duration(),
                 song.starredAt(),
+                Optional.of(song.createdAt()),
                 song.coverArtId().flatMap(id -> toCoverArt(id, new ObjectIdentifier.AlbumIdentifier(song.albumId()))),
                 song.suffix().isEmpty() ? "mp3" : song.suffix(),
                 transcodeInfo,
