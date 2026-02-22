@@ -19,7 +19,7 @@ import java.util.List;
 public class Database {
     private static final Logger logger = LoggerFactory.getLogger(Database.class);
     private static final String DB_NAME = "subsound.db";
-    private final DataSource dataSource;
+    private final HikariDataSource dataSource;
 
     public Database() {
         String dataDir = PortalUtils.getUserDataDir();
@@ -40,7 +40,7 @@ public class Database {
         initialize();
     }
 
-    private DataSource createDataSource(String url) {
+    private HikariDataSource createDataSource(String url) {
         SQLiteDataSource ds = new SQLiteDataSource();
         ds.setUrl(url);
         var cfg = new HikariConfig();
