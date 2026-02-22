@@ -217,6 +217,9 @@ public class PlaylistsListView extends Box {
 
         private final AppManager appManager;
         private final Box prefixBox;
+        private final RoundedAlbumArt prefixArt;
+        private final Image prefixIconDownload;
+        private final Image prefixIconStar;
         private final Label titleLabel;
         private final Label subtitleLabel;
         private GPlaylist gPlaylist;
@@ -236,6 +239,27 @@ public class PlaylistsListView extends Box {
             this.prefixBox.setHalign(CENTER);
             this.prefixBox.setValign(CENTER);
             this.prefixBox.setSizeRequest(ICON_SIZE, ICON_SIZE);
+
+            // Create all three prefix widgets once; toggle visibility
+            this.prefixArt = new RoundedAlbumArt(Optional.empty(), appManager, ICON_SIZE);
+            this.prefixArt.setVisible(false);
+
+            this.prefixIconDownload = Image.fromIconName(Icons.FolderDownload.getIconName());
+            this.prefixIconDownload.setPixelSize(24);
+            this.prefixIconDownload.setHalign(CENTER);
+            this.prefixIconDownload.setValign(CENTER);
+            this.prefixIconDownload.setVisible(false);
+
+            this.prefixIconStar = Image.fromIconName(Icons.Starred.getIconName());
+            this.prefixIconStar.setPixelSize(24);
+            this.prefixIconStar.setHalign(CENTER);
+            this.prefixIconStar.setValign(CENTER);
+            this.prefixIconStar.addCssClass(Classes.starred.className());
+            this.prefixIconStar.setVisible(false);
+
+            this.prefixBox.append(prefixArt);
+            this.prefixBox.append(prefixIconDownload);
+            this.prefixBox.append(prefixIconStar);
 
             // Content box for title and subtitle
             var contentBox = new Box(VERTICAL, 2);
@@ -281,35 +305,19 @@ public class PlaylistsListView extends Box {
             this.titleLabel.setLabel(playlist.name());
             this.subtitleLabel.setLabel(playlist.songCount() + " items");
 
-            // Clear existing prefix content
-            Widget child = this.prefixBox.getFirstChild();
-            while (child != null) {
-                Widget next = child.getNextSibling();
-                this.prefixBox.remove(child);
-                child = next;
-            }
-
-            // Add new prefix content
             if (playlist.kind() == PlaylistKind.DOWNLOADED) {
-                var icon = Image.fromIconName(Icons.FolderDownload.getIconName());
-                icon.setPixelSize(24);
-                icon.setHalign(CENTER);
-                icon.setValign(CENTER);
-                this.prefixBox.append(icon);
+                this.prefixArt.setVisible(false);
+                this.prefixIconStar.setVisible(false);
+                this.prefixIconDownload.setVisible(true);
             } else if (playlist.kind() == PlaylistKind.STARRED) {
-                var icon = Image.fromIconName(Icons.Starred.getIconName());
-                icon.setPixelSize(24);
-                icon.setHalign(CENTER);
-                icon.setValign(CENTER);
-                icon.addCssClass(Classes.starred.className());
-                this.prefixBox.append(icon);
+                this.prefixArt.setVisible(false);
+                this.prefixIconDownload.setVisible(false);
+                this.prefixIconStar.setVisible(true);
             } else {
-                this.prefixBox.append(RoundedAlbumArt.resolveCoverArt(
-                        appManager,
-                        playlist.coverArtId(),
-                        ICON_SIZE,
-                        true
-                ));
+                this.prefixIconDownload.setVisible(false);
+                this.prefixIconStar.setVisible(false);
+                this.prefixArt.setVisible(true);
+                this.prefixArt.update(playlist.coverArtId());
             }
         }
 

@@ -15,7 +15,6 @@ import org.gnome.gtk.Button;
 import org.gnome.gtk.MenuButton;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Scale;
-import org.gnome.gtk.Widget;
 import org.gnome.pango.EllipsizeMode;
 import org.jspecify.annotations.Nullable;
 
@@ -42,13 +41,12 @@ public class PlayerBar extends Box implements AppManager.StateListener {
 
     // albumArtBox wraps the area around album art
     private final Box albumArtBox;
-    // box that holds the album cover photo
-    private final BoxHolder<Widget> albumArtHolder;
+    // album cover art widget (updated in-place)
+    private final RoundedAlbumArt albumArt;
     // box that holds the song details
     private final Box songInfoBox;
     private final ClickLabel songTitle;
     private final ClickLabel artistTitle;
-    private final Widget placeholderAlbumArt;
 
     // player controls
     private final Button skipBackwardButton;
@@ -151,10 +149,8 @@ public class PlayerBar extends Box implements AppManager.StateListener {
                 .setHalign(Align.START)
                 .setValign(Align.CENTER)
                 .build();
-        this.albumArtHolder = new BoxHolder<>();
-        this.placeholderAlbumArt = RoundedAlbumArt.placeholderImage(ARTWORK_SIZE);
-        this.albumArtBox.append(this.albumArtHolder);
-        this.albumArtHolder.setChild(placeholderAlbumArt);
+        this.albumArt = new RoundedAlbumArt(Optional.empty(), appManager, ARTWORK_SIZE);
+        this.albumArtBox.append(this.albumArt);
 
         Box nowPlaying = Box.builder()
                 .setOrientation(Orientation.HORIZONTAL)
@@ -445,15 +441,11 @@ public class PlayerBar extends Box implements AppManager.StateListener {
     }
 
     private void replaceAlbumArt(CoverArt coverArt) {
-        Utils.runOnMainThread(() -> this.albumArtHolder.setChild(new RoundedAlbumArt(
-                coverArt,
-                this.appManager,
-                ARTWORK_SIZE
-        )));
+        Utils.runOnMainThread(() -> this.albumArt.update(Optional.of(coverArt)));
     }
 
     private void placeholderCover() {
-        Utils.runOnMainThread(() -> this.albumArtHolder.setChild(placeholderAlbumArt));
+        Utils.runOnMainThread(() -> this.albumArt.update(Optional.empty()));
     }
 
     enum CoverArtDiff {

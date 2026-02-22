@@ -9,11 +9,9 @@ import org.gnome.gtk.Box;
 import org.gnome.gtk.GestureClick;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.Orientation;
-import org.gnome.gtk.Widget;
 import org.gnome.pango.EllipsizeMode;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static com.github.subsound.utils.Utils.addHover;
@@ -110,61 +108,31 @@ public class OverviewAlbumChild extends Box {
 
 
     public static class AlbumCoverHolder extends Box {
-        private final AppManager thumbLoader;
-        private final AtomicReference<Widget> ref = new AtomicReference<>();
-        private final Widget PLACEHOLDER = RoundedAlbumArt.placeholderImage(COVER_SIZE);
-        private Optional<CoverArt> artwork;
+        private final RoundedAlbumArt art;
 
         public AlbumCoverHolder(AppManager thumbLoader) {
             super(Orientation.VERTICAL, 0);
-            this.thumbLoader = thumbLoader;
-            this.ref.set(PLACEHOLDER);
-            this.append(PLACEHOLDER);
+            this.art = new RoundedAlbumArt(Optional.empty(), thumbLoader, COVER_SIZE);
+            this.art.setClickable(false);
+            this.append(art);
         }
 
         public void setArtwork(Optional<CoverArt> artwork) {
-            this.artwork = artwork;
-            var prev = this.ref.get();
-            if (prev != null) {
-                this.remove(prev);
-            }
-            Widget next = this.artwork
-                    .map(coverArt -> new RoundedAlbumArt(coverArt, this.thumbLoader, COVER_SIZE).setClickable(false))
-                    .map(a -> (Widget) a)
-                    .orElse(PLACEHOLDER);
-            this.ref.set(next);
-            this.append(next);
+            this.art.update(artwork);
         }
     }
 
     public static class AlbumCoverHolderSmall extends Box {
-        private final Widget PLACEHOLDER = RoundedAlbumArt.placeholderImage(48);
-        private final AppManager thumbLoader;
-        private final AtomicReference<Widget> ref = new AtomicReference<>();
-        private Optional<CoverArt> artwork;
+        private final RoundedAlbumArt art;
 
         public AlbumCoverHolderSmall(AppManager thumbLoader) {
             super(Orientation.VERTICAL, 0);
-            this.thumbLoader = thumbLoader;
-            this.ref.set(PLACEHOLDER);
-            this.append(PLACEHOLDER);
+            this.art = new RoundedAlbumArt(Optional.empty(), thumbLoader, 48);
+            this.append(art);
         }
 
         public void setArtwork(Optional<CoverArt> artwork) {
-            if (this.artwork == artwork) {
-                return;
-            }
-            this.artwork = artwork;
-            var prev = this.ref.get();
-            if (prev != null) {
-                this.remove(prev);
-            }
-            Widget next = this.artwork
-                    .map(coverArt -> new RoundedAlbumArt(coverArt, this.thumbLoader, 48))
-                    .map(a -> (Widget) a)
-                    .orElse(PLACEHOLDER);
-            this.ref.set(next);
-            this.append(next);
+            this.art.update(artwork);
         }
     }
 }

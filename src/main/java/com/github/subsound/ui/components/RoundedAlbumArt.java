@@ -24,7 +24,7 @@ import org.gnome.gtk.Image;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Overflow;
 import org.gnome.gtk.Picture;
-import org.gnome.gtk.Widget;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +43,7 @@ public class RoundedAlbumArt extends Box {
     private static final Logger log = LoggerFactory.getLogger(RoundedAlbumArt.class);
 
     private final AppManager thumbLoader;
-    private final CoverArt artwork;
+    private CoverArt artwork;
     private final Picture image;
     private final Grid grid;
     private final int size;
@@ -52,21 +52,23 @@ public class RoundedAlbumArt extends Box {
 
     private final static Map<Boolean, Texture> placeHolderCache = new ConcurrentHashMap<>();
 
+    private static Texture getPlaceholderTexture() {
+        return placeHolderCache.computeIfAbsent(true, (key) -> {
+            try {
+                var bytes = mustReadBytes("images/album-placeholder.png");
+                var gioStream = MemoryInputStream.fromData(bytes);
+                // load at a reasonable resolution (2 * 128)
+                var loadSize = 2 * 128;
+                var pixbuf = Pixbuf.fromStreamAtScale(gioStream, loadSize, loadSize, true, new Cancellable());
+                return Texture.forPixbuf(pixbuf);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
     public static Grid placeholderImage(int size) {
-            var texture = placeHolderCache.computeIfAbsent(true, (key) -> {
-                try {
-                    var bytes = mustReadBytes("images/album-placeholder.png");
-                    var gioStream = MemoryInputStream.fromData(bytes);
-                    //Pixbuf pixbufloader = Pixbuf.fromFileAtSize("src/main/resources/images/album-placeholder.png", size, size);
-                    // load at twice the requested size, as the texture for some reason looks very bad in some situations
-                    // at the requested size.
-                    var loadSize = 2 * size;
-                    var pixbuf = Pixbuf.fromStreamAtScale(gioStream, loadSize, loadSize, true, new Cancellable());
-                    return Texture.forPixbuf(pixbuf);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            var texture = getPlaceholderTexture();
             var image = Image.fromPaintable(texture);
             image.setSizeRequest(size, size);
 
@@ -82,12 +84,12 @@ public class RoundedAlbumArt extends Box {
             return box;
     }
 
-    public static Widget resolveCoverArt(AppManager thumbLoader, Optional<CoverArt> coverArt, int size, boolean clickable) {
-        if (coverArt.isPresent()) {
-            return new RoundedAlbumArt(coverArt.get(), thumbLoader, size).setClickable(clickable);
-        } else {
-            return placeholderImage(size);
-        }
+    public static RoundedAlbumArt resolveCoverArt(AppManager thumbLoader, Optional<CoverArt> coverArt, int size, boolean clickable) {
+        return new RoundedAlbumArt(coverArt, thumbLoader, size).setClickable(clickable);
+    }
+
+    public RoundedAlbumArt(Optional<CoverArt> artwork, AppManager thumbLoader, int size) {
+        this(artwork.orElse(null), thumbLoader, size);
     }
 
     public RoundedAlbumArt(CoverArt artwork, AppManager thumbLoader, int size) {
@@ -101,7 +103,6 @@ public class RoundedAlbumArt extends Box {
         this.setHalign(Align.CENTER);
         this.setValign(Align.CENTER);
         this.setOverflow(Overflow.HIDDEN);
-//        this.addCssClass("rounded");
 
         this.grid = new Grid();
         this.grid.setHexpand(false);
@@ -117,13 +118,17 @@ public class RoundedAlbumArt extends Box {
         this.image.setContentFit(ContentFit.COVER);
         this.image.setSizeRequest(size, size);
 
+        if (this.artwork == null) {
+            this.image.setPaintable(getPlaceholderTexture());
+        }
+
         var click = addClick(
                 this,
                 () -> {
-                    log.info("{}: addClick: enabled={} id={}", this.getClass().getSimpleName(), clickable.get(), this.artwork.coverArtId());
-                    if (!clickable.get()) {
+                    if (!clickable.get() || this.artwork == null) {
                         return;
                     }
+                    log.info("{}: addClick: enabled={} id={}", this.getClass().getSimpleName(), clickable.get(), this.artwork.coverArtId());
                     var currentArtwork = this.artwork;
                     AppRoute route = switch (currentArtwork.identifier().orElse(null)) {
                         case AlbumIdentifier a -> new RouteAlbumInfo(a.albumId());
@@ -141,7 +146,6 @@ public class RoundedAlbumArt extends Box {
                 }
         );
 
-        //var className = "now-playing-overlay-icon";
         var className = Classes.activatable.className();
         var hoverC = addHover2(
                 () -> this.addCssClass(className),
@@ -159,7 +163,7 @@ public class RoundedAlbumArt extends Box {
 
         // wait with loading until we actually get mapped:
         this.onMap(() -> {
-            if (isLoaded.get()) {
+            if (isLoaded.get() || this.artwork == null) {
                 return;
             }
             log.info("%s: onMap: id=%s".formatted(this.getClass().getSimpleName(), this.artwork.coverArtId()));
@@ -178,18 +182,46 @@ public class RoundedAlbumArt extends Box {
         return this;
     }
 
+    public void update(Optional<CoverArt> newCoverArt) {
+        update(newCoverArt.orElse(null));
+    }
+
+    public void update(@Nullable CoverArt newArtwork) {
+        var oldArtwork = this.artwork;
+        // Skip if same cover art ID
+        if (oldArtwork != null && newArtwork != null && oldArtwork.coverArtId().equals(newArtwork.coverArtId())) {
+            return;
+        }
+        this.artwork = newArtwork;
+        this.isLoaded.set(false);
+        if (newArtwork == null) {
+            var tex = getPlaceholderTexture();
+            Utils.runOnMainThread(() -> image.setPaintable(tex));
+        } else if (this.getMapped()) {
+            startLoad(this.image).thenAccept(_ -> isLoaded.set(true));
+        }
+        // If not mapped and artwork non-null: onMap will trigger load
+    }
+
     public CompletableFuture<Void> startLoad(Picture image) {
-        return this.thumbLoader.getThumbnailCache().loadPixbuf(this.artwork, this.size)
+        var artworkSnapshot = this.artwork;
+        if (artworkSnapshot == null) {
+            return CompletableFuture.completedFuture(null);
+        }
+        return this.thumbLoader.getThumbnailCache().loadPixbuf(artworkSnapshot, this.size)
                 .thenAccept(storedImage -> {
-                    //log.info("startLoad: size={} id={}", storedImage.texture().getWidth(), this.artwork.coverArtId());
                     var texture = storedImage.texture();
+                    // artwork changed while loading:
+                    if (this.artwork != artworkSnapshot) {
+                        return;
+                    }
                     Utils.runOnMainThread(() -> {
                         image.setPaintable(texture);
                         image.setSizeRequest(size, size);
                     });
                 })
                 .exceptionally(e -> {
-                    log.error("Failed to load album art: id={}", this.artwork.coverArtId(), e);
+                    log.error("Failed to load album art: id={}", artworkSnapshot.coverArtId(), e);
                     return null;
                 });
     }

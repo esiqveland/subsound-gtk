@@ -27,6 +27,8 @@ import org.gnome.gtk.SignalListItemFactory;
 import org.gnome.gtk.Widget;
 import org.gnome.pango.EllipsizeMode;
 
+import java.util.Optional;
+
 import static com.github.subsound.ui.views.AlbumInfoPage.infoLabel;
 import static org.gnome.gtk.Align.CENTER;
 import static org.gnome.gtk.Align.START;
@@ -94,7 +96,7 @@ public class CommandPalette extends Overlay {
         var factory = new SignalListItemFactory();
         factory.onSetup(item -> {
             var listItem = (ListItem) item;
-            var row = new SearchResultRow();
+            var row = new SearchResultRow(appManager);
             listItem.setChild(row);
         });
         factory.onBind(item -> {
@@ -102,7 +104,7 @@ public class CommandPalette extends Overlay {
             var row = (SearchResultRow) listItem.getChild();
             var resultItem = (GSearchResultItem) listItem.getItem();
             if (row != null && resultItem != null) {
-                row.bind(resultItem, appManager);
+                row.bind(resultItem);
             }
         });
         factory.onUnbind(item -> {
@@ -234,24 +236,24 @@ public class CommandPalette extends Overlay {
     private static class SearchResultRow extends Box {
         private static final int ALBUM_ART_SIZE = 40;
 
-        private final Box albumArtBox;
+        private final AppManager appManager;
+        private final RoundedAlbumArt albumArt;
         private final Label titleLabel;
         private final Label artistLabel;
         private final Label separatorLabel;
         private final Label durationLabel;
         private final Label typeBadge;
 
-        SearchResultRow() {
+        SearchResultRow(AppManager appManager) {
             super(HORIZONTAL, 8);
+            this.appManager = appManager;
             this.setMarginTop(6);
             this.setMarginBottom(6);
             this.setMarginStart(8);
             this.setMarginEnd(8);
 
-            this.albumArtBox = new Box(HORIZONTAL, 0);
-            this.albumArtBox.setHalign(CENTER);
-            this.albumArtBox.setValign(CENTER);
-            this.albumArtBox.setSizeRequest(ALBUM_ART_SIZE, ALBUM_ART_SIZE);
+            this.albumArt = new RoundedAlbumArt(Optional.empty(), appManager, ALBUM_ART_SIZE);
+            this.albumArt.setClickable(false);
 
             var contentBox = new Box(VERTICAL, 2);
             contentBox.setHalign(START);
@@ -299,20 +301,12 @@ public class CommandPalette extends Overlay {
             this.typeBadge.addCssClass("search-type-badge");
             this.typeBadge.setVisible(false);
 
-            this.append(albumArtBox);
+            this.append(albumArt);
             this.append(contentBox);
             this.append(typeBadge);
         }
 
-        void bind(GSearchResultItem resultItem, AppManager appManager) {
-            // Clear old album art
-            Widget child = this.albumArtBox.getFirstChild();
-            while (child != null) {
-                Widget next = child.getNextSibling();
-                this.albumArtBox.remove(child);
-                child = next;
-            }
-
+        void bind(GSearchResultItem resultItem) {
             switch (resultItem.getEntry()) {
                 case GSearchResultItem.SearchEntry.ArtistEntry artistEntry -> {
                     var artist = artistEntry.artist();
@@ -322,13 +316,7 @@ public class CommandPalette extends Overlay {
                     this.typeBadge.setLabel("Artist");
                     this.typeBadge.setVisible(true);
                     this.separatorLabel.setVisible(true);
-                    var albumArt = RoundedAlbumArt.resolveCoverArt(
-                            appManager,
-                            artist.coverArt(),
-                            ALBUM_ART_SIZE,
-                            false
-                    );
-                    this.albumArtBox.append(albumArt);
+                    this.albumArt.update(artist.coverArt());
                 }
                 case GSearchResultItem.SearchEntry.AlbumEntry albumEntry -> {
                     ArtistAlbumInfo album = albumEntry.album();
@@ -338,13 +326,7 @@ public class CommandPalette extends Overlay {
                     this.typeBadge.setLabel("Album");
                     this.typeBadge.setVisible(true);
                     this.separatorLabel.setVisible(true);
-                    var albumArt = RoundedAlbumArt.resolveCoverArt(
-                            appManager,
-                            album.coverArt(),
-                            ALBUM_ART_SIZE,
-                            false
-                    );
-                    this.albumArtBox.append(albumArt);
+                    this.albumArt.update(album.coverArt());
                 }
                 case GSearchResultItem.SearchEntry.SongEntry songEntry -> {
                     SongInfo songInfo = songEntry.song();
@@ -353,13 +335,7 @@ public class CommandPalette extends Overlay {
                     this.durationLabel.setLabel(Utils.formatDurationShort(songInfo.duration()));
                     this.typeBadge.setVisible(false);
                     this.separatorLabel.setVisible(true);
-                    var albumArt = RoundedAlbumArt.resolveCoverArt(
-                            appManager,
-                            songInfo.coverArt(),
-                            ALBUM_ART_SIZE,
-                            false
-                    );
-                    this.albumArtBox.append(albumArt);
+                    this.albumArt.update(songInfo.coverArt());
                 }
             }
         }
@@ -368,12 +344,6 @@ public class CommandPalette extends Overlay {
             this.titleLabel.setLabel("");
             this.artistLabel.setLabel("");
             this.durationLabel.setLabel("");
-            Widget child = this.albumArtBox.getFirstChild();
-            while (child != null) {
-                Widget next = child.getNextSibling();
-                this.albumArtBox.remove(child);
-                child = next;
-            }
         }
     }
 }
