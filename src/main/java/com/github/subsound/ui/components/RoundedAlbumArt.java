@@ -187,6 +187,10 @@ public class RoundedAlbumArt extends Box {
                         image.setPaintable(texture);
                         image.setSizeRequest(size, size);
                     });
+                })
+                .exceptionally(e -> {
+                    log.error("Failed to load album art: id={}", this.artwork.coverArtId(), e);
+                    return null;
                 });
     }
 
