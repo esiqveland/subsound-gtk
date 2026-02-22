@@ -301,7 +301,6 @@ public class DatabaseServerServiceTest {
         DownloadQueueItem item = queue.get(0);
         Assertions.assertThat(item.songId()).isEqualTo("song-1");
         Assertions.assertThat(item.status()).isEqualTo(DownloadQueueItem.DownloadStatus.PENDING);
-        Assertions.assertThat(item.streamUri()).isEqualTo("http://example.com/stream");
 
         // Test updateDownloadProgress
         service.updateDownloadProgress("song-1", DownloadQueueItem.DownloadStatus.DOWNLOADING, 0.5, null);

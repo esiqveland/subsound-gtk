@@ -9,7 +9,6 @@ public record DownloadQueueItem(
         DownloadStatus status,
         double progress,
         String errorMessage,
-        String streamUri,
         String streamFormat,
         long originalSize,
         Optional<Integer> originalBitRate,

@@ -732,7 +732,6 @@ public class DatabaseServerService {
                 DownloadQueueItem.DownloadStatus.valueOf(rs.getString("status")),
                 rs.getDouble("progress"),
                 rs.getString("error_message"),
-                rs.getString("stream_uri"),
                 rs.getString("stream_format"),
                 rs.getLong("original_size"),
                 originalBitRateOpt,
