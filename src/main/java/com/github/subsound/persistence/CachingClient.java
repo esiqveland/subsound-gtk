@@ -169,8 +169,11 @@ public class CachingClient implements ServerClient {
             try {
                 dbService.upsertPlaylist(row);
                 dbService.deletePlaylistSongs(playlist.id());
-                for (int i = 0; i < playlist.songs().size(); i++) {
-                    dbService.insertPlaylistSong(playlist.id(), playlist.songs().get(i).id(), i);
+
+                var playlistSongs = playlist.songs();
+                for (int i = 0; i < playlistSongs.size(); i++) {
+                    var song = playlistSongs.get(i);
+                    dbService.insertPlaylistSong(playlist.id(), song.id(), i, song);
                 }
             } catch (Exception e) {
                 log.warn("Failed to persist playlist {} to database", playlist.id(), e);

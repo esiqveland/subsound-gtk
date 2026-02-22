@@ -143,6 +143,7 @@ A few samples of what the UI looks like:
   - [X] when in offline mode, show each row not in the downloaded set as greyed/disabled rows
   - [X] when in offline mode, show each row not in the song cache as greyed/disabled rows
   - [ ] show download status on the playlist song rows
+  - [ ] show status somewhere during sync
 - Onboarding
   - [X] Launch without crashing on zero config
   - [X] Detect we are first launch / have no configuration to load
@@ -175,6 +176,7 @@ A few samples of what the UI looks like:
   - [ ] create playlist
   - [ ] rename playlist
   - [ ] delete playlist
+  - [ ] alternative sort orders for playlists
 - [X] Mpris support
     - [X] thumbnail - needs to give the path to our downloaded copy on disk, or do a loooot of resizing to send it over dbus
     - [X] play/pause

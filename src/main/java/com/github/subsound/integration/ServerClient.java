@@ -92,6 +92,7 @@ public interface ServerClient {
             String album,
             Duration duration,
             Optional<Instant> starred,
+            Optional<Instant> created,
             Optional<CoverArt> coverArt,
             String suffix,
             TranscodeInfo transcodeInfo,
