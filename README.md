@@ -27,7 +27,6 @@ A few samples of what the UI looks like:
   - [ ] songlist: hover play icon is not tab-able for focus when row is selected, only when hover...
 - [X] Starred page
   - [X] reuse the ListView + StarredItemRow items on the page, so a new page doesn't need to be created every time
-  - [ ] make each StarredItemRow faster to create. its around 4ms per item right now. 
   - [ ] Bug: Removing a song from the ListView when its scrolled and a row below is selected, the viewport jumps to the top of the list
   - [ ] add a reload button - but where to put it? 
   - [ ] rewrite is-playing state to use GObject signal/property?
@@ -39,8 +38,6 @@ A few samples of what the UI looks like:
     - [ ] We usually load the starred list from the server on load, but we could also load it from a local cache on startup 
     - [ ] Maybe have a separate thread that periodically syncs the starred list from the server?
 - [X] Songlist:
-  - [X] remove the track number
-    - [X] Add list item number as the first element in the prefix field
   - [X] display artist
   - [X] make album art only load while in view (lazy list view)
   - [X] Fix play on row click + make focusable and double click to activate

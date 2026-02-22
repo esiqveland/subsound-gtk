@@ -196,16 +196,16 @@ public class PlaylistsListView extends Box {
 
             var songs = data.get().stream().map(songStore::newInstance).toList();
             var viewData = new PlaylistViewData(songs);
-            var next = new PlaylistListView(viewData, appManager, appManager::navigateTo);
-            next.setHalign(Align.FILL);
-            next.setValign(Align.FILL);
-            var page = NavigationPage.builder()
-                    .setTag("page-2")
-                    .setChild(next)
-                    .setTitle(playlist.name())
-                    .setHexpand(true)
-                    .build();
             Utils.runOnMainThread(() -> {
+                var next = new PlaylistListView(viewData, appManager, appManager::navigateTo);
+                next.setHalign(Align.FILL);
+                next.setValign(Align.FILL);
+                var page = NavigationPage.builder()
+                        .setTag("page-2")
+                        .setChild(next)
+                        .setTitle(playlist.name())
+                        .setHexpand(true)
+                        .build();
                 this.view.setContent(page);
             });
             return data;

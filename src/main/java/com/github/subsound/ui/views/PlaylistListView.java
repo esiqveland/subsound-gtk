@@ -133,6 +133,7 @@ public class PlaylistListView extends Box implements AppManager.StateListener {
                 return;
             }
             this.listeners.remove(child);
+            listitem.setChild(null);
         });
         Utils.runOnMainThread(() -> {
             var items = data.songs().toArray(GSongInfo[]::new);
