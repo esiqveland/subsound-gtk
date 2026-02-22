@@ -45,7 +45,6 @@ public class RoundedAlbumArt extends Box {
     private final AppManager thumbLoader;
     private CoverArt artwork;
     private final Picture image;
-    private final Grid grid;
     private final int size;
     private final AtomicBoolean clickable = new AtomicBoolean(true);
     private final AtomicBoolean isLoaded = new AtomicBoolean(false);
@@ -102,21 +101,13 @@ public class RoundedAlbumArt extends Box {
         this.setVexpand(true);
         this.setHalign(Align.CENTER);
         this.setValign(Align.CENTER);
-        this.setOverflow(Overflow.HIDDEN);
-
-        this.grid = new Grid();
-        this.grid.setHexpand(false);
-        this.grid.setVexpand(true);
-        this.grid.setHalign(Align.CENTER);
-        this.grid.setValign(Align.CENTER);
-        this.grid.setSizeRequest(size, size);
-        this.grid.setOverflow(Overflow.HIDDEN);
-        this.grid.addCssClass("rounded");
 
         // See: https://docs.gtk.org/gtk4/class.Picture.html
         this.image = new Picture();
         this.image.setContentFit(ContentFit.COVER);
         this.image.setSizeRequest(size, size);
+        this.image.setOverflow(Overflow.HIDDEN);
+        this.image.addCssClass("rounded");
 
         if (this.artwork == null) {
             this.image.setPaintable(getPlaceholderTexture());
@@ -170,9 +161,8 @@ public class RoundedAlbumArt extends Box {
             this.startLoad(this.image).thenAccept(_ -> isLoaded.set(true));
         });
 
-        this.grid.attach(image, 0, 0, 1, 1);
         var clamp = new Clamp();
-        clamp.setChild(this.grid);
+        clamp.setChild(this.image);
         clamp.setMaximumSize(size);
         this.append(clamp);
     }
