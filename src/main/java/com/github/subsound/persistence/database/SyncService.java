@@ -45,6 +45,7 @@ public class SyncService {
     public record SyncStats(int artists, int albums, int songs, int playlists) {}
 
     public SyncStats syncAll() {
+        var start = System.nanoTime();
         logger.info("Starting full sync for server: {}", serverId);
         try {
             // Step 1: Fetch artists first to verify server is online before deleting
@@ -122,7 +123,8 @@ public class SyncService {
             CompletableFuture.allOf(thumbFutures.toArray(new CompletableFuture[0])).join();
             logger.info("Finished caching thumbnails");
 
-            logger.info("Synced {} artists, {} albums, {} songs, {} playlists", stats.artists, stats.albums, stats.songs, stats.playlists);
+            var elapsedMillis = Duration.ofNanos(System.nanoTime() - start).toMillis();
+            logger.info("Synced {} artists, {} albums, {} songs, {} playlists in {}ms", stats.artists, stats.albums, stats.songs, stats.playlists, elapsedMillis);
             logger.info("Full sync completed for server: {}", serverId);
             return stats;
         } catch (Exception e) {
@@ -175,15 +177,14 @@ public class SyncService {
                 java.time.Instant.now(),
                 genre
         );
-        databaseServerService.insert(album);
-
         // Collect album cover art for thumbnail caching
         albumInfo.coverArt().ifPresent(collectedCoverArts::add);
 
         var start = System.nanoTime();
 
+        List<Song> songs = new ArrayList<>();
         for (SongInfo songInfo : albumInfo.songs()) {
-            Song song = new Song(
+            songs.add(new Song(
                     songInfo.id(),
                     serverId,
                     songInfo.albumId(),
@@ -201,12 +202,12 @@ public class SyncService {
                     songInfo.size(),
                     songInfo.genre(),
                     songInfo.suffix()
-            );
-            databaseServerService.insert(song);
+            ));
 
             // Collect song cover art for thumbnail caching
             songInfo.coverArt().ifPresent(collectedCoverArts::add);
         }
+        databaseServerService.syncAlbumBatch(album, songs);
         var elapsedMillis = Duration.ofNanos(System.nanoTime() - start).toMillis();
         logger.info("syncing: songs={} for album {} in {}ms", albumInfo.songs().size(), albumInfo.id(), elapsedMillis);
         return albumInfo.songs().size();

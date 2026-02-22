@@ -41,7 +41,10 @@ public class Database {
     }
 
     private HikariDataSource createDataSource(String url) {
-        SQLiteDataSource ds = new SQLiteDataSource();
+        org.sqlite.SQLiteConfig sqliteConfig = new org.sqlite.SQLiteConfig();
+        sqliteConfig.setJournalMode(org.sqlite.SQLiteConfig.JournalMode.WAL);
+        sqliteConfig.setSynchronous(org.sqlite.SQLiteConfig.SynchronousMode.NORMAL);
+        SQLiteDataSource ds = new SQLiteDataSource(sqliteConfig);
         ds.setUrl(url);
         var cfg = new HikariConfig();
         //cfg.setJdbcUrl(url);

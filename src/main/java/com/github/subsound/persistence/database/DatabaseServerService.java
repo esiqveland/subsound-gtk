@@ -305,6 +305,107 @@ public class DatabaseServerService {
         }
     }
 
+    public void syncAlbumBatch(Album album, List<Song> songs) {
+        String albumSql = """
+                INSERT OR REPLACE INTO albums (id, server_id, artist_id, name, song_count, year, artist_name, duration_ms, starred_at_ms, cover_art_id, added_at_ms, genre)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+        String songSql = """
+                INSERT OR REPLACE INTO songs (id, server_id, album_id, name, year, artist_id, artist_name, duration_ms, starred_at_ms, cover_art_id, created_at_ms, track_number, disc_number, bit_rate, size, genre, suffix)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+        try (Connection conn = database.openConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement pstmt = conn.prepareStatement(albumSql)) {
+                    pstmt.setString(1, album.id());
+                    pstmt.setString(2, album.serverId().toString());
+                    pstmt.setString(3, album.artistId());
+                    pstmt.setString(4, album.name());
+                    pstmt.setInt(5, album.songCount());
+                    if (album.year().isPresent()) {
+                        pstmt.setInt(6, album.year().get());
+                    } else {
+                        pstmt.setNull(6, Types.INTEGER);
+                    }
+                    pstmt.setString(7, album.artistName());
+                    pstmt.setLong(8, album.duration().toMillis());
+                    if (album.starredAt().isPresent()) {
+                        pstmt.setLong(9, album.starredAt().get().toEpochMilli());
+                    } else {
+                        pstmt.setNull(9, Types.INTEGER);
+                    }
+                    if (album.coverArtId().isPresent()) {
+                        pstmt.setString(10, album.coverArtId().get());
+                    } else {
+                        pstmt.setNull(10, Types.VARCHAR);
+                    }
+                    pstmt.setLong(11, album.addedAt().toEpochMilli());
+                    if (album.genre().isPresent()) {
+                        pstmt.setString(12, album.genre().get());
+                    } else {
+                        pstmt.setNull(12, Types.VARCHAR);
+                    }
+                    pstmt.executeUpdate();
+                }
+                try (PreparedStatement pstmt = conn.prepareStatement(songSql)) {
+                    for (Song song : songs) {
+                        pstmt.setString(1, song.id());
+                        pstmt.setString(2, song.serverId().toString());
+                        pstmt.setString(3, song.albumId());
+                        pstmt.setString(4, song.name());
+                        if (song.year().isPresent()) {
+                            pstmt.setInt(5, song.year().get());
+                        } else {
+                            pstmt.setNull(5, Types.INTEGER);
+                        }
+                        pstmt.setString(6, song.artistId());
+                        pstmt.setString(7, song.artistName());
+                        pstmt.setLong(8, song.duration().toMillis());
+                        if (song.starredAt().isPresent()) {
+                            pstmt.setLong(9, song.starredAt().get().toEpochMilli());
+                        } else {
+                            pstmt.setNull(9, Types.INTEGER);
+                        }
+                        if (song.coverArtId().isPresent()) {
+                            pstmt.setString(10, song.coverArtId().get());
+                        } else {
+                            pstmt.setNull(10, Types.VARCHAR);
+                        }
+                        pstmt.setLong(11, song.createdAt().toEpochMilli());
+                        if (song.trackNumber().isPresent()) {
+                            pstmt.setInt(12, song.trackNumber().get());
+                        } else {
+                            pstmt.setNull(12, Types.INTEGER);
+                        }
+                        if (song.discNumber().isPresent()) {
+                            pstmt.setInt(13, song.discNumber().get());
+                        } else {
+                            pstmt.setNull(13, Types.INTEGER);
+                        }
+                        if (song.bitRate().isPresent()) {
+                            pstmt.setInt(14, song.bitRate().get());
+                        } else {
+                            pstmt.setNull(14, Types.INTEGER);
+                        }
+                        pstmt.setLong(15, song.size());
+                        pstmt.setString(16, song.genre());
+                        pstmt.setString(17, song.suffix());
+                        pstmt.addBatch();
+                    }
+                    pstmt.executeBatch();
+                }
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to sync album batch", e);
+            throw new RuntimeException("Failed to sync album batch", e);
+        }
+    }
+
     public List<Song> listSongsByAlbumId(String albumId) {
         List<Song> songs = new ArrayList<>();
         String sql = "SELECT * FROM songs WHERE server_id = ? AND album_id = ? ORDER BY disc_number, track_number";
