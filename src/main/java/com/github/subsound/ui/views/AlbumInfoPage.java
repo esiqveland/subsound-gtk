@@ -24,13 +24,13 @@ import com.github.subsound.ui.models.GDownloadState;
 import com.github.subsound.ui.models.GSongInfo.Signal;
 import com.github.subsound.utils.ImageUtils;
 import com.github.subsound.utils.Utils;
-import org.gnome.adw.ActionRow;
 import org.gnome.gdk.Display;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
 import org.gnome.gtk.ContentFit;
 import org.gnome.gtk.CssProvider;
+import org.gnome.gtk.ListBoxRow;
 import org.gnome.gtk.MenuButton;
 import org.gnome.gtk.Gtk;
 import org.gnome.gtk.Justification;
@@ -64,6 +64,7 @@ import static com.github.subsound.utils.Utils.formatBytesSI;
 import static com.github.subsound.utils.Utils.formatDurationMedium;
 import static org.gnome.gtk.Align.BASELINE_FILL;
 import static org.gnome.gtk.Align.CENTER;
+import static org.gnome.gtk.Align.END;
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
@@ -90,7 +91,7 @@ public class AlbumInfoPage extends Box implements StateListener {
     private static final AtomicBoolean isProviderInit = new AtomicBoolean(false);
     private volatile NetworkStatus networkStatus;
 
-    public static class AlbumSongActionRow extends ActionRow {
+    public static class AlbumSongActionRow extends ListBoxRow {
         private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AlbumSongActionRow.class);
         private final AppManager appManager;
         private final AlbumInfo albumInfo;
@@ -101,6 +102,12 @@ public class AlbumInfoPage extends Box implements StateListener {
         public final NowPlayingOverlayIcon icon;
         private final StarButton starredButton;
         private final SongDownloadStatusIcon downloadStatusIcon = new SongDownloadStatusIcon();
+        private final Box mainBox;
+        private final Box prefixBox;
+        private final Box suffixBox;
+        private final Box centerBox;
+        private final Label rowTitleLabel;
+        private final Label rowSubTitleLabel;
         private SignalConnection<NotifyCallback> signalPlaying;
         private SignalConnection<NotifyCallback> signalFavorited;
         private SignalConnection<NotifyCallback> signalDownloadStatus;
@@ -115,6 +122,56 @@ public class AlbumInfoPage extends Box implements StateListener {
                 Function<PlayerAction, CompletableFuture<Void>> onAction
         ) {
             super();
+            this.mainBox = new Box(HORIZONTAL, 2);
+            this.mainBox.setHomogeneous(false);
+            this.mainBox.setMarginTop(4);
+            this.mainBox.setMarginBottom(4);
+            this.mainBox.setMarginStart(2);
+            this.mainBox.setMarginEnd(2);
+            this.prefixBox = new Box(HORIZONTAL, 0);
+            this.prefixBox.setHalign(START);
+            this.prefixBox.setValign(CENTER);
+            this.prefixBox.setVexpand(true);
+            this.prefixBox.setHomogeneous(true);
+
+            this.centerBox = new Box(HORIZONTAL, 0);
+            this.centerBox.setHexpand(true);
+            this.centerBox.setVexpand(true);
+            this.centerBox.setValign(CENTER);
+            this.centerBox.setHalign(START);
+            this.centerBox.setMarginStart(8);
+            this.centerBox.setMarginEnd(8);
+
+            this.suffixBox = new Box(HORIZONTAL, 0);
+            this.suffixBox.setHalign(END);
+            this.suffixBox.setValign(CENTER);
+            this.suffixBox.setVexpand(true);
+            this.mainBox.append(this.prefixBox);
+            this.mainBox.append(this.centerBox);
+            this.mainBox.append(this.suffixBox);
+            this.rowTitleLabel = new Label("Title");
+            this.rowTitleLabel.setHalign(START);
+            this.rowTitleLabel.setUseMarkup(false);
+            this.rowTitleLabel.setMaxWidthChars(30);
+            this.rowTitleLabel.setLines(1);
+            this.rowTitleLabel.setSingleLineMode(true);
+            this.rowTitleLabel.setEllipsize(EllipsizeMode.END);
+            this.rowTitleLabel.addCssClass(Classes.title3.className());
+            this.rowSubTitleLabel = new Label("Subtitle");
+            this.rowSubTitleLabel.setHalign(START);
+            this.rowSubTitleLabel.setUseMarkup(false);
+            this.rowSubTitleLabel.setLines(1);
+            this.rowSubTitleLabel.setMaxWidthChars(36);
+            this.rowSubTitleLabel.setSingleLineMode(true);
+            this.rowSubTitleLabel.addCssClass(Classes.labelDim.className());
+            this.rowSubTitleLabel.addCssClass(Classes.caption.className());
+            var titleBox = new Box(VERTICAL, 2);
+            titleBox.setVexpand(true);
+            titleBox.setHomogeneous(false);
+            titleBox.append(this.rowTitleLabel);
+            titleBox.append(this.rowSubTitleLabel);
+            this.centerBox.append(titleBox);
+            this.setChild(mainBox);
             this.appManager = appManager;
             this.albumInfo = albumInfo;
             this.index = index;
@@ -124,7 +181,6 @@ public class AlbumInfoPage extends Box implements StateListener {
             this.networkStatus = networkStatus;
             this.addCssClass(Classes.rounded.className());
             this.addCssClass("AlbumSongActionRow");
-            this.setUseMarkup(false);
             this.setActivatable(true);
             this.setFocusable(true);
             this.setFocusOnClick(true);
@@ -206,7 +262,7 @@ public class AlbumInfoPage extends Box implements StateListener {
                     .setEllipsize(EllipsizeMode.START)
                     .setCssClasses(cssClasses("dim-label", "numeric"))
                     .build();
-            icon = new NowPlayingOverlayIcon(24, songNumberLabel);
+            icon = new NowPlayingOverlayIcon(48, songNumberLabel);
             var isHoverActive = new AtomicBoolean(false);
 
             addHover(
@@ -263,10 +319,10 @@ public class AlbumInfoPage extends Box implements StateListener {
                     signalDownloadStatus = null;
                 }
             });
-            this.addPrefix(icon);
-            this.addSuffix(suffix);
-            this.setTitle(songInfo.title());
-            this.setSubtitle(subtitle);
+            this.prefixBox.append(icon);
+            this.suffixBox.append(suffix);
+            this.rowTitleLabel.setLabel(songInfo.title());
+            this.rowSubTitleLabel.setLabel(subtitle);
         }
 
         private void updateUI() {
