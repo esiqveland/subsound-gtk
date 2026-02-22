@@ -231,7 +231,7 @@ public class SyncService {
                         playlist.created(),
                         java.time.Instant.now()
                 );
-                databaseServerService.insert(row);
+                databaseServerService.upsertPlaylist(row);
                 // Note: playlist_songs already deleted at start of syncAll()
                 for (int i = 0; i < playlist.songs().size(); i++) {
                     databaseServerService.insertPlaylistSong(playlist.id(), playlist.songs().get(i).id(), i);

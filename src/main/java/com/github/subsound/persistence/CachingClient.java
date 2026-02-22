@@ -10,11 +10,15 @@ import com.github.subsound.persistence.database.Song;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.subsound.utils.Utils;
 import java.net.URI;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static com.github.subsound.persistence.ThumbnailCache.toCachePath;
 
@@ -139,13 +143,39 @@ public class CachingClient implements ServerClient {
                     .orElseThrow(() -> new RuntimeException("Playlist not found in database: " + playlistId));
         }
         try {
-            return delegate.getPlaylist(playlistId);
+            var playlist = delegate.getPlaylist(playlistId);
+            persistPlaylist(playlist);
+            return playlist;
         } catch (Exception e) {
             log.warn("Failed to fetch playlist from server, falling back to database: {}", playlistId, e);
             return dbService.getPlaylistById(playlistId)
                     .map(this::toPlaylist)
                     .orElseThrow(() -> new RuntimeException("Playlist not found in database: " + playlistId, e));
         }
+    }
+
+    private void persistPlaylist(Playlist playlist) {
+        var row = new PlaylistRow(
+                playlist.id(),
+                UUID.fromString(this.serverId),
+                playlist.name(),
+                playlist.songCount(),
+                playlist.songs().stream().map(SongInfo::duration).reduce(Duration.ZERO, Duration::plus),
+                playlist.coverArtId().map(CoverArt::coverArtId),
+                playlist.created(),
+                Instant.now()
+        );
+        Utils.doAsync(() -> {
+            try {
+                dbService.upsertPlaylist(row);
+                dbService.deletePlaylistSongs(playlist.id());
+                for (int i = 0; i < playlist.songs().size(); i++) {
+                    dbService.insertPlaylistSong(playlist.id(), playlist.songs().get(i).id(), i);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to persist playlist {} to database", playlist.id(), e);
+            }
+        });
     }
 
     @Override

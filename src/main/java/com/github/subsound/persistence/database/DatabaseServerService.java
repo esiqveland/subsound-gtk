@@ -8,7 +8,6 @@ import com.github.subsound.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -503,7 +502,7 @@ public class DatabaseServerService {
 
     // Playlist methods
 
-    public void insert(PlaylistRow playlist) {
+    public void upsertPlaylist(PlaylistRow playlist) {
         String sql = """
                 INSERT OR REPLACE INTO playlists (id, server_id, name, song_count, duration_ms, cover_art_id, created_at_ms, updated_at_ms)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
