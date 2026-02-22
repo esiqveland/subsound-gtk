@@ -46,7 +46,7 @@ public class ImageUtilsTest {
         var p = Pixbuf.fromFileAtSize(path.toAbsolutePath().toString(), size, size);
         var scaledOut = new Out<byte[]>();
         var errs = new GError[]{null};
-        boolean success = p.saveToBuffer(scaledOut, "jpeg", errs, "", null);
+        boolean success = p.saveToBuffer(scaledOut, "jpeg", errs, null, null);
         //boolean success = p.saveToBufferv(scaledOut, "jpeg", null, null);
         if (!success) {
             throw new RuntimeException("halp");
