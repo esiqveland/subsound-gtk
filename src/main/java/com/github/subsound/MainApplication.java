@@ -310,13 +310,13 @@ public class MainApplication {
             ViewStackPage frontPage = viewStack.addTitledWithIcon(frontPageContainer, "frontPage", "Home", Icons.GoHome.getIconName());
         }
         {
-            var starredPageComponent = new StarredPage();
-            starredPageComponent.append(new StarredLoader(
-                    thumbLoader,
-                    appManager,
-                    appNavigation::navigateTo
-            ));
-            ViewStackPage starredPage = viewStack.addTitledWithIcon(starredPageComponent, "starredPage", "Starred", Icons.Starred.getIconName());
+            //var starredPageComponent = new StarredPage();
+            //starredPageComponent.append(new StarredLoader(
+            //        thumbLoader,
+            //        appManager,
+            //        appNavigation::navigateTo
+            //));
+            //ViewStackPage starredPage = viewStack.addTitledWithIcon(starredPageComponent, "starredPage", "Starred", Icons.Starred.getIconName());
         }
         {
             var playlistsContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
@@ -337,25 +337,6 @@ public class MainApplication {
             artistsContainer.append(artistListBox);
             ViewStackPage artistsPage = viewStack.addTitledWithIcon(artistsContainer, "artistsPage", "Artists", Icons.Artist.getIconName());
         }
-//        {
-//            var searchMe = Button.withLabel("Search me");
-//            searchMe.onClicked(() -> {
-//                System.out.println("SearchMe.onClicked");
-//            });
-//            var searchContainer = BoxFullsize().build();
-//            searchContainer.append(searchMe);
-//            ViewStackPage searchPage = viewStack.addTitledWithIcon(searchContainer, "searchPage", "Search", Icons.Search.getIconName());
-//        }
-//        {
-//            var playlistsMe = Button.withLabel("Playlists");
-//            playlistsMe.onClicked(() -> {
-//                System.out.println("playlistsMe.onClicked");
-//            });
-//            var playlistsContainer = BoxFullsize().build();
-//            playlistsContainer.append(playlistsMe);
-//            ViewStackPage playlistPage = viewStack.addTitledWithIcon(playlistsContainer, "playlistPage", "Playlists", Icons.Playlists.getIconName());
-//        }
-
         if (cfg.onboarding != OnboardingState.DONE) {
             var onboardingOverlay = getOnboardingOverlay(this.appManager, viewStack);
             var onboardingPage = NavigationPage.builder().setChild(onboardingOverlay).setTag("onboardingOverlay").build();
