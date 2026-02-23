@@ -23,6 +23,7 @@ import org.gnome.gtk.ListView;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.SignalListItemFactory;
+import org.gnome.gtk.EventControllerMotion;
 import org.gnome.gtk.SingleSelection;
 import org.gnome.gtk.Widget;
 import org.gnome.pango.EllipsizeMode;
@@ -56,6 +57,7 @@ public class PlaylistsListView extends Box {
     private final NavigationPage playlistPage;
     private final SingleSelection<GPlaylist> selectionModel;
     private final GSongStore songStore;
+    private int currentIndex = 0;
 
     public PlaylistsListView(AppManager appManager) {
         super(Orientation.VERTICAL, 0);
@@ -129,6 +131,9 @@ public class PlaylistsListView extends Box {
         });
 
         this.selectionModel = new SingleSelection<>(this.listModel);
+        this.selectionModel.setAutoselect(true);
+        this.selectionModel.setCanUnselect(false);
+
         this.listView = ListView.builder()
                 .setShowSeparators(false)
                 .setOrientation(VERTICAL)
@@ -136,7 +141,7 @@ public class PlaylistsListView extends Box {
                 .setVexpand(true)
                 .setHalign(FILL)
                 .setValign(FILL)
-                .setFocusOnClick(true)
+                .setFocusOnClick(false)
                 .setSingleClickActivate(true)
                 .setFactory(factory)
                 .setModel(selectionModel)
@@ -147,10 +152,18 @@ public class PlaylistsListView extends Box {
             if (gPlaylist == null) {
                 return;
             }
+            this.currentIndex = index;
+            this.selectionModel.setSelected(index);
             var playlist = gPlaylist.getPlaylist();
             log.info("listView.onActivate: {} {}", index, playlist.name());
             this.setSelectedPlaylist(playlist);
         });
+
+        var motionController = new EventControllerMotion();
+        motionController.onLeave(() -> {
+            this.selectionModel.setSelected(this.currentIndex);
+        });
+        this.listView.addController(motionController);
 
         this.onDestroy(() -> {
             activateSignal.disconnect();
