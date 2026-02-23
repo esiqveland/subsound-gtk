@@ -96,3 +96,17 @@ SQLite only. All migrations are versioned in `Database.java` as inner classes (`
 ## Synthetic Playlists
 
 The playlists view prepends synthetic entries (Starred, Downloaded) to the server's playlist list. These use `PlaylistKind` enum values (`STARRED`, `DOWNLOADED`) and are handled specially in `PlaylistsListView.setSelectedPlaylist()`.
+
+## GTK4
+
+Adwaita theme is used. Adwaita is the default theme in GNOME. Prefer to use Adwaita components and UI elements over plain GTK4 elements when relevant.
+
+The app is designed for dark mode.
+
+### References
+
+https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/class.AlertDialog.html
+
+#### Original Subsonic api spec XSD
+https://www.subsonic.org/pages/inc/api/schema/subsonic-rest-api-1.16.1.xsd
+
