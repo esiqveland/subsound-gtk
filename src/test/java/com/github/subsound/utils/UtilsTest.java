@@ -7,6 +7,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.github.subsound.utils.Utils.formatDurationMedium;
 import static com.github.subsound.utils.Utils.formatDurationShort;
 import static com.github.subsound.utils.Utils.formatDurationShortest;
 import static com.github.subsound.utils.Utils.withinEpsilon;
@@ -25,6 +26,18 @@ public class UtilsTest {
             latch.countDown();
         });
         assertThat(latch.await(2, TimeUnit.SECONDS)).isTrue();
+    }
+
+    @Test
+    public void testformatDurationMedium() {
+        assertThat(formatDurationMedium(Duration.ofSeconds(0))).isEqualTo("");
+        assertThat(formatDurationMedium(Duration.ofSeconds(5))).isEqualTo("5 sec");
+        assertThat(formatDurationMedium(Duration.ofSeconds(59))).isEqualTo("59 sec");
+        assertThat(formatDurationMedium(Duration.ofSeconds(61))).isEqualTo("1 min, 1 sec");
+        assertThat(formatDurationMedium(Duration.ofSeconds(121))).isEqualTo("2 min, 1 sec");
+        assertThat(formatDurationMedium(Duration.ofSeconds(3601))).isEqualTo("1 hr, 1 sec");
+        assertThat(formatDurationMedium(Duration.ofDays(3).plusSeconds(10))).isEqualTo("3 days");
+        assertThat(formatDurationMedium(Duration.ofDays(3).plusSeconds(121))).isEqualTo("3 days, 2 min");
     }
 
     @Test

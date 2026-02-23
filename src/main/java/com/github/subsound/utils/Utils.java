@@ -1,10 +1,12 @@
 package com.github.subsound.utils;
 
+import ch.qos.logback.core.util.StringUtil;
 import com.github.subsound.utils.javahttp.InstantAdapter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.Strictness;
 import org.apache.commons.codec.Resources;
+import org.apache.commons.codec.binary.StringUtils;
 import org.apache.commons.io.IOUtils;
 import org.gnome.gio.File;
 import org.gnome.glib.GLib;
@@ -170,10 +172,16 @@ public class Utils {
         long minutes = d.toMinutes();
         d = d.minusMinutes(minutes);
         long seconds = d.getSeconds();
-        return  (days == 0 ? "" : days + " days, ") +
+        var string = (days == 0 ? "" : days + " days, ") +
                 (hours == 0 ? "" : hours + " hr, ") +
                 (minutes == 0 ? "" : minutes + " min, ") +
-                (seconds == 0 ? "" : seconds + " sec");
+                (seconds > 0 && days > 0 ? "" : seconds == 0 ? "" : seconds + " sec");
+        string = string.trim();
+        while (string.endsWith(",")) {
+            string = string.substring(0, string.length() - 1);
+            string = string.trim();
+        }
+        return string;
     }
 
     public static String formatDurationShort(Duration d) {

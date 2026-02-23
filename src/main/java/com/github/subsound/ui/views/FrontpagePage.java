@@ -35,8 +35,14 @@ import org.gnome.gtk.Stack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.gnome.gtk.Image;
+
 import java.io.File;
+import java.net.URI;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -57,7 +63,7 @@ public class FrontpagePage extends Box {
 
     sealed interface FrontpagePageState {
         record Loading() implements FrontpagePageState {}
-        record Ready(HomeOverview data) implements FrontpagePageState {}
+        record Ready(HomeOverview data, ServerClient.ServerInfo serverInfo, String serverUrl) implements FrontpagePageState {}
         record Error(Throwable t) implements FrontpagePageState {}
     }
 
@@ -135,7 +141,16 @@ public class FrontpagePage extends Box {
         Utils.doAsync(() -> {
             try {
                 var data = this.appManager.useClient(ServerClient::getHomeOverview);
-                this.setState(new FrontpagePageState.Ready(data));
+                ServerClient.ServerInfo serverInfo;
+                try {
+                    serverInfo = this.appManager.useClient(ServerClient::getServerInfo);
+                } catch (Exception e) {
+                    log.warn("failed to load server info", e);
+                    serverInfo = new ServerClient.ServerInfo("?", 0, Optional.empty(), Optional.empty(), Optional.empty());
+                }
+                var cfg = this.appManager.getConfig().serverConfig;
+                var serverUrl = cfg != null ? cfg.url() : "";
+                this.setState(new FrontpagePageState.Ready(data, serverInfo, serverUrl));
             } catch (Exception e) {
                 this.setState(new FrontpagePageState.Error(e));
             }
@@ -164,7 +179,7 @@ public class FrontpagePage extends Box {
                 }
                 case FrontpagePageState.Ready ready -> {
                     this.errorLabel.setLabel("");
-                    this.homeView.setData(ready.data);
+                    this.homeView.setData(ready.data(), ready.serverInfo(), ready.serverUrl());
                     this.viewStack.setVisibleChildName("home");
                 }
             }
@@ -177,6 +192,7 @@ public class FrontpagePage extends Box {
 
         private HomeOverview data;
 
+        private final ServerInfoCard serverInfoCard;
         private final Label recentLabel = heading1("Recently played").build();
         private final Label newLabel = heading1("Newly added releases").build();
         private final Label mostLabel = heading1("Most played").build();
@@ -193,9 +209,11 @@ public class FrontpagePage extends Box {
             this.setVexpand(true);
             this.setHalign(START);
             this.setValign(START);
+            this.serverInfoCard = new ServerInfoCard();
             this.recentList = holder();
             this.newList = holder();
             this.mostPlayedList = holder();
+            this.append(this.serverInfoCard);
             this.append(wrap(recentLabel, recentList));
             this.append(wrap(newLabel, newList));
             this.append(wrap(mostLabel, mostPlayedList));
@@ -385,8 +403,9 @@ public class FrontpagePage extends Box {
             return new HorizontalAlbumsFlowBoxV3(list, this.appManager, this.appManager::handleAction, this.onAlbumSelected);
         }
 
-        public void setData(HomeOverview homeOverview) {
+        public void setData(HomeOverview homeOverview, ServerClient.ServerInfo serverInfo, String serverUrl) {
             this.data = homeOverview;
+            this.serverInfoCard.update(serverInfo, serverUrl);
             this.update(homeOverview);
         }
 
@@ -399,6 +418,97 @@ public class FrontpagePage extends Box {
                 this.newList.setChild(n);
                 this.mostPlayedList.setChild(freq);
             });
+        }
+    }
+
+    private static class ServerInfoCard extends Box {
+        private final Label hostLabel;
+        private final Label versionLabel;
+        private final Label apiVersionLabel;
+        private final Label songsLabel;
+        private final Label foldersLabel;
+        private final Label lastScanLabel;
+
+        public ServerInfoCard() {
+            super(HORIZONTAL, 16);
+            this.addCssClass("card");
+
+            var icon = Image.fromIconName("network-server-symbolic");
+            icon.setPixelSize(40);
+            icon.setHalign(CENTER);
+            icon.setValign(CENTER);
+            icon.addCssClass(Classes.labelDim.className());
+            icon.setMarginStart(16);
+            icon.setMarginTop(16);
+            icon.setMarginBottom(16);
+
+            this.hostLabel = Label.builder().setHalign(START).setXalign(0f).build();
+            this.hostLabel.addCssClass(Classes.heading.className());
+
+            this.versionLabel = Label.builder().setHalign(START).setXalign(0f).build();
+            this.versionLabel.addCssClass(Classes.labelDim.className());
+            this.versionLabel.addCssClass(Classes.caption.className());
+
+            this.apiVersionLabel = Label.builder().setHalign(START).setXalign(0f).build();
+            this.apiVersionLabel.addCssClass(Classes.labelDim.className());
+            this.apiVersionLabel.addCssClass(Classes.caption.className());
+
+            this.songsLabel = Label.builder().setHalign(START).setXalign(0f).build();
+            this.songsLabel.addCssClass(Classes.labelDim.className());
+            this.songsLabel.addCssClass(Classes.caption.className());
+
+            this.foldersLabel = Label.builder().setHalign(START).setXalign(0f).setVisible(false).build();
+            this.foldersLabel.addCssClass(Classes.labelDim.className());
+            this.foldersLabel.addCssClass(Classes.caption.className());
+
+            this.lastScanLabel = Label.builder().setHalign(START).setXalign(0f).setVisible(false).build();
+            this.lastScanLabel.addCssClass(Classes.labelDim.className());
+            this.lastScanLabel.addCssClass(Classes.caption.className());
+
+            var textBox = Box.builder()
+                    .setOrientation(VERTICAL)
+                    .setSpacing(3)
+                    .setHalign(START)
+                    .setValign(CENTER)
+                    .setMarginTop(16)
+                    .setMarginBottom(16)
+                    .setMarginEnd(16)
+                    .build();
+            textBox.append(hostLabel);
+            textBox.append(versionLabel);
+            textBox.append(apiVersionLabel);
+            textBox.append(songsLabel);
+            textBox.append(foldersLabel);
+            textBox.append(lastScanLabel);
+
+            this.append(icon);
+            this.append(textBox);
+        }
+
+        public void update(ServerClient.ServerInfo info, String serverUrl) {
+            try {
+                var host = URI.create(serverUrl).getHost();
+                this.hostLabel.setLabel(host != null && !host.isBlank() ? host : serverUrl);
+            } catch (Exception e) {
+                this.hostLabel.setLabel(serverUrl);
+            }
+            this.versionLabel.setLabel(
+                info.serverVersion().map(v -> v.startsWith("v") ? v : "v%s".formatted(v)).map(v -> "Version: %s".formatted(v)).orElse("Version: ")
+            );
+            this.apiVersionLabel.setLabel(Optional.ofNullable(info.apiVersion()).map(v -> "API Version: %s".formatted(v)).orElse("API Version: "));
+            this.songsLabel.setLabel(String.format("%,d songs", info.songCount()));
+            info.folderCount().ifPresentOrElse(
+                f -> { this.foldersLabel.setLabel(f + " folders"); this.foldersLabel.setVisible(true); },
+                () -> this.foldersLabel.setVisible(false)
+            );
+            info.lastScan().ifPresentOrElse(
+                scan -> {
+                    var age = Duration.between(scan, Instant.now());
+                    this.lastScanLabel.setLabel("Scanned " + Utils.formatDurationMedium(age) + " ago");
+                    this.lastScanLabel.setVisible(true);
+                },
+                () -> this.lastScanLabel.setVisible(false)
+            );
         }
     }
 }
