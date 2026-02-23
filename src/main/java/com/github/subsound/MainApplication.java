@@ -45,6 +45,7 @@ import org.gnome.gtk.Gtk;
 import org.gnome.gtk.MenuButton;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Popover;
+import org.gnome.gtk.SearchBar;
 import org.gnome.gtk.Shortcut;
 import org.gnome.gtk.ShortcutController;
 import org.gnome.gtk.ShortcutScope;
@@ -180,6 +181,13 @@ public class MainApplication {
         this.backButton.setVisible(false);
         this.backButton.onClicked(() -> navigationView.pop());
 
+        var searchButton = new Button();
+        searchButton.setLabel("Search");
+        searchButton.setTooltipText("Search");
+        searchButton.onClicked(() -> this.commandPalette.toggle());
+        searchButton.addCssClass("flat");
+        searchButton.setIconName(Icons.Search.getIconName());
+
         headerBar = HeaderBar.builder()
                 .setHexpand(true)
                 .setTitleWidget(viewSwitcher)
@@ -187,6 +195,7 @@ public class MainApplication {
                 .build();
         headerBar.packStart(this.backButton);
         headerBar.packEnd(settingsButton);
+        headerBar.packEnd(searchButton);
         // TODO: these classes were an attempt to find better background colors to blend different parts of the UI
         //headerBar.addCssClass("background");
         //headerBar.addCssClass("view");
