@@ -7,6 +7,7 @@ import com.github.subsound.integration.ServerClient.PlaylistKind;
 import com.github.subsound.integration.ServerClient.PlaylistSimple;
 import com.github.subsound.ui.models.GSongInfo.GSongStore;
 import com.github.subsound.ui.views.PlaylistListView;
+import com.github.subsound.ui.views.PlaylistListViewV2;
 import com.github.subsound.ui.views.StarredListView;
 import com.github.subsound.utils.Utils;
 import org.gnome.adw.NavigationPage;
@@ -51,7 +52,7 @@ public class PlaylistsListView extends Box {
     private final NavigationPage page1;
     private final StarredListView starredListView;
     private final NavigationPage starredListPage;
-    private final PlaylistListView playlistListView;
+    private final PlaylistListViewV2 playlistListView;
     private final NavigationPage playlistPage;
     private final SingleSelection<GPlaylist> selectionModel;
     private final GSongStore songStore;
@@ -72,7 +73,7 @@ public class PlaylistsListView extends Box {
                 .setHexpand(true)
                 .build();
 
-        this.playlistListView = new PlaylistListView(appManager, appManager::navigateTo);
+        this.playlistListView = new PlaylistListViewV2(appManager, appManager::navigateTo);
         this.playlistListView.setHalign(Align.FILL);
         this.playlistListView.setValign(Align.FILL);
         this.playlistPage = NavigationPage.builder()
