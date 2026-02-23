@@ -2,6 +2,7 @@ package com.github.subsound.ui.views;
 
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.app.state.PlayerAction;
+import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.ui.components.AppNavigation;
@@ -182,7 +183,7 @@ public class PlaylistListView extends Box implements AppManager.StateListener {
         this.append(this.scroll);
     }
 
-    public void setSongs(List<GSongInfo> songs) {
+    public void setSongs(List<GSongInfo> songs, ServerClient.PlaylistSimple playlist) {
         var items = songs.toArray(GSongInfo[]::new);
         Utils.runOnMainThread(() -> {
             this.listModel.removeAll();

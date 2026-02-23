@@ -206,7 +206,7 @@ public class PlaylistsListView extends Box {
             }
 
             var songs = data.get().stream().map(songStore::newInstance).toList();
-            this.playlistListView.setSongs(songs);
+            this.playlistListView.setSongs(songs, playlist);
             Utils.runOnMainThread(() -> {
                 this.playlistPage.setTitle(playlist.name());
                 this.view.setContent(this.playlistPage);

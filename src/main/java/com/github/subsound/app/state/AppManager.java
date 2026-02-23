@@ -6,6 +6,7 @@ import com.github.subsound.app.state.PlayerAction.PlayPositionInQueue;
 import com.github.subsound.configuration.Config;
 import com.github.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
 import com.github.subsound.integration.ServerClient;
+import com.github.subsound.integration.ServerClient.PlaylistRemoveSongRequest;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.integration.ServerClient.TranscodedStream;
 import com.github.subsound.persistence.CachingClient;
@@ -55,6 +56,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.github.subsound.app.state.AppManager.NowPlaying.State.LOADING;
@@ -251,6 +253,9 @@ public class AppManager {
 
     public <T> T useClient(Function<ServerClient, T> useFunc) {
         return useFunc.apply(this.client.get());
+    }
+    public void useClient1(Consumer<ServerClient> useFunc) {
+        useFunc.accept(this.client.get());
     }
 
     public Config getConfig() {
@@ -569,6 +574,13 @@ public class AppManager {
                     });
                     String msg = "Adding %d items to %s".formatted(a.songs().size(), a.playlistName());
                     this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(msg)));
+                }
+                case PlayerAction.RemoveFromPlaylist a -> {
+                    this.useClient1(c -> c.playlistRemove(new PlaylistRemoveSongRequest(
+                            a.playlistId(),
+                            List.of(new ServerClient.SongRemoval(a.originalPosition(), a.song().id()))
+                    )));
+                    //this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Removed from " + a.playlistName())));
                 }
                 case PlayerAction.AddToDownloadQueue a -> {
                     this.downloadManager.enqueue(a.song());
