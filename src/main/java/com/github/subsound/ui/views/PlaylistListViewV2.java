@@ -344,11 +344,17 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
 
         var keyController = new EventControllerKey();
         keyController.onKeyPressed((keyval, keycode, state) -> {
-            if (keyval != 0xFFFF) return false; // GDK_KEY_Delete
+            if (keyval != 0xFFFF) {
+                return false; // GDK_KEY_Delete
+            }
             var playlist = currentPlaylist.get();
-            if (playlist == null || playlist.kind() != ServerClient.PlaylistKind.NORMAL) return false;
-            var entry = (GPlaylistEntry) selectionModel.getSelectedItem();
-            if (entry == null) return false;
+            if (playlist == null || playlist.kind() != ServerClient.PlaylistKind.NORMAL) {
+                return false;
+            }
+            var entry = selectionModel.getSelectedItem();
+            if (entry == null) {
+                return false;
+            }
             int deletedPos = entry.position();
             AdwDialogHelper.ofDialog(
                     PlaylistListViewV2.this,
