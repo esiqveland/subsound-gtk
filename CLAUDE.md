@@ -105,6 +105,8 @@ The app is designed for dark mode.
 
 ### References
 
+https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/widget-gallery.html
+
 https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/class.AlertDialog.html
 
 #### Original Subsonic api spec XSD
