@@ -12,6 +12,7 @@ public class AdwDialogHelper extends AlertDialog {
         super();
     }
 
+    public static final String CANCEL_LABEL_ID = "cancel";
     public record Response(String label, String text, ResponseAppearance appearance) {
         public Response(String label, String text) {
             this(label, text, ResponseAppearance.DEFAULT);
@@ -34,11 +35,11 @@ public class AdwDialogHelper extends AlertDialog {
         for (var r : choices) {
             h.addResponse(r.label, r.text);
             if (r.appearance != null) {
-                h.setResponseAppearance(r.label, ResponseAppearance.DESTRUCTIVE);
+                h.setResponseAppearance(r.label, r.appearance);
             }
         }
 
-        var closeResponse = choices.stream().filter(r -> r.label.equals("close")).findFirst().orElseThrow();
+        var closeResponse = choices.stream().filter(r -> CANCEL_LABEL_ID.equals(r.label)).findFirst().orElseThrow();
         h.setDefaultResponse(closeResponse.label);
         h.setCloseResponse(closeResponse.label);
 

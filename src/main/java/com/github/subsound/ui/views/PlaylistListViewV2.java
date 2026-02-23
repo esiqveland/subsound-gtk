@@ -5,6 +5,7 @@ import com.github.subsound.app.state.PlayerAction;
 import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.sound.PlaybinPlayer;
+import com.github.subsound.ui.components.AdwDialogHelper;
 import com.github.subsound.ui.components.AppNavigation;
 import com.github.subsound.ui.components.AppNavigation.AppRoute;
 import com.github.subsound.ui.components.Classes;
@@ -48,7 +49,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.github.subsound.ui.components.AdwDialogHelper.CANCEL_LABEL_ID;
 import static com.github.subsound.ui.views.AlbumInfoPage.infoLabel;
+import static org.gnome.adw.ResponseAppearance.*;
 import static org.gnome.gtk.Align.CENTER;
 import static org.gnome.gtk.Align.END;
 import static org.gnome.gtk.Align.FILL;
@@ -347,21 +350,34 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             var entry = (GPlaylistEntry) selectionModel.getSelectedItem();
             if (entry == null) return false;
             int deletedPos = entry.position();
-            onAction.apply(new PlayerAction.RemoveFromPlaylist(
-                    entry.info(), deletedPos, playlist.id(), playlist.name()));
-            Utils.runOnMainThread(() -> {
-                for (int i = 0; i < listModel.getNItems(); i++) {
-                    if (listModel.getItem(i) == entry) {
-                        listModel.remove(i);
-                        break;
-                    }
+            AdwDialogHelper.ofDialog(
+                    PlaylistListViewV2.this,
+                    "Remove from playlist",
+                    "Remove \"%s\" from \"%s\"?".formatted(entry.info().title(), playlist.name()),
+                    List.of(
+                            new AdwDialogHelper.Response(CANCEL_LABEL_ID, "_Cancel", DEFAULT),
+                            new AdwDialogHelper.Response("delete", "_Remove", DESTRUCTIVE)
+                    )
+            ).thenAccept(result -> {
+                if (!"delete".equals(result.label())) {
+                    return;
                 }
-                for (int i = 0; i < listModel.getNItems(); i++) {
-                    var e = listModel.getItem(i);
-                    if (e.position() > deletedPos) {
-                        e.setPosition(e.position() - 1);
+                onAction.apply(new PlayerAction.RemoveFromPlaylist(
+                        entry.info(), deletedPos, playlist.id(), playlist.name()));
+                Utils.runOnMainThread(() -> {
+                    for (int i = 0; i < listModel.getNItems(); i++) {
+                        if (listModel.getItem(i) == entry) {
+                            listModel.remove(i);
+                            break;
+                        }
                     }
-                }
+                    for (int i = 0; i < listModel.getNItems(); i++) {
+                        var e = listModel.getItem(i);
+                        if (e.position() > deletedPos) {
+                            e.setPosition(e.position() - 1);
+                        }
+                    }
+                });
             });
             return true;
         });
