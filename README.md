@@ -125,6 +125,7 @@ A few samples of what the UI looks like:
   - [X] fix back button in headerbar
   - AdwNavigationView ?
   - AdwLeaflet + AdwClamp? see https://gitlab.gnome.org/GNOME/gnome-music/-/blob/master/data/ui/ArtistAlbumsWidget.ui
+  - [Explore a three-pane layout](https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/adaptive-layouts.html#triple-pane-layouts)
 - [X] set up a sqlite database with migrations
   - [X] record what we have downloaded / want to keep offline
   - [X] verify downloaded files against the database on full sync

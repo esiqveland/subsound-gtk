@@ -1,5 +1,6 @@
 package com.github.subsound.persistence.database;
 
+import com.github.subsound.integration.ServerClient;
 import com.github.subsound.persistence.database.Artist.Biography;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.persistence.database.DownloadQueueItem.DownloadStatus;
@@ -543,6 +544,68 @@ public class DatabaseServerService {
         }
     }
 
+    public void playlistRemoveSong(ServerClient.PlaylistRemoveSongRequest req) {
+        if (req.songIds().isEmpty()) {
+            return;
+        }
+
+        // Build: DELETE ... WHERE ... AND (song_id, sort_order) IN (VALUES (?,?), (?,?), ...)
+        String valuePlaceholders = req.songIds().stream()
+                .map(_ -> "(?,?)")
+                .collect(java.util.stream.Collectors.joining(","));
+        String deleteSql = """
+                DELETE FROM playlist_songs
+                WHERE playlist_id = ? AND server_id = ?
+                  AND (song_id, sort_order) IN (VALUES %s)
+                """.formatted(valuePlaceholders);
+
+        // Renumber survivors in one sort pass via ROW_NUMBER() window function (O(N log N))
+        String renumberSql = """
+                WITH ranked AS (
+                    SELECT song_id,
+                           CAST(ROW_NUMBER() OVER (ORDER BY sort_order) AS INTEGER) - 1 AS new_order
+                    FROM playlist_songs
+                    WHERE playlist_id = ? AND server_id = ?
+                )
+                UPDATE playlist_songs
+                SET sort_order = ranked.new_order
+                FROM ranked
+                WHERE playlist_songs.playlist_id = ?
+                  AND playlist_songs.server_id   = ?
+                  AND playlist_songs.song_id     = ranked.song_id
+                """;
+
+        try (Connection conn = database.openConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement pstmt = conn.prepareStatement(deleteSql)) {
+                    pstmt.setString(1, req.playlistId());
+                    pstmt.setString(2, this.serverId.toString());
+                    int col = 3;
+                    for (var removal : req.songIds()) {
+                        pstmt.setString(col++, removal.songId());
+                        pstmt.setInt(col++, removal.indexInPlaylist());
+                    }
+                    pstmt.executeUpdate();
+                }
+                try (PreparedStatement pstmt = conn.prepareStatement(renumberSql)) {
+                    pstmt.setString(1, req.playlistId());
+                    pstmt.setString(2, this.serverId.toString());
+                    pstmt.setString(3, req.playlistId());
+                    pstmt.setString(4, this.serverId.toString());
+                    pstmt.executeUpdate();
+                }
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to remove song from playlist: playlistId={}", req.playlistId(), e);
+            throw new RuntimeException("Failed to remove song from playlist", e);
+        }
+    }
+
     public void deletePlaylistSongs(String playlistId) {
         String sql = "DELETE FROM playlist_songs WHERE playlist_id = ? AND server_id = ?";
         try (Connection conn = database.openConnection();
@@ -623,10 +686,10 @@ public class DatabaseServerService {
 
     public int removeOrphanedDownloads() {
         String sql = """
-            DELETE FROM download_queue
-            WHERE server_id = ?
-            AND song_id NOT IN (SELECT id FROM songs WHERE server_id = ?)
-            """;
+                DELETE FROM download_queue
+                WHERE server_id = ?
+                AND song_id NOT IN (SELECT id FROM songs WHERE server_id = ?)
+                """;
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, this.serverId.toString());
@@ -871,11 +934,22 @@ public class DatabaseServerService {
         return items;
     }
 
-    public void updateDownloadProgress(String songId, DownloadQueueItem.DownloadStatus status, double progress, String errorMessage) {
+    public void updateDownloadProgress(
+            String songId,
+            DownloadQueueItem.DownloadStatus status,
+            double progress,
+            String errorMessage
+    ) {
         updateDownloadProgress(songId, status, progress, errorMessage, null);
     }
 
-    public void updateDownloadProgress(String songId, DownloadQueueItem.DownloadStatus status, double progress, String errorMessage, String checksum) {
+    public void updateDownloadProgress(
+            String songId,
+            DownloadQueueItem.DownloadStatus status,
+            double progress,
+            String errorMessage,
+            String checksum
+    ) {
         String sql = "UPDATE download_queue SET status = ?, progress = ?, error_message = ?, checksum = ? WHERE song_id = ? AND server_id = ?";
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {

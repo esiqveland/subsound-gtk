@@ -1,5 +1,6 @@
 package com.github.subsound.persistence.database;
 
+import com.github.subsound.integration.ServerClient;
 import com.github.subsound.persistence.database.Artist.Biography;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.integration.ServerClient.TranscodeInfo;
@@ -260,6 +261,52 @@ public class DatabaseServerServiceTest {
         List<Song> starredSongs = service.listSongsByStarredAt();
         Assertions.assertThat(starredSongs).hasSize(2);
         Assertions.assertThat(starredSongs).usingRecursiveFieldByFieldElementComparator().containsExactly(song1, song3);
+    }
+
+    @Test
+    public void testPlaylistRemoveSong() throws Exception {
+        File dbFile = folder.newFile("test_playlist_remove.db");
+        Database db = new Database("jdbc:sqlite:" + dbFile.getAbsolutePath());
+
+        UUID serverId = UUID.randomUUID();
+        DatabaseServerService service = new DatabaseServerService(serverId, db);
+
+        String playlistId = "playlist-1";
+
+        // Insert 5 songs at positions 0–4
+        service.insertPlaylistSong(playlistId, "song-a", 0);
+        service.insertPlaylistSong(playlistId, "song-b", 1);
+        service.insertPlaylistSong(playlistId, "song-c", 2);
+        service.insertPlaylistSong(playlistId, "song-d", 3);
+        service.insertPlaylistSong(playlistId, "song-e", 4);
+
+        // Remove the middle song; remaining songs should be renumbered 0–3
+        service.playlistRemoveSong(new ServerClient.PlaylistRemoveSongRequest(
+                playlistId,
+                List.of(new ServerClient.SongRemoval(2, "song-c"))
+        ));
+        Assertions.assertThat(service.listPlaylistSongIds(playlistId))
+                .containsExactly("song-a", "song-b", "song-d", "song-e");
+
+        // Guard: wrong position for song-b (now at 1, not 0) — nothing removed
+        service.playlistRemoveSong(new ServerClient.PlaylistRemoveSongRequest(
+                playlistId,
+                List.of(new ServerClient.SongRemoval(0, "song-b"))
+        ));
+        Assertions.assertThat(service.listPlaylistSongIds(playlistId))
+                .containsExactly("song-a", "song-b", "song-d", "song-e");
+
+        // Batch removal: remove song-a (pos 0) and song-d (pos 2) in one request;
+        // survivors song-b and song-e should be renumbered 0 and 1
+        service.playlistRemoveSong(new ServerClient.PlaylistRemoveSongRequest(
+                playlistId,
+                List.of(
+                        new ServerClient.SongRemoval(0, "song-a"),
+                        new ServerClient.SongRemoval(2, "song-d")
+                )
+        ));
+        Assertions.assertThat(service.listPlaylistSongIds(playlistId))
+                .containsExactly("song-b", "song-e");
     }
 
     @Test

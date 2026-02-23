@@ -7,10 +7,10 @@ import com.github.subsound.persistence.database.Artist;
 import com.github.subsound.persistence.database.DatabaseServerService;
 import com.github.subsound.persistence.database.PlaylistRow;
 import com.github.subsound.persistence.database.Song;
+import com.github.subsound.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.subsound.utils.Utils;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -267,6 +267,7 @@ public class CachingClient implements ServerClient {
     @Override
     public void playlistRemove(PlaylistRemoveSongRequest req) {
         this.delegate.playlistRemove(req);
+        this.dbService.playlistRemoveSong(req);
     }
 
     @Override
