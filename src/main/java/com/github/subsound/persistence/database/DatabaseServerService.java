@@ -609,6 +609,20 @@ public class DatabaseServerService {
         }
     }
 
+    public void deletePlaylist(String playlistId) {
+        deletePlaylistSongs(playlistId);
+        String sql = "DELETE FROM playlists WHERE id = ? AND server_id = ?";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, playlistId);
+            pstmt.setString(2, this.serverId.toString());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Failed to delete playlist", e);
+            throw new RuntimeException("Failed to delete playlist", e);
+        }
+    }
+
     public void deletePlaylistSongs(String playlistId) {
         String sql = "DELETE FROM playlist_songs WHERE playlist_id = ? AND server_id = ?";
         try (Connection conn = database.openConnection();

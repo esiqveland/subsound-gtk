@@ -1,6 +1,7 @@
 package com.github.subsound.ui.components;
 
 import com.github.subsound.app.state.AppManager;
+import com.github.subsound.app.state.PlayerAction;
 import com.github.subsound.app.state.PlaylistsStore.GPlaylist;
 import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.PlaylistKind;
@@ -10,12 +11,16 @@ import com.github.subsound.ui.views.PlaylistListView;
 import com.github.subsound.ui.views.PlaylistListViewV2;
 import com.github.subsound.ui.views.StarredListView;
 import com.github.subsound.utils.Utils;
+import org.gnome.adw.AlertDialog;
 import org.gnome.adw.NavigationPage;
 import org.gnome.adw.NavigationSplitView;
+import org.gnome.adw.ResponseAppearance;
 import org.gnome.adw.StatusPage;
 import org.gnome.gio.ListStore;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
+import org.gnome.gtk.Button;
+import org.gnome.gtk.Entry;
 import org.gnome.gtk.Image;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListItem;
@@ -175,9 +180,39 @@ public class PlaylistsListView extends Box {
                 .setVexpand(true)
                 .build();
 
+        var headerLabel = Label.builder()
+                .setLabel("Library")
+                .setHalign(START)
+                .setHexpand(true)
+                .setCssClasses(cssClasses("title-3"))
+                .build();
+
+        var newPlaylistButton = Button.builder()
+                .setIconName(Icons.ListAdd.getIconName())
+                .setTooltipText("New playlist")
+                .setValign(CENTER)
+                .build();
+        newPlaylistButton.addCssClass("flat");
+        newPlaylistButton.onClicked(() -> showNewPlaylistDialog());
+
+        var headerBox = new Box(HORIZONTAL, 0);
+        headerBox.setMarginTop(8);
+        headerBox.setMarginBottom(4);
+        headerBox.setMarginStart(12);
+        headerBox.setMarginEnd(4);
+        headerBox.append(headerLabel);
+        headerBox.append(newPlaylistButton);
+
+        var sidebarBox = new Box(VERTICAL, 0);
+        sidebarBox.append(headerBox);
+        sidebarBox.append(playlistScrollView);
+        sidebarBox.addCssClass(Classes.background.className());
+        sidebarBox.addCssClass("library-sidebar");
+
+
         this.page1 = NavigationPage.builder()
                 .setTag("page-1")
-                .setChild(playlistScrollView)
+                .setChild(sidebarBox)
                 .setTitle("Playlists")
                 .build();
         this.view.setSidebar(this.page1);
@@ -227,6 +262,37 @@ public class PlaylistsListView extends Box {
             });
             return data;
         });
+    }
+
+    private void showNewPlaylistDialog() {
+        var entry = Entry.builder()
+                .setPlaceholderText("Playlist name")
+                .setActivatesDefault(true)
+                .build();
+
+        var dialog = AlertDialog.builder()
+                .setTitle("Create Playlist")
+                .setBody("Enter a name for the new playlist")
+                .build();
+        dialog.addResponse("cancel", "_Cancel");
+        dialog.addResponse("create", "_Create");
+        dialog.setResponseAppearance("create", ResponseAppearance.SUGGESTED);
+        dialog.setDefaultResponse("create");
+        dialog.setCloseResponse("cancel");
+        dialog.setExtraChild(entry);
+
+        dialog.onResponse("", response -> {
+            if ("create".equals(response)) {
+                var name = entry.getText().strip();
+                if (!name.isEmpty()) {
+                    doAsync(() -> {
+                        appManager.handleAction(new PlayerAction.CreatePlaylist(name, List.of()));
+                        return null;
+                    });
+                }
+            }
+        });
+        dialog.present(this);
     }
 
     private static class PlaylistRowWidget extends Box {

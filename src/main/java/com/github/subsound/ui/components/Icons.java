@@ -42,6 +42,7 @@ public enum Icons {
     SettingsOld("settings-symbolic"),
     Settings("emblem-system-symbolic"),
     OpenMenu("view-more-symbolic"),
+    ListAdd("list-add-symbolic"),
     ListRemove("list-remove-symbolic"),
     FolderDownload("folder-download-symbolic"),
     NetworkError("network-error-symbolic"),

@@ -299,7 +299,7 @@ public interface ServerClient {
     ){}
 
     PlaylistSimple playlistCreate(PlaylistCreateRequest req);
-    record PlaylistCreateRequest(String name){}
+    record PlaylistCreateRequest(String name, List<String> songIds){}
     void playlistRename(PlaylistRenameRequest req);
     record PlaylistRenameRequest(String id, String newName) {}
     void playlistDelete(PlaylistDeleteRequest req);

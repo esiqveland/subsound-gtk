@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Stream;
 
 public class PlaylistsStore {
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(PlaylistsStore.class);
@@ -138,6 +137,16 @@ public class PlaylistsStore {
         result.add(downloaded);
         result.addAll(serverPlaylists);
         return result;
+    }
+
+    public void addPlaylist(PlaylistSimple createdPlaylist) {
+        synchronized (lock) {
+            Utils.runOnMainThread(() -> {
+                // adds the new playlist to the "top" (right below our two fixed entries with Starred and Downloads)
+                this.metaStore.insert(2, GPlaylist.newInstance(createdPlaylist));
+                this.backingIds.addAll(2, List.of(createdPlaylist.id()));
+            });
+        }
     }
 
     record Insertion(int position, GPlaylist item) {}

@@ -6,6 +6,8 @@ import com.github.subsound.app.state.PlayerAction.PlayPositionInQueue;
 import com.github.subsound.configuration.Config;
 import com.github.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
 import com.github.subsound.integration.ServerClient;
+import com.github.subsound.integration.ServerClient.PlaylistCreateRequest;
+import com.github.subsound.integration.ServerClient.PlaylistDeleteRequest;
 import com.github.subsound.integration.ServerClient.PlaylistRemoveSongRequest;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.integration.ServerClient.TranscodedStream;
@@ -585,6 +587,18 @@ public class AppManager {
                 case PlayerAction.AddToDownloadQueue a -> {
                     this.downloadManager.enqueue(a.song());
                     this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Added to download queue")));
+                }
+                case PlayerAction.CreatePlaylist c -> {
+                    var songs = c.songs().stream().map(GSongInfo::getId).toList();
+                    var createdPlaylist = this.useClient(client -> client.playlistCreate(new PlaylistCreateRequest(
+                            c.playlistName(),
+                            songs
+                    )));
+                    this.playlistsStore.addPlaylist(createdPlaylist);
+                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Created playlist %s".formatted(c.playlistName()))));
+                }
+                case PlayerAction.DeletePlaylist d -> {
+                    this.useClient1(client -> client.playlistDelete(new PlaylistDeleteRequest(d.playlistId())));
                 }
                 case PlayerAction.AddManyToDownloadQueue a -> {
                     for (var song : a.songs()) {

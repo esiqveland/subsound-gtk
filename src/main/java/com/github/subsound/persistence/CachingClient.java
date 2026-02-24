@@ -154,6 +154,19 @@ public class CachingClient implements ServerClient {
         }
     }
 
+    private void persistPlaylist(PlaylistSimple playlist) {
+        var row = new PlaylistRow(
+                playlist.id(),
+                UUID.fromString(this.serverId),
+                playlist.name(),
+                playlist.songCount(),
+                Duration.ZERO,
+                playlist.coverArtId().map(CoverArt::coverArtId),
+                playlist.created(),
+                Instant.now()
+        );
+        dbService.upsertPlaylist(row);
+    }
     private void persistPlaylist(Playlist playlist) {
         var row = new PlaylistRow(
                 playlist.id(),
@@ -251,7 +264,9 @@ public class CachingClient implements ServerClient {
 
     @Override
     public PlaylistSimple playlistCreate(PlaylistCreateRequest req) {
-        return this.delegate.playlistCreate(req);
+        var res = this.delegate.playlistCreate(req);
+        this.persistPlaylist(res);
+        return res;
     }
 
     @Override
@@ -262,6 +277,7 @@ public class CachingClient implements ServerClient {
     @Override
     public void playlistDelete(PlaylistDeleteRequest req) {
         this.delegate.playlistDelete(req);
+        this.dbService.deletePlaylist(req.id());
     }
 
     @Override
