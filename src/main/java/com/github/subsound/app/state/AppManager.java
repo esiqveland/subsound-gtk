@@ -565,14 +565,13 @@ public class AppManager {
                 case PlayerAction.PlaySong playSong -> this.loadSourceAsync(playSong);
                 case PlayerAction.RefreshPlaylists _ -> this.playlistsStore.refreshListAsync();
                 case PlayerAction.AddToPlaylist a -> {
-                    this.useClient(c -> c.addToPlaylist(new ServerClient.AddSongToPlaylist(a.playlistId(), a.song().id())));
+                    this.useClient(c -> c.addToPlaylist(new ServerClient.AddSongToPlaylist(a.playlistId(), List.of(a.song().id()))));
                     this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Added to " + a.playlistName())));
                 }
                 case PlayerAction.AddManyToPlaylist a -> {
                     doAsync(() -> {
-                        for (var song : a.songs()) {
-                            this.useClient(c -> c.addToPlaylist(new ServerClient.AddSongToPlaylist(a.playlistId(), song.getId())));
-                        }
+                        var songsIds = a.songs().stream().map(GSongInfo::getId).toList();
+                        this.useClient(c -> c.addToPlaylist(new ServerClient.AddSongToPlaylist(a.playlistId(), songsIds)));
                     });
                     String msg = "Adding %d items to %s".formatted(a.songs().size(), a.playlistName());
                     this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(msg)));

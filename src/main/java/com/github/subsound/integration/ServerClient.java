@@ -295,7 +295,7 @@ public interface ServerClient {
 
     record AddSongToPlaylist(
             String playlistId,
-            String songId
+            List<String> songIds
     ){}
 
     PlaylistSimple playlistCreate(PlaylistCreateRequest req);

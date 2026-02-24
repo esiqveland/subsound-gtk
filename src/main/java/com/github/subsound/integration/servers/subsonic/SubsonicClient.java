@@ -238,7 +238,9 @@ public class SubsonicClient implements ServerClient {
 
     @Override
     public AddSongToPlaylist addToPlaylist(AddSongToPlaylist req) {
-        this.client.playlists().updatePlaylist(req.playlistId(), UpdatePlaylistParams.create().addSong(req.songId()));
+        var params = UpdatePlaylistParams.create();
+        req.songIds().forEach(params::addSong);
+        this.client.playlists().updatePlaylist(req.playlistId(), params);
         return req;
     }
 
@@ -686,9 +688,14 @@ public class SubsonicClient implements ServerClient {
                 var parsed = Utils.fromJson(bodyString, CreatePlaylistResponseJson.class);
                 if ("ok".equalsIgnoreCase(parsed.subsonicResponse.status)) {
                     var pl = parsed.subsonicResponse.playlist;
-                    return toPlaylistSimple(pl);
+                    var playlist = toPlaylistSimple(pl);
+                    if (!request.songIds().isEmpty()) {
+                        this.addToPlaylist(new AddSongToPlaylist(playlist.id(), request.songIds()));
+                    }
+                    return playlist;
                 }
             }
+
             throw new RuntimeException("playlistCreate: error: status=" + res.statusCode() + " body=" + bodyString);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
