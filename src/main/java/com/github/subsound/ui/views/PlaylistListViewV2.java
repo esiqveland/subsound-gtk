@@ -237,7 +237,9 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         albumFactory.onBind(obj -> {
             var listItem = (ListItem) obj;
             var entry = (GPlaylistEntry) listItem.getItem();
-            if (entry == null) return;
+            if (entry == null) {
+                return;
+            }
             var child = listItem.getChild();
             if (child instanceof AlbumCell cell) {
                 cell.bind(entry.gSong());
@@ -621,7 +623,9 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             this.setMarginEnd(4);
 
             this.albumLabel = new ClickLabel("", () -> {
-                if (this.gSong == null) return;
+                if (this.gSong == null) {
+                    return;
+                }
                 var albumId = this.gSong.getSongInfo().albumId();
                 if (albumId == null) return;
                 this.onNavigate.accept(new AppNavigation.AppRoute.RouteAlbumInfo(albumId));
