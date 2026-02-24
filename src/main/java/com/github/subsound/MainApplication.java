@@ -146,21 +146,15 @@ public class MainApplication {
         this.serverBadge = new ServerBadge(appManager);
         popoverContent.append(serverBadge);
 
-        var configureServerButton = Button.builder()
-                .setLabel("Server settings...")
-                .build();
-        configureServerButton.addCssClass("flat");
-        popoverContent.append(configureServerButton);
-
         var settingsPopover = Popover.builder()
                 .setChild(popoverContent)
                 .build();
         settingsPopover.onShow(serverBadge::refresh);
 
-        configureServerButton.onClicked(() -> {
-            settingsPopover.popdown();
-            appNavigation.navigateTo(new AppNavigation.AppRoute.SettingsPage());
-        });
+//        configureServerButton.onClicked(() -> {
+//            settingsPopover.popdown();
+//            appNavigation.navigateTo(new AppNavigation.AppRoute.SettingsPage());
+//        });
 
         settingsButton = MenuButton.builder()
                 .setIconName(Icons.Settings.getIconName())
