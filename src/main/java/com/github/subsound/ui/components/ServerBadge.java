@@ -100,7 +100,7 @@ public class ServerBadge extends Box implements AppManager.StateListener {
         this.syncButton.onActivated(() -> {
             syncButton.setSensitive(false);
             appManager.handleAction(new PlayerAction.SyncDatabase()).whenComplete((v, err) ->
-                    Utils.runOnMainThread(() -> syncButton.setSensitive(true))
+                    Utils.runOnMainThread(() -> syncButton.setSensitive(currentNetworkStatus != NetworkStatus.OFFLINE))
             );
         });
 
@@ -247,7 +247,15 @@ public class ServerBadge extends Box implements AppManager.StateListener {
     private void updateNetworkStatus(NetworkState networkState) {
         updatingSwitch.set(true);
         try {
-            offlineSwitch.setActive(networkState.status() == NetworkStatus.OFFLINE);
+            boolean offline = networkState.status() == NetworkStatus.OFFLINE;
+            offlineSwitch.setActive(offline);
+            if (offline) {
+                syncButton.setSensitive(false);
+                syncButton.setTooltipText("Must be online to sync library");
+            } else {
+                syncButton.setSensitive(true);
+                syncButton.setTooltipText("Sync library to enable offline mode");
+            }
         } finally {
             updatingSwitch.set(false);
         }
