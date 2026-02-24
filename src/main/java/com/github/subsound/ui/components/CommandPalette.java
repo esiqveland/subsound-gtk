@@ -42,8 +42,7 @@ public class CommandPalette extends Overlay {
     private final SearchEntry searchEntry;
     private final ListView resultsList;
     private final SearchResultStore searchStore;
-    private boolean shown = false;
-    private int searchGeneration = 0;
+    private volatile boolean shown = false;
 
     public CommandPalette(
             AppManager appManager,
@@ -87,10 +86,10 @@ public class CommandPalette extends Overlay {
         this.paletteCard.addCssClass(Classes.shadow.className());
 
         // Search entry
-        this.searchEntry = SearchEntry.builder()
-                .setHexpand(true)
-                .setPlaceholderText("Search...")
-                .build();
+        this.searchEntry = new SearchEntry();
+        this.searchEntry.setPlaceholderText("Search...");
+        this.searchEntry.setHexpand(true);
+
         // Results list backed by the store
         var selectionModel = new NoSelection<>(searchStore.getStore());
         var factory = new SignalListItemFactory();
@@ -148,25 +147,20 @@ public class CommandPalette extends Overlay {
             }
         });
 
-        // Connect search entry to search store (debounced via generation counter)
+        // Connect search entry to search store
+        this.searchEntry.setSearchDelay(300);
         this.searchEntry.onSearchChanged(() -> {
-            var generation = ++searchGeneration;
             var query = searchEntry.getText();
-            if (query == null || query.isBlank()) {
+            if (query == null || query.strip().isBlank()) {
                 searchStore.clear();
                 resultsList.setVisible(false);
                 return;
             }
-            GLib.timeoutAdd(GLib.PRIORITY_DEFAULT, 300, () -> {
-                if (generation != searchGeneration) {
-                    return GLib.SOURCE_REMOVE;
-                }
-                searchStore.searchAsync(query).thenAccept(result -> {
-                    Utils.runOnMainThread(() -> {
-                        resultsList.setVisible(searchStore.getStore().getNItems() > 0);
-                    });
+            var searchQuery = query.strip().trim();
+            searchStore.searchAsync(searchQuery).thenAccept(result -> {
+                Utils.runOnMainThread(() -> {
+                    resultsList.setVisible(searchStore.getStore().getNItems() > 0);
                 });
-                return GLib.SOURCE_REMOVE;
             });
         });
 
@@ -214,7 +208,6 @@ public class CommandPalette extends Overlay {
     public void hide() {
         if (!shown) return;
         shown = false;
-        searchGeneration++;
         this.removeOverlay(backdrop);
         searchEntry.setText("");
         searchStore.clear();
