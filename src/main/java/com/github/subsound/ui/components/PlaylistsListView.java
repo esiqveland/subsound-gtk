@@ -279,17 +279,24 @@ public class PlaylistsListView extends Box {
         dialog.setResponseAppearance("create", ResponseAppearance.SUGGESTED);
         dialog.setDefaultResponse("create");
         dialog.setCloseResponse("cancel");
+        dialog.setResponseEnabled("create", false);
         dialog.setExtraChild(entry);
+        var sig = entry.onChanged(() -> {
+            var text = entry.getText();
+            text = text == null ? "" : text.strip().trim();
+            dialog.setResponseEnabled("create", !text.isBlank());
+        });
 
         dialog.onResponse("", response -> {
-            if ("create".equals(response)) {
-                var name = entry.getText().strip();
-                if (!name.isEmpty()) {
-                    doAsync(() -> {
+            try {
+                if ("create".equals(response)) {
+                    var name = entry.getText().strip().trim();
+                    if (!name.isEmpty()) {
                         appManager.handleAction(new PlayerAction.CreatePlaylist(name, List.of()));
-                        return null;
-                    });
+                    }
                 }
+            } finally {
+                sig.disconnect();
             }
         });
         dialog.present(this);
