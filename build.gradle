@@ -19,8 +19,8 @@ repositories {
     google()
 }
 
-def javagiVersion = "0.14.0"
-def recordBuilderVersion = "44"
+def javagiVersion = "0.14.1"
+def recordBuilderVersion = "52"
 
 dependencies {
     implementation "org.java-gi:gtk:$javagiVersion"
