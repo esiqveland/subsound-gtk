@@ -3,18 +3,18 @@ package com.github.subsound.ui.components;
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.app.state.NetworkMonitoring.NetworkState;
 import com.github.subsound.app.state.NetworkMonitoring.NetworkStatus;
+import com.github.subsound.app.state.PlayerAction;
 import com.github.subsound.integration.ServerClient;
 import com.github.subsound.utils.Utils;
-import com.github.subsound.app.state.PlayerAction;
+import org.gnome.adw.ActionRow;
+import org.gnome.adw.ButtonRow;
+import org.gnome.adw.SwitchRow;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
-import org.gnome.gtk.Button;
-import org.gnome.gtk.IconSize;
-import org.gnome.gtk.Image;
 import org.gnome.gtk.Label;
-
+import org.gnome.gtk.ListBox;
 import org.gnome.gtk.Orientation;
-import org.gnome.pango.EllipsizeMode;
+import org.gnome.gtk.SelectionMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,148 +24,109 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.github.subsound.ui.components.Classes.boxedList;
 
 public class ServerBadge extends Box implements AppManager.StateListener {
     private static final Logger log = LoggerFactory.getLogger(ServerBadge.class);
 
     private final AppManager appManager;
-    private final Label hostnameLabel;
-    private final Label statsLabelUsername;
-    private final Label statsLabelSongs;
-    private final Label statsLabelFolders;
-    private final Label statsLabelAppVersion;
+    private final ActionRow serverRow;
+    private final ActionRow statsRow;
     private final Label statusDot;
-    private final Label networkStatusLabel;
-    private final Button buttonGoOffline;
+    private final SwitchRow offlineSwitch;
+    private final ButtonRow syncButton;
+    private final ButtonRow configureServerButton;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private ScheduledFuture<?> pingTask;
     private volatile NetworkStatus currentNetworkStatus = NetworkStatus.ONLINE;
+    private final AtomicBoolean updatingSwitch = new AtomicBoolean(false);
 
     public ServerBadge(AppManager appManager) {
-        super(Orientation.VERTICAL, 4);
+        super(Orientation.VERTICAL, 0);
         this.appManager = appManager;
 
         this.setMarginTop(8);
         this.setMarginBottom(8);
-        this.setMarginStart(12);
-        this.setMarginEnd(12);
+        this.setMarginStart(8);
+        this.setMarginEnd(8);
 
-        // Top row: server icon + hostname
-        var topRow = Box.builder()
-                .setOrientation(Orientation.HORIZONTAL)
-                .setSpacing(12)
-                .build();
-
-        var serverIcon = Image.fromIconName(Icons.NetworkServer.getIconName());
-        serverIcon.setIconSize(IconSize.LARGE);
-
-        this.hostnameLabel = Label.builder()
-                .setLabel(getServerHostNameOrNotConnected())
-                .setHalign(Align.START)
-                .setHexpand(true)
-                .setEllipsize(EllipsizeMode.END)
-                .build();
-
+        // Status indicator shown as suffix on the server row
         this.statusDot = Label.builder()
                 .setLabel("\u25CF") // ●
                 .setValign(Align.CENTER)
+                .setTooltipText("Checking…")
                 .build();
-        this.statusDot.setTooltipText("Checking...");
-        this.statusDot.addCssClass("dim-label");
+        this.statusDot.addCssClass(Classes.labelDim.className());
 
-        // Network status label (shows system network connectivity)
-        this.networkStatusLabel = Label.builder()
-                .setLabel("")
-                .setHalign(Align.START)
+        // Server hostname + username row
+        this.serverRow = ActionRow.builder()
+                .setTitle(getServerHostNameOrNotConnected())
+                .setSubtitle("Checking connectivity…")
+                .setIconName(Icons.NetworkServer.getIconName())
+                .setUseMarkup(false)
                 .build();
-        this.networkStatusLabel.addCssClass("dim-label");
-        this.networkStatusLabel.addCssClass("caption");
+        this.serverRow.addSuffix(statusDot);
 
-        var textBox = Box.builder()
-                .setOrientation(Orientation.VERTICAL)
-                .setSpacing(2)
-                .setHexpand(true)
-                .build();
-
-        var titleLabel = Label.builder()
-                .setLabel("Connected to")
-                .setHalign(Align.START)
-                .build();
-        titleLabel.addCssClass("dim-label");
-        titleLabel.addCssClass("caption");
-
-        textBox.append(titleLabel);
-        textBox.append(hostnameLabel);
-
-        var onlineIndicatorBox = new Box(Orientation.VERTICAL, 4);
-        onlineIndicatorBox.setHalign(Align.CENTER);
-        onlineIndicatorBox.setValign(Align.CENTER);
-        onlineIndicatorBox.append(statusDot);
-        topRow.append(onlineIndicatorBox);
-        topRow.append(textBox);
-
-        // Status indicator row - positioned below statusDot on the left
-        var statusRow = Box.builder()
-                .setOrientation(Orientation.HORIZONTAL)
-                .setSpacing(12)
-                //.setMarginStart(32) // align with server icon (icon size 24 + spacing 12 = 36, but we use 32 for better alignment)
+        // Songs / folders / version — hidden until server info arrives
+        this.statsRow = ActionRow.builder()
+                .setTitle("")
+                .setSubtitle("")
+                .setUseMarkup(false)
+                .setVisible(false)
                 .build();
 
-        // Stats row
-        this.statsLabelUsername = newStatsLabel();
-        this.statsLabelUsername.setCssClasses(Classes.toClassnames(Classes.captionHeading));
-        this.statsLabelSongs = newStatsLabel();
-        this.statsLabelFolders = newStatsLabel();
-        this.statsLabelAppVersion = newStatsLabel();
-
-        this.buttonGoOffline = Button.builder()
-                .setLabel("Go offline")
-                .setTooltipText("Mostly useful for testing offline mode")
+        // Offline mode toggle
+        this.offlineSwitch = SwitchRow.builder()
+                .setTitle("Offline mode")
+                .setSubtitle("Use only cached data")
                 .build();
-        this.buttonGoOffline.addCssClass("flat");
-        this.buttonGoOffline.onClicked(() -> {
-            switch (this.currentNetworkStatus) {
-                case ONLINE -> {
-                    this.appManager.handleAction(new PlayerAction.OverrideNetworkStatus(Optional.of(NetworkStatus.OFFLINE)));
-                }
-                case OFFLINE -> {
-                    this.appManager.handleAction(new PlayerAction.OverrideNetworkStatus(Optional.empty()));
-                }
+        this.offlineSwitch.onNotify("active", _ -> {
+            if (updatingSwitch.get()) return;
+            if (offlineSwitch.getActive()) {
+                appManager.handleAction(new PlayerAction.OverrideNetworkStatus(Optional.of(NetworkStatus.OFFLINE)));
+            } else {
+                appManager.handleAction(new PlayerAction.OverrideNetworkStatus(Optional.empty()));
             }
         });
 
-        var syncButton = Button.builder()
-                .setLabel("Sync library")
+        // Sync library action
+        this.syncButton = ButtonRow.builder()
+                .setTitle("Sync library")
+                .setStartIconName("view-refresh-symbolic")
+                .setTooltipText("Sync metadata for offline use")
                 .build();
-        syncButton.addCssClass("flat");
-        syncButton.onClicked(() -> {
+        this.syncButton.onActivated(() -> {
             syncButton.setSensitive(false);
-            syncButton.setLabel("Syncing\u2026");
-            appManager.handleAction(new PlayerAction.SyncDatabase()).whenComplete((v, err) -> {
-                Utils.runOnMainThread(() -> {
-                    syncButton.setSensitive(true);
-                    syncButton.setLabel("Sync library");
-                });
-            });
+            appManager.handleAction(new PlayerAction.SyncDatabase()).whenComplete((v, err) ->
+                    Utils.runOnMainThread(() -> syncButton.setSensitive(true))
+            );
         });
 
-        this.append(topRow);
-        this.append(statusRow);
-        this.append(statsLabelUsername);
-        this.append(statsLabelSongs);
-        this.append(statsLabelFolders);
-        this.append(statsLabelAppVersion);
-        this.append(networkStatusLabel);
-        this.append(syncButton);
-        this.append(buttonGoOffline);
+        this.configureServerButton = ButtonRow.builder()
+                .setTitle("Configure server")
+                .build();
+        this.configureServerButton.onActivated(() -> {
+            appManager.navigateTo(new AppNavigation.AppRoute.SettingsPage());
+        });
 
-        // Start periodic ping
+
+        var list = ListBox.builder()
+                .setSelectionMode(SelectionMode.NONE)
+                .setCssClasses(boxedList.add())
+                .build();
+        list.append(serverRow);
+        list.append(statsRow);
+        list.append(offlineSwitch);
+        list.append(syncButton);
+        list.append(configureServerButton);
+
+        this.append(list);
+
         this.pingTask = scheduler.scheduleWithFixedDelay(this::checkConnectivity, 0, 30, TimeUnit.SECONDS);
 
-        // Listen for network state changes
         this.appManager.addOnStateChanged(this);
-
-        // Initialize network status from current state
         updateNetworkStatus(this.appManager.getState().networkState());
 
         this.onDestroy(() -> {
@@ -177,21 +138,11 @@ public class ServerBadge extends Box implements AppManager.StateListener {
         });
     }
 
-    private Label newStatsLabel() {
-        return Label.builder()
-                .setLabel("")
-                .setHalign(Align.START)
-                //.setMarginStart(32) // align with status dot (same as statusRow margin)
-                .setCssClasses(Classes.toClassnames("dim-label", "caption"))
-                .setVisible(false)
-                .build();
-    }
-
     /**
      * Called when the popover is shown to refresh hostname and stats.
      */
     public void refresh() {
-        hostnameLabel.setLabel(getServerHostNameOrNotConnected());
+        serverRow.setTitle(getServerHostNameOrNotConnected());
         Utils.doAsync(this::fetchServerStatus).thenAccept(status ->
                 Utils.runOnMainThread(() -> applyStatus(status))
         );
@@ -226,46 +177,30 @@ public class ServerBadge extends Box implements AppManager.StateListener {
     }
 
     private void applyStatus(ServerStatus status) {
-        status.username().ifPresentOrElse(
-        username -> statsLabelUsername.setLabel("@%s".formatted(username)),
-                () -> statsLabelUsername.setLabel("@")
-        );
-        statsLabelUsername.setVisible(true);
+        serverRow.setSubtitle(status.username().map("@%s"::formatted).orElse(""));
 
         if (status.online()) {
             statusDot.removeCssClass("error");
-            statusDot.removeCssClass("dim-label");
+            statusDot.removeCssClass(Classes.labelDim.className());
             statusDot.addCssClass("success");
             statusDot.setTooltipText("Online");
+
             if (status.serverInfo() != null) {
                 var info = status.serverInfo();
-                var text = "%d songs".formatted(info.songCount());
-                statsLabelSongs.setLabel(text);
-                statsLabelSongs.setVisible(true);
-                info.folderCount().ifPresentOrElse(folderCount -> {
-                        statsLabelFolders.setLabel("%d folders".formatted(folderCount));
-                        statsLabelFolders.setVisible(true);
-                    },
-                    () -> statsLabelFolders.setVisible(false)
+                var folders = info.folderCount().map(" · %d folders"::formatted).orElse("");
+                statsRow.setTitle("%,d songs%s".formatted(info.songCount(), folders));
+                statsRow.setSubtitle(
+                        info.serverVersion().map("v%s"::formatted)
+                                .orElse("API v" + info.apiVersion())
                 );
-                info.serverVersion().or(() -> Optional.ofNullable(info.apiVersion())).ifPresentOrElse(serverVersion -> {
-                        statsLabelAppVersion.setLabel(serverVersion);
-                        statsLabelAppVersion.setVisible(true);
-                    },
-                    () -> statsLabelAppVersion.setVisible(false)
-                );
-                //var text = "API v%s \u00b7 %,d songs".formatted(info.apiVersion(), info.songCount());
-
+                statsRow.setVisible(true);
             }
-
         } else {
             statusDot.removeCssClass("success");
-            statusDot.removeCssClass("dim-label");
+            statusDot.removeCssClass(Classes.labelDim.className());
             statusDot.addCssClass("error");
             statusDot.setTooltipText("Offline");
-            statsLabelSongs.setVisible(false);
-            statsLabelFolders.setVisible(false);
-            statsLabelAppVersion.setVisible(false);
+            statsRow.setVisible(false);
         }
     }
 
@@ -310,19 +245,11 @@ public class ServerBadge extends Box implements AppManager.StateListener {
     }
 
     private void updateNetworkStatus(NetworkState networkState) {
-        switch (networkState.status()) {
-            case ONLINE -> {
-                networkStatusLabel.setLabel("Network: Online");
-                networkStatusLabel.removeCssClass("error");
-                networkStatusLabel.addCssClass("success");
-                buttonGoOffline.setLabel("Go offline");
-            }
-            case OFFLINE -> {
-                networkStatusLabel.setLabel("Network: Offline");
-                networkStatusLabel.removeCssClass("success");
-                networkStatusLabel.addCssClass("error");
-                buttonGoOffline.setLabel("Disable offline mode");
-            }
+        updatingSwitch.set(true);
+        try {
+            offlineSwitch.setActive(networkState.status() == NetworkStatus.OFFLINE);
+        } finally {
+            updatingSwitch.set(false);
         }
     }
 }
