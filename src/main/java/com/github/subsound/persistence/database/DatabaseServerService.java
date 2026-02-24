@@ -252,52 +252,53 @@ public class DatabaseServerService {
 
     public void insert(Song song) {
         String sql = """
-                INSERT OR REPLACE INTO songs (id, server_id, album_id, name, year, artist_id, artist_name, duration_ms, starred_at_ms, cover_art_id, created_at_ms, track_number, disc_number, bit_rate, size, genre, suffix)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO songs (id, server_id, album_id, album_name, name, year, artist_id, artist_name, duration_ms, starred_at_ms, cover_art_id, created_at_ms, track_number, disc_number, bit_rate, size, genre, suffix)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, song.id());
             pstmt.setString(2, song.serverId().toString());
             pstmt.setString(3, song.albumId());
-            pstmt.setString(4, song.name());
+            pstmt.setString(4, song.albumName());
+            pstmt.setString(5, song.name());
             if (song.year().isPresent()) {
-                pstmt.setInt(5, song.year().get());
+                pstmt.setInt(6, song.year().get());
             } else {
-                pstmt.setNull(5, Types.INTEGER);
+                pstmt.setNull(6, Types.INTEGER);
             }
-            pstmt.setString(6, song.artistId());
-            pstmt.setString(7, song.artistName());
-            pstmt.setLong(8, song.duration().toMillis());
+            pstmt.setString(7, song.artistId());
+            pstmt.setString(8, song.artistName());
+            pstmt.setLong(9, song.duration().toMillis());
             if (song.starredAt().isPresent()) {
-                pstmt.setLong(9, song.starredAt().get().toEpochMilli());
+                pstmt.setLong(10, song.starredAt().get().toEpochMilli());
             } else {
-                pstmt.setNull(9, Types.INTEGER);
+                pstmt.setNull(10, Types.INTEGER);
             }
             if (song.coverArtId().isPresent()) {
-                pstmt.setString(10, song.coverArtId().get());
+                pstmt.setString(11, song.coverArtId().get());
             } else {
-                pstmt.setNull(10, Types.VARCHAR);
+                pstmt.setNull(11, Types.VARCHAR);
             }
-            pstmt.setLong(11, song.createdAt().toEpochMilli());
+            pstmt.setLong(12, song.createdAt().toEpochMilli());
             if (song.trackNumber().isPresent()) {
-                pstmt.setInt(12, song.trackNumber().get());
-            } else {
-                pstmt.setNull(12, Types.INTEGER);
-            }
-            if (song.discNumber().isPresent()) {
-                pstmt.setInt(13, song.discNumber().get());
+                pstmt.setInt(13, song.trackNumber().get());
             } else {
                 pstmt.setNull(13, Types.INTEGER);
             }
-            if (song.bitRate().isPresent()) {
-                pstmt.setInt(14, song.bitRate().get());
+            if (song.discNumber().isPresent()) {
+                pstmt.setInt(14, song.discNumber().get());
             } else {
                 pstmt.setNull(14, Types.INTEGER);
             }
-            pstmt.setLong(15, song.size());
-            pstmt.setString(16, song.genre());
-            pstmt.setString(17, song.suffix());
+            if (song.bitRate().isPresent()) {
+                pstmt.setInt(15, song.bitRate().get());
+            } else {
+                pstmt.setNull(15, Types.INTEGER);
+            }
+            pstmt.setLong(16, song.size());
+            pstmt.setString(17, song.genre());
+            pstmt.setString(18, song.suffix());
             pstmt.executeUpdate();
         } catch (SQLException e) {
             logger.error("Failed to insert song", e);
@@ -311,8 +312,8 @@ public class DatabaseServerService {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         String songSql = """
-                INSERT OR REPLACE INTO songs (id, server_id, album_id, name, year, artist_id, artist_name, duration_ms, starred_at_ms, cover_art_id, created_at_ms, track_number, disc_number, bit_rate, size, genre, suffix)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO songs (id, server_id, album_id, album_name, name, year, artist_id, artist_name, duration_ms, starred_at_ms, cover_art_id, created_at_ms, track_number, disc_number, bit_rate, size, genre, suffix)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         try (Connection conn = database.openConnection()) {
             conn.setAutoCommit(false);
@@ -353,44 +354,45 @@ public class DatabaseServerService {
                         pstmt.setString(1, song.id());
                         pstmt.setString(2, song.serverId().toString());
                         pstmt.setString(3, song.albumId());
-                        pstmt.setString(4, song.name());
+                        pstmt.setString(4, song.albumName());
+                        pstmt.setString(5, song.name());
                         if (song.year().isPresent()) {
-                            pstmt.setInt(5, song.year().get());
+                            pstmt.setInt(6, song.year().get());
                         } else {
-                            pstmt.setNull(5, Types.INTEGER);
+                            pstmt.setNull(6, Types.INTEGER);
                         }
-                        pstmt.setString(6, song.artistId());
-                        pstmt.setString(7, song.artistName());
-                        pstmt.setLong(8, song.duration().toMillis());
+                        pstmt.setString(7, song.artistId());
+                        pstmt.setString(8, song.artistName());
+                        pstmt.setLong(9, song.duration().toMillis());
                         if (song.starredAt().isPresent()) {
-                            pstmt.setLong(9, song.starredAt().get().toEpochMilli());
+                            pstmt.setLong(10, song.starredAt().get().toEpochMilli());
                         } else {
-                            pstmt.setNull(9, Types.INTEGER);
+                            pstmt.setNull(10, Types.INTEGER);
                         }
                         if (song.coverArtId().isPresent()) {
-                            pstmt.setString(10, song.coverArtId().get());
+                            pstmt.setString(11, song.coverArtId().get());
                         } else {
-                            pstmt.setNull(10, Types.VARCHAR);
+                            pstmt.setNull(11, Types.VARCHAR);
                         }
-                        pstmt.setLong(11, song.createdAt().toEpochMilli());
+                        pstmt.setLong(12, song.createdAt().toEpochMilli());
                         if (song.trackNumber().isPresent()) {
-                            pstmt.setInt(12, song.trackNumber().get());
-                        } else {
-                            pstmt.setNull(12, Types.INTEGER);
-                        }
-                        if (song.discNumber().isPresent()) {
-                            pstmt.setInt(13, song.discNumber().get());
+                            pstmt.setInt(13, song.trackNumber().get());
                         } else {
                             pstmt.setNull(13, Types.INTEGER);
                         }
-                        if (song.bitRate().isPresent()) {
-                            pstmt.setInt(14, song.bitRate().get());
+                        if (song.discNumber().isPresent()) {
+                            pstmt.setInt(14, song.discNumber().get());
                         } else {
                             pstmt.setNull(14, Types.INTEGER);
                         }
-                        pstmt.setLong(15, song.size());
-                        pstmt.setString(16, song.genre());
-                        pstmt.setString(17, song.suffix());
+                        if (song.bitRate().isPresent()) {
+                            pstmt.setInt(15, song.bitRate().get());
+                        } else {
+                            pstmt.setNull(15, Types.INTEGER);
+                        }
+                        pstmt.setLong(16, song.size());
+                        pstmt.setString(17, song.genre());
+                        pstmt.setString(18, song.suffix());
                         pstmt.addBatch();
                     }
                     pstmt.executeBatch();
@@ -484,6 +486,7 @@ public class DatabaseServerService {
                 rs.getString("id"),
                 UUID.fromString(rs.getString("server_id")),
                 rs.getString("album_id"),
+                rs.getString("album_name") != null ? rs.getString("album_name") : "",
                 rs.getString("name"),
                 yearOptional,
                 rs.getString("artist_id"),

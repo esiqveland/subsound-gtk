@@ -394,7 +394,7 @@ public class CachingClient implements ServerClient {
                 song.artistId(),
                 song.artistName(),
                 song.albumId(),
-                "", // album name not stored in song record
+                song.albumName(),
                 song.duration(),
                 song.starredAt(),
                 Optional.of(song.createdAt()),

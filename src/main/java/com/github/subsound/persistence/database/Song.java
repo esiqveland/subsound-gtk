@@ -9,6 +9,7 @@ public record Song(
         String id,
         UUID serverId,
         String albumId,
+        String albumName,
         String name,
         Optional<Integer> year,
         String artistId,

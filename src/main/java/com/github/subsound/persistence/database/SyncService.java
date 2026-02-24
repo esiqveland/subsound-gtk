@@ -188,6 +188,7 @@ public class SyncService {
                     songInfo.id(),
                     serverId,
                     songInfo.albumId(),
+                    songInfo.album(),
                     songInfo.title(),
                     songInfo.year(),
                     songInfo.artistId(),

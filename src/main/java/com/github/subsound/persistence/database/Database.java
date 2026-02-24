@@ -115,6 +115,7 @@ public class Database {
         migrations.add(new MigrationV7());
         migrations.add(new MigrationV8());
         migrations.add(new MigrationV9());
+        migrations.add(new MigrationV10());
         return migrations;
     }
 
@@ -361,6 +362,20 @@ public class Database {
                     )
                 """);
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_scrobbles_server_status ON scrobbles (server_id, status)");
+            }
+        }
+    }
+
+    private static class MigrationV10 implements Migration {
+        @Override
+        public int version() {
+            return 10;
+        }
+
+        @Override
+        public void apply(Connection conn) throws SQLException {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("ALTER TABLE songs ADD COLUMN album_name TEXT NOT NULL DEFAULT ''");
             }
         }
     }
