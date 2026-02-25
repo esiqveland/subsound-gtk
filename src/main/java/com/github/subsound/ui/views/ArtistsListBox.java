@@ -5,44 +5,58 @@ import com.github.subsound.integration.ServerClient.ArtistAlbumInfo;
 import com.github.subsound.integration.ServerClient.ArtistEntry;
 import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.ui.components.RoundedAlbumArt;
-import org.gnome.adw.ActionRow;
 import org.gnome.adw.NavigationPage;
 import org.gnome.adw.NavigationSplitView;
 import org.gnome.adw.StatusPage;
+import org.gnome.gio.ListStore;
+import org.gnome.glib.Type;
+import org.gnome.gobject.GObject;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Label;
-import org.gnome.gtk.ListBox;
+import org.gnome.gtk.ListItem;
+import org.gnome.gtk.ListView;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.ScrolledWindow;
-import org.gnome.gtk.StringList;
-import org.gnome.gtk.StringObject;
+import org.gnome.gtk.SignalListItemFactory;
+import org.gnome.gtk.SingleSelection;
+import org.gnome.pango.EllipsizeMode;
+import org.javagi.gobject.types.Types;
 
+import java.lang.foreign.MemorySegment;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static com.github.subsound.utils.Utils.cssClasses;
+import static org.gnome.gtk.Align.CENTER;
+import static org.gnome.gtk.Align.FILL;
+import static org.gnome.gtk.Align.START;
+import static org.gnome.gtk.Orientation.HORIZONTAL;
+import static org.gnome.gtk.Orientation.VERTICAL;
 
 public class ArtistsListBox extends Box {
     private final ThumbnailCache thumbLoader;
     private final AppManager client;
     private final List<ArtistEntry> artists;
-    private final Map<String, ArtistEntry> artistsMap;
     private Consumer<ArtistAlbumInfo> onAlbumSelected;
     private final NavigationSplitView view;
     private final NavigationPage initialPage;
     private final NavigationPage page1;
     private final NavigationPage contentPage;
     private final ArtistInfoLoader artistInfoLoader;
+    private final ListStore<GArtistEntry> listModel;
+    private final ListView listView;
 
-    public ArtistsListBox(ThumbnailCache thumbLoader, AppManager client, List<ArtistEntry> artists, Consumer<ArtistAlbumInfo> onAlbumSelected) {
+    public ArtistsListBox(
+            ThumbnailCache thumbLoader,
+            AppManager client,
+            List<ArtistEntry> artists,
+            Consumer<ArtistAlbumInfo> onAlbumSelected
+    ) {
         super(Orientation.VERTICAL, 0);
         this.thumbLoader = thumbLoader;
         this.client = client;
         this.artists = artists;
-        this.artistsMap = artists.stream().collect(Collectors.toMap(ArtistEntry::id, a -> a));
         this.onAlbumSelected = onAlbumSelected;
         this.artistInfoLoader = new ArtistInfoLoader(this.thumbLoader, this.client, albumInfo -> this.onAlbumSelected.accept(albumInfo));
         this.contentPage = NavigationPage.builder().setTag("page-2").setChild(this.artistInfoLoader).setTitle("ArtistView").build();
@@ -54,36 +68,71 @@ public class ArtistsListBox extends Box {
         // https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/migrating-to-breakpoints.html#sidebar
         this.view = NavigationSplitView.builder().setValign(Align.FILL).setHalign(Align.FILL).setHexpand(true).setVexpand(true).build();
 
-        var list = ListBox.builder().setValign(Align.START).setCssClasses(new String[]{"boxed-list"}).build();
-        list.onRowActivated(row -> {
-            var artist = this.artists.get(row.getIndex());
+        this.listModel = new ListStore<>(GArtistEntry.gtype);
+
+        var factory = new SignalListItemFactory();
+        factory.onSetup(object -> {
+            ListItem listitem = (ListItem) object;
+            listitem.setActivatable(true);
+            listitem.setChild(new ArtistRowWidget(this.client));
+        });
+        factory.onBind(object -> {
+            ListItem listitem = (ListItem) object;
+            var item = (GArtistEntry) listitem.getItem();
+            if (item == null) {
+                return;
+            }
+            if (listitem.getChild() instanceof ArtistRowWidget row) {
+                row.bind(item);
+            }
+        });
+        factory.onUnbind(object -> {
+            ListItem listitem = (ListItem) object;
+            if (listitem.getChild() instanceof ArtistRowWidget row) {
+                row.unbind();
+            }
+        });
+        factory.onTeardown(object -> {
+            ListItem listitem = (ListItem) object;
+            listitem.setChild(null);
+        });
+
+        var selectionModel = new SingleSelection<>(this.listModel);
+        selectionModel.setAutoselect(false);
+        selectionModel.setCanUnselect(true);
+
+        this.listView = ListView.builder()
+                .setShowSeparators(false)
+                .setOrientation(VERTICAL)
+                .setHexpand(true)
+                .setVexpand(true)
+                .setHalign(FILL)
+                .setValign(FILL)
+                .setFocusOnClick(false)
+                .setSingleClickActivate(true)
+                .setFactory(factory)
+                .setModel(selectionModel)
+                .build();
+
+        this.listView.onActivate(index -> {
+            var item = this.listModel.getItem(index);
+            if (item == null) {
+                return;
+            }
+            var artist = item.getArtist();
             System.out.println("Artists: goto " + artist.name());
             this.contentPage.setTitle(artist.name());
             this.setSelectedArtist(artist.id());
         });
 
-        var stringList = StringList.builder().build();
-        this.artists.forEach(i -> stringList.append(i.id()));
-        list.bindModel(stringList, item -> {
-            // StringObject is the item type for a StringList ListModel type. StringObject is a GObject.
-            StringObject strObj = (StringObject) item;
-            var id = strObj.getString();
-            var artist = this.artistsMap.get(id);
-            var row = ActionRow.builder()
-                    .setTitle(artist.name())
-                    .setSubtitle(artist.albumCount() + " albums")
-                    .setUseMarkup(false)
-                    .setActivatable(true)
-                    .build();
-            row.addPrefix(RoundedAlbumArt.resolveCoverArt(
-                    this.client,
-                    artist.coverArt(),
-                    48,
-                    false
-            ));
-            return row;
-        });
-        var artistView = ScrolledWindow.builder().setChild(list).setHexpand(true).setVexpand(true).build();
+        // Populate model
+        var items = new GArtistEntry[this.artists.size()];
+        for (int i = 0; i < this.artists.size(); i++) {
+            items[i] = GArtistEntry.of(this.artists.get(i));
+        }
+        this.listModel.splice(0, 0, items);
+
+        var artistView = ScrolledWindow.builder().setChild(this.listView).setHexpand(true).setVexpand(true).build();
         // https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/migrating-to-breakpoints.html#sidebar
         this.page1 = NavigationPage.builder().setTag("page-1").setChild(artistView).setTitle("Artists").build();
         this.view.setSidebar(this.page1);
@@ -107,5 +156,90 @@ public class ArtistsListBox extends Box {
         this.artistInfoLoader.setArtistId(artistId);
         this.view.setContent(contentPage);
         this.view.setShowContent(true);
+    }
+
+    public static class GArtistEntry extends GObject {
+        public static final Type gtype = Types.register(GArtistEntry.class);
+        private ArtistEntry artist;
+
+        public GArtistEntry(MemorySegment address) {
+            super(address);
+        }
+
+        public static Type getType() {
+            return gtype;
+        }
+
+        public static GArtistEntry of(ArtistEntry artist) {
+            var instance = (GArtistEntry) GObject.newInstance(gtype);
+            instance.artist = artist;
+            return instance;
+        }
+
+        public ArtistEntry getArtist() {
+            return artist;
+        }
+    }
+
+    private static class ArtistRowWidget extends Box {
+        private static final int ICON_SIZE = 48;
+
+        private final AppManager appManager;
+        private final RoundedAlbumArt prefixArt;
+        private final Label titleLabel;
+        private final Label subtitleLabel;
+
+        public ArtistRowWidget(AppManager appManager) {
+            super(HORIZONTAL, 12);
+            this.appManager = appManager;
+
+            this.setMarginTop(8);
+            this.setMarginBottom(8);
+            this.setMarginStart(12);
+            this.setMarginEnd(12);
+
+            this.prefixArt = new RoundedAlbumArt(java.util.Optional.empty(), appManager, ICON_SIZE);
+            this.prefixArt.setHalign(CENTER);
+            this.prefixArt.setValign(CENTER);
+
+            var contentBox = new Box(VERTICAL, 2);
+            contentBox.setHalign(START);
+            contentBox.setValign(CENTER);
+            contentBox.setHexpand(true);
+
+            this.titleLabel = Label.builder()
+                    .setLabel("")
+                    .setHalign(START)
+                    .setXalign(0)
+                    .build();
+            this.titleLabel.setSingleLineMode(true);
+            this.titleLabel.setEllipsize(EllipsizeMode.END);
+
+            this.subtitleLabel = Label.builder()
+                    .setLabel("")
+                    .setHalign(START)
+                    .setXalign(0)
+                    .setCssClasses(cssClasses("dim-label", "caption"))
+                    .build();
+            this.subtitleLabel.setSingleLineMode(true);
+
+            contentBox.append(titleLabel);
+            contentBox.append(subtitleLabel);
+
+            this.append(prefixArt);
+            this.append(contentBox);
+        }
+
+        public void bind(GArtistEntry entry) {
+            var artist = entry.getArtist();
+            this.titleLabel.setLabel(artist.name());
+            this.subtitleLabel.setLabel(artist.albumCount() + " albums");
+            this.prefixArt.update(artist.coverArt());
+        }
+
+        public void unbind() {
+            this.titleLabel.setLabel("");
+            this.subtitleLabel.setLabel("");
+        }
     }
 }
