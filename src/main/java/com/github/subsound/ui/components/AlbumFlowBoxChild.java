@@ -54,11 +54,11 @@ public class AlbumFlowBoxChild extends FlowBoxChild {
                 .setHalign(Align.START)
                 .build();
 
-        var yearLabel = albumInfo.year().map(year -> Label.builder()
-                .setLabel("" + year)
+        var yearLabel = Label.builder()
+                .setLabel(albumInfo.year().map(Object::toString).orElse(""))
                 .setHalign(Align.START)
                 .setCssClasses(cssClasses("dim-label"))
-                .build());
+                .build();
 
         int margin = 6;
         var box = Box.builder()
@@ -74,7 +74,7 @@ public class AlbumFlowBoxChild extends FlowBoxChild {
         box.append(albumCover);
         box.append(albumTitle);
         //box.append(albumArtist);
-        yearLabel.ifPresent(box::append);
+        box.append(yearLabel);
 
 
         this.setChild(box);
