@@ -9,7 +9,7 @@ finish-args:
   - "--env=PATH=/app/jre/bin:/usr/bin"
   - "--env=JAVA_HOME=/app/jre"
   - "--env=JAVA_OPTS=--enable-native-access=ALL-UNNAMED"
-  - "--socket=pipewire"
+  - "--env=JAVA_LOG_LEVEL=WARN"
   - "--socket=pulseaudio"
   - "--socket=wayland"
   - "--socket=fallback-x11"
@@ -21,6 +21,8 @@ finish-args:
   - "--filesystem=xdg-config:create"
   - "--filesystem=xdg-cache:create"
   - "--filesystem=xdg-data:create"
+  # Pipewire like this might trigger a "Potentially unsafe" warning in tools like Flatseal because it can potentially allow broader system access
+  #- "--filesystem=xdg-run/pipewire-0:ro"
 modules:
   - name: openjdk
     buildsystem: 'simple'
