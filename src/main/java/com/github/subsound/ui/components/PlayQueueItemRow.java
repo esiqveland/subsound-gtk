@@ -157,6 +157,9 @@ public class PlayQueueItemRow extends Box {
         if (sig2 != null) {
             sig2.disconnect();
         }
+        // Explicitly clear visual state so recycled rows start clean
+        this.titleLabel.removeCssClass(Classes.colorAccent.className());
+        this.removeCssClass(Classes.queueAutomatic.className());
         this.songInfo = null;
         this.gSongInfo = null;
         this.gQueueItem = null;
@@ -176,38 +179,28 @@ public class PlayQueueItemRow extends Box {
     }
 
     private void updateQueueKindStyling() {
-        if (this.gQueueItem == null) {
+        if (this.gSongInfo == null || this.gQueueItem == null) {
             return;
         }
-        Utils.runOnMainThread(() -> {
-            if (this.gSongInfo == null || this.gQueueItem == null) {
-                return;
-            }
-            if (this.gSongInfo.getIsPlaying()) {
-                this.removeCssClass(Classes.queueAutomatic.className());
-                return;
-            }
-            if (this.gQueueItem.getIsUserQueued()) {
-                this.removeCssClass(Classes.queueAutomatic.className());
-            } else {
-                this.addCssClass(Classes.queueAutomatic.className());
-            }
-        });
+        if (this.gSongInfo.getIsPlaying()) {
+            this.removeCssClass(Classes.queueAutomatic.className());
+            return;
+        }
+        if (this.gQueueItem.getIsUserQueued()) {
+            this.removeCssClass(Classes.queueAutomatic.className());
+        } else {
+            this.addCssClass(Classes.queueAutomatic.className());
+        }
     }
 
     private void updateCurrentStyling() {
-        if (this.gQueueItem == null || this.gSongInfo == null) {
+        if (this.gSongInfo == null) {
             return;
         }
-        Utils.runOnMainThread(() -> {
-            if (this.gSongInfo == null) {
-                return;
-            }
-            if (this.gSongInfo.getIsPlaying()) {
-                this.titleLabel.addCssClass(Classes.colorAccent.className());
-            } else {
-                this.titleLabel.removeCssClass(Classes.colorAccent.className());
-            }
-        });
+        if (this.gSongInfo.getIsPlaying()) {
+            this.titleLabel.addCssClass(Classes.colorAccent.className());
+        } else {
+            this.titleLabel.removeCssClass(Classes.colorAccent.className());
+        }
     }
 }
