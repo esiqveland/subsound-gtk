@@ -163,11 +163,11 @@ A few samples of what the UI looks like:
   - [X] browsing playlists
   - [X] keep a cache of available playlists in AppState for quick access
   - [X] add song to a playlist
+  - [X] create playlist
   - [ ] remove song from playlist
-  - [ ] create playlist
   - [ ] rename playlist
   - [ ] delete playlist
-  - [ ] alternative sort orders for playlists
+  - [X] alternative sort orders for playlists
 - [X] Mpris support
     - [X] thumbnail - needs to give the path to our downloaded copy on disk, or do a loooot of resizing to send it over dbus
     - [X] play/pause
@@ -209,7 +209,6 @@ Features:
   - [X] Play songs from local cache
   - [X] Download album art to local cache
   - [X] Sync artist/song metadata for offline storage
-    - [X] Make it fast
   - [X] Playlists
   - [X] Browse from offline storage only
   - [X] Download manager for offline available content
