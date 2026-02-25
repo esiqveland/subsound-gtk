@@ -165,8 +165,8 @@ A few samples of what the UI looks like:
   - [X] add song to a playlist
   - [X] create playlist
   - [ ] remove song from playlist
-  - [ ] rename playlist
-  - [ ] delete playlist
+  - [X] rename playlist
+  - [X] delete playlist
   - [X] alternative sort orders for playlists
 - [X] Mpris support
     - [X] thumbnail - needs to give the path to our downloaded copy on disk, or do a loooot of resizing to send it over dbus
