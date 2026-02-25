@@ -264,6 +264,13 @@ public class Utils {
         return clazz;
     }
 
+    public static String plural(int i, String singular, String plural) {
+        if (i == 1) {
+            return singular;
+        }
+        return plural;
+    }
+
     public record SignalWidget<T extends Widget>(
             T widget,
             SignalConnection<?> signalConnection
