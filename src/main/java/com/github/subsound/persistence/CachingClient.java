@@ -271,7 +271,7 @@ public class CachingClient implements ServerClient {
 
     @Override
     public void playlistRename(PlaylistRenameRequest req) {
-        this.delegate.playlistRename(req);
+        // unconditionally rename the playlist in the UI first, its not the end of the world if we fail to rename at server
         this.dbService.getPlaylistById(req.id()).ifPresent(existing -> {
             var updated = new PlaylistRow(
                     existing.id(),
@@ -285,6 +285,7 @@ public class CachingClient implements ServerClient {
             );
             this.dbService.upsertPlaylist(updated);
         });
+        this.delegate.playlistRename(req);
     }
 
     @Override

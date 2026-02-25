@@ -149,6 +149,23 @@ public class PlaylistsStore {
         }
     }
 
+    public void renamePlaylist(String id, String newName) {
+        synchronized (lock) {
+            Utils.runOnMainThread(() -> {
+                for (int i = 0; i < metaStore.getNItems(); i++) {
+                    var gPlaylist = metaStore.getItem(i);
+                    if (id.equals(gPlaylist.getId())) {
+                        var old = gPlaylist.getPlaylist();
+                        gPlaylist.setValue(new PlaylistSimple(
+                                old.id(), newName, old.kind(), old.coverArtId(), old.songCount(), old.created()
+                        ));
+                        break;
+                    }
+                }
+            });
+        }
+    }
+
     record Insertion(int position, GPlaylist item) {}
     record Differences(
             ArrayList<Integer> removalIndices,
