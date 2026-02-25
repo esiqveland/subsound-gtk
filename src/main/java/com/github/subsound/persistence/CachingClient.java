@@ -272,6 +272,19 @@ public class CachingClient implements ServerClient {
     @Override
     public void playlistRename(PlaylistRenameRequest req) {
         this.delegate.playlistRename(req);
+        this.dbService.getPlaylistById(req.id()).ifPresent(existing -> {
+            var updated = new PlaylistRow(
+                    existing.id(),
+                    existing.serverId(),
+                    req.newName(),
+                    existing.songCount(),
+                    existing.duration(),
+                    existing.coverArtId(),
+                    existing.createdAt(),
+                    Instant.now()
+            );
+            this.dbService.upsertPlaylist(updated);
+        });
     }
 
     @Override
