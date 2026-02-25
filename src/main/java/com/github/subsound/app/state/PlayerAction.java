@@ -51,6 +51,7 @@ public sealed interface PlayerAction {
     record AddManyToDownloadQueue(List<GSongInfo> songs) implements PlayerAction {}
     record CreatePlaylist(String playlistName, List<GSongInfo> songs) implements PlayerAction {}
     record DeletePlaylist(String playlistId) implements PlayerAction {}
+    record RenamePlaylist(String playlistId, String newName) implements PlayerAction {}
     record RefreshPlaylists() implements PlayerAction {}
 
     // not strictly player actions:
