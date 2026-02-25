@@ -2,31 +2,25 @@ id: com.github.Subsound
 runtime: org.gnome.Platform
 runtime-version: '49'
 sdk: org.gnome.Sdk
-add-extensions:
-  org.freedesktop.Sdk.Extension.openjdk25:
-    version: '25.08'
 sdk-extensions:
-  org.freedesktop.Sdk.Extension.openjdk25:
-    version: '25.08'
-build-options:
-  append-path: "/usr/lib/sdk/openjdk25/bin"
+  - org.freedesktop.Sdk.Extension.openjdk25
 command: /app/bin/Subsound.sh
 finish-args:
   - "--env=PATH=/app/jre/bin:/usr/bin"
   - "--env=JAVA_HOME=/app/jre"
   - "--env=JAVA_OPTS=--enable-native-access=ALL-UNNAMED"
+  - "--socket=pipewire"
   - "--socket=pulseaudio"
   - "--socket=wayland"
   - "--socket=fallback-x11"
   - "--share=ipc"
   - "--share=network"
+  - "--own-name=org.mpris.MediaPlayer2.Subsound"
   # Direct Rendering Interface. Necessary for GL. # TODO: Is this needed for accelerated GTK rendering?
   - "--device=dri"
   - "--filesystem=xdg-config:create"
   - "--filesystem=xdg-cache:create"
   - "--filesystem=xdg-data:create"
-  #- "--talk-name=org.freedesktop.FileManager1",
-  #- "--filesystem=home:rw"
 modules:
   - name: openjdk
     buildsystem: 'simple'
@@ -36,8 +30,8 @@ modules:
   - name: Subsound
     buildsystem: simple
     build-options:
+      append-path: "/usr/lib/sdk/openjdk25/jvm/openjdk-25/bin"
       env:
-        PATH: /app/bin:/usr/bin:/usr/lib/sdk/openjdk25/bin
         JAVA_HOME: /usr/lib/sdk/openjdk25/jvm/openjdk-25
     build-commands:
       # We make the Gradle wrapper use our local .zip file
@@ -63,7 +57,7 @@ modules:
       - install --mode=0644 -D src/main/resources/icons/generated/icon-24.png  /app/share/icons/hicolor/24x24/apps/com.github.Subsound.png
       - install --mode=0644 -D src/main/resources/icons/generated/icon-16.png  /app/share/icons/hicolor/16x16/apps/com.github.Subsound.png
       - install --mode=0644 -D com.github.Subsound.desktop  /app/share/applications/com.github.Subsound.desktop
-      #- install --mode=0644 -D com.github.Subsound.metainfo.xml /app/share/metainfo/com.github.Subsound.metainfo.xml
+      - install --mode=0644 -D com.github.Subsound.metainfo.xml /app/share/metainfo/com.github.Subsound.metainfo.xml
     only-arches:
       - x86_64
     sources:
