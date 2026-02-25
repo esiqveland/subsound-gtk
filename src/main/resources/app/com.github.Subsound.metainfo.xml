@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.github.Subsound</id>
+
+  <name>Subsound</name>
+  <summary>Stream music from your Navidrome or Subsonic server</summary>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+
+  <description>
+    <p>
+      Subsound is a GTK4/Adwaita music player for Subsonic-compatible streaming servers,
+      with Navidrome as the primary target. It lets you browse artists, albums, and playlists
+      from your personal music server and plays them back directly or from a local cache.
+    </p>
+    <p>Features include:</p>
+    <ul>
+      <li>Browse and play music from Navidrome or any Subsonic-compatible server</li>
+      <li>Offline playback from a local song cache</li>
+      <li>MPRIS2 media player integration for desktop media controls</li>
+      <li>Starred songs and downloaded songs views</li>
+      <li>Playlist management</li>
+      <li>Native GTK4/Adwaita interface designed for GNOME</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">com.github.Subsound.desktop</launchable>
+
+  <url type="homepage">https://github.com/esiqveland/subsound-gtk</url>
+  <url type="bugtracker">https://github.com/esiqveland/subsound-gtk/issues</url>
+
+  <screenshots/>
+
+  <releases>
+    <release version="0.1.4" date="2025-01-01">
+      <description>
+        <p>Initial public release.</p>
+      </description>
+    </release>
+  </releases>
+
+  <content_rating type="oars-1.1"/>
+
+  <categories>
+    <category>Audio</category>
+    <category>Music</category>
+  </categories>
+
+  <keywords>
+    <keyword>music</keyword>
+    <keyword>audio</keyword>
+    <keyword>navidrome</keyword>
+    <keyword>subsonic</keyword>
+    <keyword>streaming</keyword>
+    <keyword>player</keyword>
+  </keywords>
+</component>
