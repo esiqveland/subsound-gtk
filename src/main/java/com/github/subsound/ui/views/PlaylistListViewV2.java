@@ -66,6 +66,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
     private final ColumnView listView;
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private final ScrolledWindow scroll;
+    private final Label titleLabel;
     private final AtomicReference<MiniState> prevState;
     private final Consumer<AppRoute> onNavigate;
     private final ListStore<GPlaylistEntry> listModel = new ListStore<>();
@@ -410,6 +411,22 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
                 .setPropagateNaturalHeight(true)
                 .build();
         this.scroll.setChild(this.listView);
+
+        this.titleLabel = Label.builder()
+                .setLabel("")
+                .setHalign(START)
+                .setHexpand(true)
+                .setCssClasses(new String[]{"title-2"})
+                .build();
+
+        var headerBox = new Box(HORIZONTAL, 0);
+        headerBox.setMarginTop(12);
+        headerBox.setMarginBottom(8);
+        headerBox.setMarginStart(16);
+        headerBox.setMarginEnd(8);
+        headerBox.append(this.titleLabel);
+
+        this.append(headerBox);
         this.append(this.scroll);
     }
 
@@ -420,6 +437,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             items[i] = GPlaylistEntry.of(songs.get(i), i);
         }
         Utils.runOnMainThread(() -> {
+            this.titleLabel.setLabel(playlist.name());
             this.listModel.removeAll();
             this.listModel.splice(0, 0, items);
         });
