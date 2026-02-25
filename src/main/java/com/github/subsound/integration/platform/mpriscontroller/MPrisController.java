@@ -79,7 +79,7 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
         try (DBusConnection conn = builder.build()) {
             this.appManager.addOnStateChanged(this);
             conn.exportObject("/org/mpris/MediaPlayer2", this);
-            conn.requestBusName("org.mpris.MediaPlayer2.com.github.Subsound");
+            conn.requestBusName("org.mpris.MediaPlayer2.Subsound");
             while (!isShutdown.get()) {
                 var msg = dbusMessageChannel.receive();
                 if (msg != null) {
