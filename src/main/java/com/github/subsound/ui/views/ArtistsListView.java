@@ -34,7 +34,7 @@ import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
 
-public class ArtistsListBox extends Box {
+public class ArtistsListView extends Box {
     private final ThumbnailCache thumbLoader;
     private final AppManager client;
     private final List<ArtistEntry> artists;
@@ -47,7 +47,7 @@ public class ArtistsListBox extends Box {
     private final ListStore<GArtistEntry> listModel;
     private final ListView listView;
 
-    public ArtistsListBox(
+    public ArtistsListView(
             ThumbnailCache thumbLoader,
             AppManager client,
             List<ArtistEntry> artists,
