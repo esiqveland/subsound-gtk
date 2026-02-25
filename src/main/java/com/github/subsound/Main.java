@@ -27,8 +27,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class Main {
     private final static Logger log = LoggerFactory.getLogger(Main.class);
+    private final static String rootLogLevel = Optional.ofNullable(System.getenv("JAVA_LOG_LEVEL")).orElse("INFO");
     static {
-        LogUtils.setRootLogLevel("INFO");
+        LogUtils.setRootLogLevel(rootLogLevel);
         // Bridge/route all JUL log records to the SLF4J API.
         SLF4JBridgeHandler.install();
     }
