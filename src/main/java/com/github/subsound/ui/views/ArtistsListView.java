@@ -5,6 +5,7 @@ import com.github.subsound.integration.ServerClient.ArtistAlbumInfo;
 import com.github.subsound.integration.ServerClient.ArtistEntry;
 import com.github.subsound.persistence.ThumbnailCache;
 import com.github.subsound.ui.components.RoundedAlbumArt;
+import com.github.subsound.utils.Utils;
 import org.gnome.adw.NavigationPage;
 import org.gnome.adw.NavigationSplitView;
 import org.gnome.adw.StatusPage;
@@ -15,6 +16,7 @@ import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListItem;
+import org.gnome.gtk.EventControllerMotion;
 import org.gnome.gtk.ListView;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.ScrolledWindow;
@@ -46,6 +48,8 @@ public class ArtistsListView extends Box {
     private final ArtistInfoLoader artistInfoLoader;
     private final ListStore<GArtistEntry> listModel;
     private final ListView listView;
+    private final SingleSelection<GArtistEntry> selectionModel;
+    private int currentIndex = -1;
 
     public ArtistsListView(
             ThumbnailCache thumbLoader,
@@ -97,7 +101,7 @@ public class ArtistsListView extends Box {
             listitem.setChild(null);
         });
 
-        var selectionModel = new SingleSelection<>(this.listModel);
+        this.selectionModel = new SingleSelection<>(this.listModel);
         selectionModel.setAutoselect(false);
         selectionModel.setCanUnselect(true);
 
@@ -119,11 +123,20 @@ public class ArtistsListView extends Box {
             if (item == null) {
                 return;
             }
+            this.currentIndex = index;
             var artist = item.getArtist();
             System.out.println("Artists: goto " + artist.name());
             this.contentPage.setTitle(artist.name());
             this.setSelectedArtist(artist.id());
         });
+
+        var motionController = new EventControllerMotion();
+        motionController.onLeave(() -> {
+            if (this.currentIndex >= 0) {
+                this.selectionModel.setSelected(this.currentIndex);
+            }
+        });
+        this.listView.addController(motionController);
 
         // Populate model
         var items = new GArtistEntry[this.artists.size()];
@@ -233,7 +246,7 @@ public class ArtistsListView extends Box {
         public void bind(GArtistEntry entry) {
             var artist = entry.getArtist();
             this.titleLabel.setLabel(artist.name());
-            this.subtitleLabel.setLabel(artist.albumCount() + " albums");
+            this.subtitleLabel.setLabel("%d %s".formatted(artist.albumCount(), Utils.plural(artist.albumCount(), "album", "albums")));
             this.prefixArt.update(artist.coverArt());
         }
 
