@@ -8,6 +8,7 @@ import com.github.subsound.integration.ServerClient;
 import com.github.subsound.utils.Utils;
 import org.gnome.adw.ActionRow;
 import org.gnome.adw.ButtonRow;
+import org.gnome.adw.Clamp;
 import org.gnome.adw.SwitchRow;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
@@ -67,6 +68,8 @@ public class ServerBadge extends Box implements AppManager.StateListener {
                 .setIconName(Icons.NetworkServer.getIconName())
                 .setUseMarkup(false)
                 .build();
+        this.serverRow.setSubtitleLines(1);
+        this.serverRow.setTitleLines(1);
         this.serverRow.addSuffix(statusDot);
 
         // Songs / folders / version — hidden until server info arrives
@@ -122,7 +125,12 @@ public class ServerBadge extends Box implements AppManager.StateListener {
         list.append(syncButton);
         list.append(configureServerButton);
 
-        this.append(list);
+        var clamp = new Clamp();
+        clamp.setMaximumSize(240);
+        clamp.setHalign(Align.FILL);
+        clamp.setValign(Align.FILL);
+        clamp.setChild(list);
+        this.append(clamp);
 
         this.pingTask = scheduler.scheduleWithFixedDelay(this::checkConnectivity, 0, 30, TimeUnit.SECONDS);
 
