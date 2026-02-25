@@ -103,6 +103,9 @@ Adwaita theme is used. Adwaita is the default theme in GNOME. Prefer to use Adwa
 
 The app is designed for dark mode.
 
+Gtk4 helper docs:
+https://api.pygobject.gnome.org/Gtk-4.0/classes.html
+
 ### References
 
 https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/widget-gallery.html

@@ -12,19 +12,14 @@ A few samples of what the UI looks like:
 
 ![Artists listing](screenshots/artistsv2.png)
 
-![Playlists view](screenshots/playlistsv1.png)
+![Playlists view](screenshots/starredv6.png)
 
-![Search modal ( Ctrl+K )](screenshots/searchv1.png)
+![Search modal ( Ctrl+K )](screenshots/searchv2.png)
 
 ### TODO
 
-- [X] songlist: duration, tracknumber, starred
-- [X] songlist: bitrate, size, format
-- [X] songlist: currently playing icon on the left
+- [X] songlist: duration, tracknumber, starred, bitrate, size, format
 - [X] songlist: self-updating playing icon on the left
-- [X] songlist: Single click to select, double-click/enter to activate (start playback)
-- [X] songlist: Hover-shows-play ?
-  - [ ] songlist: hover play icon is not tab-able for focus when row is selected, only when hover...
 - [X] Starred page
   - [X] reuse the ListView + StarredItemRow items on the page, so a new page doesn't need to be created every time
   - [ ] Bug: Removing a song from the ListView when its scrolled and a row below is selected, the viewport jumps to the top of the list
@@ -38,13 +33,8 @@ A few samples of what the UI looks like:
     - [ ] We usually load the starred list from the server on load, but we could also load it from a local cache on startup 
     - [ ] Maybe have a separate thread that periodically syncs the starred list from the server?
 - [X] Songlist:
-  - [X] display artist
   - [X] make album art only load while in view (lazy list view)
-  - [X] Fix play on row click + make focusable and double click to activate
-  - [X] Fix keyboard navigation in the listview
   - [X] Fix focus on propagating to child of the ListItem in the listview (ActionRow does not get `focused` state when row is selected / focused)
-  - [X] Make cover art be prettier in the ActionRow
-  - [X] Fix blinking when hover/unhover
   - [X] goto artist when clicking artist name
   - [X] goto album when clicking album name
   - [X] goto album when clicking on album artwork
@@ -85,7 +75,7 @@ A few samples of what the UI looks like:
   - [X] search by album
   - [X] search by song title
   - [X] search UI on ctrl+k
-  - [ ] find a place to put the search button for discovery
+  - [X] find a place to put the search button for discovery
 - HomePage
   - [X] Reuse between page views so we dont lose state
   - [X] Refresh using button
@@ -275,3 +265,5 @@ https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/named-colors.html#palet
 Adwaita available style classes stylesheet
 https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/style-classes.html
 
+SearchEntry
+https://api.pygobject.gnome.org/Gtk-4.0/class-SearchEntry.html#gi.repository.Gtk.SearchEntry
