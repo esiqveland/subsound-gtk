@@ -625,6 +625,14 @@ public class AppManager {
                             )
                     )));
                 }
+                case PlayerAction.ClearSongCache _ -> {
+                    this.songCache.clearSongs(SERVER_ID);
+                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Song cache cleared")));
+                }
+                case PlayerAction.ClearThumbnailCache _ -> {
+                    this.thumbnailCache.clearThumbnails(SERVER_ID);
+                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Thumbnail cache cleared")));
+                }
             }
         });
     }

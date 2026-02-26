@@ -6,6 +6,7 @@ import com.github.subsound.utils.javahttp.LoggingHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -15,8 +16,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.function.Function;
 
 import static com.github.subsound.utils.Utils.sha256;
@@ -45,7 +48,9 @@ public class SongCache implements SongCacheChecker {
         this.root = cacheDir;
     }
 
-    public record SongCacheQuery(String serverId, String songId, String streamFormat) {}
+    public record SongCacheQuery(String serverId, String songId, String streamFormat) {
+    }
+
     public record CacheSong(
             String serverId,
             String songId,
@@ -67,7 +72,8 @@ public class SongCache implements SongCacheChecker {
             // uri to the cached local file
             // file:///absolute/path/file.mp3
             URI uri
-    ) {}
+    ) {
+    }
 
     public LoadSongResult getSong(CacheSong songData) {
         // TODO: cache the cache check??
@@ -157,7 +163,7 @@ public class SongCache implements SongCacheChecker {
                 byte[] buffer = new byte[8192];
                 long sum = 0L;
                 int n;
-                while(-1 != (n = stream.read(buffer))) {
+                while (-1 != (n = stream.read(buffer))) {
                     output.write(buffer, 0, n);
                     sum += n;
                     if (sum > expectedSize) {
@@ -226,6 +232,24 @@ public class SongCache implements SongCacheChecker {
             return file.delete();
         }
         return false;
+    }
+
+    public void clearSongs(String serverId) {
+        var songsDir = root.resolve(serverId).resolve("songs");
+        deleteTree(songsDir);
+    }
+
+    private void deleteTree(Path dir) {
+        if (!dir.toFile().exists()) {
+            return;
+        }
+        try (var stream = Files.walk(dir)) {
+            stream.sorted(Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(File::delete);
+        } catch (IOException e) {
+            log.warn("Failed to delete directory: {}", dir, e);
+        }
     }
 
     public static Path joinPath(Path base, String... elements) {

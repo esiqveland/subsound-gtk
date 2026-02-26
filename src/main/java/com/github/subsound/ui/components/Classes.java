@@ -23,6 +23,7 @@ public enum Classes {
     colorWarning("warning"),
     colorError("error"),
     suggestedAction("suggested-action"),
+    destructiveAction("destructive-action"),
     titleLarge("larger-title"),
     titleLarge2("larger-title-2"),
     titleLarge3("larger-title-3"),

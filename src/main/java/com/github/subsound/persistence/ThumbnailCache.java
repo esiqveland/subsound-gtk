@@ -18,6 +18,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.http.HttpClient;
@@ -25,6 +26,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Semaphore;
@@ -176,6 +178,25 @@ public class ThumbnailCache {
                 throw new RuntimeException(ex);
             }
         });
+    }
+
+    public void clearThumbnails(String serverId) {
+        var thumbsDir = root.resolve(serverId).resolve("thumbs");
+        deleteTree(thumbsDir);
+        pixbufCache.invalidateAll();
+    }
+
+    private void deleteTree(Path dir) {
+        if (!dir.toFile().exists()) {
+            return;
+        }
+        try (var stream = Files.walk(dir)) {
+            stream.sorted(Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(File::delete);
+        } catch (IOException e) {
+            log.warn("Failed to delete directory: {}", dir, e);
+        }
     }
 
     record CacheKey(String part1, String part2, String part3) {

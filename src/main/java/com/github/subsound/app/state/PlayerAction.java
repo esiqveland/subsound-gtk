@@ -58,5 +58,7 @@ public sealed interface PlayerAction {
     record SaveConfig(SettingsInfo next) implements PlayerAction {}
     record Toast(org.gnome.adw.Toast toast) implements PlayerAction {}
     record SyncDatabase() implements PlayerAction {}
+    record ClearSongCache() implements PlayerAction {}
+    record ClearThumbnailCache() implements PlayerAction {}
     record OverrideNetworkStatus(Optional<NetworkMonitoring.NetworkStatus> overrideStatus) implements PlayerAction {}
 }

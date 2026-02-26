@@ -30,6 +30,7 @@ import static com.github.subsound.ui.components.Classes.colorError;
 import static com.github.subsound.ui.components.Classes.colorSuccess;
 import static com.github.subsound.ui.components.Classes.colorWarning;
 import static com.github.subsound.ui.components.Classes.none;
+import static com.github.subsound.ui.components.Classes.destructiveAction;
 import static com.github.subsound.ui.components.Classes.suggestedAction;
 import static com.github.subsound.ui.components.Classes.title1;
 import static com.github.subsound.ui.components.Classes.titleLarge;
@@ -51,6 +52,8 @@ public class SettingsPage extends Box {
     private final SwitchRow tlsSwitchEntry;
     private final EntryRow usernameEntry;
     private final PasswordEntryRow passwordEntry;
+    private final Button clearSongCacheButton;
+    private final Button clearThumbnailCacheButton;
     private final Button testButton;
     private final Button saveButton;
 
@@ -70,6 +73,20 @@ public class SettingsPage extends Box {
         this.tlsSwitchEntry = SwitchRow.builder().setTitle("Accept unverified certificate").setSensitive(false).build();
         this.usernameEntry = EntryRow.builder().setTitle("Username").build();
         this.passwordEntry = PasswordEntryRow.builder().setTitle("Password").build();
+        this.clearSongCacheButton = Button.builder()
+                .setLabel("Clear song cache")
+                .setCssClasses(destructiveAction.add())
+                .build();
+        this.clearSongCacheButton.onClicked(() ->
+                this.onAction.apply(new PlayerAction.ClearSongCache()));
+
+        this.clearThumbnailCacheButton = Button.builder()
+                .setLabel("Clear thumbnail cache")
+                .setCssClasses(destructiveAction.add())
+                .build();
+        this.clearThumbnailCacheButton.onClicked(() ->
+                this.onAction.apply(new PlayerAction.ClearThumbnailCache()));
+
         this.testButton = Button.builder().setLabel("Test").setCssClasses(none.add()).build();
         this.testButton.onClicked(() -> this.testConnection());
         this.saveButton = Button.builder().setLabel("Save").setCssClasses(title1.add(suggestedAction)).setSensitive(false).build();
@@ -80,6 +97,8 @@ public class SettingsPage extends Box {
         this.listBox.append(tlsSwitchEntry);
         this.listBox.append(usernameEntry);
         this.listBox.append(passwordEntry);
+        this.listBox.append(clearSongCacheButton);
+        this.listBox.append(clearThumbnailCacheButton);
         this.listBox.append(testButton);
         this.listBox.append(saveButton);
 
