@@ -6,6 +6,7 @@ import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.ui.models.GQueueItem;
 import com.github.subsound.ui.models.GSongInfo;
 import com.github.subsound.utils.Utils;
+import org.gnome.gobject.GObject;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
@@ -38,9 +39,9 @@ public class PlayQueueItemRow extends Box {
     private final Label durationLabel;
     private final Button removeButton;
 
-    private final AtomicReference<SignalConnection<?>> isCurrentSignal = new AtomicReference<>();
-    private final AtomicReference<SignalConnection<?>> positionSignal = new AtomicReference<>();
     private final AtomicInteger index = new AtomicInteger(0);
+    private SignalConnection<NotifyCallback> isCurrentSignal;
+    private SignalConnection<NotifyCallback> positionSignal;
 
     public PlayQueueItemRow(AppManager appManager) {
         super(HORIZONTAL, 8);
@@ -109,8 +110,6 @@ public class PlayQueueItemRow extends Box {
         this.append(albumArt);
         this.append(contentBox);
         this.append(removeButton);
-
-        this.onDestroy(this::unbind);
     }
 
     public void bind(GQueueItem item, ListItem listItem) {
@@ -119,24 +118,16 @@ public class PlayQueueItemRow extends Box {
         this.songInfo = item.getSongInfo().getSongInfo();
 
         // Listen for IS_CURRENT changes
-        var currentConnection = this.gSongInfo.onNotify(
+        this.isCurrentSignal = this.gSongInfo.onNotify(
                 GSongInfo.Signal.IS_PLAYING.getId(),
                 _ -> updateStyling()
         );
-        var oldCurrentConnection = this.isCurrentSignal.getAndSet(currentConnection);
-        if (oldCurrentConnection != null) {
-            oldCurrentConnection.disconnect();
-        }
 
         // Listen for position changes
-        var positionConnection = listItem.onNotify("position", _ -> {
+        this.positionSignal = listItem.onNotify("position", _ -> {
             int pos = listItem.getPosition();
             this.index.set(pos);
         });
-        var oldPositionConnection = this.positionSignal.getAndSet(positionConnection);
-        if (oldPositionConnection != null) {
-            oldPositionConnection.disconnect();
-        }
 
         this.index.set(listItem.getPosition());
         updateView();
@@ -149,13 +140,15 @@ public class PlayQueueItemRow extends Box {
     }
 
     public void unbind() {
-        var sig1 = this.isCurrentSignal.getAndSet(null);
+        var sig1 = this.isCurrentSignal;
         if (sig1 != null) {
             sig1.disconnect();
+            this.isCurrentSignal = null;
         }
-        var sig2 = this.positionSignal.getAndSet(null);
+        var sig2 = this.positionSignal;
         if (sig2 != null) {
             sig2.disconnect();
+            this.positionSignal = null;
         }
         // Explicitly clear visual state so recycled rows start clean
         this.titleLabel.removeCssClass(Classes.colorAccent.className());
