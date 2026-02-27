@@ -14,8 +14,6 @@ import com.github.subsound.utils.Utils;
 import org.gnome.adw.Clamp;
 import org.gnome.gdk.Texture;
 import org.gnome.gdkpixbuf.Pixbuf;
-import org.gnome.gio.Cancellable;
-import org.gnome.gio.MemoryInputStream;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.ContentFit;
@@ -36,7 +34,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.github.subsound.utils.Utils.addClick;
 import static com.github.subsound.utils.Utils.addHover2;
-import static com.github.subsound.utils.Utils.mustReadBytes;
 
 
 public class RoundedAlbumArt extends Box {
@@ -53,16 +50,10 @@ public class RoundedAlbumArt extends Box {
 
     private static Texture getPlaceholderTexture() {
         return placeHolderCache.computeIfAbsent(true, (key) -> {
-            try {
-                var bytes = mustReadBytes("images/album-placeholder.png");
-                var gioStream = MemoryInputStream.fromData(bytes);
-                // load at a reasonable resolution (2 * 128)
-                var loadSize = 2 * 128;
-                var pixbuf = Pixbuf.fromStreamAtScale(gioStream, loadSize, loadSize, true, new Cancellable());
-                return Texture.forPixbuf(pixbuf);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            // 1×1 dark grey pixel — Picture scales it to fill with ContentFit.COVER
+            var pixbuf = new Pixbuf(org.gnome.gdkpixbuf.Colorspace.RGB, true, 8, 1, 1);
+            pixbuf.fill(0x333333ff);  // RRGGBBAA: dark grey, fully opaque
+            return Texture.forPixbuf(pixbuf);
         });
     }
 
@@ -109,9 +100,7 @@ public class RoundedAlbumArt extends Box {
         this.image.setOverflow(Overflow.HIDDEN);
         this.image.addCssClass("rounded");
 
-        if (this.artwork == null) {
-            this.image.setPaintable(getPlaceholderTexture());
-        }
+        this.image.setPaintable(getPlaceholderTexture());
 
         var click = addClick(
                 this,
@@ -184,10 +173,9 @@ public class RoundedAlbumArt extends Box {
         }
         this.artwork = newArtwork;
         this.isLoaded.set(false);
-        if (newArtwork == null) {
-            var tex = getPlaceholderTexture();
-            Utils.runOnMainThread(() -> image.setPaintable(tex));
-        } else if (this.getMapped()) {
+        var tex = getPlaceholderTexture();
+        Utils.runOnMainThread(() -> image.setPaintable(tex));
+        if (newArtwork != null && this.getMapped()) {
             startLoad(this.image).thenAccept(_ -> isLoaded.set(true));
         }
         // If not mapped and artwork non-null: onMap will trigger load
