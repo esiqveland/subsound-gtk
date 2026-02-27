@@ -192,7 +192,6 @@ public class FrontpagePage extends Box {
 
         private HomeOverview data;
 
-        private final ServerInfoCard serverInfoCard;
         private final Label recentLabel = heading1("Recently played").build();
         private final Label newLabel = heading1("Newly added releases").build();
         private final Label mostLabel = heading1("Most played").build();
@@ -209,11 +208,9 @@ public class FrontpagePage extends Box {
             this.setVexpand(true);
             this.setHalign(START);
             this.setValign(START);
-            this.serverInfoCard = new ServerInfoCard();
             this.recentList = holder();
             this.newList = holder();
             this.mostPlayedList = holder();
-            this.append(this.serverInfoCard);
             this.append(wrap(recentLabel, recentList));
             this.append(wrap(newLabel, newList));
             this.append(wrap(mostLabel, mostPlayedList));
@@ -405,7 +402,6 @@ public class FrontpagePage extends Box {
 
         public void setData(HomeOverview homeOverview, ServerClient.ServerInfo serverInfo, String serverUrl) {
             this.data = homeOverview;
-            this.serverInfoCard.update(serverInfo, serverUrl);
             this.update(homeOverview);
         }
 
