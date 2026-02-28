@@ -6,6 +6,7 @@ import com.github.subsound.persistence.database.DownloadQueueItem;
 import com.github.subsound.persistence.database.DownloadQueueItem.DownloadStatus;
 import org.gnome.glib.Type;
 import org.gnome.gobject.GObject;
+import org.javagi.gobject.SignalConnection;
 import org.javagi.gobject.annotations.Property;
 import org.javagi.gobject.types.Types;
 
@@ -103,6 +104,11 @@ public class GSongInfo extends GObject {
     public boolean getIsPlaying() {
         return this.isPlaying.get();
     }
+    @Property(skip = true)
+    public SignalConnection<NotifyCallback> onIsPlayingChanged(NotifyCallback handler) {
+        return onNotify(Signal.IS_PLAYING.getId(), handler);
+    }
+
 
     @Property
     // for some reason java-gi throws an exception on startup if we return the raw enum here:
