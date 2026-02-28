@@ -3,6 +3,7 @@ package com.github.subsound.app.state;
 import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.PlaylistKind;
 import com.github.subsound.integration.ServerClient.PlaylistSimple;
+import com.github.subsound.ui.models.GSongInfo;
 import com.github.subsound.utils.Utils;
 import org.gnome.glib.Type;
 import org.gnome.gio.ListStore;
@@ -19,7 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 public class PlaylistsStore {
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(PlaylistsStore.class);
@@ -33,10 +36,12 @@ public class PlaylistsStore {
     private final ArrayList<String> backingIds = new ArrayList<>();
     private final AtomicBoolean isLoading = new AtomicBoolean(false);
     private final Object lock = new Object();
+    private final GSongInfo.GSongStore songStore;
     private GPlaylist starredPlaylist;
 
     public PlaylistsStore(AppManager appManager) {
         this.appManager = appManager;
+        this.songStore = appManager.getSongStore();
     }
 
     public CompletableFuture<Void> refreshListAsync() {
@@ -139,7 +144,7 @@ public class PlaylistsStore {
         return result;
     }
 
-    public void addPlaylist(PlaylistSimple createdPlaylist) {
+    public void addNewPlaylist(PlaylistSimple createdPlaylist) {
         synchronized (lock) {
             Utils.runOnMainThread(() -> {
                 // adds the new playlist to the "top" (right below our two fixed entries with Starred and Downloads)
@@ -147,6 +152,27 @@ public class PlaylistsStore {
                 this.backingIds.addAll(2, List.of(createdPlaylist.id()));
             });
         }
+    }
+
+    public void refreshPlaylistAsync(String playlistId) {
+        Utils.doAsync(() -> this.appManager.useClient(cl -> cl.getPlaylist(playlistId)))
+                .thenAccept(playlist -> {
+                    var simple = new PlaylistSimple(
+                            playlist.id(),
+                            playlist.name(),
+                            playlist.kind(),
+                            playlist.coverArtId(),
+                            playlist.songCount(),
+                            playlist.created()
+                    );
+
+                    var gPlaylist = GPlaylist.newInstance(simple);
+                    var gSongs = playlist.songs().stream().map(songStore::newInstance).toList();
+                    Utils.runOnMainThread(() -> {
+                        gPlaylist.setValue(simple);
+                        gPlaylist.setSongs(gSongs);
+                    });
+                });
     }
 
     public void renamePlaylist(String id, String newName) {
@@ -205,9 +231,11 @@ public class PlaylistsStore {
 
     public static class GPlaylist extends GObject {
         public static final Type gtype = Types.register(GPlaylist.class);
+        public static final ConcurrentHashMap<String, GPlaylist> instances = new ConcurrentHashMap<>();
 
         private String id;
         private PlaylistSimple value;
+        private List<GSongInfo> songs;
 
         public GPlaylist(MemorySegment address) {
             super(address);
@@ -235,10 +263,17 @@ public class PlaylistsStore {
         }
 
         public static GPlaylist newInstance(PlaylistSimple value) {
-            GPlaylist obj = GObject.newInstance(gtype);
-            obj.id = value.id();
-            obj.value = value;
-            return obj;
+            return instances.computeIfAbsent(value.id(), key -> {
+                GPlaylist obj = GObject.newInstance(gtype);
+                obj.id = value.id();
+                obj.value = value;
+                return obj;
+            });
+        }
+
+        public void setSongs(List<GSongInfo> gSongs) {
+            this.songs = gSongs;
+            //this.notify("songs");
         }
     }
 }
