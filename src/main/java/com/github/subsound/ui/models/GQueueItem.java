@@ -1,10 +1,10 @@
 package com.github.subsound.ui.models;
 
 import com.github.subsound.integration.ServerClient.SongInfo;
-import org.javagi.gobject.annotations.Property;
-import org.javagi.gobject.types.Types;
 import org.gnome.glib.Type;
 import org.gnome.gobject.GObject;
+import org.javagi.gobject.annotations.Property;
+import org.javagi.gobject.types.Types;
 
 import java.lang.foreign.MemorySegment;
 
@@ -16,6 +16,7 @@ public class GQueueItem extends GObject {
         AUTOMATIC,
     }
 
+    private String queueItemId;
     private GSongInfo gSongInfo;
     private QueueKind queueKind = QueueKind.AUTOMATIC;
     private int originalOrder;   // Position when added to queue (for unshuffle)
@@ -39,6 +40,10 @@ public class GQueueItem extends GObject {
     @Property
     public String getId() {
         return gSongInfo != null ? gSongInfo.getSongInfo().id() : null;
+    }
+
+    public String getQueueItemId() {
+        return queueItemId;
     }
 
     public QueueKind queueKind() {
@@ -67,12 +72,9 @@ public class GQueueItem extends GObject {
         return queueKind == QueueKind.USER_ADDED;
     }
 
-    public static GQueueItem newInstance(GSongInfo gSongInfo, QueueKind queueKind) {
-        return newInstance(gSongInfo, queueKind, 0);
-    }
-
-    public static GQueueItem newInstance(GSongInfo gSongInfo, QueueKind queueKind, int originalOrder) {
+    public static GQueueItem newInstance(String itemId, GSongInfo gSongInfo, QueueKind queueKind, int originalOrder) {
         GQueueItem instance = GObject.newInstance(gtype);
+        instance.queueItemId = itemId;
         instance.gSongInfo = gSongInfo;
         instance.queueKind = queueKind;
         instance.originalOrder = originalOrder;
