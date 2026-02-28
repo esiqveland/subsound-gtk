@@ -7,6 +7,8 @@ import com.github.subsound.app.state.AppManager.StateListener;
 import com.github.subsound.app.state.NetworkMonitoring.NetworkStatus;
 import com.github.subsound.app.state.PlayerAction;
 import com.github.subsound.app.state.PlaylistsStore.GPlaylist;
+import com.github.subsound.integration.ServerClient;
+import com.github.subsound.integration.ServerClient.ObjectIdentifier.AlbumIdentifier;
 import com.github.subsound.integration.ServerClient.PlaylistKind;
 import com.github.subsound.app.state.PlayerAction.PlayAndReplaceQueue;
 import com.github.subsound.integration.ServerClient.SongInfo;
@@ -58,6 +60,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
+import static com.github.subsound.app.state.PlaylistsStore.STARRED_ID;
 import static com.github.subsound.utils.Utils.addHover;
 import static com.github.subsound.utils.Utils.cssClasses;
 import static com.github.subsound.utils.Utils.formatBytesSI;
@@ -392,6 +395,7 @@ public class AlbumInfoPage extends Box implements StateListener {
                 menuPopover.popdown();
                 int idx = this.index;
                 this.onAction.apply(PlayAndReplaceQueue.of(
+                        new AlbumIdentifier(albumInfo.album().id()),
                         this.albumInfo.songs(),
                         idx
                 ));
@@ -536,6 +540,7 @@ public class AlbumInfoPage extends Box implements StateListener {
             var songInfo = this.info.songs().get(row.getIndex());
             System.out.println("AlbumInfoBox: play " + songInfo.getTitle() + " (%s)".formatted(songInfo.getId()));
             this.onAction.apply(new PlayAndReplaceQueue(
+                    new AlbumIdentifier(this.info.album().id()),
                     this.info.songs().stream().map(GSongInfo::getSongInfo).toList(),
                     row.getIndex()
             ));

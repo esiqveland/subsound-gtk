@@ -6,7 +6,7 @@ import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
 import com.github.subsound.ui.components.OverviewAlbumChild.AlbumCoverHolderSmall;
 import com.github.subsound.ui.models.GSongInfo;
-import com.github.subsound.ui.views.PlaylistListView;
+import com.github.subsound.ui.views.PlaylistListViewV2.MiniState;
 import com.github.subsound.utils.Utils;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
@@ -39,7 +39,7 @@ import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
 
-public class StarredItemRow extends Box implements PlaylistListView.UpdateListener {
+public class StarredItemRow extends Box {
     private static final int TRACK_NUMBER_LABEL_CHARS = 4;
 
     private final AppManager appManager;
@@ -342,7 +342,6 @@ public class StarredItemRow extends Box implements PlaylistListView.UpdateListen
 
     private volatile NowPlayingState playingState = NowPlayingState.NONE;
 
-    @Override
     public void update(MiniState n) {
         var next = getNextPlayingState(n);
         if (next == this.playingState) {

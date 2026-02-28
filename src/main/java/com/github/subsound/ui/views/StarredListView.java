@@ -2,13 +2,14 @@ package com.github.subsound.ui.views;
 
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.app.state.PlayerAction;
+import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.ui.components.AppNavigation;
 import com.github.subsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
 import com.github.subsound.ui.components.StarredItemRow;
 import com.github.subsound.ui.models.GSongInfo;
-import com.github.subsound.ui.views.PlaylistListView.UpdateListener.MiniState;
+import com.github.subsound.ui.views.PlaylistListViewV2.MiniState;
 import com.github.subsound.utils.Utils;
 import org.gnome.gio.ListStore;
 import org.gnome.gtk.Align;
@@ -31,6 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.github.subsound.app.state.PlaylistsStore.STARRED_ID;
 import static org.gnome.gtk.Align.CENTER;
 import static org.gnome.gtk.Align.FILL;
 import static org.gnome.gtk.Align.START;
@@ -154,7 +156,11 @@ public class StarredListView extends Box implements AppManager.StateListener {
             }
             log.info("listView.onActivate: {} {}", index, songInfo.getTitle());
             List<SongInfo> songs = this.listModel.stream().map(GSongInfo::getSongInfo).toList();
-            this.onAction.apply(new PlayerAction.PlayAndReplaceQueue(songs, index));
+            this.onAction.apply(new PlayerAction.PlayAndReplaceQueue(
+                    new ServerClient.ObjectIdentifier.PlaylistIdentifier(STARRED_ID),
+                    songs,
+                    index
+            ));
         });
 
         // Key controller to handle Delete key for unstarring selected songs
@@ -230,21 +236,23 @@ public class StarredListView extends Box implements AppManager.StateListener {
         var npSong = state.nowPlaying().map(AppManager.NowPlaying::song);
         var nowPlayingState = getNowPlayingState(state.player().state());
         if (prev == null) {
-            return new MiniState(npSong, nowPlayingState);
+            return new MiniState(npSong, nowPlayingState, state.queue().playContext(), state.queue().position());
         }
-        if (prev.songInfo() == npSong && prev.nowPlayingState() == nowPlayingState) {
+        var pos = state.queue().position();
+        if (prev.songInfo() == npSong && prev.nowPlayingState() == nowPlayingState && prev.position() == pos) {
             return prev;
         }
+        var playContext = state.queue().playContext();
         if (npSong.isPresent()) {
             if (npSong.get().id().equals(prev.songInfo().map(SongInfo::id).orElse(""))) {
                 if (prev.nowPlayingState() == nowPlayingState) {
                     return prev;
                 } else {
-                    return new MiniState(npSong, nowPlayingState);
+                    return new MiniState(npSong, nowPlayingState, playContext, pos);
                 }
             }
         }
-        return new MiniState(npSong, nowPlayingState);
+        return new MiniState(npSong, nowPlayingState, playContext, pos);
     }
 
     private NowPlayingState getNowPlayingState(PlaybinPlayer.PlayerStates state) {

@@ -135,10 +135,31 @@ public interface ServerClient {
     }
 
     sealed interface ObjectIdentifier {
-        record ArtistIdentifier(String artistId) implements ObjectIdentifier {}
-        record AlbumIdentifier(String albumId) implements ObjectIdentifier {}
-        record PlaylistIdentifier(String playlistId) implements ObjectIdentifier {}
-        record SongIdentifier(String songId) implements ObjectIdentifier {}
+        String getId();
+        record ArtistIdentifier(String artistId) implements ObjectIdentifier {
+            @Override
+            public String getId() {
+                return artistId;
+            }
+        }
+        record AlbumIdentifier(String albumId) implements ObjectIdentifier {
+            @Override
+            public String getId() {
+                return albumId;
+            }
+        }
+        record PlaylistIdentifier(String playlistId) implements ObjectIdentifier {
+            @Override
+            public String getId() {
+                return playlistId;
+            }
+        }
+        record SongIdentifier(String songId) implements ObjectIdentifier {
+            @Override
+            public String getId() {
+                return songId;
+            }
+        }
         static ArtistIdentifier ofArtist(String artistId) {
             return new ArtistIdentifier(artistId);
         }

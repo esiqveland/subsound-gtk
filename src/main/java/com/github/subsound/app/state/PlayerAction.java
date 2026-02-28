@@ -1,5 +1,7 @@
 package com.github.subsound.app.state;
 
+import com.github.subsound.integration.ServerClient;
+import com.github.subsound.integration.ServerClient.ObjectIdentifier;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.ui.components.SettingsPage.SettingsInfo;
 import com.github.subsound.ui.models.GSongInfo;
@@ -22,9 +24,10 @@ public sealed interface PlayerAction {
     }
     record SetPlayMode(PlayMode mode) implements PlayerAction {}
     record SeekTo(Duration position) implements PlayerAction {}
-    record PlayAndReplaceQueue(List<SongInfo> queue, int position) implements PlayerAction {
-        public static PlayAndReplaceQueue of(List<GSongInfo> queue, int position) {
-            return new PlayAndReplaceQueue(queue.stream().map(GSongInfo::getSongInfo).toList(), position);
+    record PlayAndReplaceQueue(ObjectIdentifier playContext, List<SongInfo> queue, int position) implements PlayerAction {
+        public static PlayAndReplaceQueue of(ObjectIdentifier playContext, List<GSongInfo> queue, int position) {
+            var songs = queue.stream().map(GSongInfo::getSongInfo).toList();
+            return new PlayAndReplaceQueue(playContext, songs, position);
         }
         @Override
         public @NonNull String toString() {

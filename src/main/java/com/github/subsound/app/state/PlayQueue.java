@@ -1,6 +1,8 @@
 package com.github.subsound.app.state;
 
 import com.github.subsound.app.state.PlayerAction.PlayMode;
+import com.github.subsound.integration.ServerClient;
+import com.github.subsound.integration.ServerClient.ObjectIdentifier;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.sound.PlaybinPlayer.Source;
@@ -37,6 +39,7 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     private final Consumer<GSongInfo> onPlay;
     private final ListStore<GQueueItem> listStore = new ListStore<>(GQueueItem.gtype);
     private final GSongStore songstore;
+    private Optional<ObjectIdentifier> playContext;
     private Optional<Integer> position = Optional.empty();
     private PlayMode playMode = PlayMode.NORMAL;
 
@@ -59,7 +62,7 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
 
     public PlayQueueState getState() {
         synchronized (lock) {
-            return new PlayQueueState(position, playMode);
+            return new PlayQueueState(this.playContext, position, playMode);
         }
     }
 
@@ -84,6 +87,7 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
 
     public CompletableFuture<Void> playAndReplaceQueue(PlayerAction.PlayAndReplaceQueue a) {
         return Utils.doAsync(() -> {
+            this.playContext = Optional.ofNullable(a.playContext());
             this.replaceQueue(a.queue(), a.position()).join();
             // Use actual position from queue state (may differ from a.position() after shuffle)
             int positionToPlay;
@@ -95,6 +99,7 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     }
 
     public record PlayQueueState (
+            Optional<ObjectIdentifier> playContext,
             Optional<Integer> position,
             PlayMode playMode
     ){}
@@ -255,10 +260,6 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
                 this.notifyState();
             }
         });
-    }
-
-    public void replaceQueue(List<SongInfo> queue) {
-        replaceQueue(queue, Optional.empty());
     }
 
     public CompletableFuture<Void> replaceQueue(List<SongInfo> queue, int startPosition) {
