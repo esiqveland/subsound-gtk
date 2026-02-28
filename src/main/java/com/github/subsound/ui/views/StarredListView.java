@@ -3,6 +3,7 @@ package com.github.subsound.ui.views;
 import com.github.subsound.app.state.AppManager;
 import com.github.subsound.app.state.PlayerAction;
 import com.github.subsound.integration.ServerClient;
+import com.github.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.sound.PlaybinPlayer;
 import com.github.subsound.ui.components.AppNavigation;
@@ -25,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -155,10 +157,21 @@ public class StarredListView extends Box implements AppManager.StateListener {
                 return;
             }
             log.info("listView.onActivate: {} {}", index, songInfo.getTitle());
-            List<SongInfo> songs = this.listModel.stream().map(GSongInfo::getSongInfo).toList();
+            var playContext = new PlaylistIdentifier(STARRED_ID);
+            int count = 0;
+            var queue = new ArrayList<PlayerAction.QueueSlot>(this.listModel.getNItems());
+            for (GSongInfo song : this.listModel) {
+                PlayerAction.QueueSlot queueSlot = new PlayerAction.QueueSlot(
+                        PlaylistListViewV2.GPlaylistEntry.makeQueueItemId(playContext, song.getId(), count++),
+                        song.getSongInfo()
+                );
+                queue.add(queueSlot);
+            }
+
+
             this.onAction.apply(new PlayerAction.PlayAndReplaceQueue(
-                    new ServerClient.ObjectIdentifier.PlaylistIdentifier(STARRED_ID),
-                    songs,
+                    new PlaylistIdentifier(STARRED_ID),
+                    queue,
                     index
             ));
         });

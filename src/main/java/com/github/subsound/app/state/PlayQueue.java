@@ -1,7 +1,6 @@
 package com.github.subsound.app.state;
 
 import com.github.subsound.app.state.PlayerAction.PlayMode;
-import com.github.subsound.integration.ServerClient;
 import com.github.subsound.integration.ServerClient.ObjectIdentifier;
 import com.github.subsound.integration.ServerClient.SongInfo;
 import com.github.subsound.sound.PlaybinPlayer;
@@ -10,6 +9,7 @@ import com.github.subsound.sound.Player;
 import com.github.subsound.ui.models.GQueueItem;
 import com.github.subsound.ui.models.GSongInfo;
 import com.github.subsound.ui.models.GSongInfo.GSongStore;
+import com.github.subsound.ui.views.PlaylistListViewV2;
 import com.github.subsound.utils.Utils;
 import org.gnome.gio.ListStore;
 import org.slf4j.Logger;
@@ -21,6 +21,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -62,7 +63,10 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
 
     public PlayQueueState getState() {
         synchronized (lock) {
-            return new PlayQueueState(this.playContext, position, playMode);
+            var playingItemId = position
+                    .filter(p -> p >= 0 && p < listStore.getNItems())
+                    .map(p -> listStore.getItem(p).getQueueItemId());
+            return new PlayQueueState(this.playContext, position, playingItemId, playMode);
         }
     }
 
@@ -88,7 +92,7 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     public CompletableFuture<Void> playAndReplaceQueue(PlayerAction.PlayAndReplaceQueue a) {
         return Utils.doAsync(() -> {
             this.playContext = Optional.ofNullable(a.playContext());
-            this.replaceQueue(a.queue(), a.position()).join();
+            this.replaceQueueSlots(a.queue(), a.position()).join();
             // Use actual position from queue state (may differ from a.position() after shuffle)
             int positionToPlay;
             synchronized (lock) {
@@ -98,9 +102,11 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
         });
     }
 
+
     public record PlayQueueState (
             Optional<ObjectIdentifier> playContext,
             Optional<Integer> position,
+            Optional<String> playingItemId,
             PlayMode playMode
     ){}
     private void notifyState() {
@@ -181,7 +187,9 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
         synchronized (lock) {
             int insertPosition = position.orElse(-1) + 1;
             var song = this.songstore.newInstance(songInfo);
-            listStore.insert(insertPosition, GQueueItem.newInstance(song, GQueueItem.QueueKind.USER_ADDED));
+            var queueItemId = PlaylistListViewV2.GPlaylistEntry.makeQueueItemId(song.getSongInfo().albumId(), song.getId(), insertPosition);
+            var queueItem = GQueueItem.newInstance(queueItemId, song, GQueueItem.QueueKind.USER_ADDED, insertPosition);
+            listStore.insert(insertPosition, queueItem);
             this.notifyState();
         }
     }
@@ -198,7 +206,13 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
                 }
             }
             var song = this.songstore.newInstance(songInfo);
-            listStore.insert(insertPos, GQueueItem.newInstance(song, GQueueItem.QueueKind.USER_ADDED));
+            var queueItemId = PlaylistListViewV2.GPlaylistEntry.makeQueueItemId(
+                    song.getSongInfo().albumId(),
+                    song.getId(),
+                    insertPos
+            );
+            var queueItem = GQueueItem.newInstance(queueItemId, song, GQueueItem.QueueKind.USER_ADDED, insertPos);
+            listStore.insert(insertPos, queueItem);
             this.notifyState();
         }
     }
@@ -225,12 +239,13 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
         }
     }
 
-    public CompletableFuture<Void> replaceQueue(List<SongInfo> newQueue, Optional<Integer> startPosition) {
+    public CompletableFuture<Void> replaceQueueSlots(List<PlayerAction.QueueSlot> slots, Optional<Integer> startPosition) {
         return Utils.doAsync(() -> {
-            var newList = new GQueueItem[newQueue.size()];
-            for (int i = 0; i < newQueue.size(); i++) {
-                var song = this.songstore.newInstance(newQueue.get(i));
-                newList[i] = GQueueItem.newInstance(song, GQueueItem.QueueKind.AUTOMATIC, i);
+            var newList = new GQueueItem[slots.size()];
+            for (int i = 0; i < slots.size(); i++) {
+                var slot = slots.get(i);
+                var song = this.songstore.newInstance(slot.song());
+                newList[i] = GQueueItem.newInstance(slot.id(), song, GQueueItem.QueueKind.AUTOMATIC, i);
             }
 
             synchronized (lock) {
@@ -262,8 +277,16 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
         });
     }
 
-    public CompletableFuture<Void> replaceQueue(List<SongInfo> queue, int startPosition) {
-        return replaceQueue(queue, Optional.of(startPosition));
+    public CompletableFuture<Void> replaceQueueSlots(List<PlayerAction.QueueSlot> slots, int startPosition) {
+        return replaceQueueSlots(slots, Optional.of(startPosition));
+    }
+
+    /** Convenience method for callers that don't need UUID tracking (e.g. tests). */
+    public CompletableFuture<Void> replaceQueue(List<SongInfo> songs, int startPosition) {
+        var slots = songs.stream()
+                .map(s -> new PlayerAction.QueueSlot(UUID.randomUUID().toString(), s))
+                .toList();
+        return replaceQueueSlots(slots, startPosition);
     }
 
     private void updateCurrentItemStyling(int oldPosition, int newPosition) {
