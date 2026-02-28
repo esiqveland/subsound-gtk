@@ -46,10 +46,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -98,6 +100,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
 
         private GSongInfo gSong;
         private int position;
+        private String queueItemId;
 
         public GPlaylistEntry(MemorySegment address) {
             super(address);
@@ -107,11 +110,22 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             return gtype;
         }
 
-        public static GPlaylistEntry of(GSongInfo gSong, int position) {
+        public static String makeQueueItemId(ObjectIdentifier identifier, String songId, int position) {
+            return "%s||%s||%s".formatted(identifier.getId(), songId, position);
+        }
+        public static String makeQueueItemId(String playlistId, String songId, int position) {
+            return "%s||%s||%s".formatted(playlistId, songId, position);
+        }
+        public static GPlaylistEntry of(String playlistId, GSongInfo gSong, int position) {
             var instance = (GPlaylistEntry) GObject.newInstance(getType());
             instance.gSong = gSong;
             instance.position = position;
+            instance.queueItemId = makeQueueItemId(playlistId, gSong.getId(), position);
             return instance;
+        }
+
+        public @Nullable String getQueueItemId() {
+            return queueItemId;
         }
 
         public GSongInfo gSong() {
@@ -173,18 +187,22 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             }
             var child = listItem.getChild();
             if (child instanceof NowPlayingCell cell) {
-                cell.bind(entry.gSong(), listItem, prevState.get());
+                var playingItemId = appManager.getState().queue().playingItemId();
+                cell.bind(entry, listItem, prevState.get(), playingItemId);
                 var list = listeners.computeIfAbsent(entry.gSong.getId(), key -> new ArrayList<>());
                 list.add(cell);
             }
         });
         nowPlayingFactory.onUnbind(obj -> {
             var listItem = (ListItem) obj;
+            var entry = (GPlaylistEntry) listItem.getItem();
             var child = listItem.getChild();
             if (child instanceof NowPlayingCell cell) {
-                var gSong = cell.gSong;
                 cell.unbind();
-                listeners.get(gSong.getId()).remove(cell);
+                if (entry != null) {
+                    var list = listeners.get(entry.gSong.getId());
+                    if (list != null) list.remove(cell);
+                }
             }
         });
         nowPlayingFactory.onTeardown(obj -> {
@@ -241,18 +259,22 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             }
             var child = listItem.getChild();
             if (child instanceof TitleArtistCell cell) {
-                cell.bind(entry.gSong(), listItem);
+                var playingItemId = appManager.getState().queue().playingItemId();
+                cell.bind(entry, listItem, playingItemId);
                 var list = listenersTitle.computeIfAbsent(entry.gSong.getId(), key -> new ArrayList<>());
                 list.add(cell);
             }
         });
         titleFactory.onUnbind(obj -> {
             var listItem = (ListItem) obj;
+            var entry = (GPlaylistEntry) listItem.getItem();
             var child = listItem.getChild();
             if (child instanceof TitleArtistCell cell) {
-                var gSong = cell.gSong;
                 cell.unbind();
-                listenersTitle.get(gSong.getId()).remove(cell);
+                if (entry != null) {
+                    var list = listenersTitle.get(entry.gSong.getId());
+                    if (list != null) list.remove(cell);
+                }
             }
         });
         titleFactory.onTeardown(obj -> {
@@ -379,19 +401,24 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         this.selectionModel = new SingleSelection<>(this.sortModel);
         this.listView.setModel(this.selectionModel);
 
-        // Activate: play in sorted order so next/prev respect current sort
+        // Activate: play in sorted order so next/prev respect current sort.
+        // Assign a UUID to every entry in the current sorted view so highlighting
+        // survives re-sort and shuffle.
         var activateSignal = this.listView.onActivate(index -> {
             var entry = this.sortModel.getItem(index);
             if (entry == null) {
                 return;
             }
             log.info("listView.onActivate: {} {}", index, entry.info().title());
-            List<SongInfo> songs = this.sortModel.stream().map(GPlaylistEntry::info).toList();
-            this.onAction.apply(new PlayerAction.PlayAndReplaceQueue(
-                    new PlaylistIdentifier(this.currentPlaylist.get().id()),
-                    songs,
-                    index
-            ));
+            int n = (int) this.sortModel.getNItems();
+            var slots = new ArrayList<PlayerAction.QueueSlot>(n);
+            for (int i = 0; i < n; i++) {
+                var e = this.sortModel.getItem(i);
+                slots.add(new PlayerAction.QueueSlot(e.getQueueItemId().toString(), e.info()));
+            }
+            var playlist = this.currentPlaylist.get();
+            var playContext = playlist != null ? new PlaylistIdentifier(playlist.id()) : null;
+            this.onAction.apply(new PlayerAction.PlayAndReplaceQueue(playContext, slots, index));
         });
 
         var keyController = new EventControllerKey();
@@ -510,9 +537,11 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         this.currentPlaylist.set(playlist);
         this.lastKnownSongCount = playlist.songCount();
         this.reloadNeeded = false;
+        var playlistId = playlist.id();
         var items = new GPlaylistEntry[songs.size()];
         for (int i = 0; i < songs.size(); i++) {
-            items[i] = GPlaylistEntry.of(songs.get(i), i);
+            var song = songs.get(i);
+            items[i] = GPlaylistEntry.of(playlistId, song, i);
         }
         Utils.runOnMainThread(() -> {
             this.titleLabel.setLabel(playlist.name());
@@ -555,15 +584,9 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         var nextSongId = next.songInfo().map(SongInfo::id).orElse("");
         int prevPos = prev.position().orElse(-1);
         int nextPos = next.position().orElse(-1);
-        String playingContextId = next.playContext.map(ObjectIdentifier::getId).orElse("");
-        boolean isCurrentPlayContext = this.currentPlaylist.get().id().equals(playingContextId);
-
-        // TODO: currentlyPlayingPosition is not sufficient, we also need to know which 'context'
-        // currentlyPlayingPosition is only the position in the current playQueue,
-        // so could be a position in a shuffled list, or a shuffled list with user-queued additional tracks in it
-        int currentlyPlayingPosition = next.position().orElse(-1);
-
+        var playingItemId = state.queue().playingItemId();
         var playingState = next.nowPlayingState();
+
         if (!prevSongId.equals(nextSongId) || nextPos != prevPos) {
             var from = this.listeners.get(prevSongId);
             if (from != null) {
@@ -574,9 +597,9 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             var to = this.listeners.get(nextSongId);
             if (to != null) {
                 for (var l : to) {
-                    int boundPosition = l.listPosition;
-                    boolean isCurrentlyPlayingThisPosition = boundPosition == currentlyPlayingPosition && isCurrentPlayContext;
-                    l.updateCellIsPlaying(isCurrentlyPlayingThisPosition, playingState);
+                    var qid = l.boundEntry != null ? l.boundEntry.getQueueItemId() : null;
+                    boolean isPlaying = isPlayingEntry(qid, playingItemId, nextSongId);
+                    l.updateCellIsPlaying(isPlaying, playingState);
                 }
             }
             var from1 = this.listenersTitle.get(prevSongId);
@@ -588,9 +611,9 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             var to1 = this.listenersTitle.get(nextSongId);
             if (to1 != null) {
                 for (var l : to1) {
-                    int boundPosition = l.listPosition;
-                    boolean isCurrentlyPlayingThisPosition = boundPosition == currentlyPlayingPosition && isCurrentPlayContext;
-                    l.updateRow(isCurrentlyPlayingThisPosition);
+                    var qid = l.boundEntry != null ? l.boundEntry.getQueueItemId() : null;
+                    boolean isPlaying = isPlayingEntry(qid, playingItemId, nextSongId);
+                    l.updateRow(isPlaying);
                 }
             }
         }
@@ -598,10 +621,19 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             var to = this.listeners.get(nextSongId);
             if (to != null) {
                 for (var l : to) {
-                    l.update(next);
+                    var qid = l.boundEntry != null ? l.boundEntry.getQueueItemId() : null;
+                    boolean isPlaying = isPlayingEntry(qid, playingItemId, nextSongId);
+                    l.updateCellIsPlaying(isPlaying, playingState);
                 }
             }
         }
+    }
+
+    private boolean isPlayingEntry(@Nullable String entryQueueId, Optional<String> playingItemId, String nextSongId) {
+        if (entryQueueId != null) {
+            return playingItemId.map(entryQueueId::equals).orElse(false);
+        }
+        return false;
     }
 
     public record MiniState(
@@ -762,7 +794,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         private SignalConnection<NotifyCallback> positionSignal;
         private SignalConnection<NotifyCallback> playingSignal;
         private boolean isCurrentlyPlaying;
-        private int listPosition;
+        @Nullable volatile GPlaylistEntry boundEntry;
 
         NowPlayingCell() {
             super(HORIZONTAL, 0);
@@ -787,26 +819,36 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             this.append(overlay);
         }
 
-        void bind(GSongInfo gSong, ListItem listItem, MiniState state) {
+        void bind(GPlaylistEntry entry, ListItem listItem, MiniState state, Optional<String> playingItemId) {
+            this.boundEntry = entry;
+            this.gSong = entry.gSong();
             this.listItem = listItem;
-            this.listPosition = listItem.getPosition();
-            this.gSong = gSong;
             this.trackNumberLabel.setLabel("%d".formatted(listItem.getPosition() + 1));
             this.playingSignal = this.gSong.onIsPlayingChanged((v) -> {
 
             });
             this.positionSignal = listItem.onNotify(
                     "position", _ -> {
-                        this.listPosition = listItem.getPosition();
-                        Utils.runOnMainThread(() -> this.trackNumberLabel.setLabel("%d".formatted(this.listPosition + 1)));
+                        int pos = listItem.getPosition();
+                        Utils.runOnMainThread(() -> this.trackNumberLabel.setLabel("%d".formatted(pos + 1)));
                     }
             );
-            this.update(state);
+            String songId = entry.gSong().getSongInfo().id();
+            boolean isPlaying = isPlayingEntry(entry.getQueueItemId(), playingItemId, songId);
+            updateCellIsPlaying(isPlaying, state.nowPlayingState());
+        }
+
+        private static boolean isPlayingEntry(@Nullable String entryQueueId, Optional<String> playingItemId, String songId) {
+            if (entryQueueId != null) {
+                return playingItemId.map(entryQueueId::equals).orElse(false);
+            }
+            return false;
         }
 
         void unbind() {
             this.gSong = null;
             this.listItem = null;
+            this.boundEntry = null;
             var sig = positionSignal;
             if (sig != null) {
                 sig.disconnect();
@@ -878,9 +920,9 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         private GSongInfo gSong;
         private volatile NowPlayingState playingState = NowPlayingState.NONE;
         private ListItem listItem;
-        private int listPosition;
         private SignalConnection<NotifyCallback> positionSignal;
         private boolean itemAndPositionIsPlaying;
+        @Nullable volatile GPlaylistEntry boundEntry;
 
         TitleArtistCell(Consumer<AppRoute> onNavigate) {
             super(VERTICAL, 2);
@@ -919,30 +961,34 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             this.append(artistLabel);
         }
 
-        void bind(GSongInfo gSong, ListItem listItem) {
-            this.gSong = gSong;
+        void bind(GPlaylistEntry entry, ListItem listItem, Optional<String> playingItemId) {
+            this.gSong = entry.gSong();
             this.listItem = listItem;
-            this.listPosition = listItem.getPosition();
+            this.boundEntry = entry;
             this.positionSignal = listItem.onNotify("position", (a) -> {
-                this.listPosition = listItem.getPosition();
+                // position changed; no action needed for title cell
             });
-            var info = gSong.getSongInfo();
+            var info = entry.gSong().getSongInfo();
             this.titleLabel.setLabel(info.title());
             this.artistLabel.setLabel(info.artist() != null ? info.artist() : "");
-            // Re-apply playing state for this new song
-            Utils.runOnMainThread(() -> {
-                switch (this.playingState) {
-                    case LOADING, PAUSED, PLAYING -> this.titleLabel.addCssClass(Classes.colorAccent.className());
-                    case NONE -> this.titleLabel.removeCssClass(Classes.colorAccent.className());
-                }
-            });
+            boolean isPlaying = isPlayingEntry(entry.getQueueItemId(), playingItemId, info.id());
+            updateRow(isPlaying);
+        }
+
+        private static boolean isPlayingEntry(@Nullable String entryQueueId, Optional<String> playingItemId, String songId) {
+            if (entryQueueId != null) {
+                return playingItemId.map(entryQueueId::equals).orElse(false);
+            }
+            return false;
         }
 
         void unbind() {
             this.gSong = null;
             this.listItem = null;
-            this.listPosition = -1;
-            this.positionSignal.disconnect();
+            this.boundEntry = null;
+            if (this.positionSignal != null) {
+                this.positionSignal.disconnect();
+            }
             this.titleLabel.removeCssClass(Classes.colorAccent.className());
         }
 

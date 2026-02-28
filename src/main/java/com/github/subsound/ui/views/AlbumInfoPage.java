@@ -24,6 +24,7 @@ import com.github.subsound.ui.components.StarButton;
 import com.github.subsound.ui.models.GSongInfo;
 import com.github.subsound.ui.models.GDownloadState;
 import com.github.subsound.ui.models.GSongInfo.Signal;
+import com.github.subsound.ui.views.PlaylistListViewV2.GPlaylistEntry;
 import com.github.subsound.utils.ImageUtils;
 import com.github.subsound.utils.Utils;
 import org.gnome.gdk.Display;
@@ -394,9 +395,19 @@ public class AlbumInfoPage extends Box implements StateListener {
             playMenuItem.onClicked(() -> {
                 menuPopover.popdown();
                 int idx = this.index;
-                this.onAction.apply(PlayAndReplaceQueue.of(
-                        new AlbumIdentifier(albumInfo.album().id()),
-                        this.albumInfo.songs(),
+                var playContext = new AlbumIdentifier(this.albumInfo.album().id());
+                int count = 0;
+                var queue = new ArrayList<PlayerAction.QueueSlot>(this.albumInfo.songs().size());
+                for (GSongInfo song : this.albumInfo.songs()) {
+                    PlayerAction.QueueSlot queueSlot = new PlayerAction.QueueSlot(
+                            GPlaylistEntry.makeQueueItemId(playContext, song.getId(), count++),
+                            song.getSongInfo()
+                    );
+                    queue.add(queueSlot);
+                }
+                this.onAction.apply(new PlayAndReplaceQueue(
+                        playContext,
+                        queue,
                         idx
                 ));
             });
@@ -539,9 +550,19 @@ public class AlbumInfoPage extends Box implements StateListener {
         this.listView.onRowActivated(row -> {
             var songInfo = this.info.songs().get(row.getIndex());
             System.out.println("AlbumInfoBox: play " + songInfo.getTitle() + " (%s)".formatted(songInfo.getId()));
+            var playContext = new AlbumIdentifier(this.info.album().id());
+            int count = 0;
+            var queue = new ArrayList<PlayerAction.QueueSlot>(this.info.songs().size());
+            for (GSongInfo song : this.info.songs()) {
+                PlayerAction.QueueSlot queueSlot = new PlayerAction.QueueSlot(
+                        GPlaylistEntry.makeQueueItemId(playContext, song.getId(), count++),
+                        song.getSongInfo()
+                );
+                queue.add(queueSlot);
+            }
             this.onAction.apply(new PlayAndReplaceQueue(
-                    new AlbumIdentifier(this.info.album().id()),
-                    this.info.songs().stream().map(GSongInfo::getSongInfo).toList(),
+                    playContext,
+                    queue,
                     row.getIndex()
             ));
         });
