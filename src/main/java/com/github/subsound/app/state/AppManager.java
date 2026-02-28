@@ -644,7 +644,7 @@ public class AppManager {
             log.warn("unable to toast because toastOverlay={}", this.toastOverlay);
             return;
         }
-        t.toast().setTimeout((int) t.timeout().toMillis());
+        t.toast().setTimeout((int) t.timeout().toSeconds());
         runOnMainThread(() -> {
             this.toastOverlay.addToast(t.toast());
         });
