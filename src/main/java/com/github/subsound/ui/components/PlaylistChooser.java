@@ -2,6 +2,7 @@ package com.github.subsound.ui.components;
 
 import com.github.subsound.app.state.PlaylistsStore.GPlaylist;
 import com.github.subsound.integration.ServerClient.PlaylistKind;
+import org.gnome.adw.Clamp;
 import org.gnome.gio.ListStore;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.CustomFilter;
@@ -12,6 +13,7 @@ import org.gnome.gtk.ListBoxRow;
 import org.gnome.gtk.Popover;
 import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.Separator;
+import org.gnome.pango.EllipsizeMode;
 
 import java.util.function.BiConsumer;
 
@@ -65,6 +67,8 @@ public class PlaylistChooser extends Popover {
                         var label1 = new Label(playlist.getName());
                         label1.setHalign(START);
                         label1.addCssClass("body");
+                        label1.setSingleLineMode(true);
+                        label1.setEllipsize(EllipsizeMode.END);
                         row.setChild(label1);
                         return row;
                     } else {
@@ -95,7 +99,10 @@ public class PlaylistChooser extends Popover {
         this.contentBox.append(new Separator(org.gnome.gtk.Orientation.HORIZONTAL));
         this.contentBox.append(scrolledWindow);
 
-        this.setChild(this.contentBox);
+        var menuClamp = new Clamp();
+        menuClamp.setMaximumSize(220);
+        menuClamp.setChild(this.contentBox);
+        this.setChild(menuClamp);
         this.onDestroy(signal::disconnect);
     }
 

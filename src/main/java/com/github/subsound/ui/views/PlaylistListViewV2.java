@@ -39,6 +39,7 @@ import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.SignalListItemFactory;
 import org.gnome.gtk.SingleSelection;
 import org.gnome.gtk.SortListModel;
+import org.gnome.pango.EllipsizeMode;
 import org.javagi.gobject.SignalConnection;
 import org.javagi.gobject.types.Types;
 import org.jetbrains.annotations.Nullable;
@@ -506,12 +507,14 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
                 .build();
         this.scroll.setChild(this.listView);
 
-        this.titleLabel = Label.builder()
-                .setLabel("")
-                .setHalign(START)
-                .setHexpand(true)
-                .setCssClasses(new String[]{"title-2"})
-                .build();
+        this.titleLabel = new Label();
+        this.titleLabel.setLabel("");
+        this.titleLabel.setHalign(START);
+        this.titleLabel.setHexpand(true);
+        this.titleLabel.setMaxWidthChars(50);
+        this.titleLabel.setEllipsize(EllipsizeMode.END);
+        this.titleLabel.setSingleLineMode(true);
+        this.titleLabel.addCssClass("title-2");
 
         this.menuButton = MenuButton.builder()
                 .setIconName(Icons.OpenMenu.getIconName())
@@ -664,7 +667,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         }
     }
 
-    private boolean isPlayingEntry(@Nullable String entryQueueId, Optional<String> playingItemId, String nextSongId) {
+    private boolean isPlayingEntry(String entryQueueId, Optional<String> playingItemId, String nextSongId) {
         if (entryQueueId != null) {
             return playingItemId.map(entryQueueId::equals).orElse(false);
         }
@@ -968,11 +971,11 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             this.setMarginStart(4);
             this.setMarginEnd(4);
 
-            this.titleLabel = infoLabel("", Classes.title3.add());
+            this.titleLabel = new Label();
             this.titleLabel.setHalign(START);
+            this.titleLabel.setEllipsize(EllipsizeMode.END);
             this.titleLabel.setSingleLineMode(true);
             this.titleLabel.setMaxWidthChars(36);
-            this.titleLabel.setEllipsize(org.gnome.pango.EllipsizeMode.END);
 
             this.artistLabel = new ClickLabel(
                     "", () -> {

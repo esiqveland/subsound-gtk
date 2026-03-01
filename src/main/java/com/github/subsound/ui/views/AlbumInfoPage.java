@@ -27,6 +27,7 @@ import com.github.subsound.ui.models.GSongInfo.Signal;
 import com.github.subsound.ui.views.PlaylistListViewV2.GPlaylistEntry;
 import com.github.subsound.utils.ImageUtils;
 import com.github.subsound.utils.Utils;
+import org.gnome.adw.Clamp;
 import org.gnome.gdk.Display;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
@@ -387,9 +388,11 @@ public class AlbumInfoPage extends Box implements StateListener {
                     .setMarginEnd(4)
                     .build();
 
-            var menuPopover = Popover.builder()
-                    .setChild(stack)
-                    .build();
+            var menuPopover = new Popover();
+            var menuClamp = new Clamp();
+            menuClamp.setMaximumSize(220);
+            menuClamp.setChild(stack);
+            menuPopover.setChild(menuClamp);
 
             var playMenuItem = menuItem("Play");
             playMenuItem.onClicked(() -> {
@@ -496,13 +499,18 @@ public class AlbumInfoPage extends Box implements StateListener {
             return menuPopover;
         }
 
-        private static Button menuItem(String label) {
-            var button = Button.builder().setLabel(label).build();
+        private static Button menuItem(String labelText) {
+            var label = new Label();
+            label.setLabel(labelText);
+            label.setHalign(Align.START);
+            label.setJustify(Justification.LEFT);
+            label.setEllipsize(EllipsizeMode.END);
+            //label.setMaxWidthChars(24);
+            label.setSingleLineMode(true);
+            label.addCssClass("body");
+            var button = new Button();
+            button.setChild(label);
             button.addCssClass("flat");
-            if (button.getChild() instanceof Label child) {
-                child.setHalign(START);
-                child.addCssClass("body");
-            }
             return button;
         }
 
@@ -720,6 +728,13 @@ public class AlbumInfoPage extends Box implements StateListener {
     }
 
     public static Label infoLabel(String label, String[] cssClazz) {
-        return Label.builder().setCssClasses(cssClazz).setUseMarkup(false).setEllipsize(EllipsizeMode.END).setLabel(label).build();
+        var lbl = new Label();
+        lbl.setUseMarkup(false);
+        lbl.setEllipsize(EllipsizeMode.END);
+        for (String clazz : cssClazz) {
+            lbl.addCssClass(clazz);
+        }
+        lbl.setLabel(label);
+        return lbl;
     }
 }
