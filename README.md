@@ -169,6 +169,7 @@ A few samples of what the UI looks like:
   - [X] alternative sort orders for playlists
   - [X] when I have a playlist open in the playlistlistviewv2, go to another artist or album, add songs, and then back to the playlist, the playlist must show any newly added songs
   - [x] remove song from playlist
+  - [ ] make refresh of playlist smoother: restore scroll position, make a diff and modify listmodel instead of clear + addAll
   - [ ] multi select to remove songs from playlist
   - [ ] when I add a new song to a playlist i am currently playing from, I expect the newly added songs to end up at the end of the current playqueue
 - [X] Mpris support
