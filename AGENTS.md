@@ -31,7 +31,7 @@ Subsonic API docs:
 ```bash
 ./gradlew compileJava        # Compile
 ./gradlew test               # Run all tests
-./gradlew test --tests "com.github.subsound.persistence.database.DatabaseServerServiceTest"  # Single test class
+./gradlew test --tests "org.subsound.persistence.database.DatabaseServerServiceTest"  # Single test class
 ./gradlew run                # Run the application
 ./gradlew shadowJar          # Build fat JAR (output: build/libs/*-final.jar)
 ```
