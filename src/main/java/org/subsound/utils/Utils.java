@@ -269,6 +269,14 @@ public class Utils {
         return plural;
     }
 
+    public static String getEnv(String envName, String defaultValue) {
+        var val = System.getenv(envName);
+        if (val == null || val.isBlank()) {
+            return defaultValue;
+        }
+        return val;
+    }
+
     public record SignalWidget<T extends Widget>(
             T widget,
             SignalConnection<?> signalConnection

@@ -213,7 +213,7 @@ public class ServerBadge extends Box implements AppManager.StateListener {
     }
 
     private String getServerHostNameOrNotConnected() {
-        return getServerHostName().map(ss -> System.getenv("SERVER_HOST").equals(ss) ? "server.example.org" : ss).orElse("Not connected");
+        return getServerHostName().map(ss -> Utils.getEnv("SERVER_HOST", "").equals(ss) ? "server.example.org" : ss).orElse("Not connected");
     }
 
     private Optional<String> getServerHostName() {

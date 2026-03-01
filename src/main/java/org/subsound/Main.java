@@ -37,7 +37,7 @@ public class Main {
         // Initialisation Gst
         Gst.init(new Out<>(new String[]{}));
         Pixbuf.getFormats().forEach(pixbufFormat -> {
-            System.out.println("pixbufFormat supported: %s %s".formatted(pixbufFormat.getName(), pixbufFormat.getDescription()));
+            log.info("pixbufFormat supported: %s %s".formatted(pixbufFormat.getName(), pixbufFormat.getDescription()));
         });
 
         this.config = Config.createDefault();
@@ -50,7 +50,7 @@ public class Main {
             try {
                 this.mprisController.run();
             } catch (Throwable throwable) {
-                log.error("error starting mprisController: ", throwable);
+                log.warn("error starting mprisController: ", throwable);
             }
         });
 
