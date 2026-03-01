@@ -82,7 +82,7 @@ public class MainApplication {
     private final CommandPalette commandPalette;
     private final ServerBadge serverBadge;
     private AppNavigation appNavigation;
-    private final CssProvider mainProvider = CssProvider.builder().build();
+    private final CssProvider mainProvider;
 
 
     public MainApplication(AppManager appManager) {
@@ -90,8 +90,9 @@ public class MainApplication {
         this.appManager.setToastOverlay(this.toastOverlay);
         this.thumbLoader = appManager.getThumbnailCache();
         this.cssMain = mustRead(Path.of("css/main.css"));
-        mainProvider.loadFromString(cssMain);
-        Gtk.styleContextAddProviderForDisplay(Display.getDefault(), mainProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+        this.mainProvider = new CssProvider();
+        this.mainProvider.loadFromString(cssMain);
+        Gtk.styleContextAddProviderForDisplay(Display.getDefault(), this.mainProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         // force to dark mode as we currently look terrible in light mode:
         StyleManager.getDefault().setColorScheme(ColorScheme.FORCE_DARK);
 
