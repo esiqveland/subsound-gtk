@@ -164,10 +164,13 @@ A few samples of what the UI looks like:
   - [X] keep a cache of available playlists in AppState for quick access
   - [X] add song to a playlist
   - [X] create playlist
-  - [ ] remove song from playlist
   - [X] rename playlist
   - [X] delete playlist
   - [X] alternative sort orders for playlists
+  - [X] when I have a playlist open in the playlistlistviewv2, go to another artist or album, add songs, and then back to the playlist, the playlist must show any newly added songs
+  - [x] remove song from playlist
+  - [ ] multi select to remove songs from playlist
+  - [ ] when I add a new song to a playlist i am currently playing from, I expect the newly added songs to end up at the end of the current playqueue
 - [X] Mpris support
     - [X] thumbnail - needs to give the path to our downloaded copy on disk, or do a loooot of resizing to send it over dbus
     - [X] play/pause
