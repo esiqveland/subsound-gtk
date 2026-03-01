@@ -22,7 +22,7 @@ public class Database {
 
     public Database() {
         String dataDir = PortalUtils.getUserDataDir();
-        File subsoundDir = new File(dataDir, "subsound");
+        File subsoundDir = new File(dataDir, "subsound-gtk");
         if (!subsoundDir.exists()) {
             subsoundDir.mkdirs();
         }
