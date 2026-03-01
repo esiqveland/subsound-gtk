@@ -17,10 +17,11 @@
     <p>Features include:</p>
     <ul>
       <li>Browse and play music from Navidrome or any Subsonic-compatible server</li>
-      <li>Offline playback from a local song cache</li>
-      <li>MPRIS2 media player integration for desktop media controls</li>
-      <li>Starred songs and downloaded songs views</li>
       <li>Playlist management</li>
+      <li>Starred songs and downloaded songs views</li>
+      <li>Offline playback from a local song cache</li>
+      <li>Offline first scrobble back to server</li>
+      <li>MPRIS media player integration for desktop media controls</li>
       <li>Native GTK4/Adwaita interface designed for GNOME</li>
     </ul>
   </description>
@@ -30,7 +31,17 @@
   <url type="homepage">https://github.com/esiqveland/subsound-gtk</url>
   <url type="bugtracker">https://github.com/esiqveland/subsound-gtk/issues</url>
 
-  <screenshots/>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/esiqveland/subsound-gtk/main/screenshots/artistsv3.png</image>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/esiqveland/subsound-gtk/main/screenshots/starredv7.png</image>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/esiqveland/subsound-gtk/main/screenshots/searchv2.png</image>
+    </screenshot>
+  </screenshots>
 
   <releases>
     <release version="0.1.4" date="2025-01-01">
