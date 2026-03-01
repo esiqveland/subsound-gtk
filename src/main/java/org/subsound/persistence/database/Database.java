@@ -29,6 +29,7 @@ public class Database {
         File dbFile = new File(subsoundDir, DB_NAME);
         String url = "jdbc:sqlite:" + dbFile.getAbsolutePath();
         logger.info("Database URL: {}", url);
+        logger.warn("opening database file path={}", dbFile.getAbsolutePath());
         this.dataSource = createDataSource(url);
         initialize();
     }
