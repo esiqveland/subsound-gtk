@@ -46,12 +46,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.foreign.MemorySegment;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -78,6 +76,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private final ScrolledWindow scroll;
     private final Label titleLabel;
+    private final Button reloadButton;
     private final MenuButton menuButton;
     private final AtomicReference<MiniState> prevState;
     private final Consumer<AppRoute> onNavigate;
@@ -481,14 +480,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
 
             if (reloadNeeded && playlist.kind() == ServerClient.PlaylistKind.NORMAL) {
                 reloadNeeded = false;
-                var songStore = appManager.getSongStore();
-                Utils.doAsync(() -> {
-                    var songs = appManager
-                            .useClient(cl -> cl.getPlaylist(playlist.id()).songs().stream())
-                            .map(songStore::newInstance)
-                            .toList();
-                    setSongs(songs, playlist);
-                });
+                this.refreshCurrentPlaylistAsync();
             }
         });
         var unmapSignal = this.onUnmap(() -> appManager.removeOnStateChanged(this));
@@ -529,6 +521,17 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
                 .build();
         this.menuButton.addCssClass("flat");
         this.menuButton.addCssClass("circular");
+        this.reloadButton = new Button();
+        this.reloadButton.setTooltipText("Refresh playlist");
+        //this.reloadButton.setLabel("Sync library");
+        this.reloadButton.setIconName("view-refresh-symbolic");
+        this.reloadButton.addCssClass("flat");
+        this.reloadButton.addCssClass("circular");
+        this.reloadButton.onClicked(() -> {
+            //this.appManager.handleAction(new PlayerAction.RefreshPlaylist());
+            this.reloadNeeded = false;
+            this.refreshCurrentPlaylistAsync();
+        });
 
         var headerBox = new Box(HORIZONTAL, 0);
         headerBox.setMarginTop(12);
@@ -536,10 +539,33 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         headerBox.setMarginStart(16);
         headerBox.setMarginEnd(8);
         headerBox.append(this.titleLabel);
+        headerBox.append(this.reloadButton);
         headerBox.append(this.menuButton);
 
         this.append(headerBox);
         this.append(this.scroll);
+    }
+
+    private CompletableFuture<ServerClient.Playlist> refreshCurrentPlaylistAsync() {
+        var songStore = appManager.getSongStore();
+        return Utils.doAsync(() -> {
+            var playlist = this.currentPlaylist.get();
+            if (playlist == null) {
+                return null;
+            }
+            var newPlaylist = appManager
+                    .useClient(cl -> cl.getPlaylist(playlist.id()));
+
+            // playlistid changed while loading:
+            if (!this.currentPlaylist.get().id().equals(newPlaylist.id())) {
+                return newPlaylist;
+            }
+            var songs = newPlaylist.songs().stream()
+                    .map(songStore::newInstance)
+                    .toList();
+            setSongs(songs, playlist);
+            return newPlaylist;
+        });
     }
 
     public void setSongs(List<GSongInfo> songs, ServerClient.PlaylistSimple playlist) {
