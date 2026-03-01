@@ -168,7 +168,7 @@ public class AppManager {
 
         this.currentState = BehaviorSubject.createDefault(buildState());
         var disposable = this.currentState
-                .throttleLatest(100, TimeUnit.MILLISECONDS, true)
+                .throttleLatest(250, TimeUnit.MILLISECONDS, true)
                 //.throttleLatest(50, TimeUnit.MILLISECONDS, true)
                 .observeOn(Schedulers.io())
                 .subscribeOn(Schedulers.io())

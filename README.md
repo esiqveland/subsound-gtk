@@ -10,9 +10,9 @@ Very early project still, but it works ok for basic playback and browsing.
 
 A few samples of what the UI looks like:
 
-![Artists listing](screenshots/artistsv2.png)
+![Artists listing](screenshots/artistsv3.png)
 
-![Playlists view](screenshots/starredv6.png)
+![Playlists view](screenshots/starredv7.png)
 
 ![Search modal ( Ctrl+K )](screenshots/searchv2.png)
 
