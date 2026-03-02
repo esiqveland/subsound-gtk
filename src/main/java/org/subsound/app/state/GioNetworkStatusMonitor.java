@@ -25,13 +25,15 @@ public class GioNetworkStatusMonitor implements NetworkMonitoring {
         this.listener = listener;
         this.nm = NetworkMonitor.getDefault();
         var connectivity = this.nm.getConnectivity();
-        this.latest.set(connectivity);
+        var value = Optional.ofNullable(connectivity).orElse(NetworkConnectivity.FULL);
+        log.info("Initial Network connectivity: {} val={}", connectivity, value);
+        this.latest.set(value);
         this.nm.onNetworkChanged(ccc -> {
             var prev = this.latest.get();
             var next = this.nm.getConnectivity();
             if (!prev.equals(next)) {
                 this.latest.set(next);
-                log.info("Network status changed: prev={} next={}", prev, next);
+                log.info("onNetworkChanged: status changed: prev={} next={}", prev, next);
             }
             this.notifyListeners();
         });
