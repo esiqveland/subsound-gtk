@@ -202,7 +202,17 @@ public class MainApplication {
 
         viewStack.getPages().onSelectionChanged((position, nItems) -> {
             var visibleChild = viewStack.getVisibleChildName();
-            System.out.println("viewSwitcher.Pages.SelectionModel.onSelectionChanged.visibleChild: " + visibleChild);
+            log.info("viewSwitcher.Pages.SelectionModel.onSelectionChanged.visibleChild: {}", visibleChild);
+            if (visibleChild == null) {
+                return;
+            }
+            // clear navigation stack that could be over the page we just selected:
+            int size = navigationView.getNavigationStack().getNItems();
+            log.info("viewStack.onSelectionChanged: stack size={}", size);
+            while (size > 1) {
+                navigationView.pop();
+                size--;
+            }
         });
         navigationView.onPushed(() -> {
             int size = navigationView.getNavigationStack().getNItems();
