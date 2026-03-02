@@ -313,6 +313,40 @@ public class DatabaseServerServiceTest {
     }
 
     @Test
+    public void testPlaylistDuplicateSongOrder() throws Exception {
+        File dbFile = folder.newFile("test_playlist_duplicates.db");
+        Database db = new Database("jdbc:sqlite:" + dbFile.getAbsolutePath());
+
+        UUID serverId = UUID.randomUUID();
+        DatabaseServerService service = new DatabaseServerService(serverId, db);
+
+        String playlistId = "playlist-dup";
+
+        // Add 3 entries of song1
+        service.insertPlaylistSong(playlistId, "song1", 0);
+        service.insertPlaylistSong(playlistId, "song1", 1);
+        service.insertPlaylistSong(playlistId, "song1", 2);
+
+        // Add 2 entries of song2
+        service.insertPlaylistSong(playlistId, "song2", 3);
+        service.insertPlaylistSong(playlistId, "song2", 4);
+
+        // Add 4 more entries of song1
+        service.insertPlaylistSong(playlistId, "song1", 5);
+        service.insertPlaylistSong(playlistId, "song1", 6);
+        service.insertPlaylistSong(playlistId, "song1", 7);
+        service.insertPlaylistSong(playlistId, "song1", 8);
+
+        // Verify the full order is preserved: 3×song1, 2×song2, 4×song1
+        Assertions.assertThat(service.listPlaylistSongIds(playlistId))
+                .containsExactly(
+                        "song1", "song1", "song1",
+                        "song2", "song2",
+                        "song1", "song1", "song1", "song1"
+                );
+    }
+
+    @Test
     public void testDownloadQueueOperations() throws Exception {
         File dbFile = folder.newFile("test_download_service.db");
         String url = "jdbc:sqlite:" + dbFile.getAbsolutePath();

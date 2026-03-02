@@ -565,7 +565,7 @@ public class DatabaseServerService {
         // Renumber survivors in one sort pass via ROW_NUMBER() window function (O(N log N))
         String renumberSql = """
                 WITH ranked AS (
-                    SELECT song_id,
+                    SELECT sort_order,
                            CAST(ROW_NUMBER() OVER (ORDER BY sort_order) AS INTEGER) - 1 AS new_order
                     FROM playlist_songs
                     WHERE playlist_id = ? AND server_id = ?
@@ -575,7 +575,7 @@ public class DatabaseServerService {
                 FROM ranked
                 WHERE playlist_songs.playlist_id = ?
                   AND playlist_songs.server_id   = ?
-                  AND playlist_songs.song_id     = ranked.song_id
+                  AND playlist_songs.sort_order  = ranked.sort_order
                 """;
 
         try (Connection conn = database.openConnection()) {

@@ -116,6 +116,7 @@ public class Database {
         migrations.add(new MigrationV8());
         migrations.add(new MigrationV9());
         migrations.add(new MigrationV10());
+        migrations.add(new MigrationV11());
         return migrations;
     }
 
@@ -376,6 +377,29 @@ public class Database {
         public void apply(Connection conn) throws SQLException {
             try (Statement stmt = conn.createStatement()) {
                 stmt.execute("ALTER TABLE songs ADD COLUMN album_name TEXT NOT NULL DEFAULT ''");
+            }
+        }
+    }
+
+    static class MigrationV11 implements Migration {
+        @Override
+        public int version() { return 11; }
+
+        @Override
+        public void apply(Connection conn) throws SQLException {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.executeUpdate("""
+                        CREATE TABLE IF NOT EXISTS playlist_songs_new (
+                            playlist_id TEXT NOT NULL,
+                            server_id   TEXT NOT NULL,
+                            song_id     TEXT NOT NULL,
+                            sort_order  INTEGER NOT NULL,
+                            PRIMARY KEY (playlist_id, server_id, sort_order)
+                        )
+                        """);
+                stmt.executeUpdate("INSERT INTO playlist_songs_new SELECT * FROM playlist_songs");
+                stmt.executeUpdate("DROP TABLE playlist_songs");
+                stmt.executeUpdate("ALTER TABLE playlist_songs_new RENAME TO playlist_songs");
             }
         }
     }
