@@ -1,6 +1,7 @@
 package org.subsound.ui.views;
 
 import org.subsound.app.state.AppManager;
+import org.subsound.app.state.NetworkMonitoring;
 import org.subsound.app.state.PlayerAction;
 import org.subsound.integration.ServerClient;
 import org.subsound.integration.ServerClient.ArtistAlbumInfo;
@@ -53,7 +54,7 @@ import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
 
-public class FrontpagePage extends Box {
+public class FrontpagePage extends Box implements AppManager.StateListener {
     private static final Logger log = LoggerFactory.getLogger(FrontpagePage.class);
 
     sealed interface FrontpagePageState {
@@ -67,6 +68,7 @@ public class FrontpagePage extends Box {
     private final Consumer<ArtistAlbumInfo> onAlbumSelected;
     private final AtomicReference<FrontpagePageState> state = new AtomicReference<>(new Loading());
     private final AtomicBoolean isMapped = new AtomicBoolean(false);
+    private final AtomicReference<NetworkMonitoring.NetworkStatus> lastNetworkStatus = new AtomicReference<>();
 
     private final ScrolledWindow scroll;
     private final Box view;
@@ -88,6 +90,7 @@ public class FrontpagePage extends Box {
         this.appManager = appManager;
         this.homeView = new HomeView(this.appManager, this.onAlbumSelected);
         this.onMap(() -> {
+            appManager.addOnStateChanged(this);
             if (this.isMapped.get()) {
                 return;
             }
@@ -97,6 +100,7 @@ public class FrontpagePage extends Box {
         });
         this.onUnmap(() -> {
             log.info("FrontpagePage: onUnmap");
+            appManager.removeOnStateChanged(this);
             //isMapped.set(false);
         });
         //this.onRealize(() -> this.doLoad());
@@ -129,6 +133,16 @@ public class FrontpagePage extends Box {
                 .setChild(view)
                 .build();
         this.append(scroll);
+    }
+
+    @Override
+    public void onStateChanged(AppManager.AppState state) {
+        var prev = lastNetworkStatus.getAndSet(state.networkState().status());
+        if (prev == NetworkMonitoring.NetworkStatus.OFFLINE
+                && state.networkState().status() == NetworkMonitoring.NetworkStatus.ONLINE) {
+            log.info("FrontpagePage: network came online, reloading");
+            this.doLoad();
+        }
     }
 
     private void doLoad() {

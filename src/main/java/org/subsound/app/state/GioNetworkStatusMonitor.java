@@ -43,7 +43,7 @@ public class GioNetworkStatusMonitor implements NetworkMonitoring {
         GLib.timeoutAdd(GLib.PRIORITY_DEFAULT, 500, () -> {
             var updated = this.nm.getConnectivity();
             this.latest.set(updated);
-            log.debug("Deferred network connectivity check: {}", updated);
+            log.info("Deferred network connectivity check: {}", updated);
             this.notifyListeners();
             return GLib.SOURCE_REMOVE;
         });
