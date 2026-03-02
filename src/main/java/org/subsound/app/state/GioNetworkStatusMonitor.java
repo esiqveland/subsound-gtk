@@ -2,6 +2,7 @@ package org.subsound.app.state;
 
 import org.gnome.gio.NetworkConnectivity;
 import org.gnome.gio.NetworkMonitor;
+import org.gnome.glib.GLib;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +34,16 @@ public class GioNetworkStatusMonitor implements NetworkMonitoring {
                 log.info("Network status changed: prev={} next={}", prev, next);
             }
             this.notifyListeners();
+        });
+        // In Flatpak, GNetworkMonitorPortal queries D-Bus asynchronously on startup.
+        // The initial getConnectivity() call above may return LOCAL before the portal
+        // has responded. Schedule a deferred re-check to pick up the real state.
+        GLib.timeoutAdd(GLib.PRIORITY_DEFAULT, 500, () -> {
+            var updated = this.nm.getConnectivity();
+            this.latest.set(updated);
+            log.debug("Deferred network connectivity check: {}", updated);
+            this.notifyListeners();
+            return GLib.SOURCE_REMOVE;
         });
     }
 
