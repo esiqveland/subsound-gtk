@@ -65,12 +65,11 @@ public class ServerBadge extends Box implements AppManager.StateListener {
         this.serverRow = ActionRow.builder()
                 .setTitle(getServerHostNameOrNotConnected())
                 .setSubtitle("Checking connectivity…")
-                .setIconName(Icons.NetworkServer.getIconName())
                 .setUseMarkup(false)
                 .build();
         this.serverRow.setSubtitleLines(1);
         this.serverRow.setTitleLines(1);
-        this.serverRow.addSuffix(statusDot);
+        this.serverRow.addPrefix(statusDot);
 
         // Songs / folders / version — hidden until server info arrives
         this.statsRow = ActionRow.builder()

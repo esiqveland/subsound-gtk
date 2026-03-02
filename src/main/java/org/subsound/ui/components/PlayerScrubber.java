@@ -131,7 +131,7 @@ public class PlayerScrubber extends Box {
         if (endTime.equals(totalTime)) {
             return;
         }
-        System.out.printf("PlayerBar.newDuration: %dsec\n", totalTime.getSeconds());
+        //System.out.printf("PlayerBar.newDuration: %dsec\n", totalTime.getSeconds());
         endTime = totalTime;
         var endTimeText = Utils.formatDurationShortest(totalTime);
         Utils.runOnMainThread(() -> {

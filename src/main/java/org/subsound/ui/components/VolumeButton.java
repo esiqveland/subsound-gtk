@@ -49,7 +49,7 @@ public class VolumeButton extends Button {
 
     private void updateIcon(Icons next) {
         if (next != currentIcon) {
-            System.out.printf("VolumeIcon: old icon=%s next=%s%n", currentIcon.getIconName(), next.getIconName());
+            //System.out.printf("VolumeIcon: old icon=%s next=%s%n", currentIcon.getIconName(), next.getIconName());
             currentIcon = next;
             Utils.runOnMainThread(() -> {
                 this.setIconName(next.getIconName());

@@ -311,15 +311,6 @@ public class MainApplication {
             ViewStackPage frontPage = viewStack.addTitledWithIcon(frontPageContainer, "frontPage", "Home", Icons.GoHome.getIconName());
         }
         {
-            //var starredPageComponent = new StarredPage();
-            //starredPageComponent.append(new StarredLoader(
-            //        thumbLoader,
-            //        appManager,
-            //        appNavigation::navigateTo
-            //));
-            //ViewStackPage starredPage = viewStack.addTitledWithIcon(starredPageComponent, "starredPage", "Starred", Icons.Starred.getIconName());
-        }
-        {
             var playlistsContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
             playlistsContainer.append(new PlaylistsViewLoader(
                     thumbLoader,

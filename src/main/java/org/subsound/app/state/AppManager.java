@@ -206,7 +206,9 @@ public class AppManager {
 
         // Update CachingClient with network status
         var client = this.client.get();
-        client.setNetworkStatus(next.status());
+        if (client != null) {
+            client.setNetworkStatus(next.status());
+        }
     }
 
     /**
