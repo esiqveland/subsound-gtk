@@ -12,6 +12,7 @@ import org.subsound.ui.components.CommandPalette;
 import org.subsound.ui.components.OnboardingOverlay;
 import org.subsound.ui.components.PlayerBar;
 import org.subsound.ui.components.ServerBadge;
+import org.subsound.ui.components.ServerConfigForm;
 import org.subsound.ui.components.SettingsPage;
 import org.subsound.ui.views.AlbumInfoLoader;
 import org.subsound.ui.views.ArtistInfoLoader;
@@ -271,7 +272,7 @@ public class MainApplication {
             }
             case AppNavigation.AppRoute.SettingsPage s -> {
                 var cfg = this.appManager.getConfig();
-                var info = cfg.serverConfig == null ? null : new SettingsPage.SettingsInfo(
+                var info = cfg.serverConfig == null ? null : new ServerConfigForm.SettingsInfo(
                         cfg.serverConfig.type(),
                         cfg.serverConfig.url(),
                         cfg.serverConfig.username(),

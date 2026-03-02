@@ -17,7 +17,7 @@ import org.gnome.gtk.Widget;
 
 public class OnboardingOverlay extends Overlay {
     private final AppManager appManager;
-    private final SettingsPage settingsPage;
+    private final ServerConfigForm serverConfigForm;
     private final Widget child;
     private final Box centerBox;
     private final Box settingsBox;
@@ -29,7 +29,7 @@ public class OnboardingOverlay extends Overlay {
     public OnboardingOverlay(AppManager appManager, Widget child) {
         super();
         this.appManager = appManager;
-        this.settingsPage = buildSettingsPage(appManager);
+        this.serverConfigForm = buildServerConfigForm(appManager);
         this.child = child;
         this.centerBox = Utils.borderBox(Orientation.VERTICAL, 10).build();
         this.centerBox.addCssClass(Classes.transparent.className());
@@ -45,7 +45,7 @@ public class OnboardingOverlay extends Overlay {
         this.contentBox.append(Label.builder().setLabel("Welcome").setJustify(Justification.CENTER).setCssClasses(Classes.titleLarge.add()).setMarginBottom(20).build());
         this.contentBox.append(this.logo);
         this.contentBox.append(Label.builder().setLabel("Login to your Subsonic Server to get started.").setJustify(Justification.CENTER).setCssClasses(Classes.bodyText.add()).setMarginBottom(10).build());
-        this.contentBox.append(this.settingsPage);
+        this.contentBox.append(this.serverConfigForm);
         this.toolbarView = new ToolbarView();
         this.toolbarView.addTopBar(this.headerBar);
         this.toolbarView.setContent(this.contentBox);
@@ -57,15 +57,15 @@ public class OnboardingOverlay extends Overlay {
         this.setChildVisible(true);
     }
 
-    private SettingsPage buildSettingsPage(AppManager appManager) {
+    private ServerConfigForm buildServerConfigForm(AppManager appManager) {
         var cfg = appManager.getConfig();
-        var info = cfg.serverConfig == null ? null : new SettingsPage.SettingsInfo(
+        var info = cfg.serverConfig == null ? null : new ServerConfigForm.SettingsInfo(
                 cfg.serverConfig.type(),
                 cfg.serverConfig.url(),
                 cfg.serverConfig.username(),
                 cfg.serverConfig.password()
         );
-        var settings = new SettingsPage(
+        return new ServerConfigForm(
                 info,
                 cfg.dataDir,
                 action -> appManager
@@ -77,7 +77,6 @@ public class OnboardingOverlay extends Overlay {
                             return null;
                         })
         );
-        return settings;
     }
 
     private void setOnboardingFinished() {

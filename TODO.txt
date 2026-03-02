@@ -1,10 +1,11 @@
 # TODO
 
 ## RELEASE v1
-- Fix and verify handling of offline artwork after sync at the very least
-- fix issue with offline mode triggering before onboarding is completed
-- fix onboarding screen icon size being weird
-- fix onboarding screen re-using the server configuration page, which now has cache clearing and will have transcode settings
+- [ ] flatpak env: fix and verify handling of offline artwork after sync at the very least
+- [ ] flatpak env: fix issue with offline mode triggering before onboarding is completed
+- [ ] flatpak: need a svg icon for the app
+- [ ] fix onboarding screen icon size being weird
+- [ ] fix onboarding screen re-using the server configuration page, which now has cache clearing and will have transcode settings
 
 ## General
 

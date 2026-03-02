@@ -2,7 +2,7 @@ package org.subsound.app.state;
 
 import org.subsound.integration.ServerClient.ObjectIdentifier;
 import org.subsound.integration.ServerClient.SongInfo;
-import org.subsound.ui.components.SettingsPage.SettingsInfo;
+import org.subsound.ui.components.ServerConfigForm.SettingsInfo;
 import org.subsound.ui.models.GSongInfo;
 import org.jspecify.annotations.NonNull;
 
