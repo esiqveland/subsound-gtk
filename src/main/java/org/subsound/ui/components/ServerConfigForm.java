@@ -1,5 +1,7 @@
 package org.subsound.ui.components;
 
+import org.gnome.adw.ButtonRow;
+import org.gnome.adw.PreferencesRow;
 import org.subsound.app.state.AppManager;
 import org.subsound.app.state.PlayerAction;
 import org.subsound.configuration.Config.ServerConfig;
@@ -22,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -51,8 +54,8 @@ public class ServerConfigForm extends Box {
     private final SwitchRow tlsSwitchEntry;
     private final EntryRow usernameEntry;
     private final PasswordEntryRow passwordEntry;
-    private final Button testButton;
-    private final Button saveButton;
+    private final ButtonRow testButton;
+    private final ButtonRow saveButton;
 
     public record SettingsInfo(
             ServerType type,
@@ -79,12 +82,16 @@ public class ServerConfigForm extends Box {
         this.usernameEntry = EntryRow.builder().setTitle("Username").build();
         this.passwordEntry = PasswordEntryRow.builder().setTitle("Password").build();
 
-        this.testButton = Button.builder().setLabel("Test").setCssClasses(none.add()).build();
-        this.testButton.onClicked(() -> this.testConnection());
-        this.saveButton = Button.builder().setLabel("Save").setCssClasses(title1.add(suggestedAction)).setSensitive(false).build();
-        this.saveButton.onClicked(() -> this.saveForm());
+        this.testButton = ButtonRow.builder().setTitle("Test").build();
+        this.testButton.onActivated(() -> this.testConnection());
+        this.saveButton = ButtonRow.builder().setTitle("Save").setSensitive(false).build();
+        this.saveButton.onActivated(() -> this.saveForm());
+        this.saveButton.addCssClass(suggestedAction.className());
 
-        this.listBox = ListBox.builder().setSelectionMode(SelectionMode.NONE).setCssClasses(boxedList.add()).build();
+        this.listBox = new ListBox();
+        this.listBox.addCssClass(boxedList.className());
+        this.listBox.setSelectionMode(SelectionMode.NONE);
+
         this.listBox.append(serverUrlEntry);
         this.listBox.append(tlsSwitchEntry);
         this.listBox.append(usernameEntry);
@@ -101,7 +108,7 @@ public class ServerConfigForm extends Box {
     }
 
     private void testConnection() {
-        this.testButton.setCssClasses(none.add());
+        //this.testButton.setCssClasses(none.add());
         this.saveButton.setSensitive(false);
         var data = getFormData();
         Utils.doAsync(() -> {
@@ -130,7 +137,7 @@ public class ServerConfigForm extends Box {
             Utils.runOnMainThread(() -> {
                 this.saveButton.setSensitive(success);
                 Classes color = success ? colorSuccess : colorError;
-                this.testButton.setCssClasses(color.add());
+                this.testButton.addCssClass(color.className());
             });
         });
     }
@@ -146,7 +153,6 @@ public class ServerConfigForm extends Box {
             this.passwordEntry.setText(s.password);
             this.tlsSwitchEntry.setSensitive(false);
             this.testButton.setSensitive(true);
-            this.testButton.setCssClasses(none.add());
             this.saveButton.setSensitive(false);
         });
     }

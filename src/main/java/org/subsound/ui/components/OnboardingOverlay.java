@@ -1,8 +1,5 @@
 package org.subsound.ui.components;
 
-import org.subsound.app.state.AppManager;
-import org.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
-import org.subsound.utils.Utils;
 import org.gnome.adw.HeaderBar;
 import org.gnome.adw.ToolbarView;
 import org.gnome.gdk.Texture;
@@ -14,6 +11,9 @@ import org.gnome.gtk.Label;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Overlay;
 import org.gnome.gtk.Widget;
+import org.subsound.app.state.AppManager;
+import org.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
+import org.subsound.utils.Utils;
 
 public class OnboardingOverlay extends Overlay {
     private final AppManager appManager;
