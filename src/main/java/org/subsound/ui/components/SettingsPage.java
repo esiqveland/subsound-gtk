@@ -3,14 +3,18 @@ package org.subsound.ui.components;
 import org.gnome.adw.ActionRow;
 import org.gnome.adw.ButtonRow;
 import org.gnome.adw.Clamp;
+import org.gnome.adw.ComboRow;
 import org.gnome.adw.PreferencesGroup;
+import org.gnome.adw.PreferencesPage;
 import org.gnome.gtk.Align;
+import org.gnome.gtk.StringList;
 import org.subsound.app.state.PlayerAction;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
 import org.gnome.gtk.ListBox;
 import org.gnome.gtk.SelectionMode;
 import org.jetbrains.annotations.Nullable;
+import org.subsound.utils.Utils;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -20,6 +24,7 @@ import java.util.function.Function;
 import static org.subsound.ui.components.Classes.boxedList;
 import static org.subsound.ui.components.Classes.destructiveAction;
 import static org.gnome.gtk.Orientation.VERTICAL;
+import static org.subsound.utils.Utils.addClick;
 import static org.subsound.utils.Utils.borderBox;
 
 public class SettingsPage extends Box {
@@ -28,6 +33,8 @@ public class SettingsPage extends Box {
     private final ButtonRow clearSongCacheButton;
     private final ButtonRow clearThumbnailCacheButton;
     private final PreferencesGroup localSettings;
+    private final PreferencesGroup transcodeSettings;
+    private final ComboRow audioFormatCombo;
     private final Box centerBox;
 
     public SettingsPage(
@@ -52,6 +59,20 @@ public class SettingsPage extends Box {
         this.localSettings.add(clearSongCacheButton);
         this.localSettings.add(clearThumbnailCacheButton);
 
+        var model = new StringList();
+        model.append("raw");
+        model.append("opus");
+        model.append("mp3");
+        this.audioFormatCombo = new ComboRow();
+        this.audioFormatCombo.setTitle("Transcode settings");
+        this.audioFormatCombo.setModel(model);
+        this.audioFormatCombo.setSelected(1);
+
+        this.transcodeSettings = new PreferencesGroup();
+        this.transcodeSettings.setTitle("Audio format");
+        this.transcodeSettings.setSeparateRows(false);
+        this.transcodeSettings.add(audioFormatCombo);
+
         this.form = new ServerConfigForm(
                 settingsInfo,
                 dataDir,
@@ -60,6 +81,7 @@ public class SettingsPage extends Box {
 
         this.centerBox = borderBox(VERTICAL, 8).setSpacing(8).build();
         this.centerBox.append(this.form);
+        this.centerBox.append(this.transcodeSettings);
         this.centerBox.append(this.localSettings);
 
         var clamp = new Clamp();
