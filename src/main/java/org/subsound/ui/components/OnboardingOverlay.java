@@ -33,9 +33,11 @@ public class OnboardingOverlay extends Overlay {
         this.child = child;
         this.centerBox = Utils.borderBox(Orientation.VERTICAL, 10).build();
         this.centerBox.addCssClass(Classes.transparent.className());
+        this.centerBox.addCssClass(Classes.rounded.className());
         this.settingsBox = Utils.borderBox(Orientation.VERTICAL, 14).setHalign(Align.CENTER).setValign(Align.CENTER).setHexpand(false).setVexpand(true).build();
         this.settingsBox.addCssClass(Classes.shadow.className());
         this.settingsBox.addCssClass(Classes.background.className());
+        this.settingsBox.addCssClass(Classes.rounded.className());
         this.centerBox.append(this.settingsBox);
         this.logo = image(ImageIcons.SubsoundLarge);
         this.logo.setMarginBottom(20);
@@ -44,7 +46,12 @@ public class OnboardingOverlay extends Overlay {
         this.contentBox = Box.builder().setOrientation(Orientation.VERTICAL).setSpacing(0).build();
         this.contentBox.append(Label.builder().setLabel("Welcome").setJustify(Justification.CENTER).setCssClasses(Classes.titleLarge.add()).setMarginBottom(20).build());
         this.contentBox.append(this.logo);
-        this.contentBox.append(Label.builder().setLabel("Login to your Subsonic Server to get started.").setJustify(Justification.CENTER).setCssClasses(Classes.bodyText.add()).setMarginBottom(10).build());
+        var bodyTextLabel = new Label();
+        bodyTextLabel.setLabel("Login to your server to get started");
+        bodyTextLabel.setJustify(Justification.CENTER);
+        bodyTextLabel.addCssClass(Classes.bodyText.className());
+        bodyTextLabel.setMarginBottom(10);
+        this.contentBox.append(bodyTextLabel);
         this.contentBox.append(this.serverConfigForm);
         this.toolbarView = new ToolbarView();
         this.toolbarView.addTopBar(this.headerBar);
@@ -88,9 +95,9 @@ public class OnboardingOverlay extends Overlay {
     }
 
     private Image image(ImageIcons imageIcons) {
-        Texture texture = Texture.forPixbuf(imageIcons.getPixbuf());
+        Texture texture = imageIcons.getTexture();
         var image = Image.fromPaintable(texture);
-        image.setSizeRequest(100, 100);
+        image.setPixelSize(64);
         return image;
     }
 }

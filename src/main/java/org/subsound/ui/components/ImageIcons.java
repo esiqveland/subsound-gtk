@@ -1,7 +1,8 @@
 package org.subsound.ui.components;
 
-import org.subsound.utils.ImageUtils;
-import org.gnome.gdkpixbuf.Pixbuf;
+import org.gnome.gdk.Texture;
+import org.javagi.base.GErrorException;
+import org.subsound.utils.Lazy;
 
 import java.nio.file.Path;
 
@@ -14,13 +15,19 @@ public enum ImageIcons {
     SubsoundSmall(Path.of("icons/generated/icon-64.png")),
     ;
 
-    private final Pixbuf pixbuf;
+    private final Lazy<Texture> pixbuf;
     ImageIcons(Path path) {
-        byte[] bytes = mustReadBytes(path.toString());
-        this.pixbuf = ImageUtils.readPixbuf(bytes);
+        this.pixbuf = Lazy.of(() -> {
+            try {
+                byte[] bytes = mustReadBytes(path.toString());
+                return Texture.fromBytes(bytes);
+            } catch (GErrorException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
-    public Pixbuf getPixbuf() {
-        return this.pixbuf;
+    public Texture getTexture() {
+        return this.pixbuf.get();
     }
 }
