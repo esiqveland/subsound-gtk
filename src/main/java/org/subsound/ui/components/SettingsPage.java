@@ -14,9 +14,11 @@ import org.gnome.gtk.Button;
 import org.gnome.gtk.ListBox;
 import org.gnome.gtk.SelectionMode;
 import org.jetbrains.annotations.Nullable;
+import org.subsound.integration.ServerClient;
 import org.subsound.utils.Utils;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -59,14 +61,13 @@ public class SettingsPage extends Box {
         this.localSettings.add(clearSongCacheButton);
         this.localSettings.add(clearThumbnailCacheButton);
 
+        var formats = Arrays.stream(ServerClient.TranscodeFormat.values()).toList();
         var model = new StringList();
-        model.append("raw");
-        model.append("opus");
-        model.append("mp3");
+        formats.forEach(val -> model.append(val.name()));
         this.audioFormatCombo = new ComboRow();
         this.audioFormatCombo.setTitle("Transcode settings");
         this.audioFormatCombo.setModel(model);
-        this.audioFormatCombo.setSelected(1);
+        this.audioFormatCombo.setSelected(formats.indexOf(ServerClient.TranscodeFormat.opus));
 
         this.transcodeSettings = new PreferencesGroup();
         this.transcodeSettings.setTitle("Audio format");

@@ -600,28 +600,6 @@ public class SubsonicClient implements ServerClient {
         });
     }
 
-    public record TranscodeSettings(
-            TranscodeFormat format,
-            TranscodeBitrate bitrate
-    ) {
-    }
-
-    enum TranscodeFormat {
-        raw,
-        mp3,
-        opus,
-    }
-
-    public sealed interface TranscodeBitrate {
-        record Unlimited() implements TranscodeBitrate {
-        }
-
-        record MaximumBitrate(int v) implements TranscodeBitrate {
-        }
-
-        ;
-    }
-
     public static SubsonicPreferences createSettings(ServerConfig cfg) {
         SubsonicPreferences preferences = new SubsonicPreferences(
                 cfg.url(),

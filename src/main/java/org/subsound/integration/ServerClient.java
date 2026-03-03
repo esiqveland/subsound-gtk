@@ -328,4 +328,19 @@ public interface ServerClient {
     void playlistRemove(PlaylistRemoveSongRequest req);
     record SongRemoval(int indexInPlaylist, String songId) {}
     record PlaylistRemoveSongRequest(String playlistId, List<SongRemoval> songIds) {}
+
+
+    enum TranscodeFormat {
+        raw,
+        mp3,
+        opus,
+    }
+    record TranscodeSettings(
+            TranscodeFormat format,
+            TranscodeBitrate bitrate
+    ) {}
+    sealed interface TranscodeBitrate {
+        record Unlimited() implements TranscodeBitrate {}
+        record MaximumBitrate(int v) implements TranscodeBitrate {}
+    }
 }
