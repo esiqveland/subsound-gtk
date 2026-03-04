@@ -83,7 +83,7 @@ public class SettingsPage extends Box {
         );
 
         this.audioFormatCombo = new ComboRow();
-        this.audioFormatCombo.setTitle("Transcode settings");
+        this.audioFormatCombo.setTitle("Audio format");
         this.audioFormatCombo.setModel(model);
         var initialFormat = audioFormat != null ? audioFormat : ServerClient.TranscodeFormat.opus;
         this.audioFormatCombo.setSelected(formats.indexOf(initialFormat));
@@ -99,7 +99,7 @@ public class SettingsPage extends Box {
         this.audioBitrateCombo.setSelected(0);
 
         this.transcodeSettings = new PreferencesGroup();
-        this.transcodeSettings.setTitle("Audio format");
+        this.transcodeSettings.setTitle("Transcode settings");
         this.transcodeSettings.setSeparateRows(false);
         this.transcodeSettings.add(audioFormatCombo);
         this.transcodeSettings.add(audioBitrateCombo);
