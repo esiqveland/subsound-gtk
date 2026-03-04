@@ -18,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 import org.subsound.integration.ServerClient;
 import org.subsound.integration.ServerClient.TranscodeBitrate.MaximumBitrate;
 import org.subsound.integration.ServerClient.TranscodeBitrate.SourceQuality;
+import org.subsound.integration.ServerClient.TranscodeSettings;
 import org.subsound.utils.Utils;
 
 import java.nio.file.Path;
@@ -70,11 +71,6 @@ public class SettingsPage extends Box {
         var formats = Arrays.stream(ServerClient.TranscodeFormat.values()).toList();
         var model = new StringList();
         formats.forEach(val -> model.append(val.name()));
-        this.audioFormatCombo = new ComboRow();
-        this.audioFormatCombo.setTitle("Transcode settings");
-        this.audioFormatCombo.setModel(model);
-        var initialFormat = audioFormat != null ? audioFormat : ServerClient.TranscodeFormat.opus;
-        this.audioFormatCombo.setSelected(formats.indexOf(initialFormat));
         List<ServerClient.TranscodeBitrate> bitRates = List.of(
                 new SourceQuality(),
                 MaximumBitrate.of(64),
@@ -85,6 +81,12 @@ public class SettingsPage extends Box {
                 MaximumBitrate.of(256),
                 MaximumBitrate.of(320)
         );
+
+        this.audioFormatCombo = new ComboRow();
+        this.audioFormatCombo.setTitle("Transcode settings");
+        this.audioFormatCombo.setModel(model);
+        var initialFormat = audioFormat != null ? audioFormat : ServerClient.TranscodeFormat.opus;
+        this.audioFormatCombo.setSelected(formats.indexOf(initialFormat));
 
         var bitrateModelList = new StringList();
         bitRates.stream().map(value -> switch (value) {
