@@ -721,10 +721,12 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
                 .build();
 
         var renameItem = menuItem("Rename\u2026");
+        var downloadAllItem = menuItem("Download all");
         var deleteItem = menuItem("Delete Playlist\u2026");
         deleteItem.addCssClass("destructive-action");
 
         popoverBox.append(renameItem);
+        popoverBox.append(downloadAllItem);
         popoverBox.append(deleteItem);
 
         var popover = Popover.builder().setChild(popoverBox).build();
@@ -733,12 +735,27 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             popover.popdown();
             showRenameDialog();
         });
+        downloadAllItem.onClicked(() -> {
+            popover.popdown();
+            downloadAll();
+        });
         deleteItem.onClicked(() -> {
             popover.popdown();
             showDeleteDialog();
         });
 
         return popover;
+    }
+
+    private void downloadAll() {
+        int n = listModel.getNItems();
+        var songs = new ArrayList<GSongInfo>(n);
+        for (int i = 0; i < n; i++) {
+            songs.add(listModel.getItem(i).gSong());
+        }
+        if (!songs.isEmpty()) {
+            onAction.apply(new PlayerAction.AddManyToDownloadQueue(songs));
+        }
     }
 
     private void showRenameDialog() {
