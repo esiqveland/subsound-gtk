@@ -340,7 +340,14 @@ public interface ServerClient {
             TranscodeBitrate bitrate
     ) {}
     sealed interface TranscodeBitrate {
-        record Unlimited() implements TranscodeBitrate {}
-        record MaximumBitrate(int v) implements TranscodeBitrate {}
+        record SourceQuality() implements TranscodeBitrate {}
+        record MaximumBitrate(int maxBitrate) implements TranscodeBitrate {
+            public int maxBitrate() {
+                return maxBitrate;
+            }
+            public static MaximumBitrate of(int maxBitrate) {
+                return new MaximumBitrate(maxBitrate);
+            }
+        }
     }
 }
