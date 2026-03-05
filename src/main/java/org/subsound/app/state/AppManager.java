@@ -7,6 +7,7 @@ import org.subsound.app.state.PlayerAction.PlayPositionInQueue;
 import org.subsound.configuration.Config;
 import org.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
 import org.subsound.integration.ServerClient;
+import org.subsound.integration.ServerClient.TranscodeFormat;
 import org.subsound.integration.ServerClient.PlaylistCreateRequest;
 import org.subsound.integration.ServerClient.PlaylistDeleteRequest;
 import org.subsound.integration.ServerClient.PlaylistRenameRequest;
@@ -540,6 +541,7 @@ public class AppManager {
             switch (action) {
                 // config actions:
                 case PlayerAction.SaveConfig settings -> this.saveConfig(settings);
+                case PlayerAction.SaveTranscodeFormat a -> this.saveTranscodeFormat(a);
                 case PlayerAction.Toast t -> this.toast(t);
 
                 // player actions:
@@ -655,13 +657,40 @@ public class AppManager {
 
     private void saveConfig(PlayerAction.SaveConfig settings) {
         this.config.onboarding = OnboardingState.DONE;
+        TranscodeFormat existingFormat = this.config.serverConfig != null
+                ? this.config.serverConfig.audioFormat() : null;
+        ServerClient.TranscodeBitrate existingBitrate = this.config.serverConfig != null
+                ? this.config.serverConfig.audioBitrate() : null;
         this.config.serverConfig = new Config.ServerConfig(
                 this.config.dataDir,
                 SERVER_ID,
                 settings.next().type(),
                 settings.next().serverUrl(),
                 settings.next().username(),
-                settings.next().password()
+                settings.next().password(),
+                existingFormat,
+                existingBitrate
+        );
+        try {
+            this.config.saveToFile();
+            var newClient = ServerClient.create(this.config.serverConfig);
+            this.setClient(newClient);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void saveTranscodeFormat(PlayerAction.SaveTranscodeFormat action) {
+        if (this.config.serverConfig == null) return;
+        this.config.serverConfig = new Config.ServerConfig(
+                this.config.serverConfig.dataDir(),
+                this.config.serverConfig.id(),
+                this.config.serverConfig.type(),
+                this.config.serverConfig.url(),
+                this.config.serverConfig.username(),
+                this.config.serverConfig.password(),
+                action.audioFormat().format(),
+                action.audioFormat().bitrate()
         );
         try {
             this.config.saveToFile();

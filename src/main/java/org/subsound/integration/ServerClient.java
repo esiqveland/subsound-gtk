@@ -331,7 +331,7 @@ public interface ServerClient {
 
 
     enum TranscodeFormat {
-        raw,
+        source,
         mp3,
         opus,
     }

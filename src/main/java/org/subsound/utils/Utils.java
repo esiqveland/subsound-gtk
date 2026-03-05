@@ -1,6 +1,5 @@
 package org.subsound.utils;
 
-import org.subsound.utils.javahttp.InstantAdapter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.Strictness;
@@ -21,8 +20,9 @@ import org.gnome.gtk.PropagationPhase;
 import org.gnome.gtk.Widget;
 import org.gnome.gtk.Window;
 import org.javagi.gobject.SignalConnection;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+import org.subsound.utils.javahttp.InstantAdapter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -365,7 +365,7 @@ public class Utils {
         return null;
     }
 
-    public static @NotNull String firstNotBlank(String ...ss) {
+    public static @NonNull String firstNotBlank(String ...ss) {
         for (String s : ss) {
             if (s != null && !s.isBlank()) {
                 return s;

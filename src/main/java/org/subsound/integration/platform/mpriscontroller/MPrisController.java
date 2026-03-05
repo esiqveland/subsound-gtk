@@ -1,5 +1,6 @@
 package org.subsound.integration.platform.mpriscontroller;
 
+import org.jspecify.annotations.Nullable;
 import org.subsound.app.state.AppManager;
 import org.subsound.integration.ServerClient;
 import org.subsound.sound.PlaybinPlayer;
@@ -13,7 +14,6 @@ import org.freedesktop.dbus.interfaces.Properties;
 import org.freedesktop.dbus.types.DBusListType;
 import org.freedesktop.dbus.types.DBusMapType;
 import org.freedesktop.dbus.types.Variant;
-import org.jetbrains.annotations.Nullable;
 import org.mpris.MediaPlayer2.MediaPlayer2;
 import org.mpris.MediaPlayer2.MediaPlayer2Player;
 import org.mpris.MediaPlayer2.TrackList.TrackId;

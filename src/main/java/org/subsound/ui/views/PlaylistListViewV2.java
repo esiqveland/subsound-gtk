@@ -1,5 +1,6 @@
 package org.subsound.ui.views;
 
+import org.jspecify.annotations.Nullable;
 import org.subsound.app.state.AppManager;
 import org.subsound.app.state.PlayerAction;
 import org.subsound.integration.ServerClient;
@@ -42,7 +43,6 @@ import org.gnome.gtk.SortListModel;
 import org.gnome.pango.EllipsizeMode;
 import org.javagi.gobject.SignalConnection;
 import org.javagi.gobject.types.Types;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,7 +89,8 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
     private final AtomicReference<ServerClient.PlaylistSimple> currentPlaylist = new AtomicReference<>();
     private volatile boolean reloadNeeded = false;
     private volatile int lastKnownSongCount = 0;
-    @Nullable private SignalConnection<?> playlistNotifySignal = null;
+    @Nullable
+    private SignalConnection<?> playlistNotifySignal = null;
 
     /**
      * Wrapper GObject that pairs a GSongInfo with its original playlist position,

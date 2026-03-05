@@ -1,5 +1,6 @@
 package org.subsound.ui.views;
 
+import org.jspecify.annotations.Nullable;
 import org.subsound.app.state.AppManager;
 import org.subsound.app.state.PlayerAction;
 import org.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier;
@@ -21,7 +22,6 @@ import org.gnome.gtk.ListView;
 import org.gnome.gtk.MultiSelection;
 import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.SignalListItemFactory;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

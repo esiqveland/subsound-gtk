@@ -1,8 +1,11 @@
 package org.subsound.configuration;
 
+import org.jspecify.annotations.Nullable;
 import org.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
 import org.subsound.configuration.Config.ConfigurationDTO.ServerConfigDTO;
 import org.subsound.integration.ServerClient.ServerType;
+import org.subsound.integration.ServerClient.TranscodeBitrate;
+import org.subsound.integration.ServerClient.TranscodeFormat;
 import org.subsound.integration.platform.PortalUtils;
 import org.subsound.utils.Utils;
 import com.google.gson.annotations.SerializedName;
@@ -58,7 +61,13 @@ public class Config {
                     this.serverConfig.type(),
                     this.serverConfig.url(),
                     this.serverConfig.username(),
-                    this.serverConfig.password()
+                    this.serverConfig.password(),
+                    this.serverConfig.audioFormat() != null ? this.serverConfig.audioFormat().name() : null,
+                    switch (this.serverConfig.audioBitrate()) {
+                        case null -> null;
+                        case TranscodeBitrate.SourceQuality _ -> null;
+                        case TranscodeBitrate.MaximumBitrate(var kbps) -> kbps;
+                    }
             );
         }
         return d;
@@ -71,7 +80,9 @@ public class Config {
             ServerType type,
             String url,
             String username,
-            String password
+            String password,
+            TranscodeFormat audioFormat,   // nullable means use mp3
+            @Nullable TranscodeBitrate audioBitrate   // null = SourceQuality
     ) {}
 
     public static Config createDefault() {
@@ -95,13 +106,25 @@ public class Config {
                             }
                             if (cfg.server != null) {
                                 config.onboarding = OnboardingState.DONE;
+                                TranscodeFormat audioFormat = null;
+                                try {
+                                    if (cfg.server.audioFormat != null) {
+                                        audioFormat = TranscodeFormat.valueOf(cfg.server.audioFormat);
+                                    }
+                                } catch (IllegalArgumentException ignored) {}
+                                TranscodeBitrate audioBitrate = null;
+                                if (cfg.server.transcodeBitrate != null && cfg.server.transcodeBitrate > 0) {
+                                    audioBitrate = TranscodeBitrate.MaximumBitrate.of(cfg.server.transcodeBitrate);
+                                }
                                 config.serverConfig = new ServerConfig(
                                         config.dataDir,
                                         cfg.server.id,
                                         cfg.server.type,
                                         cfg.server.url,
                                         cfg.server.username,
-                                        cfg.server.password
+                                        cfg.server.password,
+                                        audioFormat,
+                                        audioBitrate
                                 );
                             }
                         },
@@ -117,7 +140,9 @@ public class Config {
                 ServerType type,
                 String url,
                 String username,
-                String password
+                String password,
+                String audioFormat,   // String for JSON, Gson serializes enums by name
+                Integer transcodeBitrate   // null/0 = source, positive = MaximumBitrate kbps
         ) {}
 
         @SerializedName("server")

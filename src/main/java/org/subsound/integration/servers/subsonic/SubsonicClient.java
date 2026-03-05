@@ -1,15 +1,5 @@
 package org.subsound.integration.servers.subsonic;
 
-import org.subsound.configuration.Config.ServerConfig;
-import org.subsound.integration.ServerClient;
-import org.subsound.integration.ServerClient.ObjectIdentifier.AlbumIdentifier;
-import org.subsound.integration.ServerClient.ObjectIdentifier.ArtistIdentifier;
-import org.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier;
-import org.subsound.integration.servers.subsonic.SubsonicClient.CreatePlaylistResponseJson.PlaylistJson;
-import org.subsound.integration.servers.subsonic.SubsonicClient.SubsonicResponseJson.SubsonicResponse;
-import org.subsound.utils.Utils;
-import org.subsound.utils.javahttp.LoggingHttpClient;
-import org.subsound.utils.javahttp.TextUtils;
 import com.google.gson.annotations.SerializedName;
 import net.beardbot.subsonic.client.Subsonic;
 import net.beardbot.subsonic.client.SubsonicPreferences;
@@ -27,6 +17,16 @@ import org.subsonic.restapi.Child;
 import org.subsonic.restapi.PlaylistWithSongs;
 import org.subsonic.restapi.SearchResult3;
 import org.subsonic.restapi.Starred2;
+import org.subsound.configuration.Config.ServerConfig;
+import org.subsound.integration.ServerClient;
+import org.subsound.integration.ServerClient.ObjectIdentifier.AlbumIdentifier;
+import org.subsound.integration.ServerClient.ObjectIdentifier.ArtistIdentifier;
+import org.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier;
+import org.subsound.integration.servers.subsonic.SubsonicClient.CreatePlaylistResponseJson.PlaylistJson;
+import org.subsound.integration.servers.subsonic.SubsonicClient.SubsonicResponseJson.SubsonicResponse;
+import org.subsound.utils.Utils;
+import org.subsound.utils.javahttp.LoggingHttpClient;
+import org.subsound.utils.javahttp.TextUtils;
 
 import java.io.IOException;
 import java.net.URI;
@@ -45,9 +45,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static java.util.Optional.ofNullable;
 import static org.subsound.app.state.AppManager.SERVER_ID;
 import static org.subsound.persistence.ThumbnailCache.toCachePath;
-import static java.util.Optional.ofNullable;
 
 
 public class SubsonicClient implements ServerClient {
@@ -600,14 +600,29 @@ public class SubsonicClient implements ServerClient {
         });
     }
 
+    private static final TranscodeFormat DEFAULT_AUDIO_FORMAT = TranscodeFormat.source;
+
     public static SubsonicPreferences createSettings(ServerConfig cfg) {
         SubsonicPreferences preferences = new SubsonicPreferences(
                 cfg.url(),
                 cfg.username(),
                 cfg.password()
         );
-        preferences.setStreamFormat("mp3");
-        preferences.setStreamBitRate(321);
+        TranscodeFormat fmt = cfg.audioFormat() != null ? cfg.audioFormat() : DEFAULT_AUDIO_FORMAT;
+        switch (fmt) {
+            case source -> {
+                preferences.setStreamFormat("");
+                preferences.setStreamBitRate(0);
+            }
+            case mp3 -> preferences.setStreamFormat("mp3");
+            case opus -> preferences.setStreamFormat("opus");
+        }
+        int bitrate = switch (cfg.audioBitrate()) {
+            case null -> 0;
+            case ServerClient.TranscodeBitrate.SourceQuality _ -> 0;
+            case ServerClient.TranscodeBitrate.MaximumBitrate(var kbps) -> kbps;
+        };
+        preferences.setStreamBitRate(bitrate);
         preferences.setClientName("subsound-gtk");
         return preferences;
     }

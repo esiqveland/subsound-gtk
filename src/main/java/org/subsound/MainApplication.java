@@ -1,7 +1,10 @@
 package org.subsound;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.subsound.app.state.AppManager;
 import org.subsound.app.state.PlayerAction;
+import org.subsound.integration.ServerClient;
 import org.subsound.app.state.PlayerAction.PlayMode;
 import org.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
 import org.subsound.persistence.ThumbnailCache;
@@ -49,8 +52,6 @@ import org.gnome.gtk.ShortcutController;
 import org.gnome.gtk.ShortcutScope;
 import org.gnome.gtk.ShortcutTrigger;
 import org.gnome.gtk.Widget;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -278,9 +279,13 @@ public class MainApplication {
                         cfg.serverConfig.username(),
                         cfg.serverConfig.password()
                 );
+                var transcodeSettings = cfg.serverConfig != null
+                        ? new ServerClient.TranscodeSettings(cfg.serverConfig.audioFormat(), cfg.serverConfig.audioBitrate())
+                        : null;
                 var settings = new SettingsPage(
                         info,
                         cfg.dataDir,
+                        transcodeSettings,
                         appManager::handleAction
                 );
                 NavigationPage navPage = NavigationPage.builder().setChild(settings).setTitle("Settings").build();
@@ -372,7 +377,7 @@ public class MainApplication {
         window.present();
     }
 
-    @NotNull
+    @NonNull
     private OnboardingOverlay getOnboardingOverlay(AppManager appManager, ViewStack viewStack) {
         return new OnboardingOverlay(appManager, viewStack);
     }

@@ -2,7 +2,7 @@ package org.subsound.ui.components;
 
 import org.gnome.gtk.GestureClick;
 import org.gnome.gtk.Label;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class ClickLabel extends Label {
     private final Runnable onClick;

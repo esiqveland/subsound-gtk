@@ -1,12 +1,13 @@
 package org.subsound.ui.components;
 
 import org.gnome.adw.ButtonRow;
-import org.gnome.adw.PreferencesRow;
+import org.jspecify.annotations.Nullable;
 import org.subsound.app.state.AppManager;
 import org.subsound.app.state.PlayerAction;
 import org.subsound.configuration.Config.ServerConfig;
 import org.subsound.integration.ServerClient;
 import org.subsound.integration.ServerClient.ServerType;
+import org.subsound.integration.ServerClient.TranscodeFormat;
 import org.subsound.utils.Utils;
 import org.gnome.adw.Clamp;
 import org.gnome.adw.EntryRow;
@@ -15,16 +16,13 @@ import org.gnome.adw.SwitchRow;
 import org.gnome.adw.Toast;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
-import org.gnome.gtk.Button;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListBox;
 import org.gnome.gtk.SelectionMode;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -32,7 +30,6 @@ import static org.subsound.ui.components.Classes.boxedList;
 import static org.subsound.ui.components.Classes.colorError;
 import static org.subsound.ui.components.Classes.colorSuccess;
 import static org.subsound.ui.components.Classes.colorWarning;
-import static org.subsound.ui.components.Classes.none;
 import static org.subsound.ui.components.Classes.suggestedAction;
 import static org.subsound.ui.components.Classes.title1;
 import static org.subsound.ui.components.Classes.titleLarge;
@@ -118,7 +115,9 @@ public class ServerConfigForm extends Box {
                     data.type,
                     data.serverUrl,
                     data.username,
-                    data.password
+                    data.password,
+                    TranscodeFormat.source,
+                    null
             ));
             boolean success = serverClient.testConnection();
             if (success) {

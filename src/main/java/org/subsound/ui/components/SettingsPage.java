@@ -1,25 +1,20 @@
 package org.subsound.ui.components;
 
-import org.gnome.adw.ActionRow;
 import org.gnome.adw.ButtonRow;
 import org.gnome.adw.Clamp;
 import org.gnome.adw.ComboRow;
 import org.gnome.adw.PreferencesGroup;
-import org.gnome.adw.PreferencesPage;
 import org.gnome.gtk.Align;
+import org.gnome.gtk.Box;
 import org.gnome.gtk.StringList;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.subsound.app.state.PlayerAction;
-import org.gnome.gtk.Box;
-import org.gnome.gtk.Button;
-import org.gnome.gtk.ListBox;
-import org.gnome.gtk.SelectionMode;
-import org.jetbrains.annotations.Nullable;
 import org.subsound.integration.ServerClient;
 import org.subsound.integration.ServerClient.TranscodeBitrate.MaximumBitrate;
 import org.subsound.integration.ServerClient.TranscodeBitrate.SourceQuality;
 import org.subsound.integration.ServerClient.TranscodeSettings;
-import org.subsound.utils.Utils;
+import org.subsound.ui.components.ServerConfigForm.SettingsInfo;
 
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -27,10 +22,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
-import static org.subsound.ui.components.Classes.boxedList;
-import static org.subsound.ui.components.Classes.destructiveAction;
 import static org.gnome.gtk.Orientation.VERTICAL;
-import static org.subsound.utils.Utils.addClick;
+import static org.subsound.ui.components.Classes.destructiveAction;
 import static org.subsound.utils.Utils.borderBox;
 
 public class SettingsPage extends Box {
@@ -46,9 +39,9 @@ public class SettingsPage extends Box {
     private final Box centerBox;
 
     public SettingsPage(
-            @Nullable ServerConfigForm.SettingsInfo settingsInfo,
+            @Nullable SettingsInfo settingsInfo,
             Path dataDir,
-            @Nullable ServerClient.TranscodeFormat audioFormat,
+            @Nullable TranscodeSettings transcodeSettings,
             Function<PlayerAction, CompletableFuture<Void>> onAction
     ) {
         super(VERTICAL, 0);
@@ -85,7 +78,7 @@ public class SettingsPage extends Box {
         this.audioFormatCombo = new ComboRow();
         this.audioFormatCombo.setTitle("Audio format");
         this.audioFormatCombo.setModel(model);
-        var initialFormat = audioFormat != null ? audioFormat : ServerClient.TranscodeFormat.opus;
+        var initialFormat = transcodeSettings != null ? transcodeSettings.format() : ServerClient.TranscodeFormat.opus;
         this.audioFormatCombo.setSelected(formats.indexOf(initialFormat));
 
         var bitrateModelList = new StringList();
@@ -96,7 +89,28 @@ public class SettingsPage extends Box {
         this.audioBitrateCombo = new ComboRow();
         this.audioBitrateCombo.setTitle("Max bitrate");
         this.audioBitrateCombo.setModel(bitrateModelList);
-        this.audioBitrateCombo.setSelected(0);
+        var initialBitrate = transcodeSettings != null ? transcodeSettings.bitrate() : new SourceQuality();
+        initialBitrate = initialBitrate == null ? new SourceQuality() : initialBitrate;
+        this.audioBitrateCombo.setSelected(Math.max(0, bitRates.indexOf(initialBitrate)));
+
+        this.audioFormatCombo.onNotify(
+                "selected", _ -> {
+                    var fmt = formats.get(this.audioFormatCombo.getSelected());
+                    var bitrate = bitRates.get(this.audioBitrateCombo.getSelected());
+                    var selected = new TranscodeSettings(fmt, bitrate);
+                    log.info("Selected transcode settings: {}", selected);
+                    onAction.apply(new PlayerAction.SaveTranscodeFormat(selected));
+                }
+        );
+        this.audioBitrateCombo.onNotify(
+                "selected", _ -> {
+                    var fmt = formats.get(this.audioFormatCombo.getSelected());
+                    var bitrate = bitRates.get(this.audioBitrateCombo.getSelected());
+                    var selected = new TranscodeSettings(fmt, bitrate);
+                    log.info("Selected transcode settings: {}", selected);
+                    onAction.apply(new PlayerAction.SaveTranscodeFormat(selected));
+                }
+        );
 
         this.transcodeSettings = new PreferencesGroup();
         this.transcodeSettings.setTitle("Transcode settings");
@@ -121,7 +135,7 @@ public class SettingsPage extends Box {
         this.append(clamp);
     }
 
-    public void setSettingsInfo(@Nullable ServerConfigForm.SettingsInfo s) {
+    public void setSettingsInfo(@Nullable SettingsInfo s) {
         this.form.setSettingsInfo(s);
     }
 }

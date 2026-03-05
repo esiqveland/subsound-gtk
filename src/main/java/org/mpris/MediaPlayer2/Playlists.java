@@ -7,7 +7,7 @@ import org.freedesktop.dbus.annotations.Position;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.messages.DBusSignal;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -53,7 +53,8 @@ public interface Playlists extends DBusInterface {
         @Position(1)
         private final String name;
         @Position(2)
-        @Nullable private final String icon;
+        @Nullable
+        private final String icon;
 
         public Playlist(String id, String name, @Nullable String icon) {
             this.id = id;
