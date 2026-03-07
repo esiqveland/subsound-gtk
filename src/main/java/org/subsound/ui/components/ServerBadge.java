@@ -135,7 +135,9 @@ public class ServerBadge extends Box implements AppManager.StateListener {
         this.pingTask = scheduler.scheduleWithFixedDelay(this::checkConnectivity, 0, 30, TimeUnit.SECONDS);
 
         this.appManager.addOnStateChanged(this);
-        updateNetworkStatus(this.appManager.getState().networkState());
+        var initialNetworkState = this.appManager.getState().networkState();
+        this.currentNetworkStatus = initialNetworkState.status();
+        updateNetworkStatus(initialNetworkState);
 
         this.onDestroy(() -> {
             this.appManager.removeOnStateChanged(this);
