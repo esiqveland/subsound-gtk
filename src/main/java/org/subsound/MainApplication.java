@@ -84,6 +84,7 @@ public class MainApplication {
     private final CommandPalette commandPalette;
     private final ServerBadge serverBadge;
     private AppNavigation appNavigation;
+    private PlaylistsViewLoader playlistsViewLoader;
     private final CssProvider mainProvider;
 
 
@@ -265,6 +266,7 @@ public class MainApplication {
             }
             case AppNavigation.AppRoute.RoutePlaylistsOverview route -> {
                 viewStack.setVisibleChildName("playlistPage");
+                route.preselect().ifPresent(id -> playlistsViewLoader.preselect(id.playlistId()));
                 yield false;
             }
             case AppNavigation.AppRoute.RouteStarred starred -> {
@@ -328,11 +330,8 @@ public class MainApplication {
         }
         {
             var playlistsContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
-            playlistsContainer.append(new PlaylistsViewLoader(
-                    thumbLoader,
-                    appManager,
-                    appNavigation::navigateTo
-            ));
+            this.playlistsViewLoader = new PlaylistsViewLoader(thumbLoader, appManager, appNavigation::navigateTo);
+            playlistsContainer.append(this.playlistsViewLoader);
             ViewStackPage starredPage = viewStack.addTitledWithIcon(playlistsContainer, "playlistPage", "Playlists", Icons.Starred.getIconName());
         }
         {

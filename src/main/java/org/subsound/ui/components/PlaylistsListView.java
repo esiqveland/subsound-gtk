@@ -226,6 +226,19 @@ public class PlaylistsListView extends Box {
         this.append(view);
     }
 
+    public void preselect(String playlistId) {
+        for (int i = 0; i < this.listModel.getNItems(); i++) {
+            var gPlaylist = this.listModel.getItem(i);
+            if (gPlaylist != null && playlistId.equals(gPlaylist.getId())) {
+                this.currentIndex = i;
+                this.selectionModel.setSelected(i);
+                this.setSelectedPlaylist(gPlaylist.getPlaylist());
+                return;
+            }
+        }
+        log.info("preselect: playlistId={} not found in listModel (size={})", playlistId, this.listModel.getNItems());
+    }
+
     private void setSelectedPlaylist(PlaylistSimple playlist) {
         doAsync(() -> switch (playlist.kind()) {
             case NORMAL -> Optional.of(this.appManager.useClient(cl -> cl.getPlaylist(playlist.id())).songs());

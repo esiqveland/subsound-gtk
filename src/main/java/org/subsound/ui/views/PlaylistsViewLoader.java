@@ -61,4 +61,8 @@ public class PlaylistsViewLoader extends Box {
 
         this.append(playlistsListView);
     }
+
+    public void preselect(String playlistId) {
+        this.playlistsListView.preselect(playlistId);
+    }
 }

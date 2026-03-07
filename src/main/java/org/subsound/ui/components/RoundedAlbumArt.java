@@ -113,7 +113,7 @@ public class RoundedAlbumArt extends Box {
                     AppRoute route = switch (currentArtwork.identifier().orElse(null)) {
                         case AlbumIdentifier a -> new RouteAlbumInfo(a.albumId());
                         case ArtistIdentifier a -> new RouteArtistInfo(a.artistId());
-                        case PlaylistIdentifier p -> new RoutePlaylistsOverview(Optional.of(p.playlistId()));
+                        case PlaylistIdentifier p -> new RoutePlaylistsOverview(Optional.of(p));
                         case SongIdentifier p -> {
                             log.info("unhandled song click: p.songId() = {}", p.songId());
                             yield null;
