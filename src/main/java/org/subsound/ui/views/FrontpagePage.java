@@ -473,7 +473,7 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
                 return false;
             }));
             this.sortedModel = new SortListModel<>(this.filteredModel,
-                    new GPlaylistSorter(Comparator.comparing(a -> a.getPlaylist().changedAt()))
+                    new GPlaylistSorter(Comparator.comparing((GPlaylist a) -> a.getPlaylist().changedAt()).reversed())
             );
             this.slicedModel = new SliceListModel<>(this.sortedModel, 0, MAX_ITEMS);
 
