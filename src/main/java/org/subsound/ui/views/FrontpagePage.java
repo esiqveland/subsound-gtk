@@ -455,7 +455,7 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
 
     public static class HorizontalPlaylistsView extends Box {
         private static final int COVER_SIZE = 128;
-        private static final int MAX_ITEMS = 6;
+        private static final int MAX_ITEMS = 10;
         private final ListView listView;
         private final FilterListModel<GPlaylist> filteredModel;
         private final SortListModel<GPlaylist> sortedModel;
@@ -535,6 +535,8 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
 
         public PlaylistOverviewChild(AppManager appManager, int coverSize) {
             super(VERTICAL, 0);
+            this.setMarginStart(6);
+            this.setMarginEnd(6);
             this.art = new RoundedAlbumArt(Optional.empty(), appManager, coverSize);
             this.art.setClickable(false);
 
