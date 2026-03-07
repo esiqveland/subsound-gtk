@@ -296,7 +296,8 @@ public interface ServerClient {
             List<ArtistAlbumInfo> recent,
             List<ArtistAlbumInfo> newest,
             List<ArtistAlbumInfo> frequent,
-            List<ArtistAlbumInfo> highest
+            List<ArtistAlbumInfo> highest,
+            List<ArtistAlbumInfo> byYear
     ) {}
 
     enum ServerType {

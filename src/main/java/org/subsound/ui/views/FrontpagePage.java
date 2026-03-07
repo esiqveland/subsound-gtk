@@ -51,6 +51,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.gnome.gtk.Image;
+import org.gnome.adw.Clamp;
+import org.gnome.pango.EllipsizeMode;
 
 import java.net.URI;
 import java.time.Duration;
@@ -225,13 +227,15 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
 
         private final Label playlistsLabel = heading1("Playlists").build();
         private final Label recentLabel = heading1("Recently played").build();
-        private final Label newLabel = heading1("Newly added releases").build();
+        private final Label newLabel = heading1("Recently added releases").build();
         private final Label mostLabel = heading1("Most played").build();
+        private final Label yearlyLabel = heading1("Most recent").build();
 
         private final HorizontalPlaylistsView playlistsView;
         private final BoxHolder<HorizontalAlbumsFlowBoxV3> recentList;
         private final BoxHolder<HorizontalAlbumsFlowBoxV3> newList;
         private final BoxHolder<HorizontalAlbumsFlowBoxV3> mostPlayedList;
+        private final BoxHolder<HorizontalAlbumsFlowBoxV3> mostRecentYear;
 
         public HomeView(AppManager appManager, Consumer<ArtistAlbumInfo> onAlbumSelected, Consumer<AppNavigation.AppRoute> onNavigate) {
             super(Orientation.VERTICAL, BIG_SPACING);
@@ -246,10 +250,12 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
             this.recentList = holder();
             this.newList = holder();
             this.mostPlayedList = holder();
+            this.mostRecentYear = holder();
             this.append(wrap(playlistsLabel, playlistsView));
             this.append(wrap(recentLabel, recentList));
             this.append(wrap(newLabel, newList));
             this.append(wrap(mostLabel, mostPlayedList));
+            this.append(wrap(yearlyLabel, mostRecentYear));
         }
 
         private static Box wrap(Label label, Box widget) {
@@ -445,10 +451,12 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
             var r = flowBox(data.recent());
             var n = flowBox(data.newest());
             var freq = flowBox(data.frequent());
+            var yearly = flowBox(data.byYear());
             Utils.runOnMainThread(() -> {
                 this.recentList.setChild(r);
                 this.newList.setChild(n);
                 this.mostPlayedList.setChild(freq);
+                this.mostRecentYear.setChild(yearly);
             });
         }
     }

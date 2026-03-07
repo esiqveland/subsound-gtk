@@ -247,7 +247,7 @@ public class CachingClient implements ServerClient {
             var recentAlbums = dbService.listAlbumsByAddedAt();
             var albumInfos = recentAlbums.stream().map(this::toArtistAlbumInfo).toList();
             // For offline, use recent albums for all categories
-            return new HomeOverview(albumInfos, albumInfos, List.of(), List.of());
+            return new HomeOverview(albumInfos, albumInfos, List.of(), List.of(), List.of());
         }
         try {
             return delegate.getHomeOverview();
@@ -256,7 +256,7 @@ public class CachingClient implements ServerClient {
             var recentAlbums = dbService.listAlbumsByAddedAt();
             var albumInfos = recentAlbums.stream().map(this::toArtistAlbumInfo).toList();
             // For offline, use recent albums for all categories
-            return new HomeOverview(albumInfos, albumInfos, List.of(), List.of());
+            return new HomeOverview(albumInfos, albumInfos, List.of(), List.of(), List.of());
         }
     }
 

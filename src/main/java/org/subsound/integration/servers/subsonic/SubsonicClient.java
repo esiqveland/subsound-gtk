@@ -121,6 +121,7 @@ public class SubsonicClient implements ServerClient {
         var newestTask = Utils.doAsync(() -> this.loadAlbumList(AlbumListType.NEWEST));
         var frequentTask = Utils.doAsync(() -> this.loadAlbumList(AlbumListType.FREQUENT));
         var highestTask = Utils.doAsync(() -> this.loadAlbumList(AlbumListType.HIGHEST));
+        var yearTask = Utils.doAsync(() -> this.loadAlbumList(AlbumListType.BY_YEAR));
 
         return CompletableFuture
                 .allOf(recentTask, newestTask, frequentTask, highestTask)
@@ -128,7 +129,8 @@ public class SubsonicClient implements ServerClient {
                         recentTask.join(),
                         newestTask.join(),
                         frequentTask.join(),
-                        highestTask.join()
+                        highestTask.join(),
+                        yearTask.join()
                 ))
                 .join();
     }
@@ -141,7 +143,13 @@ public class SubsonicClient implements ServerClient {
     }
 
     private AlbumListParams listParams(AlbumListType albumListType) {
-        return AlbumListParams.create().type(albumListType);
+        var params = AlbumListParams.create().type(albumListType);
+        if (albumListType == AlbumListType.BY_YEAR) {
+            params.toYear(1900);
+            params.fromYear(Instant.now().atZone(ZoneOffset.UTC).getYear());
+            params.size(20);
+        }
+        return params;
     }
 
     @Override
