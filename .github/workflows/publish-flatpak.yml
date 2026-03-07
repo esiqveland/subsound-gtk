@@ -6,13 +6,15 @@ on:
 
 jobs:
   build-and-publish:
+    name: "Flatpak"
     runs-on: ubuntu-latest
-
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-49
+      options: --privileged
     steps:
       - uses: actions/checkout@v4
-
       # Builds inside the correct GNOME SDK container (Platform 49 + openjdk25 extension)
-      - uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@v6
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: org.subsound.Subsound.flatpak
           manifest-path: org.subsound.Subsound.yml
