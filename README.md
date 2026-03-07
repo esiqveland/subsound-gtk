@@ -16,6 +16,24 @@ A few samples of what the UI looks like:
 
 ![Search modal ( Ctrl+K )](screenshots/searchv2.png)
 
+## Installation
+
+Flatpak:
+
+```
+# Add remote
+flatpak remote-add --no-gpg-verify subsound-beta https://esiqveland.github.io/subsound-gtk-repo/
+
+# Install                                                                                                           
+flatpak install subsound-beta org.subsound.Subsound                                                                 
+                                                                                                                    
+# Run                                                                                                               
+flatpak run org.subsound.Subsound                                                                                   
+                                                                                                                    
+# After a new tag is pushed and CI publishes:                                                                       
+flatpak update org.subsound.Subsound                                                                                
+```
+
 ### TODO
 
 - [X] songlist: duration, tracknumber, starred, bitrate, size, format
