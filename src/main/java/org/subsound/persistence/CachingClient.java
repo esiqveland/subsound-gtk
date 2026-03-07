@@ -245,18 +245,22 @@ public class CachingClient implements ServerClient {
         if (isOffline()) {
             log.debug("Offline mode: using cached home overview");
             var recentAlbums = dbService.listAlbumsByAddedAt();
+            var albumsByYear = dbService.listAlbumsByYear(20);
+            var albumsByYears = albumsByYear.stream().map(this::toArtistAlbumInfo).toList();
             var albumInfos = recentAlbums.stream().map(this::toArtistAlbumInfo).toList();
             // For offline, use recent albums for all categories
-            return new HomeOverview(albumInfos, albumInfos, List.of(), List.of(), List.of());
+            return new HomeOverview(albumInfos, albumInfos, List.of(), List.of(), albumsByYears);
         }
         try {
             return delegate.getHomeOverview();
         } catch (Exception e) {
             log.warn("Failed to fetch home overview from server, falling back to database", e);
             var recentAlbums = dbService.listAlbumsByAddedAt();
+            var albumsByYear = dbService.listAlbumsByYear(20);
+            var albumsByYears = albumsByYear.stream().map(this::toArtistAlbumInfo).toList();
             var albumInfos = recentAlbums.stream().map(this::toArtistAlbumInfo).toList();
             // For offline, use recent albums for all categories
-            return new HomeOverview(albumInfos, albumInfos, List.of(), List.of(), List.of());
+            return new HomeOverview(albumInfos, albumInfos, List.of(), List.of(), albumsByYears);
         }
     }
 

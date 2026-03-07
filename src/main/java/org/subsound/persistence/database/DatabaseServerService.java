@@ -94,21 +94,40 @@ public class DatabaseServerService {
     }
 
     public List<Album> listAlbumsByAddedAt() {
-        List<Album> albums = new ArrayList<>();
         String sql = "SELECT * FROM albums WHERE server_id = ? ORDER BY added_at_ms DESC";
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, this.serverId.toString());
             try (ResultSet rs = pstmt.executeQuery()) {
+                List<Album> albums = new ArrayList<>();
                 while (rs.next()) {
                     albums.add(mapResultSetToAlbum(rs));
                 }
+                return albums;
             }
         } catch (SQLException e) {
             logger.error("Failed to list albums by added_at_ms for server: {}", serverId, e);
             throw new RuntimeException("Failed to list albums by added_at_ms", e);
         }
-        return albums;
+    }
+
+    public List<Album> listAlbumsByYear(int limit) {
+        String sql = "SELECT * FROM albums WHERE server_id = ? AND year IS NOT NULL ORDER BY year DESC LIMIT ?";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            pstmt.setInt(2, limit);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                var albums = new ArrayList<Album>();
+                while (rs.next()) {
+                    albums.add(mapResultSetToAlbum(rs));
+                }
+                return albums;
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to list albums by year for server: {}", serverId, e);
+            throw new RuntimeException("Failed to list albums by year", e);
+        }
     }
 
     public Optional<Album> getAlbumById(String albumId) {
