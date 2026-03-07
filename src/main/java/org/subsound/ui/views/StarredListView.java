@@ -1,5 +1,6 @@
 package org.subsound.ui.views;
 
+import org.gnome.gtk.ListTabBehavior;
 import org.jspecify.annotations.Nullable;
 import org.subsound.app.state.AppManager;
 import org.subsound.app.state.PlayerAction;
@@ -148,6 +149,7 @@ public class StarredListView extends Box implements AppManager.StateListener {
                 .setSingleClickActivate(false)
                 .setFactory(factory)
                 .setModel(selectionModel)
+                .setTabBehavior(ListTabBehavior.ITEM)
                 .build();
         var activateSignal = this.listView.onActivate(index -> {
             //var songInfo = this.data.songs().get(index);

@@ -1,5 +1,6 @@
 package org.subsound.ui.components;
 
+import org.gnome.gtk.ListTabBehavior;
 import org.subsound.app.state.AppManager;
 import org.subsound.app.state.PlayerAction;
 import org.subsound.app.state.PlaylistsStore.GPlaylist;
@@ -148,6 +149,7 @@ public class PlaylistsListView extends Box {
                 .setSingleClickActivate(true)
                 .setFactory(factory)
                 .setModel(selectionModel)
+                .setTabBehavior(ListTabBehavior.ITEM)
                 .build();
 
         var activateSignal = this.listView.onActivate(index -> {

@@ -1,5 +1,6 @@
 package org.subsound.ui.views;
 
+import org.gnome.gtk.ListTabBehavior;
 import org.jspecify.annotations.Nullable;
 import org.subsound.app.state.AppManager;
 import org.subsound.app.state.PlayerAction;
@@ -169,6 +170,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
                 .setValign(FILL)
                 .setFocusOnClick(true)
                 .setSingleClickActivate(false)
+                .setTabBehavior(ListTabBehavior.ITEM)
                 .build();
 
         // 2. Build columns with per-column factories and sorters, then append them
