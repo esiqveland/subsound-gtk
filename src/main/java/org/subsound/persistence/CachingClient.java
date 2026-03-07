@@ -29,8 +29,11 @@ public class CachingClient implements ServerClient {
     private final DatabaseServerService dbService;
     private final String serverId;
     private final Path cacheRoot;
-    // Default to OFFLINE - safer to assume offline until network monitor confirms online
-    private volatile NetworkStatus networkStatus = NetworkStatus.OFFLINE;
+    // Default to ONLINE - try the server first, fall back to DB on failure.
+    // The network monitor will update this when the real connectivity is known.
+    // Defaulting to OFFLINE here causes first-run/onboarding issues in flatpak where
+    // GNetworkMonitorPortal returns LOCAL (mapped to OFFLINE) for ~500ms on startup.
+    private volatile NetworkStatus networkStatus = NetworkStatus.ONLINE;
 
     public CachingClient(ServerClient delegate, DatabaseServerService dbService, String serverId, Path cacheRoot) {
         this.delegate = delegate;
