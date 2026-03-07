@@ -5,15 +5,15 @@ on:
     tags: ['v*']
 
 jobs:
-  build-and-publish:
-    name: "Flatpak"
+  build:
+    name: "Build Flatpak"
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-49
       options: --privileged
     steps:
       - uses: actions/checkout@v4
-      # Builds inside the correct GNOME SDK container (Platform 49 + openjdk25 extension)
+
       - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: org.subsound.Subsound.flatpak
@@ -23,6 +23,21 @@ jobs:
       # Generate static deltas so updates only download changed objects
       - name: Add static deltas
         run: flatpak build-update-repo repo --generate-static-deltas
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flatpak-repo
+          path: repo/
+
+  publish:
+    name: "Publish to GitHub Pages"
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: flatpak-repo
+          path: repo/
 
       # Push the OSTree repo directory to the hosting GitHub repo.
       # clean: false is critical — OSTree is append-only; deleting old objects
