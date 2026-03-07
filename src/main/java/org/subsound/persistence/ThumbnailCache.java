@@ -2,17 +2,17 @@ package org.subsound.persistence;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import org.gnome.gdk.Texture;
+import org.gnome.gdkpixbuf.Pixbuf;
 import org.javagi.base.Out;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.subsound.integration.ServerClient.CoverArt;
 import org.subsound.utils.ImageUtils;
 import org.subsound.utils.ImageUtils.ColorValue;
 import org.subsound.utils.ThumbHashUtils;
 import org.subsound.utils.Utils;
 import org.subsound.utils.javahttp.LoggingHttpClient;
-import org.gnome.gdk.Texture;
-import org.gnome.gdkpixbuf.Pixbuf;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -30,6 +30,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.subsound.persistence.SongCache.joinPath;
 import static org.subsound.utils.Utils.sha256;
@@ -49,7 +50,7 @@ public class ThumbnailCache {
     private final Semaphore semaphore = new Semaphore(2);
     // A separate semaphore for querying the cache, so downloading new content does not block us from loading content we already have stored
     private final Semaphore semaphorePixbuf = new Semaphore(2);
-    private final Cache<PixbufCacheKey, CachedTexture> pixbufCache = Caffeine.newBuilder().maximumSize(5000).build();
+    private final Cache<PixbufCacheKey, CachedTexture> pixbufCache = Caffeine.newBuilder().maximumSize(1000).build();
 
     record PixbufCacheKey(
             CoverArt coverArt,
@@ -177,6 +178,42 @@ public class ThumbnailCache {
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
+        });
+    }
+
+    public record CacheStats(
+            long inmemoryCount,
+            long inmemoryHits,
+            long inMemoryMisses,
+            long totalCount,
+            long totalBytes
+    ) {}
+
+    public CompletableFuture<CacheStats> getStats(String serverId) {
+        return Utils.doAsync(() -> {
+            var thumbsDir = root.resolve(serverId).resolve("thumbs");
+            var byteSize = new AtomicLong();
+            var count = new AtomicLong();
+            try {
+                Files.walk(thumbsDir)
+                        .map(Path::toFile)
+                        .filter(File::isFile)
+                        .forEach(fd -> {
+                            byteSize.addAndGet(fd.length());
+                            count.incrementAndGet();
+                        });
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            var s = pixbufCache.stats();
+            return new CacheStats(
+                    pixbufCache.estimatedSize(),
+                    s.hitCount(),
+                    s.missCount(),
+                    count.get(),
+                    byteSize.get()
+            );
         });
     }
 
