@@ -712,11 +712,10 @@ public class AppManager {
     }
 
     private CachingClient wrapWithCaching(ServerClient raw) {
-        var cachingClient = new CachingClient(
-                raw, this.dbService, SERVER_ID, this.config.dataDir
-        );
-        cachingClient.setNetworkStatus(this.networkMonitor.getState().status());
-        return cachingClient;
+        // Do not force-sync the network status at creation: CachingClient defaults to ONLINE
+        // so the server is tried first. The network monitor will update it once it has
+        // queried the real connectivity (which in flatpak can take ~500 ms via the portal).
+        return new CachingClient(raw, this.dbService, SERVER_ID, this.config.dataDir);
     }
 
     /**
