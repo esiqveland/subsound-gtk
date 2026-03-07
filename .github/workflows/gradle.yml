@@ -16,11 +16,11 @@ jobs:
     - uses: actions/checkout@v4
     - uses: actions/setup-java@v4
       with:
-        java-version: '22'
+        java-version: '25'
         distribution: 'temurin'
     - uses: gradle/actions/setup-gradle@dbbdc275be76ac10734476cc723d82dfe7ec6eda # v3.4.2
       with:
-        gradle-version: '8.10'
+        gradle-version: '9.3'
     - run: gradle build -x test
       
   generate-dependency-json:
@@ -34,11 +34,11 @@ jobs:
         ref: ${{ github.head_ref }}
     - uses: actions/setup-java@v4
       with:
-        java-version: '22'
+        java-version: '25'
         distribution: 'temurin'
     - uses: gradle/actions/setup-gradle@dbbdc275be76ac10734476cc723d82dfe7ec6eda # v3.4.2
       with:
-        gradle-version: '8.10'
+        gradle-version: '9.3'
     - name: Get dependencies with Gradle & run flatpak-gradle-generator plugin by jwharm
       run: gradle flatpakGradleGenerator
     - uses: stefanzweifel/git-auto-commit-action@v5
@@ -58,7 +58,7 @@ jobs:
     - uses: actions/checkout@v4
     - uses: actions/setup-java@v4
       with:
-        java-version: '22'
+        java-version: '25'
         distribution: 'temurin'
     # Generates and submits a dependency graph, enabling Dependabot Alerts for all project dependencies.
     # See: https://github.com/gradle/actions/blob/main/dependency-submission/README.md
