@@ -132,6 +132,10 @@ public class ThumbnailCache {
                     return new ThumbLoaded(cachehPath, Files.readAllBytes(cacheAbsPath));
                 }
                 var link = coverArt.coverArtLink();
+                var scheme = link.getScheme();
+                if (scheme == null || (!scheme.equals("http") && !scheme.equals("https"))) {
+                    throw new RuntimeException("cover art not cached on disk and not downloadable: coverArtId=" + coverArt.coverArtId() + " path=" + cacheAbsPath);
+                }
                 var req = HttpRequest.newBuilder().GET().uri(link).build();
                 var bodyHandler = HttpResponse.BodyHandlers.ofByteArray();
                 //CompletableFuture<HttpResponse<Void>> httpResponseCompletableFuture = this.client.sendAsync(req, bodyHandler);
