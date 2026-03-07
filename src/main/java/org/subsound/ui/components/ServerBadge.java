@@ -108,6 +108,7 @@ public class ServerBadge extends Box implements AppManager.StateListener {
 
         this.configureServerButton = ButtonRow.builder()
                 .setTitle("Configure server")
+                .setStartIconName(Icons.Settings.getIconName())
                 .build();
         this.configureServerButton.onActivated(() -> {
             appManager.navigateTo(new AppNavigation.AppRoute.SettingsPage());
