@@ -224,14 +224,14 @@ Features:
 Later goals:
  - [ ] Internationalize
 
-Eventually goals:
+Potential goals:
+ - [ ] Lyrics support
  - [ ] support multiple server types (native Navidrome API, OpenSubsonic, Jellyfish etc)
+ - [ ] make it look OK in light mode?
+ - [ ] Chromecast support
  - [ ] support the subsonic podcast features
- - [ ] could support chromecast
  - [ ] consider using fanart.tv
  - [ ] support embedded image tags? https://github.com/neithern/g4music/blob/bf80b5cad448a57c635f01d0a315671fef045d14/src/gst/tag-parser.vala#L99
- - [ ] make it look OK in light mode?
- - [ ] Lyrics support?
 
 Non-goals:
  - Video support  
@@ -273,3 +273,7 @@ https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/style-classes.html
 
 SearchEntry
 https://api.pygobject.gnome.org/Gtk-4.0/class-SearchEntry.html#gi.repository.Gtk.SearchEntry
+
+## Credits
+
+Vectors and icons by <a href="https://www.svgrepo.com" target="_blank">SVG Repo</a>
