@@ -18,23 +18,23 @@ A few samples of what the UI looks like:
 
 ## Installation
 
-Flatpak:
+Flatpak beta release:
 
+```bash
+# Add remote (one-time)
+flatpak remote-add --user --no-gpg-verify subsound-beta https://esiqveland.github.io/subsound-gtk-repo/
+
+# Install
+flatpak install --user subsound-beta org.subsound.Subsound
+
+# Run
+flatpak run --user org.subsound.Subsound
+
+# Update
+flatpak update --user org.subsound.Subsound
 ```
-# Add remote
-flatpak remote-add --no-gpg-verify subsound-beta https://esiqveland.github.io/subsound-gtk-repo/
 
-# Install                                                                                                           
-flatpak install subsound-beta org.subsound.Subsound                                                                 
-                                                                                                                    
-# Run                                                                                                               
-flatpak run org.subsound.Subsound                                                                                   
-                                                                                                                    
-# After a new tag is pushed and CI publishes:                                                                       
-flatpak update org.subsound.Subsound                                                                                
-```
-
-### TODO
+## TODO
 
 - [X] songlist: duration, tracknumber, starred, bitrate, size, format
 - [X] songlist: self-updating playing icon on the left
@@ -67,10 +67,10 @@ flatpak update org.subsound.Subsound
   - [X] fix song cache storing with original suffix instead of transcode format suffix
     - This caused us to save mp3 transcoded flac data with .flac extension
   - [X] find a way to handle difference between original and stream (transcode) data better
-    - [ ] Server settings: add selection: (raw, opus, mp3)
-    - [ ] Server settings: add max bitrate constraint: (none, 128, 192, 320)
+    - [X] Server settings: add selection: (raw, opus, mp3)
+    - [X] Server settings: add max bitrate constraint: (none, 128, 192, 320)
     - [ ] Server settings: add note about clearing stored song data to reset stored transcode format
-  - [ ] transcode configurable
+  - [X] transcode configurable
   - [ ] a way to clear transcode cache. need to trigger download sync after clearing cache
   - [ ] we should only transcode flac/wav or bitrate > X kbps. f.ex. a 193kbps mp3 should not be transcoded, and probably not a 320kbps mp3 either. mp3 should probably not be transcoded to opus f.ex.
 - [X] replace gtk.image with gtk.picture? https://docs.gtk.org/gtk4/class.Picture.html
