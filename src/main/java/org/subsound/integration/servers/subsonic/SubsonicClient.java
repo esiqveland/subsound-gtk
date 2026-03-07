@@ -254,6 +254,7 @@ public class SubsonicClient implements ServerClient {
                         PlaylistKind.NORMAL,
                         toCoverArt(p.getCoverArtId(), new PlaylistIdentifier(p.getId())),
                         p.getSongCount(),
+                        p.getChanged().toInstant(ZoneOffset.UTC),
                         p.getCreated().toInstant(ZoneOffset.UTC)
                 ))
                 .toList();
@@ -270,6 +271,7 @@ public class SubsonicClient implements ServerClient {
                 PlaylistKind.NORMAL,
                 toCoverArt(playlist.getCoverArtId(), new PlaylistIdentifier(playlist.getId())),
                 songs.size(),
+                playlist.getChanged().toInstant(ZoneOffset.UTC),
                 playlist.getCreated().toInstant(ZoneOffset.UTC),
                 songs
         );
@@ -707,6 +709,7 @@ public class SubsonicClient implements ServerClient {
                                 .flatMap(c -> toCoverArt(c.coverArt, new ObjectIdentifier.SongIdentifier(c.songId)))
                         )),
                 pl.songCount,
+                pl.changed,
                 pl.created
         );
     }

@@ -125,6 +125,7 @@ public class PlaylistsStore {
                 PlaylistKind.STARRED,
                 Optional.empty(),
                 starredCount,
+                Instant.now(),
                 Instant.now()
         );
         var downloaded = new PlaylistSimple(
@@ -133,6 +134,7 @@ public class PlaylistsStore {
                 PlaylistKind.DOWNLOADED,
                 Optional.empty(),
                 downloadCount,
+                Instant.now(),
                 Instant.now()
         );
 
@@ -162,6 +164,7 @@ public class PlaylistsStore {
                             playlist.kind(),
                             playlist.coverArtId(),
                             playlist.songCount(),
+                            playlist.changedAt(),
                             playlist.created()
                     );
 
@@ -182,7 +185,7 @@ public class PlaylistsStore {
                     if (id.equals(gPlaylist.getId())) {
                         var old = gPlaylist.getPlaylist();
                         gPlaylist.setValue(new PlaylistSimple(
-                                old.id(), newName, old.kind(), old.coverArtId(), old.songCount(), old.created()
+                                old.id(), newName, old.kind(), old.coverArtId(), old.songCount(), Instant.now(), old.created()
                         ));
                         break;
                     }
@@ -220,7 +223,7 @@ public class PlaylistsStore {
         }
         var old = sp.getPlaylist();
         Utils.runOnMainThread(() -> sp.setValue(new PlaylistSimple(
-                old.id(), old.name(), old.kind(), old.coverArtId(), count, old.created()
+                old.id(), old.name(), old.kind(), old.coverArtId(), count, old.changedAt(), old.created()
         )));
     }
 

@@ -266,6 +266,7 @@ public interface ServerClient {
             PlaylistKind kind,
             Optional<CoverArt> coverArtId,
             int songCount,
+            Instant changedAt,
             Instant created
     ) {}
 
@@ -275,6 +276,7 @@ public interface ServerClient {
             PlaylistKind kind,
             Optional<CoverArt> coverArtId,
             int songCount,
+            Instant changedAt,
             Instant created,
             List<SongInfo> songs
     ) {}

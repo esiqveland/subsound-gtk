@@ -442,6 +442,7 @@ public class CachingClient implements ServerClient {
                 PlaylistKind.NORMAL,
                 row.coverArtId().flatMap(id -> toCoverArt(id, new ObjectIdentifier.PlaylistIdentifier(row.id()))),
                 row.songCount(),
+                row.updatedAt(),
                 row.createdAt()
         );
     }
@@ -458,6 +459,7 @@ public class CachingClient implements ServerClient {
                 PlaylistKind.NORMAL,
                 row.coverArtId().flatMap(id -> toCoverArt(id, new ObjectIdentifier.PlaylistIdentifier(row.id()))),
                 row.songCount(),
+                row.updatedAt(),
                 row.createdAt(),
                 songs
         );

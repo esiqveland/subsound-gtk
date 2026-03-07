@@ -1,12 +1,24 @@
 package org.subsound.ui.views;
 
+import org.gnome.gobject.GObject;
+import org.gnome.gtk.CustomSorter;
+import org.gnome.gtk.ListTabBehavior;
+import org.gnome.gtk.SliceListModel;
+import org.gnome.gtk.SortListModel;
+import org.gnome.gtk.Sorter;
 import org.subsound.app.state.AppManager;
 import org.subsound.app.state.NetworkMonitoring;
 import org.subsound.app.state.PlayerAction;
+import org.subsound.app.state.PlaylistsStore.GPlaylist;
 import org.subsound.integration.ServerClient;
 import org.subsound.integration.ServerClient.ArtistAlbumInfo;
 import org.subsound.integration.ServerClient.HomeOverview;
+import org.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier;
+import org.subsound.integration.ServerClient.PlaylistKind;
+import org.subsound.integration.ServerClient.PlaylistSimple;
 import org.subsound.persistence.ThumbnailCache;
+import org.subsound.ui.components.AppNavigation;
+import org.subsound.ui.components.AppNavigation.AppRoute.RoutePlaylistsOverview;
 import org.subsound.ui.components.AlbumFlowBoxChild;
 import org.subsound.ui.components.AlbumsFlowBox;
 import org.subsound.ui.components.BoxHolder;
@@ -14,6 +26,7 @@ import org.subsound.ui.components.Classes;
 import org.subsound.ui.components.LoadingSpinner;
 import org.subsound.ui.components.OverviewAlbumChild;
 import org.subsound.ui.components.RefreshButton;
+import org.subsound.ui.components.RoundedAlbumArt;
 import org.subsound.ui.views.FrontpagePage.FrontpagePageState.Loading;
 import org.subsound.utils.Utils;
 import org.gnome.gtk.Align;
@@ -27,6 +40,11 @@ import org.gnome.gtk.Orientation;
 import org.gnome.gtk.PolicyType;
 import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.SignalListItemFactory;
+import org.gnome.gio.ListStore;
+import org.gnome.gtk.CustomFilter;
+import org.gnome.gtk.FilterListModel;
+import org.gnome.gtk.GestureClick;
+import org.gnome.gtk.NoSelection;
 import org.gnome.gtk.SingleSelection;
 import org.gnome.gtk.Stack;
 import org.slf4j.Logger;
@@ -37,6 +55,7 @@ import org.gnome.gtk.Image;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -66,6 +85,7 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
     private final ThumbnailCache thumbLoader;
     private final AppManager appManager;
     private final Consumer<ArtistAlbumInfo> onAlbumSelected;
+    private final Consumer<AppNavigation.AppRoute> onNavigate;
     private final AtomicReference<FrontpagePageState> state = new AtomicReference<>(new Loading());
     private final AtomicBoolean isMapped = new AtomicBoolean(false);
     private final AtomicReference<NetworkMonitoring.NetworkStatus> lastNetworkStatus = new AtomicReference<>();
@@ -77,9 +97,10 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
     private final Label errorLabel;
     private final HomeView homeView;
 
-    public FrontpagePage(ThumbnailCache thumbLoader, AppManager appManager, Consumer<ArtistAlbumInfo> onAlbumSelected) {
+    public FrontpagePage(ThumbnailCache thumbLoader, AppManager appManager, Consumer<ArtistAlbumInfo> onAlbumSelected, Consumer<AppNavigation.AppRoute> onNavigate) {
         super(Orientation.VERTICAL, 0);
         this.onAlbumSelected = onAlbumSelected;
+        this.onNavigate = onNavigate;
         this.setHexpand(true);
         this.setVexpand(true);
         this.setHalign(START);
@@ -88,7 +109,7 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
         this.view = borderBox(Orientation.VERTICAL, BIG_SPACING).setSpacing(BIG_SPACING).setHalign(START).setValign(START).build();
         this.thumbLoader = thumbLoader;
         this.appManager = appManager;
-        this.homeView = new HomeView(this.appManager, this.onAlbumSelected);
+        this.homeView = new HomeView(this.appManager, this.onAlbumSelected, this.onNavigate);
         this.onMap(() -> {
             appManager.addOnStateChanged(this);
             if (this.isMapped.get()) {
@@ -198,42 +219,48 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
     private static class HomeView extends Box {
         private final AppManager appManager;
         private final Consumer<ArtistAlbumInfo> onAlbumSelected;
+        private final Consumer<AppNavigation.AppRoute> onNavigate;
 
         private HomeOverview data;
 
+        private final Label playlistsLabel = heading1("Playlists").build();
         private final Label recentLabel = heading1("Recently played").build();
         private final Label newLabel = heading1("Newly added releases").build();
         private final Label mostLabel = heading1("Most played").build();
 
+        private final HorizontalPlaylistsView playlistsView;
         private final BoxHolder<HorizontalAlbumsFlowBoxV3> recentList;
         private final BoxHolder<HorizontalAlbumsFlowBoxV3> newList;
         private final BoxHolder<HorizontalAlbumsFlowBoxV3> mostPlayedList;
 
-        public HomeView(AppManager appManager, Consumer<ArtistAlbumInfo> onAlbumSelected) {
+        public HomeView(AppManager appManager, Consumer<ArtistAlbumInfo> onAlbumSelected, Consumer<AppNavigation.AppRoute> onNavigate) {
             super(Orientation.VERTICAL, BIG_SPACING);
             this.appManager = appManager;
             this.onAlbumSelected = onAlbumSelected;
+            this.onNavigate = onNavigate;
             this.setHexpand(true);
             this.setVexpand(true);
             this.setHalign(START);
             this.setValign(START);
+            this.playlistsView = new HorizontalPlaylistsView(appManager.getPlaylistsListStore(), appManager, onNavigate);
             this.recentList = holder();
             this.newList = holder();
             this.mostPlayedList = holder();
+            this.append(wrap(playlistsLabel, playlistsView));
             this.append(wrap(recentLabel, recentList));
             this.append(wrap(newLabel, newList));
             this.append(wrap(mostLabel, mostPlayedList));
         }
 
-        private static Box wrap(Label recentLabel, BoxHolder<HorizontalAlbumsFlowBoxV3> recentList) {
+        private static Box wrap(Label label, Box widget) {
             var b = Box.builder().setOrientation(VERTICAL).setSpacing(8).build();
-            b.append(recentLabel);
-            b.append(recentList);
+            b.append(label);
+            b.append(widget);
             return b;
         }
 
-        private BoxHolder<HorizontalAlbumsFlowBoxV3> holder() {
-            var h = new BoxHolder<HorizontalAlbumsFlowBoxV3>();
+        private <T extends Box> BoxHolder<T> holder() {
+            var h = new BoxHolder<T>();
             h.setHexpand(true);
             h.setHalign(START);
             h.setValign(START);
@@ -423,6 +450,127 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
                 this.newList.setChild(n);
                 this.mostPlayedList.setChild(freq);
             });
+        }
+    }
+
+    public static class HorizontalPlaylistsView extends Box {
+        private static final int COVER_SIZE = 128;
+        private static final int MAX_ITEMS = 6;
+        private final ListView listView;
+        private final FilterListModel<GPlaylist> filteredModel;
+        private final SortListModel<GPlaylist> sortedModel;
+        private final SliceListModel<GPlaylist> slicedModel;
+
+        public HorizontalPlaylistsView(ListStore<GPlaylist> store, AppManager appManager, Consumer<AppNavigation.AppRoute> onNavigate) {
+            super(HORIZONTAL, 0);
+            this.setHalign(START);
+            this.setHexpand(true);
+
+            this.filteredModel = new FilterListModel<>(store, new CustomFilter(item -> {
+                if (item instanceof GPlaylist gp) {
+                    return gp.getPlaylist().kind() == PlaylistKind.NORMAL;
+                }
+                return false;
+            }));
+            this.sortedModel = new SortListModel<>(this.filteredModel,
+                    new GPlaylistSorter(Comparator.comparing(a -> a.getPlaylist().changedAt()))
+            );
+            this.slicedModel = new SliceListModel<>(this.sortedModel, 0, MAX_ITEMS);
+
+            var factory = new SignalListItemFactory();
+            factory.onSetup(obj -> {
+                var listItem = (ListItem) obj;
+                listItem.setChild(new PlaylistOverviewChild(appManager, COVER_SIZE));
+            });
+            factory.onBind(obj -> {
+                var listItem = (ListItem) obj;
+                var gp = (GPlaylist) listItem.getItem();
+                if (gp != null && listItem.getChild() instanceof PlaylistOverviewChild child) {
+                    child.bind(gp.getPlaylist());
+                }
+            });
+            factory.onUnbind(obj -> {
+                var listItem = (ListItem) obj;
+                if (listItem.getChild() instanceof PlaylistOverviewChild child) {
+                    child.unbind();
+                }
+            });
+            factory.onTeardown(obj -> ((ListItem) obj).setChild(null));
+
+            this.listView = ListView.builder()
+                    .setOrientation(HORIZONTAL)
+                    .setModel(new NoSelection(this.slicedModel))
+                    .setFactory(factory)
+                    .setHexpand(true)
+                    .setHalign(START)
+                    .setSingleClickActivate(true)
+                    .setShowSeparators(false)
+                    .setCssClasses(new String[]{"transparent"})
+                    .build();
+            this.listView.setTabBehavior(ListTabBehavior.ITEM);
+
+            var sig = listView.onActivate(index -> {
+                var gp = this.slicedModel.getItem(index);
+                if (gp != null) {
+                    onNavigate.accept(new RoutePlaylistsOverview(Optional.of(new PlaylistIdentifier(gp.getId()))));
+                }
+            });
+            this.onDestroy(sig::disconnect);
+
+            var scroll = ScrolledWindow.builder()
+                    .setHexpand(true)
+                    .setPropagateNaturalHeight(true)
+                    .setPropagateNaturalWidth(true)
+                    .setVscrollbarPolicy(PolicyType.NEVER)
+                    .setOverlayScrolling(true)
+                    .build();
+            scroll.setChild(listView);
+            this.append(scroll);
+        }
+    }
+
+    private static class PlaylistOverviewChild extends Box {
+        private final RoundedAlbumArt art;
+        private final Label nameLabel;
+
+        public PlaylistOverviewChild(AppManager appManager, int coverSize) {
+            super(VERTICAL, 0);
+            this.art = new RoundedAlbumArt(Optional.empty(), appManager, coverSize);
+            this.art.setClickable(false);
+
+            this.nameLabel = Label.builder()
+                    .setLabel("")
+                    .setCssClasses(new String[]{"heading"})
+                    .setHalign(START)
+                    .setMaxWidthChars(20)
+                    .build();
+            this.nameLabel.setEllipsize(org.gnome.pango.EllipsizeMode.END);
+
+            int margin = 6;
+            var inner = Box.builder()
+                    .setOrientation(VERTICAL)
+                    .setHalign(CENTER)
+                    .setSpacing(margin)
+                    .setMarginStart(margin)
+                    .setMarginTop(margin)
+                    .setMarginEnd(margin)
+                    .setMarginBottom(margin)
+                    .build();
+            inner.addCssClass(Classes.rounded.className());
+            inner.append(this.art);
+            inner.append(this.nameLabel);
+            this.append(inner);
+            this.addCssClass(Classes.rounded.className());
+        }
+
+        public void bind(PlaylistSimple playlist) {
+            this.nameLabel.setLabel(playlist.name());
+            this.art.update(playlist.coverArtId());
+        }
+
+        public void unbind() {
+            this.nameLabel.setLabel("");
+            this.art.update(Optional.empty());
         }
     }
 

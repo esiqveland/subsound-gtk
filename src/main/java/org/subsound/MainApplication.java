@@ -324,7 +324,8 @@ public class MainApplication {
             var frontPageContainer = new FrontpagePage(
                     thumbLoader,
                     appManager,
-                    albumInfo -> this.appNavigation.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(albumInfo.id()))
+                    albumInfo -> this.appNavigation.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(albumInfo.id())),
+                    this.appNavigation::navigateTo
             );
             ViewStackPage frontPage = viewStack.addTitledWithIcon(frontPageContainer, "frontPage", "Home", Icons.GoHome.getIconName());
         }
