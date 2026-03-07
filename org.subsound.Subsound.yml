@@ -53,6 +53,7 @@ modules:
       - install --mode=0644 -D src/main/resources/icons/generated/icon-32.png  /app/share/icons/hicolor/32x32/apps/org.subsound.Subsound.png
       - install --mode=0644 -D src/main/resources/icons/generated/icon-24.png  /app/share/icons/hicolor/24x24/apps/org.subsound.Subsound.png
       - install --mode=0644 -D src/main/resources/icons/generated/icon-16.png  /app/share/icons/hicolor/16x16/apps/org.subsound.Subsound.png
+      - install --mode=0644 -D src/main/resources/icons/icon.svg /app/share/icons/hicolor/scalable/apps/org.subsound.Subsound.svg
       - install --mode=0644 -D org.subsound.Subsound.desktop  /app/share/applications/org.subsound.Subsound.desktop
       - install --mode=0644 -D org.subsound.Subsound.metainfo.xml /app/share/metainfo/org.subsound.Subsound.metainfo.xml
     only-arches:

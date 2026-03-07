@@ -1,14 +1,13 @@
 # TODO
 
 ## RELEASE v1
-- [ ] flatpak env: fix and verify handling of offline artwork after sync at the very least
-- [ ] flatpak env: fix issue with offline mode triggering before onboarding is completed
-- [ ] flatpak: need a svg icon for the app
+- [x] flatpak env: fix and verify handling of offline artwork after sync at the very least
+- [x] flatpak env: fix issue with offline mode triggering before onboarding is completed
+- [x] flatpak: need a svg icon for the app
 
 ## General
 
 Playlist:
-    - button to download all songs in the playlist
     - next level: "keep all songs available offline"
     - Find a way to add a context menu to the rows in the playlist page + button to remove from playlist
     - what about enable multi-select, then a delete action button becomes visible on the top of the playlist?
@@ -17,8 +16,7 @@ GSongInfo:
  - [ ] extend is-playing to a richer playing state (buffering, paused ?)
 
 - downloads:
-  - need to store the format we downloaded mp3/opus/flac
-  - need to store the quality we downloaded high/medium/low
+  - need to store the format and bitrate we downloaded mp3/opus/flac
   - need to show the format/quality and file size in the playlist page
   - delete button?
   - potentially add a way to check the status of downloaded files on disk
