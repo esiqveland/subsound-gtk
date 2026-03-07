@@ -78,6 +78,7 @@ public class PlaylistsStore {
                             var fresh = playlistById.get(gPlaylist.getId());
                             if (fresh != null) {
                                 gPlaylist.setValue(fresh);
+                                metaStore.emitItemsChanged(i, 1, 1);
                             }
                         }
 
@@ -173,6 +174,13 @@ public class PlaylistsStore {
                     Utils.runOnMainThread(() -> {
                         gPlaylist.setValue(simple);
                         gPlaylist.setSongs(gSongs);
+                        // Signal downstream models (FilterListModel, SortListModel) to re-evaluate this item
+                        for (int i = 0; i < metaStore.getNItems(); i++) {
+                            if (metaStore.getItem(i) == gPlaylist) {
+                                metaStore.emitItemsChanged(i, 1, 1);
+                                break;
+                            }
+                        }
                     });
                 });
     }
@@ -187,6 +195,7 @@ public class PlaylistsStore {
                         gPlaylist.setValue(new PlaylistSimple(
                                 old.id(), newName, old.kind(), old.coverArtId(), old.songCount(), Instant.now(), old.created()
                         ));
+                        metaStore.emitItemsChanged(i, 1, 1);
                         break;
                     }
                 }
@@ -222,9 +231,17 @@ public class PlaylistsStore {
             return;
         }
         var old = sp.getPlaylist();
-        Utils.runOnMainThread(() -> sp.setValue(new PlaylistSimple(
-                old.id(), old.name(), old.kind(), old.coverArtId(), count, old.changedAt(), old.created()
-        )));
+        Utils.runOnMainThread(() -> {
+            sp.setValue(new PlaylistSimple(
+                    old.id(), old.name(), old.kind(), old.coverArtId(), count, old.changedAt(), old.created()
+            ));
+            for (int i = 0; i < metaStore.getNItems(); i++) {
+                if (metaStore.getItem(i) == sp) {
+                    metaStore.emitItemsChanged(i, 1, 1);
+                    break;
+                }
+            }
+        });
     }
 
     public ListStore<GPlaylist> playlistsListStore() {
