@@ -7,6 +7,7 @@ import org.subsound.app.state.PlayerAction;
 import org.subsound.integration.ServerClient;
 import org.subsound.integration.ServerClient.ObjectIdentifier;
 import org.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier;
+import org.subsound.integration.ServerClient.PlaylistKind;
 import org.subsound.integration.ServerClient.SongInfo;
 import org.subsound.sound.PlaybinPlayer;
 import org.subsound.ui.components.AdwDialogHelper;
@@ -433,7 +434,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
                 return false; // GDK_KEY_Delete
             }
             var playlist = currentPlaylist.get();
-            if (playlist == null || playlist.kind() != ServerClient.PlaylistKind.NORMAL) {
+            if (playlist == null || playlist.kind() != PlaylistKind.NORMAL) {
                 return false;
             }
             var entry = selectionModel.getSelectedItem();
