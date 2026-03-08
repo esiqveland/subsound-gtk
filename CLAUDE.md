@@ -97,6 +97,11 @@ SQLite only. All migrations are versioned in `Database.java` as inner classes (`
 
 The playlists view prepends synthetic entries (Starred, Downloaded) to the server's playlist list. These use `PlaylistKind` enum values (`STARRED`, `DOWNLOADED`) and are handled specially in `PlaylistsListView.setSelectedPlaylist()`.
 
+# Code style guide
+
+- primarily google style guide: https://google.github.io/styleguide/javaguide.html
+- _ALL_ if/for/while/do/switch statements must always be braced with curly braces
+
 ## GTK4
 
 Adwaita theme is used. Adwaita is the default theme in GNOME. Prefer to use Adwaita components and UI elements over plain GTK4 elements when relevant.
