@@ -135,6 +135,26 @@ public class SubsonicClient implements ServerClient {
                 .join();
     }
 
+    public ScanStatus scanStatus() {
+        var status = this.client.libraryScan().getScanStatus();
+        if (status.isScanning()) {
+            return new ScanStatus.Scanning(status.getCount());
+        } else {
+            return new ScanStatus.NotScanning();
+        }
+    }
+
+    public ScanStatus startScan() {
+        return switch (scanStatus()) {
+            case ScanStatus.Scanning scanning -> scanning;
+            case ScanStatus.NotScanning _ -> {
+                var status = this.client.libraryScan().startScan();
+                var count = status.getCount() != null ? status.getCount() : 0;
+                yield new ScanStatus.Scanning(count);
+            }
+        };
+    }
+
     private List<ArtistAlbumInfo> loadAlbumList(AlbumListType albumListType) {
         var albums = this.client.lists().getAlbumList2(listParams(albumListType)).getAlbums();
         return albums.stream()

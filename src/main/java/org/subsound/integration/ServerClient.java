@@ -20,6 +20,7 @@ import static java.util.Optional.ofNullable;
 public interface ServerClient {
     // serverId is a client generated or server generated globally unique id for this specific server integration
     //String serverId();
+    ServerType getServerType();
 
     ListArtists getArtists();
     ArtistInfo getArtistInfo(String artistId);
@@ -33,12 +34,18 @@ public interface ServerClient {
     HomeOverview getHomeOverview();
     void starId(String id);
     void unStarId(String id);
-    ServerType getServerType();
     boolean testConnection();
     ServerInfo getServerInfo();
     SearchResult search(String query);
     void scrobble(ScrobbleRequest req);
     URI getStreamUri(String songId);
+    ScanStatus scanStatus();
+    ScanStatus startScan();
+
+    sealed interface ScanStatus {
+        record Scanning(long count) implements ScanStatus {}
+        record NotScanning() implements ScanStatus {}
+    }
 
     record ScrobbleRequest(String songId, Instant playedAt) {}
     record SearchResult(

@@ -344,6 +344,16 @@ public class CachingClient implements ServerClient {
     }
 
     @Override
+    public ScanStatus scanStatus() {
+        return delegate.scanStatus();
+    }
+
+    @Override
+    public ScanStatus startScan() {
+        return delegate.startScan();
+    }
+
+    @Override
     public SearchResult search(String query) {
         return delegate.search(query);
     }
