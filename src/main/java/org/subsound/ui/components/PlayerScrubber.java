@@ -1,5 +1,7 @@
 package org.subsound.ui.components;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.subsound.utils.Utils;
 import org.gnome.gobject.GObject;
 import org.gnome.gtk.*;
@@ -13,6 +15,7 @@ import java.util.function.Consumer;
 public class PlayerScrubber extends Box {
     private static final String LABEL_ZERO = "-:--";
 
+    private final Logger log = LoggerFactory.getLogger(PlayerScrubber.class);
     private final Consumer<Duration> onPositionChanged;
     private final Scale scale;
     private final Label currentTimeLabel;
@@ -168,7 +171,8 @@ public class PlayerScrubber extends Box {
         // changing fill level does not always redraw the scale component,
         // but scale.getAdjustment().emitValueChanged() forces a redraw:
         this.scale.getAdjustment().emitValueChanged();
-        System.out.printf("fill: %.2f level=%.1f\n", fill, fillLevel);
+        //log.debug("setFill: {}/{}", count, total);
+        //System.out.printf("fill: %.2f level=%.1f\n", fill, fillLevel);
     }
 
     public void disableFill() {

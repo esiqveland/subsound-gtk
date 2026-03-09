@@ -16,7 +16,6 @@ public class ClickLabel extends Label {
         this.gestureClick = new GestureClick();
         this.addController(gestureClick);
         var signal = gestureClick.onReleased((int nPress, double x, double y) -> {
-            System.out.println("ClickLabel.gestureClick.onReleased: " + nPress);
             this.onClick.run();
         });
         this.onDestroy(() -> {

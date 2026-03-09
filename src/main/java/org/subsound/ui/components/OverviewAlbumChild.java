@@ -61,7 +61,6 @@ public class OverviewAlbumChild extends Box {
         );
         gestureClick = new GestureClick();
         gestureClick.onReleased((int nPress, double x, double y) -> {
-            System.out.println("clicked: " + this.albumInfo.name());
             this.onAction.accept(this.albumInfo);
         });
         this.addController(gestureClick);
