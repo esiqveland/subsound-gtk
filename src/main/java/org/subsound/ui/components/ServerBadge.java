@@ -1,10 +1,13 @@
 package org.subsound.ui.components;
 
+import org.gnome.gtk.Widget;
+import org.gnome.gtk.Window;
 import org.subsound.app.state.AppManager;
 import org.subsound.app.state.NetworkMonitoring.NetworkState;
 import org.subsound.app.state.NetworkMonitoring.NetworkStatus;
 import org.subsound.app.state.PlayerAction;
 import org.subsound.integration.ServerClient;
+import org.subsound.ui.views.AboutView;
 import org.subsound.utils.Utils;
 import org.gnome.adw.ActionRow;
 import org.gnome.adw.ButtonRow;
@@ -26,12 +29,14 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import static org.subsound.ui.components.Classes.boxedList;
 
 public class ServerBadge extends Box implements AppManager.StateListener {
     private static final Logger log = LoggerFactory.getLogger(ServerBadge.class);
 
+    private final Widget parentWindow;
     private final AppManager appManager;
     private final ActionRow serverRow;
     private final ActionRow statsRow;
@@ -44,14 +49,28 @@ public class ServerBadge extends Box implements AppManager.StateListener {
     private volatile NetworkStatus currentNetworkStatus = NetworkStatus.ONLINE;
     private final AtomicBoolean updatingSwitch = new AtomicBoolean(false);
 
-    public ServerBadge(AppManager appManager) {
+    public ServerBadge(
+            Widget parentWindow,
+            AppManager appManager,
+            Runnable onClose
+    ) {
         super(Orientation.VERTICAL, 0);
+        this.parentWindow = parentWindow;
         this.appManager = appManager;
 
         this.setMarginTop(8);
         this.setMarginBottom(8);
         this.setMarginStart(8);
         this.setMarginEnd(8);
+
+        var aboutButton = ButtonRow.builder()
+                .setTitle("About")
+                .build();
+        aboutButton.addCssClass(Classes.flat.className());
+        aboutButton.onActivated(() -> {
+            onClose.run();
+            AboutView.show(this.parentWindow);
+        });
 
         // Status indicator shown as suffix on the server row
         this.statusDot = Label.builder()
@@ -124,6 +143,7 @@ public class ServerBadge extends Box implements AppManager.StateListener {
         list.append(offlineSwitch);
         list.append(syncButton);
         list.append(configureServerButton);
+        list.append(aboutButton);
 
         var clamp = new Clamp();
         clamp.setMaximumSize(240);

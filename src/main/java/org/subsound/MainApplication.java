@@ -75,6 +75,7 @@ public class MainApplication {
     private final HeaderBar headerBar;
     private final ViewSwitcher viewSwitcher;
 
+    private Popover settingsPopover;
     private final MenuButton settingsButton;
     private final PlayerBar playerBar;
     private final Box bottomBar;
@@ -144,13 +145,13 @@ public class MainApplication {
                 .build();
 
         // Server badge at the top
-        this.serverBadge = new ServerBadge(appManager);
+        this.serverBadge = new ServerBadge(this.toolbarView, appManager, () -> settingsPopover.popdown());
         popoverContent.append(serverBadge);
 
-        var settingsPopover = Popover.builder()
+        this.settingsPopover = Popover.builder()
                 .setChild(popoverContent)
                 .build();
-        settingsPopover.onShow(serverBadge::refresh);
+        this.settingsPopover.onShow(serverBadge::refresh);
 
 //        configureServerButton.onClicked(() -> {
 //            settingsPopover.popdown();
@@ -160,7 +161,7 @@ public class MainApplication {
         settingsButton = MenuButton.builder()
                 .setIconName(Icons.Settings.getIconName())
                 .setTooltipText("Settings")
-                .setPopover(settingsPopover)
+                .setPopover(this.settingsPopover)
                 .build();
 
         viewSwitcher = ViewSwitcher.builder()
