@@ -41,6 +41,7 @@ public class ServerBadge extends Box implements AppManager.StateListener {
     private final ActionRow serverRow;
     private final ActionRow statsRow;
     private final Label statusDot;
+    private final ButtonRow triggerScanButton;
     private final SwitchRow offlineSwitch;
     private final ButtonRow syncButton;
     private final ButtonRow configureServerButton;
@@ -62,6 +63,15 @@ public class ServerBadge extends Box implements AppManager.StateListener {
         this.setMarginBottom(8);
         this.setMarginStart(8);
         this.setMarginEnd(8);
+
+        this.triggerScanButton = ButtonRow.builder()
+                .setTitle("Trigger scan")
+                .build();
+        triggerScanButton.addCssClass(Classes.flat.className());
+        triggerScanButton.onActivated(() -> {
+            onClose.run();
+            appManager.handleAction(new PlayerAction.TriggerServerScan());
+        });
 
         var aboutButton = ButtonRow.builder()
                 .setTitle("About")
@@ -141,6 +151,7 @@ public class ServerBadge extends Box implements AppManager.StateListener {
         list.append(serverRow);
         list.append(statsRow);
         list.append(offlineSwitch);
+        list.append(triggerScanButton);
         list.append(syncButton);
         list.append(configureServerButton);
         list.append(aboutButton);
@@ -280,9 +291,11 @@ public class ServerBadge extends Box implements AppManager.StateListener {
             boolean offline = networkState.status() == NetworkStatus.OFFLINE;
             offlineSwitch.setActive(offline);
             if (offline) {
+                triggerScanButton.setSensitive(false);
                 syncButton.setSensitive(false);
                 syncButton.setTooltipText("Must be online to sync library");
             } else {
+                triggerScanButton.setSensitive(true);
                 syncButton.setSensitive(true);
                 syncButton.setTooltipText("Sync library to enable offline mode");
             }

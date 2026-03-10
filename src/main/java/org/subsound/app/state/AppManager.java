@@ -42,6 +42,7 @@ import org.gnome.adw.ToastOverlay;
 import org.gnome.gio.ListStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.subsound.utils.Utils;
 
 import java.io.IOException;
 import java.net.URI;
@@ -639,6 +640,18 @@ public class AppManager {
                 case PlayerAction.ClearThumbnailCache _ -> {
                     this.thumbnailCache.clearThumbnails(SERVER_ID);
                     this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Thumbnail cache cleared")));
+                }
+                case PlayerAction.TriggerServerScan triggerServerScan -> {
+                    Utils.doAsync(() -> this.useClient(ServerClient::startScan))
+                            .thenApply(status -> {
+                                this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Started server scan")));
+                                return status;
+                            })
+                            .exceptionally(throwable -> {
+                                log.error("Failed to start server scan", throwable);
+                                this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Failed to start server: %s".formatted(throwable.getMessage()))));
+                                return null;
+                            });
                 }
             }
         });
