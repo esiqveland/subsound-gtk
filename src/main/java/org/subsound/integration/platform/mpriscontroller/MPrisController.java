@@ -2,6 +2,7 @@ package org.subsound.integration.platform.mpriscontroller;
 
 import org.jspecify.annotations.Nullable;
 import org.subsound.app.state.AppManager;
+import org.subsound.app.state.PlayerAction;
 import org.subsound.integration.ServerClient;
 import org.subsound.sound.PlaybinPlayer;
 import org.subsound.utils.OsUtil;
@@ -185,11 +186,16 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
 
     private MPRISPlayerState toMprisState(AppManager.AppState next) {
         var metadata = next.nowPlaying().map(this::toMprisMetadata).orElse(null);
+        var mode = next.queue().playMode();
+        var loopStatus = switch (mode) {
+            case REPEAT_ONE -> LoopStatus.Track;
+            default -> LoopStatus.None;
+        };
         return new MPRISPlayerState(
                 next.player().state().toMpris(),
-                LoopStatus.None,
+                loopStatus,
                 1.0,
-                false,
+                mode == PlayerAction.PlayMode.SHUFFLE,
                 metadata,
                 next.player().volume(),
                 // mpris: it should be fine to publish the position here, mpris clients that render a position,
@@ -201,7 +207,7 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
                 true,
                 true,
                 true,
-                false,
+                true,
                 true
         );
     }
@@ -540,7 +546,10 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
                 map.put("xesam:discNumber", ofVariant(discNumber));
             }
             if (artUrl != null) {
-                var artUri = artUrl.toString().replace("file:", "file://");
+                var artUri = artUrl.toString();
+                if (artUri.startsWith("file:" ) && !artUri.startsWith("file://")) {
+                    artUri = artUri.replace("file:", "file://");
+                };
                 //val artUri = "file://${artUrl.absolutePath}"
                 map.put("mpris:artUrl", ofVariant(artUri));
             }
