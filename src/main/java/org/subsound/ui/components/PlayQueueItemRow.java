@@ -173,7 +173,11 @@ public class PlayQueueItemRow extends Box {
         if (this.gSongInfo == null || this.gQueueItem == null) {
             return;
         }
-        if (this.gSongInfo.getIsPlaying()) {
+        var playingItemId = appManager.getState().queue().playingItemId();
+        boolean isCurrent = playingItemId
+                .map(id -> id.equals(gQueueItem.getQueueItemId()))
+                .orElse(false);
+        if (isCurrent) {
             this.removeCssClass(Classes.queueAutomatic.className());
             return;
         }
@@ -185,10 +189,14 @@ public class PlayQueueItemRow extends Box {
     }
 
     private void updateCurrentStyling() {
-        if (this.gSongInfo == null) {
+        if (this.gSongInfo == null || this.gQueueItem == null) {
             return;
         }
-        if (this.gSongInfo.getIsPlaying()) {
+        var playingItemId = appManager.getState().queue().playingItemId();
+        boolean isCurrent = playingItemId
+                .map(id -> id.equals(gQueueItem.getQueueItemId()))
+                .orElse(false);
+        if (isCurrent) {
             this.titleLabel.addCssClass(Classes.colorAccent.className());
         } else {
             this.titleLabel.removeCssClass(Classes.colorAccent.className());
