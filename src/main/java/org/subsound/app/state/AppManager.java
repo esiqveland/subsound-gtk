@@ -226,7 +226,7 @@ public class AppManager {
             try {
                 var serverClient = this.client.get();
                 if (serverClient == null) {
-                    return null;
+                    throw new RuntimeException("Failed to restore last playing song: serverClient is null");
                 }
                 return serverClient.getSong(songId);
             } catch (Exception e) {
@@ -383,6 +383,7 @@ public class AppManager {
 
 
     public CompletableFuture<LoadSongResult> loadSourceAsync(PlayerAction.PlaySong songInfo) {
+
         return CompletableFuture.supplyAsync(
                 () -> this.loadSourceSync(songInfo),
                 ASYNC_EXECUTOR
