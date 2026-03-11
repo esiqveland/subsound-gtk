@@ -148,38 +148,38 @@
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/github/hypfvieh/dbus-java-core/5.1.0/dbus-java-core-5.1.0.jar",
-    "sha512": "690510362a968452ce137bdc63cca9a56d2102efa82146b60ed7d63b34997be460c7a893ef06d80cbf9e0c04336a0cfa81d6324bbe0365e8fbcf1b1e13fc3a8f",
-    "dest": "./offline-repository/com/github/hypfvieh/dbus-java-core/5.1.0",
-    "dest-filename": "dbus-java-core-5.1.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/com/github/hypfvieh/dbus-java-core/5.2.0/dbus-java-core-5.2.0.jar",
+    "sha512": "f774fb5c55312ef13f9c31d5115330d318ab93a484e8b52a06b16f60b6e226a67a1732d3bb565397ecd6fe94e8bbe19b16b04df37b68d6aaf466832427445275",
+    "dest": "./offline-repository/com/github/hypfvieh/dbus-java-core/5.2.0",
+    "dest-filename": "dbus-java-core-5.2.0.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/github/hypfvieh/dbus-java-core/5.1.0/dbus-java-core-5.1.0.pom",
-    "sha512": "d1a1b930fd835201426ccbe08afc2d0cc2a78096648a75658cd28f1f09f93b8be9122b3dd415394d6eed8d9cd71e345ac7ac08585da23fd9202995fe5b0086e3",
-    "dest": "./offline-repository/com/github/hypfvieh/dbus-java-core/5.1.0",
-    "dest-filename": "dbus-java-core-5.1.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/com/github/hypfvieh/dbus-java-core/5.2.0/dbus-java-core-5.2.0.pom",
+    "sha512": "f36b2cc09392300347d168423e4d6af9a605fb4849814a96338c121f8ad67b7826bde35f753b71144bb0fcf171d061fc64c718c5f0731c42b505e05741f47a4d",
+    "dest": "./offline-repository/com/github/hypfvieh/dbus-java-core/5.2.0",
+    "dest-filename": "dbus-java-core-5.2.0.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/github/hypfvieh/dbus-java-parent/5.1.0/dbus-java-parent-5.1.0.pom",
-    "sha512": "57194c09c31fbf64afc11feac88284cb6b0ce81d005d51d2720513b1ec5ed5f01ee73405a03617b1a8bae18eb6e3c0049c177dbcea67b1b3646e785ca7616dd5",
-    "dest": "./offline-repository/com/github/hypfvieh/dbus-java-parent/5.1.0",
-    "dest-filename": "dbus-java-parent-5.1.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/com/github/hypfvieh/dbus-java-parent/5.2.0/dbus-java-parent-5.2.0.pom",
+    "sha512": "a7c89a9ac5c62bef0a3e96dad4d2fb36380498c5eb2b49806c8bc99866a75af01933d54b4b56caebbc9d6a2d74c7ca9e8d04dcd3b6e5b82f5ed47924f223fa6f",
+    "dest": "./offline-repository/com/github/hypfvieh/dbus-java-parent/5.2.0",
+    "dest-filename": "dbus-java-parent-5.2.0.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/github/hypfvieh/dbus-java-transport-native-unixsocket/5.1.0/dbus-java-transport-native-unixsocket-5.1.0.jar",
-    "sha512": "2f8d8467734118592cc403be48fd5a825da32b38809b4d3f9e4391d4875d9219618e5629d37a07c5e066124bdd96f5e2840bafaa5d308f2ae3c3254e70fc93bb",
-    "dest": "./offline-repository/com/github/hypfvieh/dbus-java-transport-native-unixsocket/5.1.0",
-    "dest-filename": "dbus-java-transport-native-unixsocket-5.1.0.jar"
+    "url": "https://repo.maven.apache.org/maven2/com/github/hypfvieh/dbus-java-transport-native-unixsocket/5.2.0/dbus-java-transport-native-unixsocket-5.2.0.jar",
+    "sha512": "65f952e1f9789a1765b5c62d1a144019434ae8d9dd86fb894b1231735a383cd3be4226fa9f7b4c3363277676437a96f1f7264b7ad421ce2d5355e8c66f676f2f",
+    "dest": "./offline-repository/com/github/hypfvieh/dbus-java-transport-native-unixsocket/5.2.0",
+    "dest-filename": "dbus-java-transport-native-unixsocket-5.2.0.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/github/hypfvieh/dbus-java-transport-native-unixsocket/5.1.0/dbus-java-transport-native-unixsocket-5.1.0.pom",
-    "sha512": "c8a2661e04f3c2aebc1d06683084815c625299b83f172279de3a8d1e3b1d6665c67487e7f666b194e0c64f464deb2c74071a2b3067e39a4753ec16210c839f16",
-    "dest": "./offline-repository/com/github/hypfvieh/dbus-java-transport-native-unixsocket/5.1.0",
-    "dest-filename": "dbus-java-transport-native-unixsocket-5.1.0.pom"
+    "url": "https://repo.maven.apache.org/maven2/com/github/hypfvieh/dbus-java-transport-native-unixsocket/5.2.0/dbus-java-transport-native-unixsocket-5.2.0.pom",
+    "sha512": "e1a7b87c86b7c23aed5a8f5b4c75d3f3694bd050dd7a06c3604e6dbdae1295c1d651b42fa4be9645382a7f1c5f5007693eb35a16d84dd36416d228a8d2b26464",
+    "dest": "./offline-repository/com/github/hypfvieh/dbus-java-transport-native-unixsocket/5.2.0",
+    "dest-filename": "dbus-java-transport-native-unixsocket-5.2.0.pom"
   },
   {
     "type": "file",
@@ -1608,13 +1608,6 @@
     "sha512": "5b36199c9a331c4d05ed78b8fe1f28c5d21e0d7a05bdca1d45f532a89eb7d67fd425da93e9405203a483354abc63718858f80c828e0c090316f70fd833ef904c",
     "dest": "./offline-repository/org/junit/junit-bom/5.10.2",
     "dest-filename": "junit-bom-5.10.2.pom"
-  },
-  {
-    "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/org/junit/junit-bom/5.10.3/junit-bom-5.10.3.pom",
-    "sha512": "51edc3d5a07b98c4ea60fd411db63e948f831e285d40e52b08387abf61d0b39ce90eb28209ef8825f55a3d2e29e501b168bdd0d322f50816bcf78e80862e219e",
-    "dest": "./offline-repository/org/junit/junit-bom/5.10.3",
-    "dest-filename": "junit-bom-5.10.3.pom"
   },
   {
     "type": "file",
