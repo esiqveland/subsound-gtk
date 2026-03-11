@@ -1,16 +1,5 @@
 package org.subsound.ui.components;
 
-import org.gnome.gtk.ListTabBehavior;
-import org.subsound.app.state.AppManager;
-import org.subsound.app.state.PlayerAction;
-import org.subsound.app.state.PlaylistsStore.GPlaylist;
-import org.subsound.integration.ServerClient;
-import org.subsound.integration.ServerClient.PlaylistKind;
-import org.subsound.integration.ServerClient.PlaylistSimple;
-import org.subsound.ui.models.GSongInfo.GSongStore;
-import org.subsound.ui.views.PlaylistListViewV2;
-import org.subsound.ui.views.StarredListView;
-import org.subsound.utils.Utils;
 import org.gnome.adw.AlertDialog;
 import org.gnome.adw.NavigationPage;
 import org.gnome.adw.NavigationSplitView;
@@ -25,6 +14,7 @@ import org.gnome.gtk.EventControllerMotion;
 import org.gnome.gtk.Image;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListItem;
+import org.gnome.gtk.ListTabBehavior;
 import org.gnome.gtk.ListView;
 import org.gnome.gtk.Orientation;
 import org.gnome.gtk.ScrolledWindow;
@@ -34,17 +24,27 @@ import org.gnome.pango.EllipsizeMode;
 import org.javagi.gobject.SignalConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.subsound.app.state.AppManager;
+import org.subsound.app.state.PlayerAction;
+import org.subsound.app.state.PlaylistsStore.GPlaylist;
+import org.subsound.integration.ServerClient;
+import org.subsound.integration.ServerClient.PlaylistKind;
+import org.subsound.integration.ServerClient.PlaylistSimple;
+import org.subsound.ui.models.GSongInfo.GSongStore;
+import org.subsound.ui.views.PlaylistListViewV2;
+import org.subsound.ui.views.StarredListView;
+import org.subsound.utils.Utils;
 
 import java.util.List;
 import java.util.Optional;
 
-import static org.subsound.utils.Utils.cssClasses;
-import static org.subsound.utils.Utils.doAsync;
 import static org.gnome.gtk.Align.CENTER;
 import static org.gnome.gtk.Align.FILL;
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
+import static org.subsound.utils.Utils.cssClasses;
+import static org.subsound.utils.Utils.doAsync;
 
 public class PlaylistsListView extends Box {
     private static final Logger log = LoggerFactory.getLogger(PlaylistsListView.class);
@@ -346,17 +346,21 @@ public class PlaylistsListView extends Box {
             // Create all three prefix widgets once; toggle visibility
             this.prefixArt = new RoundedAlbumArt(Optional.empty(), appManager, ICON_SIZE);
             this.prefixArt.setVisible(false);
+            this.prefixArt.setHalign(CENTER);
+            this.prefixArt.setValign(CENTER);
 
             this.prefixIconDownload = Image.fromIconName(Icons.FolderDownload.getIconName());
             this.prefixIconDownload.setPixelSize(24);
             this.prefixIconDownload.setHalign(CENTER);
             this.prefixIconDownload.setValign(CENTER);
+            this.prefixIconDownload.setSizeRequest(ICON_SIZE, ICON_SIZE);
             this.prefixIconDownload.setVisible(false);
 
             this.prefixIconStar = Image.fromIconName(Icons.Starred.getIconName());
             this.prefixIconStar.setPixelSize(24);
             this.prefixIconStar.setHalign(CENTER);
             this.prefixIconStar.setValign(CENTER);
+            this.prefixIconStar.setSizeRequest(ICON_SIZE, ICON_SIZE);
             this.prefixIconStar.addCssClass(Classes.starred.className());
             this.prefixIconStar.setVisible(false);
 
