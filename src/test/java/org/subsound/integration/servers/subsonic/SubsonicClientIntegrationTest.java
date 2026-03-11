@@ -8,7 +8,7 @@ import java.util.Map;
 
 /**
  * Integration test that calls a real Navidrome/Subsonic server.
- * Run manually with a configured server in ~/.local/share/subsound-gtk/config.json
+ * Run manually with a configured server in ~/.local/share/org.subsound.Subsound/config.json
  */
 @Ignore("Requires a real server connection")
 public class SubsonicClientIntegrationTest {

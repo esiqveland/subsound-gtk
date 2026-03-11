@@ -3,6 +3,7 @@ package org.subsound.configuration;
 import org.jspecify.annotations.Nullable;
 import org.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
 import org.subsound.configuration.Config.ConfigurationDTO.ServerConfigDTO;
+import org.subsound.configuration.constants.Constants;
 import org.subsound.integration.ServerClient.ServerType;
 import org.subsound.integration.ServerClient.TranscodeBitrate;
 import org.subsound.integration.ServerClient.TranscodeFormat;
@@ -189,7 +190,7 @@ public class Config {
         {
             String userDataDir = PortalUtils.getUserDataDir();
             if (userDataDir != null && !userDataDir.isBlank()) {
-                var p = Path.of(userDataDir, "subsound-gtk").toAbsolutePath();
+                var p = Path.of(userDataDir, Constants.APP_ID).toAbsolutePath();
                 var fd = p.toFile();
                 if (!fd.exists()) {
                     fd.mkdirs();
@@ -200,7 +201,7 @@ public class Config {
         {
             var xdg = Utils.firstNotBlank(System.getenv("XDG_DATA_HOME"), System.getenv("XDG_CACHE_HOME"));
             if (!xdg.isBlank()) {
-                Path path = java.nio.file.Path.of(xdg, "subsound-gtk").toAbsolutePath();
+                Path path = java.nio.file.Path.of(xdg, Constants.APP_ID).toAbsolutePath();
                 var fHandle = path.toFile();
                 if (!fHandle.exists()) {
                     fHandle.mkdirs();
@@ -214,7 +215,7 @@ public class Config {
             if (homeDir == null || homeDir.isBlank()) {
                 throw new IllegalStateException("unable to determine a location for cache dir");
             }
-            Path path = Path.of(homeDir, ".cache", "subsound-gtk").toAbsolutePath();
+            Path path = Path.of(homeDir, ".cache", Constants.APP_ID).toAbsolutePath();
             var fHandle = path.toFile();
             if (!fHandle.exists()) {
                 fHandle.mkdirs();
@@ -227,7 +228,7 @@ public class Config {
     private static Path defaultConfigDir() {
         var userConfigDir = PortalUtils.getUserConfigDir();
         if (userConfigDir != null && !userConfigDir.isBlank()) {
-            Path path = Path.of(userConfigDir, "subsound-gtk").toAbsolutePath();
+            Path path = Path.of(userConfigDir, Constants.APP_ID).toAbsolutePath();
             var fHandle = path.toFile();
             if (!fHandle.exists()) {
                 fHandle.mkdirs();
@@ -237,7 +238,7 @@ public class Config {
 
         var xdg = System.getenv("XDG_CONFIG_HOME");
         if (xdg != null && !xdg.isBlank()) {
-            Path path = Path.of(xdg, "subsound-gtk").toAbsolutePath();
+            Path path = Path.of(xdg, Constants.APP_ID).toAbsolutePath();
             var fHandle = path.toFile();
             if (!fHandle.exists()) {
                 fHandle.mkdirs();
@@ -250,7 +251,7 @@ public class Config {
         if (homeDir == null || homeDir.isBlank()) {
             throw new IllegalStateException("unable to determine a location for cache dir");
         }
-        Path path = Path.of(homeDir, ".config", "subsound-gtk").toAbsolutePath();
+        Path path = Path.of(homeDir, ".config", Constants.APP_ID).toAbsolutePath();
         var fHandle = path.toFile();
         if (!fHandle.exists()) {
             fHandle.mkdirs();

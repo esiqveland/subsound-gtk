@@ -3,6 +3,7 @@ package org.subsound.integration.platform.mpriscontroller;
 import org.jspecify.annotations.Nullable;
 import org.subsound.app.state.AppManager;
 import org.subsound.app.state.PlayerAction;
+import org.subsound.configuration.constants.Constants;
 import org.subsound.integration.ServerClient;
 import org.subsound.sound.PlaybinPlayer;
 import org.subsound.utils.OsUtil;
@@ -568,7 +569,7 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
         private final boolean canRaise = true;
         private final boolean hasTrackList = false;
         private final String identity = "Subsound";
-        private final String desktopEntry = "org.subsound.Subsound";
+        private final String desktopEntry = Constants.APP_ID;
         private final List<String> supportedUriSchemes = List.of(
                 //"file", "https" // TODO(mpris)
         );

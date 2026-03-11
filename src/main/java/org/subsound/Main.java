@@ -2,6 +2,7 @@ package org.subsound;
 
 import org.subsound.app.state.AppManager;
 import org.subsound.configuration.Config;
+import org.subsound.configuration.constants.Constants;
 import org.subsound.integration.ServerClient;
 import org.subsound.integration.platform.mpriscontroller.MPrisController;
 import org.subsound.persistence.ThumbnailCache;
@@ -56,7 +57,7 @@ public class Main {
 
         try {
             var mainAppRef = new AtomicReference<MainApplication>();
-            var app = new Application("org.subsound.Subsound", ApplicationFlags.DEFAULT_FLAGS);
+            var app = new Application(Constants.APP_ID, ApplicationFlags.DEFAULT_FLAGS);
             app.onActivate(() -> {
                 MainApplication mainApp = new MainApplication(appManager);
                 mainAppRef.set(mainApp);

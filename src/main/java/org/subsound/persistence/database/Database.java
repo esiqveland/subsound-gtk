@@ -1,5 +1,6 @@
 package org.subsound.persistence.database;
 
+import org.subsound.configuration.constants.Constants;
 import org.subsound.integration.platform.PortalUtils;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -22,7 +23,7 @@ public class Database {
 
     public Database() {
         String dataDir = PortalUtils.getUserDataDir();
-        File subsoundDir = new File(dataDir, "subsound-gtk");
+        File subsoundDir = new File(dataDir, Constants.APP_ID);
         if (!subsoundDir.exists()) {
             subsoundDir.mkdirs();
         }

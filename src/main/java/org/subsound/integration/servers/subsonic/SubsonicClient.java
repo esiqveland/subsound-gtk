@@ -18,6 +18,7 @@ import org.subsonic.restapi.PlaylistWithSongs;
 import org.subsonic.restapi.SearchResult3;
 import org.subsonic.restapi.Starred2;
 import org.subsound.configuration.Config.ServerConfig;
+import org.subsound.configuration.constants.Constants;
 import org.subsound.integration.ServerClient;
 import org.subsound.integration.ServerClient.ObjectIdentifier.AlbumIdentifier;
 import org.subsound.integration.ServerClient.ObjectIdentifier.ArtistIdentifier;
@@ -653,7 +654,7 @@ public class SubsonicClient implements ServerClient {
             case ServerClient.TranscodeBitrate.MaximumBitrate(var kbps) -> kbps;
         };
         preferences.setStreamBitRate(bitrate);
-        preferences.setClientName("subsound-gtk");
+        preferences.setClientName(Constants.APP_ID);
         return preferences;
     }
 

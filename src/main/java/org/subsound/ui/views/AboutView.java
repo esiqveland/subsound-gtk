@@ -10,7 +10,7 @@ public class AboutView {
         //AboutDialog.fromAppdata()
         var dialog = AboutDialog.builder()
                 .setApplicationName("Subsound")
-                .setApplicationIcon("org.subsound.Subsound")
+                .setApplicationIcon(Constants.APP_ID)
                 .setVersion(Constants.Application.VERSION)
                 .setDevelopers(new String[] { "Eivind Larsen" })
                 .setDeveloperName("Eivind Larsen")
