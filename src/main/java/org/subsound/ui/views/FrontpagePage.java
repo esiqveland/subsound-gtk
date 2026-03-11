@@ -1,11 +1,30 @@
 package org.subsound.ui.views;
 
-import org.gnome.gobject.GObject;
-import org.gnome.gtk.CustomSorter;
+import org.gnome.adw.Carousel;
+import org.gnome.gio.ListStore;
+import org.gnome.gtk.Align;
+import org.gnome.gtk.Box;
+import org.gnome.gtk.CustomFilter;
+import org.gnome.gtk.FilterListModel;
+import org.gnome.gtk.GridView;
+import org.gnome.gtk.Image;
+import org.gnome.gtk.Label;
+import org.gnome.gtk.ListItem;
 import org.gnome.gtk.ListTabBehavior;
+import org.gnome.gtk.ListView;
+import org.gnome.gtk.NoSelection;
+import org.gnome.gtk.Orientation;
+import org.gnome.gtk.PolicyType;
+import org.gnome.gtk.ScrolledWindow;
+import org.gnome.gtk.SignalListItemFactory;
+import org.gnome.gtk.SingleSelection;
 import org.gnome.gtk.SliceListModel;
 import org.gnome.gtk.SortListModel;
-import org.gnome.gtk.Sorter;
+import org.gnome.gtk.Stack;
+import org.gnome.pango.EllipsizeMode;
+import org.javagi.gio.ListIndexModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.subsound.app.state.AppManager;
 import org.subsound.app.state.NetworkMonitoring;
 import org.subsound.app.state.PlayerAction;
@@ -17,10 +36,10 @@ import org.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier
 import org.subsound.integration.ServerClient.PlaylistKind;
 import org.subsound.integration.ServerClient.PlaylistSimple;
 import org.subsound.persistence.ThumbnailCache;
-import org.subsound.ui.components.AppNavigation;
-import org.subsound.ui.components.AppNavigation.AppRoute.RoutePlaylistsOverview;
 import org.subsound.ui.components.AlbumFlowBoxChild;
 import org.subsound.ui.components.AlbumsFlowBox;
+import org.subsound.ui.components.AppNavigation;
+import org.subsound.ui.components.AppNavigation.AppRoute.RoutePlaylistsOverview;
 import org.subsound.ui.components.BoxHolder;
 import org.subsound.ui.components.Classes;
 import org.subsound.ui.components.LoadingSpinner;
@@ -29,30 +48,6 @@ import org.subsound.ui.components.RefreshButton;
 import org.subsound.ui.components.RoundedAlbumArt;
 import org.subsound.ui.views.FrontpagePage.FrontpagePageState.Loading;
 import org.subsound.utils.Utils;
-import org.gnome.gtk.Align;
-import org.javagi.gio.ListIndexModel;
-import org.gnome.adw.Carousel;
-import org.gnome.gtk.Box;
-import org.gnome.gtk.Label;
-import org.gnome.gtk.ListItem;
-import org.gnome.gtk.ListView;
-import org.gnome.gtk.Orientation;
-import org.gnome.gtk.PolicyType;
-import org.gnome.gtk.ScrolledWindow;
-import org.gnome.gtk.SignalListItemFactory;
-import org.gnome.gio.ListStore;
-import org.gnome.gtk.CustomFilter;
-import org.gnome.gtk.FilterListModel;
-import org.gnome.gtk.GestureClick;
-import org.gnome.gtk.NoSelection;
-import org.gnome.gtk.SingleSelection;
-import org.gnome.gtk.Stack;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.gnome.gtk.Image;
-import org.gnome.adw.Clamp;
-import org.gnome.pango.EllipsizeMode;
 
 import java.net.URI;
 import java.time.Duration;
@@ -66,14 +61,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static org.subsound.ui.views.ArtistInfoFlowBox.BIG_SPACING;
-import static org.subsound.utils.Utils.borderBox;
-import static org.subsound.utils.Utils.heading1;
 import static org.gnome.gtk.Align.CENTER;
 import static org.gnome.gtk.Align.END;
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
+import static org.subsound.ui.views.ArtistInfoFlowBox.BIG_SPACING;
+import static org.subsound.utils.Utils.borderBox;
+import static org.subsound.utils.Utils.heading1;
 
 public class FrontpagePage extends Box implements AppManager.StateListener {
     private static final Logger log = LoggerFactory.getLogger(FrontpagePage.class);
@@ -462,16 +457,16 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
     }
 
     public static class HorizontalPlaylistsView extends Box {
-        private static final int COVER_SIZE = 128;
-        private static final int MAX_ITEMS = 10;
-        private final ListView listView;
+        private static final int COVER_SIZE = 72;
+        private static final int MAX_ITEMS = 6;
+        private final GridView gridView;
         private final FilterListModel<GPlaylist> filteredModel;
         private final SortListModel<GPlaylist> sortedModel;
         private final SliceListModel<GPlaylist> slicedModel;
 
         public HorizontalPlaylistsView(ListStore<GPlaylist> store, AppManager appManager, Consumer<AppNavigation.AppRoute> onNavigate) {
-            super(HORIZONTAL, 0);
-            this.setHalign(START);
+            super(VERTICAL, 0);
+            this.setHalign(Align.FILL);
             this.setHexpand(true);
 
             this.filteredModel = new FilterListModel<>(store, new CustomFilter(item -> {
@@ -505,19 +500,22 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
             });
             factory.onTeardown(obj -> ((ListItem) obj).setChild(null));
 
-            this.listView = ListView.builder()
-                    .setOrientation(HORIZONTAL)
+            this.gridView = GridView.builder()
                     .setModel(new NoSelection(this.slicedModel))
                     .setFactory(factory)
+                    .setHalign(Align.START)
+                    .setValign(Align.START)
                     .setHexpand(true)
-                    .setHalign(START)
+                    .setVexpand(false)
                     .setSingleClickActivate(true)
-                    .setShowSeparators(false)
-                    .setCssClasses(new String[]{"transparent"})
+                    .setMinColumns(2)
+                    .setMaxColumns(3)
                     .build();
-            this.listView.setTabBehavior(ListTabBehavior.ITEM);
+            this.gridView.setOrientation(HORIZONTAL);
+            this.gridView.setTabBehavior(ListTabBehavior.ITEM);
+            this.gridView.addCssClass(Classes.transparent.className());
 
-            var sig = listView.onActivate(index -> {
+            var sig = gridView.onActivate(index -> {
                 var gp = this.slicedModel.getItem(index);
                 if (gp != null) {
                     onNavigate.accept(new RoutePlaylistsOverview(Optional.of(new PlaylistIdentifier(gp.getId()))));
@@ -525,61 +523,67 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
             });
             this.onDestroy(sig::disconnect);
 
-            var scroll = ScrolledWindow.builder()
-                    .setHexpand(true)
-                    .setPropagateNaturalHeight(true)
-                    .setPropagateNaturalWidth(true)
-                    .setVscrollbarPolicy(PolicyType.NEVER)
-                    .setOverlayScrolling(true)
-                    .build();
-            scroll.setChild(listView);
-            this.append(scroll);
+            this.append(gridView);
         }
     }
 
     private static class PlaylistOverviewChild extends Box {
         private final RoundedAlbumArt art;
         private final Label nameLabel;
+        private final Label countLabel;
 
         public PlaylistOverviewChild(AppManager appManager, int coverSize) {
-            super(VERTICAL, 0);
-            this.setMarginStart(6);
-            this.setMarginEnd(6);
+            super(HORIZONTAL, 10);
+            int margin = 10;
+            this.setMarginStart(margin);
+            this.setMarginEnd(margin);
+            this.setMarginTop(margin);
+            this.setMarginBottom(margin);
+            this.setSizeRequest(240, -1);
+
             this.art = new RoundedAlbumArt(Optional.empty(), appManager, coverSize);
             this.art.setClickable(false);
+            this.art.setValign(Align.CENTER);
 
-            this.nameLabel = Label.builder()
-                    .setLabel("")
-                    .setCssClasses(new String[]{"heading"})
-                    .setHalign(START)
-                    .setMaxWidthChars(20)
-                    .build();
-            this.nameLabel.setEllipsize(org.gnome.pango.EllipsizeMode.END);
+            this.nameLabel = new Label();
+            this.nameLabel.setHalign(START);
+            this.nameLabel.setXalign(0f);
+            this.nameLabel.setWrap(true);
+            this.nameLabel.setHexpand(true);
+            this.nameLabel.setLines(2);
+            this.nameLabel.addCssClass(Classes.heading.className());
+            this.nameLabel.setMaxWidthChars(20);
+            this.nameLabel.setEllipsize(EllipsizeMode.END);
 
-            int margin = 6;
-            var inner = Box.builder()
-                    .setOrientation(VERTICAL)
-                    .setHalign(CENTER)
-                    .setSpacing(margin)
-                    .setMarginStart(margin)
-                    .setMarginTop(margin)
-                    .setMarginEnd(margin)
-                    .setMarginBottom(margin)
-                    .build();
-            inner.addCssClass(Classes.rounded.className());
-            inner.append(this.art);
-            inner.append(this.nameLabel);
-            this.append(inner);
-            this.addCssClass(Classes.rounded.className());
+            this.countLabel = new Label();
+            this.countLabel.setHalign(START);
+            this.countLabel.setXalign(0f);
+            this.countLabel.addCssClass(Classes.labelDim.className());
+            this.countLabel.addCssClass(Classes.caption.className());
+
+            var textBox = new Box(VERTICAL, 2);
+            textBox.setOrientation(VERTICAL);
+            textBox.setSpacing(2);
+            textBox.setHalign(START);
+            textBox.setValign(Align.CENTER);
+            textBox.setHexpand(true);
+
+            textBox.append(nameLabel);
+            textBox.append(countLabel);
+
+            this.append(art);
+            this.append(textBox);
         }
 
         public void bind(PlaylistSimple playlist) {
             this.nameLabel.setLabel(playlist.name());
+            this.countLabel.setLabel(playlist.songCount() + " songs");
             this.art.update(playlist.coverArtId());
         }
 
         public void unbind() {
             this.nameLabel.setLabel("");
+            this.countLabel.setLabel("");
             this.art.update(Optional.empty());
         }
     }
