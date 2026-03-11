@@ -189,7 +189,7 @@ public class PlaybinPlayer implements Player {
         var msgType = msgTypes.iterator().next();
         if (msgTypes.contains(MessageType.EOS)) {
             log.debug("Player: Got Event Type: {}", msgType.name());
-            GLib.print("End of stream\n");
+            //GLib.print("End of stream\n");
             this.pause();
             this.setPlayerState(END_OF_STREAM);
             this.notifyState();
@@ -490,11 +490,11 @@ public class PlaybinPlayer implements Player {
 
         // We set the input filename to the source element
         if (initialFile != null) {
-            var fileUri = initialFile.toString();
-            GLib.print("Now playing: %s\n", fileUri);
+            //var fileUri = initialFile.toString();
+            //GLib.print("Now playing: %s\n", fileUri);
             this.setSource(initialFile, false);
         }
-        GLib.print("Running...\n");
+        //GLib.print("Running...\n");
     }
 
     public Optional<Duration> getCurrentPosition() {
