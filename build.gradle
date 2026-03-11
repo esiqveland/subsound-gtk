@@ -1,16 +1,13 @@
 import org.apache.tools.ant.filters.ReplaceTokens
+import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
-    id 'com.gradleup.shadow' version '9.3.2'
-    id 'java'
     id 'application'
+    id 'java'
+    id 'com.gradleup.shadow' version '9.3.2'
     id 'io.github.jwharm.flatpak-gradle-generator' version '1.7.0'
     //    id 'androidx.room' version "2.7.0-alpha06" apply false
 }
-
-group = 'org.subsound'
-version = '0.1.0'
-def mainClass = 'org.subsound.Main'
 
 repositories {
     maven { url './offline-repository/' }
@@ -115,7 +112,7 @@ test {
 }
 
 tasks.named('run') {
-    //jvmArgs += "-XstartOnFirstThread"
+    jvmArgs += "-XstartOnFirstThread"
     jvmArgs += "--enable-native-access=ALL-UNNAMED"
     jvmArgs += "-Djava.library.path=/usr/lib64:/lib64:/lib:/usr/lib:/lib/x86_64-linux-gnu "
     //jvmArgs += "-Djava.library.path=/usr/lib64:/lib64:/lib:/usr/lib:/lib/x86_64-linux-gnu:/opt/homebrew/lib "
@@ -124,19 +121,32 @@ tasks.named('run') {
 tasks.flatpakGradleGenerator {
     outputFile = file('flatpak-sources.json')
     downloadDirectory = './offline-repository'
+    //excludeConfigurations = ['testCompileClasspath', 'testRuntimeClasspath']
 }
 
 application {
-    setMainClass(mainClass)
+    applicationName = "Subsound"
+    mainClass = "org.subsound.Main"
+
+    // Allow native access
+    applicationDefaultJvmArgs += "--enable-native-access=ALL-UNNAMED"
+
+    // Add common library directories to the library lookup path
+    if (Os.isFamily(Os.FAMILY_MAC))
+        applicationDefaultJvmArgs += [
+                "-Djavagi.path=/opt/homebrew/lib",
+                "-XstartOnFirstThread"
+        ]
+    else if (Os.isFamily(Os.FAMILY_WINDOWS))
+        applicationDefaultJvmArgs += [
+                "-Djavagi.path=C:/msys64/mingw64/bin"
+        ]
+    else
+        applicationDefaultJvmArgs += [
+                "-Djavagi.path=/usr/lib/x86_64-linux-gnu:/lib64:/usr/lib64:/lib:/usr/lib"
+        ]
 }
 
 shadowJar {
     archiveClassifier.set('final')
-}
-
-tasks.jar {
-    manifest {
-        attributes["Main-Class"] = mainClass;
-    }
-    dependsOn("shadowJar")
 }
