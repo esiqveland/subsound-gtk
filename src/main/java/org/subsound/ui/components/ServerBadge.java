@@ -1,7 +1,18 @@
 package org.subsound.ui.components;
 
+import org.gnome.adw.ActionRow;
+import org.gnome.adw.Clamp;
+import org.gnome.adw.SwitchRow;
+import org.gnome.gtk.Align;
+import org.gnome.gtk.Box;
+import org.gnome.gtk.Image;
+import org.gnome.gtk.Label;
+import org.gnome.gtk.ListBox;
+import org.gnome.gtk.Orientation;
+import org.gnome.gtk.SelectionMode;
 import org.gnome.gtk.Widget;
-import org.gnome.gtk.Window;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.subsound.app.state.AppManager;
 import org.subsound.app.state.NetworkMonitoring.NetworkState;
 import org.subsound.app.state.NetworkMonitoring.NetworkStatus;
@@ -9,18 +20,6 @@ import org.subsound.app.state.PlayerAction;
 import org.subsound.integration.ServerClient;
 import org.subsound.ui.views.AboutView;
 import org.subsound.utils.Utils;
-import org.gnome.adw.ActionRow;
-import org.gnome.adw.ButtonRow;
-import org.gnome.adw.Clamp;
-import org.gnome.adw.SwitchRow;
-import org.gnome.gtk.Align;
-import org.gnome.gtk.Box;
-import org.gnome.gtk.Label;
-import org.gnome.gtk.ListBox;
-import org.gnome.gtk.Orientation;
-import org.gnome.gtk.SelectionMode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.Optional;
@@ -29,7 +28,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 
 import static org.subsound.ui.components.Classes.boxedList;
 
@@ -41,10 +39,10 @@ public class ServerBadge extends Box implements AppManager.StateListener {
     private final ActionRow serverRow;
     private final ActionRow statsRow;
     private final Label statusDot;
-    private final ButtonRow triggerScanButton;
+    private final ActionRow triggerScanButton;
     private final SwitchRow offlineSwitch;
-    private final ButtonRow syncButton;
-    private final ButtonRow configureServerButton;
+    private final ActionRow syncButton;
+    private final ActionRow configureServerButton;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private ScheduledFuture<?> pingTask;
     private volatile NetworkStatus currentNetworkStatus = NetworkStatus.ONLINE;
@@ -64,19 +62,35 @@ public class ServerBadge extends Box implements AppManager.StateListener {
         this.setMarginStart(8);
         this.setMarginEnd(8);
 
-        this.triggerScanButton = ButtonRow.builder()
+        this.triggerScanButton = ActionRow.builder()
                 .setTitle("Trigger scan")
+                .setActivatable(true)
                 .build();
+        var scanIcon = Image.fromIconName("emblem-synchronizing-symbolic");
+        scanIcon.setPixelSize(16);
+        scanIcon.setSizeRequest(32,-1);
+        scanIcon.setHalign(Align.CENTER);
+        scanIcon.setValign(Align.CENTER);
+        triggerScanButton.addPrefix(scanIcon);
         triggerScanButton.addCssClass(Classes.flat.className());
+        triggerScanButton.addCssClass(Classes.heading.className());
         triggerScanButton.onActivated(() -> {
             onClose.run();
             appManager.handleAction(new PlayerAction.TriggerServerScan());
         });
 
-        var aboutButton = ButtonRow.builder()
+        var aboutButton = ActionRow.builder()
                 .setTitle("About")
+                .setActivatable(true)
                 .build();
+        var aboutIcon = Image.fromIconName("help-about-symbolic");
+        aboutIcon.setPixelSize(16);
+        aboutIcon.setSizeRequest(32,-1);
+        aboutIcon.setHalign(Align.CENTER);
+        aboutIcon.setValign(Align.CENTER);
+        aboutButton.addPrefix(aboutIcon);
         aboutButton.addCssClass(Classes.flat.className());
+        aboutButton.addCssClass(Classes.heading.className());
         aboutButton.onActivated(() -> {
             onClose.run();
             AboutView.show(this.parentWindow);
@@ -123,23 +137,41 @@ public class ServerBadge extends Box implements AppManager.StateListener {
         });
 
         // Sync library action
-        this.syncButton = ButtonRow.builder()
+        this.syncButton = ActionRow.builder()
                 .setTitle("Sync library")
-                .setStartIconName("view-refresh-symbolic")
+                .setActivatable(true)
                 .setTooltipText("Sync metadata for offline use")
                 .build();
+        this.syncButton.addCssClass(Classes.flat.className());
+        this.syncButton.addCssClass(Classes.heading.className());
+        var syncIcon = Image.fromIconName("view-refresh-symbolic");
+        syncIcon.setPixelSize(16);
+        syncIcon.setSizeRequest(32,-1);
+        syncIcon.setHalign(Align.CENTER);
+        syncIcon.setValign(Align.CENTER);
+        syncButton.addPrefix(syncIcon);
         this.syncButton.onActivated(() -> {
+            onClose.run();
             syncButton.setSensitive(false);
             appManager.handleAction(new PlayerAction.SyncDatabase()).whenComplete((v, err) ->
                     Utils.runOnMainThread(() -> syncButton.setSensitive(currentNetworkStatus != NetworkStatus.OFFLINE))
             );
         });
 
-        this.configureServerButton = ButtonRow.builder()
+        this.configureServerButton = ActionRow.builder()
                 .setTitle("Configure server")
-                .setStartIconName(Icons.Settings.getIconName())
+                .setActivatable(true)
                 .build();
+        var configIcon = Image.fromIconName(Icons.Settings.getIconName());
+        configIcon.setPixelSize(16);
+        configIcon.setSizeRequest(32,-1);
+        configIcon.setHalign(Align.CENTER);
+        configIcon.setValign(Align.CENTER);
+        this.configureServerButton.addCssClass(Classes.flat.className());
+        this.configureServerButton.addCssClass(Classes.heading.className());
+        configureServerButton.addPrefix(configIcon);
         this.configureServerButton.onActivated(() -> {
+            onClose.run();
             appManager.navigateTo(new AppNavigation.AppRoute.SettingsPage());
         });
 
