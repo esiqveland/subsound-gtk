@@ -6,7 +6,9 @@
 - [x] flatpak: need a svg icon for the app
 
 ## RELEASE next
-- [ ] flatpak: the parent config/cache folder must be named <app-id> `org.subsound.Subsound`
+- [X] flatpak: the parent config/cache folder must be named <app-id> `org.subsound.Subsound`
+- [ ] flatpak: maybe need to change <app-id> to `io.github.Subsound`
+- [ ] flatpak: fix frontpage screen not working after first launch configuration is completed
 
 ## release eventually
 - [ ] mobile adaptive UI
