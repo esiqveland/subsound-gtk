@@ -22,6 +22,7 @@ import org.gnome.gtk.ListItem;
 import org.gnome.gtk.ListView;
 import org.gnome.gtk.MultiSelection;
 import org.gnome.gtk.ScrolledWindow;
+import org.gnome.gtk.PropagationPhase;
 import org.gnome.gtk.SignalListItemFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -179,7 +180,17 @@ public class StarredListView extends Box implements AppManager.StateListener {
 
         // Key controller to handle Delete key for unstarring selected songs
         keyController = new EventControllerKey();
+        keyController.setPropagationPhase(PropagationPhase.CAPTURE);
         keyController.onKeyPressed((keyval, keycode, state) -> {
+            // GDK_KEY_space = 0x0020
+            if (keyval == 0x20) {
+                if (appManager.getState().player().state().isPlaying()) {
+                    this.onAction.apply(new PlayerAction.Pause());
+                } else {
+                    this.onAction.apply(new PlayerAction.Play());
+                }
+                return true;
+            }
             // GDK_KEY_Delete = 0xFFFF (65535)
             if (keyval == 0xFFFF) {
                 var selection = this.selectionModel.getSelection();
