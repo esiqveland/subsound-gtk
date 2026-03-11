@@ -148,5 +148,5 @@ application {
 }
 
 shadowJar {
-    archiveClassifier.set('final')
+    archiveClassifier = "final"
 }
