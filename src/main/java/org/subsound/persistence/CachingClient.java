@@ -219,7 +219,7 @@ public class CachingClient implements ServerClient {
             log.debug("Offline mode: using cached song for {}", songId);
             return dbService.getSongById(songId)
                     .map(this::toSongInfo)
-                    .orElseThrow(() -> new RuntimeException("Song not found in database: " + songId));
+                    .orElseThrow(() -> new RuntimeException("Song not found in local database: " + songId));
         }
         try {
             return delegate.getSong(songId);
@@ -227,7 +227,7 @@ public class CachingClient implements ServerClient {
             log.warn("Failed to fetch song from server, falling back to database: {}", songId, e);
             return dbService.getSongById(songId)
                     .map(this::toSongInfo)
-                    .orElseThrow(() -> new RuntimeException("Song not found in database: " + songId, e));
+                    .orElseThrow(() -> new RuntimeException("Song not found in local database: " + songId, e));
         }
     }
 
