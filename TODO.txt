@@ -12,6 +12,8 @@
 
 ## release eventually
 - [ ] mobile adaptive UI
+- [ ] clicking album art should take you to the current playContext and select the correct song in the listview.
+if the playContext has been changed, select any song with same songId
 - [ ] flatpak: other flatpak apps can not read the mpris:artUrl file path ( see https://gitlab.freedesktop.org/mpris/mpris-spec/-/merge_requests/4 )
     - mpris: consider using a local http server to serve the artwork file
 
