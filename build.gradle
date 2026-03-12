@@ -61,20 +61,26 @@ dependencies {
 
 // copy the Constants class and replace the version placeholder with the application version
 tasks.register("processVersion", Copy) {
-    from("src/main/java/com/github/subsound/configuration/constants/") {
+    from("src/main/java/org/subsound/configuration/constants/") {
         include("Constants.java")
         filter(ReplaceTokens, tokens: ['version': version])
     }
-    into layout.buildDirectory.dir("generated/sources/classes/src/java/main/com/github/subsound/configuration/constants/")
+    into layout.buildDirectory.dir("generated/sources/classes/src/java/main/org/subsound/configuration/constants/")
 
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+processResources {
+    filesMatching("app/org.subsound.Subsound.metainfo.xml") {
+        filter(ReplaceTokens, tokens: ['version': version])
+    }
 }
 
 // exclude the original Constants class from the source set so gradle doesn't compile it in
 sourceSets {
     main {
         java {
-            exclude ("com/github/subsound/configuration/constants/Constants.java")
+            exclude ("org/subsound/configuration/constants/Constants.java")
         }
         resources {
             exclude("samples/*")
@@ -85,7 +91,7 @@ sourceSets {
 // include the new Constants class that was previously generated
 tasks.named("compileJava", JavaCompile) {
     dependsOn("processVersion")
-    source(layout.buildDirectory.dir("generated/sources/classes/src/java/main/com/github/subsound/configuration/constants/"))
+    source(layout.buildDirectory.dir("generated/sources/classes/src/java/main/org/subsound/configuration/constants/"))
 }
 
 java {
