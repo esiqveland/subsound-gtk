@@ -86,6 +86,7 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
     private final AtomicReference<FrontpagePageState> state = new AtomicReference<>(new Loading());
     private final AtomicBoolean isMapped = new AtomicBoolean(false);
     private final AtomicReference<NetworkMonitoring.NetworkStatus> lastNetworkStatus = new AtomicReference<>();
+    private final AtomicReference<Optional<String>> lastServerId = new AtomicReference<>(Optional.empty());
 
     private final ScrolledWindow scroll;
     private final Box view;
@@ -159,6 +160,12 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
         if (prev == NetworkMonitoring.NetworkStatus.OFFLINE
                 && state.networkState().status() == NetworkMonitoring.NetworkStatus.ONLINE) {
             log.info("FrontpagePage: network came online, reloading");
+            this.doLoad();
+            return;
+        }
+        var prevServerId = lastServerId.getAndSet(state.serverState().serverId());
+        if (!prevServerId.equals(state.serverState().serverId())) {
+            log.info("FrontpagePage: server changed, reloading");
             this.doLoad();
         }
     }

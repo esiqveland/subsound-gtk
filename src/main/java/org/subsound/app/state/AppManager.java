@@ -248,7 +248,10 @@ public class AppManager {
     }
 
     private AppState buildState() {
-        return new AppState(Optional.empty(), this.player.getState(), this.playQueue.getState(), this.networkMonitor.getState());
+        var initialServerId = this.config.serverConfig != null
+                ? ServerState.of(this.config.serverConfig.id())
+                : ServerState.empty();
+        return new AppState(Optional.empty(), this.player.getState(), this.playQueue.getState(), this.networkMonitor.getState(), initialServerId);
     }
 
     public AppState getState() {
@@ -369,12 +372,22 @@ public class AppManager {
         }
     }
 
+    public record ServerState(Optional<String> serverId) {
+        public static ServerState empty() {
+            return new ServerState(Optional.empty());
+        }
+        public static ServerState of(String id) {
+            return new ServerState(Optional.of(id));
+        }
+    }
+
     @RecordBuilderFull
     public record AppState(
             Optional<NowPlaying> nowPlaying,
             PlaybinPlayer.PlayerState player,
             PlayQueue.PlayQueueState queue,
-            NetworkState networkState
+            NetworkState networkState,
+            ServerState serverState
     ) implements AppManagerAppStateBuilder.With {}
 
     public void enqueue(SongInfo songInfo) {
@@ -720,6 +733,11 @@ public class AppManager {
             var client = wrapWithCaching(newClient);
             this.client.set(client);
             this.starredList.refreshAsync();
+            this.playlistsStore.refreshListAsync();
+            var newServerId = this.config.serverConfig != null
+                    ? ServerState.of(this.config.serverConfig.id())
+                    : ServerState.empty();
+            this.setState(old -> old.withServerState(newServerId));
         } else {
             this.client.set(null);
         }
