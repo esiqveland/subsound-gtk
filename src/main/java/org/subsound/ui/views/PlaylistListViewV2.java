@@ -429,7 +429,17 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         });
 
         var keyController = new EventControllerKey();
+        keyController.setPropagationPhase(PropagationPhase.CAPTURE);
         keyController.onKeyPressed((keyval, keycode, state) -> {
+            // GDK_KEY_space = 0x0020
+            if (keyval == 0x20) {
+                if (appManager.getState().player().state().isPlaying()) {
+                    this.onAction.apply(new PlayerAction.Pause());
+                } else {
+                    this.onAction.apply(new PlayerAction.Play());
+                }
+                return true;
+            }
             if (keyval != 0xFFFF) {
                 return false; // GDK_KEY_Delete
             }
