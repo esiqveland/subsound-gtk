@@ -85,3 +85,4 @@ bin/
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
+./subsound-gtk-repo
