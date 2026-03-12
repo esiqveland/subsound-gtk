@@ -90,7 +90,8 @@ public class ServerConfigForm extends Box {
         this.listBox.setSelectionMode(SelectionMode.NONE);
 
         this.listBox.append(serverUrlEntry);
-        this.listBox.append(tlsSwitchEntry);
+        // TODO: actually implement tls-no-verified
+        //this.listBox.append(tlsSwitchEntry);
         this.listBox.append(usernameEntry);
         this.listBox.append(passwordEntry);
         this.listBox.append(testButton);
