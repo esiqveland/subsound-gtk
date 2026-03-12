@@ -1,6 +1,7 @@
 package org.subsound.ui.views;
 
 import org.gnome.gtk.ListTabBehavior;
+import org.gnome.gtk.PropagationPhase;
 import org.jspecify.annotations.Nullable;
 import org.subsound.app.state.AppManager;
 import org.subsound.app.state.PlayerAction;
