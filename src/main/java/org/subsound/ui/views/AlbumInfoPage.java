@@ -12,7 +12,9 @@ import org.subsound.integration.ServerClient.PlaylistKind;
 import org.subsound.app.state.PlayerAction.PlayAndReplaceQueue;
 import org.subsound.integration.ServerClient.SongInfo;
 import org.subsound.persistence.ThumbnailCache;
+import org.subsound.ui.components.AppNavigation;
 import org.subsound.ui.components.Classes;
+import org.subsound.ui.components.ClickLabel;
 import org.subsound.ui.components.Icons;
 import org.subsound.ui.components.NowPlayingOverlayIcon;
 import org.subsound.ui.components.NowPlayingOverlayIcon.NowPlayingState;
@@ -84,6 +86,7 @@ public class AlbumInfoPage extends Box implements StateListener {
     private final ScrolledWindow scroll;
     private final Box mainContainer;
     private final Box albumInfoBox;
+    private final ClickLabel artistNameLabel;
     private final ListBox listView;
     private final List<AlbumSongActionRow> rows;
     private final Widget artistImage;
@@ -597,7 +600,15 @@ public class AlbumInfoPage extends Box implements StateListener {
         this.mainContainer = Box.builder().setHalign(BASELINE_FILL).setSpacing(8).setValign(START).setOrientation(VERTICAL).setHexpand(true).setVexpand(true).setMarginBottom(10).setHomogeneous(false).build();
         this.albumInfoBox = Box.builder().setHalign(CENTER).setSpacing(4).setValign(START).setOrientation(VERTICAL).setHexpand(true).setMarginBottom(10).build();
         this.albumInfoBox.append(infoLabel(this.info.album().name(), Classes.titleLarge2.add()));
-        this.albumInfoBox.append(infoLabel(this.info.album().artistName(), Classes.titleLarge3.add()));
+        this.artistNameLabel = new ClickLabel(
+                this.info.album().artistName(),
+                () -> this.appManager.navigateTo(new AppNavigation.AppRoute.RouteArtistInfo(this.info.album().artistId()))
+        );
+        this.artistNameLabel.setUseMarkup(false);
+        this.artistNameLabel.setEllipsize(EllipsizeMode.END);
+        this.artistNameLabel.addCssClass(Classes.titleLarge3.className());
+        this.artistNameLabel.setLabel(this.info.album().artistName());
+        this.albumInfoBox.append(this.artistNameLabel);
         this.albumInfoBox.append(infoLabel(this.info.album().year().map(String::valueOf).orElse(""), Classes.labelDim.add(Classes.bodyText)));
         this.albumInfoBox.append(infoLabel("%d songs, %s".formatted(this.info.album().songCount(), formatDurationMedium(this.info.album().totalPlayTime())), Classes.labelDim.add(Classes.bodyText)));
         //this.albumInfoBox.append(infoLabel("%s playtime".formatted(formatDurationMedium(this.albumInfo.totalPlayTime())), Classes.labelDim.add(Classes.bodyText)));
