@@ -1,12 +1,5 @@
 package org.subsound.ui.components;
 
-import org.subsound.app.state.AppManager;
-import org.subsound.app.state.AppManager.AppState;
-import org.subsound.app.state.AppManager.NowPlaying;
-import org.subsound.app.state.PlayerAction;
-import org.subsound.integration.ServerClient.SongInfo;
-import org.subsound.sound.PlaybinPlayer;
-import org.subsound.utils.Utils;
 import org.gnome.gtk.ActionBar;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
@@ -16,6 +9,15 @@ import org.gnome.gtk.Orientation;
 import org.gnome.gtk.Scale;
 import org.gnome.pango.EllipsizeMode;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.subsound.app.state.AppManager;
+import org.subsound.app.state.AppManager.AppState;
+import org.subsound.app.state.AppManager.NowPlaying;
+import org.subsound.app.state.PlayerAction;
+import org.subsound.integration.ServerClient.SongInfo;
+import org.subsound.sound.PlaybinPlayer;
+import org.subsound.utils.Utils;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -32,6 +34,7 @@ import static org.subsound.utils.Utils.runOnMainThread;
 import static org.subsound.utils.Utils.withinEpsilon;
 
 public class PlayerBar extends Box implements AppManager.StateListener {
+    private final Logger log = LoggerFactory.getLogger(PlayerBar.class);
     private static final int ARTWORK_SIZE = 64;
 
     private final AppManager appManager;
@@ -184,7 +187,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
                 return;
             }
             var cubicVolume = this.volumeScale.getValue();
-            System.out.println("volumeScale.onValueChanged: " + cubicVolume);
+            log.info("volumeScale.onValueChanged: {}", cubicVolume);
             this.appManager.setVolume(cubicVolume);
             this.volumeButton.setVolume(cubicVolume);
         });
@@ -366,7 +369,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
                 this.volumeButton.setMute(player.muted());
                 var cubicVolume = PlaybinPlayer.toVolumeCubic(linearVolume);
                 if (!withinEpsilon(cubicVolume, volumeScale.getValue(), 0.01)) {
-                    System.out.printf("volume is outdated: %.2f%n", cubicVolume);
+                    log.info("volume is outdated: %.2f".formatted(cubicVolume));
                     this.volumeButton.setVolume(cubicVolume);
                     this.volumeScale.setValue(cubicVolume);
                 }
