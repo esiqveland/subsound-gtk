@@ -23,13 +23,13 @@ Pending a Flatpak release, you can run from source or use the Flatpak beta relea
 flatpak remote-add --user --no-gpg-verify subsound-beta https://esiqveland.github.io/subsound-gtk-repo/
 
 # Install
-flatpak install --user subsound-beta org.subsound.Subsound
+flatpak install --user subsound-beta io.github.Subsound
 
 # Run
-flatpak run --user org.subsound.Subsound
+flatpak run --user io.github.Subsound
 
 # Update
-flatpak update --user org.subsound.Subsound
+flatpak update --user io.github.Subsound
 ```
 
 ## Features
