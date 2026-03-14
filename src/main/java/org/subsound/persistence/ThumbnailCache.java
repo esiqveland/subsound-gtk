@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
@@ -260,6 +261,11 @@ public class ThumbnailCache {
             Path cachePath,
             Path tmpFilePath
     ) {
+    }
+
+    public Optional<Path> getCachedPath(String serverId, String coverArtId) {
+        var path = toCachePath(root, serverId, coverArtId).cachePath();
+        return Files.exists(path) ? Optional.of(path) : Optional.empty();
     }
 
     public static CachehPath toCachePath(Path root, String serverId, String coverArtId) {

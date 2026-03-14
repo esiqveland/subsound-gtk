@@ -1,12 +1,5 @@
 package org.subsound.integration.platform.mpriscontroller;
 
-import org.jspecify.annotations.Nullable;
-import org.subsound.app.state.AppManager;
-import org.subsound.app.state.PlayerAction;
-import org.subsound.configuration.constants.Constants;
-import org.subsound.integration.ServerClient;
-import org.subsound.sound.PlaybinPlayer;
-import org.subsound.utils.OsUtil;
 import com.softwaremill.jox.Channel;
 import com.softwaremill.jox.ChannelDoneException;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
@@ -16,15 +9,20 @@ import org.freedesktop.dbus.interfaces.Properties;
 import org.freedesktop.dbus.types.DBusListType;
 import org.freedesktop.dbus.types.DBusMapType;
 import org.freedesktop.dbus.types.Variant;
+import org.jspecify.annotations.Nullable;
 import org.mpris.MediaPlayer2.MediaPlayer2;
 import org.mpris.MediaPlayer2.MediaPlayer2Player;
 import org.mpris.MediaPlayer2.TrackList.TrackId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.subsound.app.state.AppManager;
+import org.subsound.app.state.PlayerAction;
+import org.subsound.configuration.constants.Constants;
+import org.subsound.sound.PlaybinPlayer;
+import org.subsound.utils.OsUtil;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -34,17 +32,21 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.subsound.integration.platform.mpriscontroller.MPrisController.MPRISPlayerState.*;
+import static org.subsound.integration.platform.mpriscontroller.MPrisController.MPRISPlayerState.interfaceName;
+import static org.subsound.integration.platform.mpriscontroller.MPrisController.MPRISPlayerState.toListVariant;
+import static org.subsound.integration.platform.mpriscontroller.MPrisController.MPRISPlayerState.toMicroseconds;
 
 public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppManager.StateListener, Properties {
     private final static Logger log = LoggerFactory.getLogger(MPrisController.class);
     private final AppManager appManager;
+    private final ArtworkHttpServer artworkServer;
     private final Channel<PropertiesChanged> dbusMessageChannel = Channel.newBufferedDefaultChannel();
     private final MprisApplicationProperties mprisApplicationProperties;
     private final AtomicReference<MPRISPlayerState> playerState = new AtomicReference<>();
 
-    public MPrisController(AppManager appManager) {
+    public MPrisController(AppManager appManager, ArtworkHttpServer artworkServer) {
         this.appManager = appManager;
+        this.artworkServer = artworkServer;
         this.mprisApplicationProperties = new MprisApplicationProperties();
     }
 
@@ -215,6 +217,7 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
 
     private MPRISMetadata toMprisMetadata(AppManager.NowPlaying np) {
         Long discNumber = np.song().discNumber().map(Long::valueOf).orElse(null);
+        var artUrl = np.song().coverArt().flatMap(artworkServer::getArtUrl).orElse(null);
         return new MPRISMetadata(
                 new TrackId(np.song().id()),
                 np.song().duration(),
@@ -223,7 +226,7 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
                 np.song().album(),
                 np.song().title(),
                 discNumber,
-                np.song().coverArt().map(ServerClient.CoverArt::coverArtFilePath).map(Path::toUri).orElse(null),
+                artUrl,
                 null
         );
     }
@@ -551,7 +554,6 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
                 if (artUri.startsWith("file:" ) && !artUri.startsWith("file://")) {
                     artUri = artUri.replace("file:", "file://");
                 };
-                //val artUri = "file://${artUrl.absolutePath}"
                 map.put("mpris:artUrl", ofVariant(artUri));
             }
             if (lyrics != null) {

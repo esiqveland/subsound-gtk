@@ -4,6 +4,7 @@ import org.subsound.app.state.AppManager;
 import org.subsound.configuration.Config;
 import org.subsound.configuration.constants.Constants;
 import org.subsound.integration.ServerClient;
+import org.subsound.integration.platform.mpriscontroller.ArtworkHttpServer;
 import org.subsound.integration.platform.mpriscontroller.MPrisController;
 import org.subsound.persistence.ThumbnailCache;
 import org.subsound.sound.PlaybinPlayer;
@@ -33,6 +34,7 @@ public class Main {
     private final Config config;
     private final AppManager appManager;
     private final MPrisController mprisController;
+    private final ArtworkHttpServer artworkServer;
 
     public Main(String[] args) {
         // Initialisation Gst
@@ -46,7 +48,8 @@ public class Main {
         var client = Optional.ofNullable(config.serverConfig).map(ServerClient::create);
         var player = new PlaybinPlayer();
         this.appManager = new AppManager(this.config, player, thumbnailCache, client);
-        this.mprisController = new MPrisController(appManager);
+        this.artworkServer = new ArtworkHttpServer(thumbnailCache);
+        this.mprisController = new MPrisController(appManager, artworkServer);
         Utils.doAsync(() -> {
             try {
                 this.mprisController.run();
