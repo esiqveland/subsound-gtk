@@ -21,6 +21,7 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 public class Main {
     private final static Logger log = LoggerFactory.getLogger(Main.class);
@@ -39,9 +40,14 @@ public class Main {
     public Main(String[] args) {
         // Initialisation Gst
         Gst.init(new Out<>(new String[]{}));
-        Pixbuf.getFormats().forEach(pixbufFormat -> {
-            log.info("pixbufFormat supported: %s %s".formatted(pixbufFormat.getName(), pixbufFormat.getDescription()));
-        });
+        var supportedImageFormats = Pixbuf.getFormats();
+        var supportedMsg = supportedImageFormats.stream().map(format -> format.getName()).collect(Collectors.joining(",")).toLowerCase();
+        if (supportedMsg.contains("webp")) {
+            log.info("pixbufFormats supported={}", supportedMsg);
+        } else {
+            log.warn("pixbufFormats supported={}", supportedMsg);
+            log.warn("GDK pixbufFormats reports missing webp support");
+        }
 
         this.config = Config.createDefault();
         var thumbnailCache = new ThumbnailCache(config.dataDir);
