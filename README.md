@@ -53,6 +53,7 @@ Features:
   - [X] Download album art to local cache
   - [X] Sync artist/song metadata for offline storage
   - [X] Playlists
+  - [X] Scrobble offline, send later
   - [X] Browse from offline storage only
   - [ ] Search from offline storage only or disable search box
   - [X] Download manager for offline available content
@@ -76,7 +77,7 @@ Non-goals:
 
 Possible ideas:
   - Shared remote control, think something like Spotify Connect
-  - Could support chromecast
+  - Chromecast support
   - Player for local media, not just for a streaming server
 
 ## Credits
