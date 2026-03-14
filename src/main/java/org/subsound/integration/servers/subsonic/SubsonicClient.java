@@ -589,7 +589,7 @@ public class SubsonicClient implements ServerClient {
                     duration,
                     ofNullable(song.getStarred()).map(d -> d.toInstant(ZoneOffset.UTC)),
                     ofNullable(song.getCreated()).map(d -> d.toInstant(ZoneOffset.UTC)),
-                    toCoverArt(song.getCoverArtId(), new AlbumIdentifier(song.getAlbumId())),
+                    toCoverArt(song.getAlbumId(), new AlbumIdentifier(song.getAlbumId())),
                     song.getSuffix(),
                     transcodeInfo,
                     downloadUri

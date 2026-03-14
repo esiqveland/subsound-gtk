@@ -445,7 +445,7 @@ public class CachingClient implements ServerClient {
                 song.duration(),
                 song.starredAt(),
                 Optional.of(song.createdAt()),
-                song.coverArtId().flatMap(id -> toCoverArt(id, new ObjectIdentifier.AlbumIdentifier(song.albumId()))),
+                song.coverArtId().flatMap(id -> toCoverArt(song.albumId(), new ObjectIdentifier.AlbumIdentifier(song.albumId()))),
                 song.suffix().isEmpty() ? "mp3" : song.suffix(),
                 transcodeInfo,
                 URI.create("offline://unavailable/" + song.id())
