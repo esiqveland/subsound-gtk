@@ -1,14 +1,6 @@
 package org.subsound.ui.components;
 
 import org.gnome.adw.ButtonRow;
-import org.jspecify.annotations.Nullable;
-import org.subsound.app.state.AppManager;
-import org.subsound.app.state.PlayerAction;
-import org.subsound.configuration.Config.ServerConfig;
-import org.subsound.integration.ServerClient;
-import org.subsound.integration.ServerClient.ServerType;
-import org.subsound.integration.ServerClient.TranscodeFormat;
-import org.subsound.utils.Utils;
 import org.gnome.adw.Clamp;
 import org.gnome.adw.EntryRow;
 import org.gnome.adw.PasswordEntryRow;
@@ -19,13 +11,24 @@ import org.gnome.gtk.Box;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListBox;
 import org.gnome.gtk.SelectionMode;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.subsound.app.state.AppManager;
+import org.subsound.app.state.PlayerAction;
+import org.subsound.configuration.Config.ServerConfig;
+import org.subsound.integration.ServerClient;
+import org.subsound.integration.ServerClient.ServerType;
+import org.subsound.integration.ServerClient.TranscodeFormat;
+import org.subsound.utils.Utils;
 
+import java.net.URI;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+import static org.gnome.gtk.Orientation.VERTICAL;
 import static org.subsound.ui.components.Classes.boxedList;
 import static org.subsound.ui.components.Classes.colorError;
 import static org.subsound.ui.components.Classes.colorSuccess;
@@ -35,7 +38,6 @@ import static org.subsound.ui.components.Classes.title1;
 import static org.subsound.ui.components.Classes.titleLarge;
 import static org.subsound.utils.Utils.borderBox;
 import static org.subsound.utils.javahttp.TextUtils.capitalize;
-import static org.gnome.gtk.Orientation.VERTICAL;
 
 public class ServerConfigForm extends Box {
     private static final Logger log = LoggerFactory.getLogger(ServerConfigForm.class);
@@ -74,7 +76,7 @@ public class ServerConfigForm extends Box {
         this.setHalign(Align.CENTER);
 
         this.serverTypeInfoLabel = Label.builder().setLabel("New Server").setCssClasses(titleLarge.add()).build();
-        this.serverUrlEntry = EntryRow.builder().setTitle("Server URL").build();
+        this.serverUrlEntry = EntryRow.builder().setTitle("Server URL").setText("https://").build();
         this.tlsSwitchEntry = SwitchRow.builder().setTitle("Accept unverified certificate").setSensitive(false).build();
         this.usernameEntry = EntryRow.builder().setTitle("Username").build();
         this.passwordEntry = PasswordEntryRow.builder().setTitle("Password").build();
@@ -108,8 +110,8 @@ public class ServerConfigForm extends Box {
     private void testConnection() {
         //this.testButton.setCssClasses(none.add());
         this.saveButton.setSensitive(false);
-        var data = getFormData();
-        Utils.doAsync(() -> {
+        var dataOpt = getFormData();
+        dataOpt.ifPresent(data -> Utils.doAsync(() -> {
             ServerClient serverClient = ServerClient.create(new ServerConfig(
                     this.dataDir,
                     AppManager.SERVER_ID,
@@ -139,7 +141,7 @@ public class ServerConfigForm extends Box {
                 Classes color = success ? colorSuccess : colorError;
                 this.testButton.addCssClass(color.className());
             });
-        });
+        }));
     }
 
     public void setSettingsInfo(@Nullable SettingsInfo s) {
@@ -158,14 +160,23 @@ public class ServerConfigForm extends Box {
     }
 
     private void saveForm() {
-        var data = getFormData();
-        log.info("saveForm: data={}", data);
+        var dataOpt = getFormData();
+        log.info("saveForm: data={}", dataOpt);
+        if (dataOpt.isPresent()) {
+            Toast toast = Toast.builder()
+                    .setTimeout(5)
+                    .setCustomTitle(Label.builder().setLabel("Error saving configuration!").setCssClasses(title1.add(colorError)).build())
+                    .build();
+            this.onAction.apply(new PlayerAction.Toast(toast));
+            return;
+        }
+        var data = dataOpt.get();
         onAction.apply(new PlayerAction.SaveConfig(data))
                 .handle((success, throwable) -> {
                     if (throwable != null) {
                         log.error("saveForm: data={} error: ", data, throwable);
                         Toast toast = Toast.builder()
-                                .setTimeout(30)
+                                .setTimeout(5)
                                 .setCustomTitle(Label.builder().setLabel("Error saving configuration!").setCssClasses(title1.add(colorError)).build())
                                 .build();
                         return new PlayerAction.Toast(toast);
@@ -181,12 +192,24 @@ public class ServerConfigForm extends Box {
                 .thenAccept(this.onAction::apply);
     }
 
-    private SettingsInfo getFormData() {
-        return new SettingsInfo(
-                ServerType.SUBSONIC,
-                this.serverUrlEntry.getText(),
-                this.usernameEntry.getText(),
-                this.passwordEntry.getText()
-        );
+    private Optional<SettingsInfo> getFormData() {
+        var url = this.serverUrlEntry.getText();
+        if (!url.startsWith("http")) {
+            url = "https://" + url;
+        }
+        try {
+            var parsed = URI.create(url);
+            this.serverUrlEntry.setText(url);
+
+            return Optional.of(new SettingsInfo(
+                    ServerType.SUBSONIC,
+                    parsed.toString(),
+                    this.usernameEntry.getText(),
+                    this.passwordEntry.getText()
+            ));
+        } catch (IllegalArgumentException e) {
+            this.serverUrlEntry.setText(url);
+            return Optional.empty();
+        }
     }
 }
