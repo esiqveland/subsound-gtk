@@ -206,6 +206,7 @@ worklog:
     - [X] Optimize updates for when we post a new state (hopefully we don't need more optimization here)
     - [X] Get Position
     - [ ] Set position
+    - [ ] `xesam:url` is a url back to e.g the youtube video or a direct link to the media content
 
 Releasing a Flatpak:
   - [X] make it work (org.gnome.Platform + Java Platform + java-gi + gradle)

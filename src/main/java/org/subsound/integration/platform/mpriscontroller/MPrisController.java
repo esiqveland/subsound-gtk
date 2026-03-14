@@ -559,6 +559,8 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
             if (lyrics != null) {
                 map.put("xesam:asText", ofVariant(lyrics));
             }
+            // TODO: xesam:url is a url back to e.g the youtube video or a direct link to the media content
+            //map.put("xesam:url", ofVariant(lyrics));
             return map;
         }
     }
