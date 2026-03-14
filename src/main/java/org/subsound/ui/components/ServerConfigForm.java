@@ -11,6 +11,7 @@ import org.gnome.gtk.Box;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListBox;
 import org.gnome.gtk.SelectionMode;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +63,14 @@ public class ServerConfigForm extends Box {
             String username,
             String password
     ) {
+        @Override
+        public @NonNull String toString() {
+            return "SettingsInfo[type=%s, serverUrl=%s, username=%s, password=[REDACTED]]".formatted(
+                    type,
+                    serverUrl,
+                    username
+            );
+        }
     }
 
     public ServerConfigForm(
@@ -162,7 +171,7 @@ public class ServerConfigForm extends Box {
     private void saveForm() {
         var dataOpt = getFormData();
         log.info("saveForm: data={}", dataOpt);
-        if (dataOpt.isPresent()) {
+        if (dataOpt.isEmpty()) {
             Toast toast = Toast.builder()
                     .setTimeout(5)
                     .setCustomTitle(Label.builder().setLabel("Error saving configuration!").setCssClasses(title1.add(colorError)).build())
