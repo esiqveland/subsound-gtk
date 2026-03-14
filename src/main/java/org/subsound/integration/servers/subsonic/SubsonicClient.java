@@ -541,7 +541,9 @@ public class SubsonicClient implements ServerClient {
     final URI getServerUri(String path, ResponseFormat format, Map<String, String> extraParams) {
         var auth = this.settings.getAuthentication();
         var v = this.client.getApiVersion().getVersionString();
-        var builder = HttpUrl.get(this.uri).newBuilder(path)
+        var pathPrefix = Utils.removeTrailingSlash(this.uri.getPath());
+        var requestPath = pathPrefix + path;
+        var builder = HttpUrl.get(this.uri).newBuilder(requestPath)
                 .setQueryParameter("u", this.settings.getUsername())
                 .setQueryParameter("s", auth.getSalt())
                 .setQueryParameter("t", auth.getToken())

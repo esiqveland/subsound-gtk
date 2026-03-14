@@ -277,6 +277,16 @@ public class Utils {
         return val;
     }
 
+    public static String removeTrailingSlash(String path) {
+        if (path == null || path.isBlank() || !path.endsWith("/")) {
+            return path;
+        }
+        while (path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+        return path;
+    }
+
     public record SignalWidget<T extends Widget>(
             T widget,
             SignalConnection<?> signalConnection
