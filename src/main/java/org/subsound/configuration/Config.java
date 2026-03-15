@@ -47,6 +47,10 @@ public class Config {
         Files.writeString(this.configFilePath, jsonStr, StandardCharsets.UTF_8);
     }
 
+    public Path getConfigFilePath() {
+        return configFilePath;
+    }
+
     public Optional<ServerConfig> getServerConfig() {
         return Optional.ofNullable(this.serverConfig);
     }

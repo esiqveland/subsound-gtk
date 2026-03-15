@@ -44,6 +44,7 @@ import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 
@@ -450,6 +451,27 @@ public class Utils {
             }
         });
         return result;
+    }
+    public static <T> T timeIt(Consumer<Duration> durationConsumer, Supplier<T> operation) {
+        var start = System.nanoTime();
+        try {
+            return operation.get();
+        } finally {
+            var end = System.nanoTime();
+            var duration = end - start;
+            durationConsumer.accept(Duration.ofNanos(duration));
+        }
+    }
+
+    public static void timeIt(Consumer<Duration> durationConsumer, Runnable operation) {
+        var start = System.nanoTime();
+        try {
+            operation.run();
+        } finally {
+            var end = System.nanoTime();
+            var duration = end - start;
+            durationConsumer.accept(Duration.ofNanos(duration));
+        }
     }
 
 //    public static File getResourceDirectory(String resource) {

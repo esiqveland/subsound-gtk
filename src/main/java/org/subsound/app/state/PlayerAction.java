@@ -68,4 +68,5 @@ public sealed interface PlayerAction {
     record ClearSongCache() implements PlayerAction {}
     record ClearThumbnailCache() implements PlayerAction {}
     record OverrideNetworkStatus(Optional<NetworkMonitoring.NetworkStatus> overrideStatus) implements PlayerAction {}
+    record Quit() implements PlayerAction {}
 }

@@ -46,8 +46,10 @@ import org.subsound.utils.Utils;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -70,6 +72,7 @@ import static org.subsound.app.state.AppManager.NowPlaying.State.READY;
 import static org.subsound.utils.Utils.doAsync;
 import static org.subsound.utils.Utils.runOnMainThread;
 import static org.subsound.utils.Utils.sha256;
+import static org.subsound.utils.Utils.timeIt;
 
 public class AppManager {
     private static final Logger log = LoggerFactory.getLogger(AppManager.class);
@@ -96,6 +99,8 @@ public class AppManager {
     private final DownloadManager downloadManager;
     private final ScrobbleService scrobbleService;
     private final NetworkMonitoring networkMonitor;
+    private final Runnable onQuit;
+    private final AtomicBoolean isShutdown = new AtomicBoolean(false);
     private volatile ScheduledFuture<?> pendingPreferenceSave;
     private volatile UUID scrobbledForRequestId = null;
 
@@ -106,9 +111,11 @@ public class AppManager {
             Config config,
             PlaybinPlayer player,
             ThumbnailCache thumbnailCache,
-            Optional<ServerClient> client
+            Optional<ServerClient> client,
+            Runnable onQuit
     ) {
         this.config = config;
+        this.onQuit = onQuit;
         this.player = player;
         this.thumbnailCache = thumbnailCache;
         this.database = new Database();
@@ -306,15 +313,31 @@ public class AppManager {
     }
 
     public void shutdown() {
+        if (!this.isShutdown.compareAndSet(false, true)) {
+            return;
+        }
         var start = System.currentTimeMillis();
-        saveCurrentPlayerPreferencesImmediately();
+        timeIt(
+                duration -> log.info("shutdown: saveCurrentPlayerPreferencesImmediately: {}ms", duration.toMillis()),
+                this::saveCurrentPlayerPreferencesImmediately
+        );
+
         var saveTask = this.pendingPreferenceSave;
         if (saveTask != null) {
             saveTask.cancel(false);
         }
-        this.preferenceSaveScheduler.shutdown();
-        this.downloadManager.stop();
-        this.scrobbleService.stop();
+        timeIt(
+                duration -> log.info("shutdown: preferenceSaveScheduler: {}ms", duration.toMillis()),
+                this.preferenceSaveScheduler::shutdown
+        );
+        timeIt(
+                duration -> log.info("shutdown: downloadManager: {}ms", duration.toMillis()),
+                this.downloadManager::stop
+        );
+        timeIt(
+                duration -> log.info("shutdown: scrobbleService: {}ms", duration.toMillis()),
+                this.scrobbleService::stop
+        );
         var elapsed = System.currentTimeMillis() - start;
         log.info("AppManager shutdown completed in %dms".formatted(elapsed));
     }
@@ -667,6 +690,10 @@ public class AppManager {
                                 return null;
                             });
                 }
+                case PlayerAction.Quit _ -> {
+                    this.player.pause();
+                    this.shutdown();
+                    this.onQuit.run();
             }
         });
     }

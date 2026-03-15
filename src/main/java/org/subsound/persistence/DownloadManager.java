@@ -2,20 +2,20 @@ package org.subsound.persistence;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.subsound.integration.ServerClient.SongInfo;
 import org.subsound.integration.ServerClient.TranscodeInfo;
 import org.subsound.persistence.database.DatabaseServerService;
 import org.subsound.persistence.database.DownloadQueueItem;
 import org.subsound.persistence.database.DownloadQueueItem.DownloadStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.subsound.utils.Utils;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -23,7 +23,7 @@ public class DownloadManager {
     private static final Logger log = LoggerFactory.getLogger(DownloadManager.class);
     private final DatabaseServerService dbService;
     private final SongCache songCache;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private final Consumer<DownloadManagerEvent> onEvent;
     private final Cache<String, Optional<DownloadQueueItem>> songStatusCache = Caffeine.newBuilder()
             .expireAfterAccess(Duration.ofMinutes(10))
@@ -56,19 +56,16 @@ public class DownloadManager {
     }
 
     private void startQueueProcessor() {
-        executor.submit(() -> {
-            while (running) {
-                try {
-                    processQueue();
-                    TimeUnit.SECONDS.sleep(5);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                } catch (Exception e) {
-                    log.error("Error in download queue processor", e);
-                }
+        executor.scheduleAtFixedRate(() -> {
+            if (!this.running) {
+                return;
             }
-        });
+            try {
+                processQueue();
+            } catch (Exception e) {
+                log.error("Error in download queue processor", e);
+            }
+        }, 5000, 5000, TimeUnit.MILLISECONDS);
     }
 
     public Optional<DownloadQueueItem> getSongStatus(String songId) {

@@ -55,7 +55,9 @@ public class Main {
         var thumbnailCache = new ThumbnailCache(config.dataDir);
         var client = Optional.ofNullable(config.serverConfig).map(ServerClient::create);
         var player = new PlaybinPlayer();
-        this.appManager = new AppManager(this.config, player, thumbnailCache, client);
+        var mainAppRef = new AtomicReference<MainApplication>();
+        var app = new Application(Constants.APP_ID, ApplicationFlags.DEFAULT_FLAGS);
+        this.appManager = new AppManager(this.config, player, thumbnailCache, client, app::quit);
         this.artworkServer = new ArtworkHttpServer(thumbnailCache);
         this.mprisController = new MPrisController(appManager, artworkServer);
         Utils.doAsync(() -> {
@@ -67,8 +69,6 @@ public class Main {
         });
 
         try {
-            var mainAppRef = new AtomicReference<MainApplication>();
-            var app = new Application(Constants.APP_ID, ApplicationFlags.DEFAULT_FLAGS);
             app.onActivate(() -> {
                 MainApplication mainApp = new MainApplication(appManager);
                 mainAppRef.set(mainApp);
@@ -91,6 +91,7 @@ public class Main {
                     mainApp.shutdown();
                 }
                 mprisController.stop();
+                artworkServer.stop();
                 player.quit();
                 appManager.shutdown();
             });

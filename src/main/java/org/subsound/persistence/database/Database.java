@@ -408,4 +408,8 @@ public class Database {
     public Connection openConnection() throws SQLException {
         return getConnection();
     }
+
+    public void close() {
+        dataSource.close();
+    }
 }

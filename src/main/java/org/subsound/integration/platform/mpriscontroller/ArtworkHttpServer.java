@@ -67,6 +67,10 @@ public class ArtworkHttpServer {
         log.info("ArtworkHttpServer started on port {}", port);
     }
 
+    public void stop() {
+        server.stop(0);
+    }
+
     public Optional<URI> getArtUrl(CoverArt coverArt) {
         var url = "http://127.0.0.1:%d/art/%s/%s".formatted(
                 port,
