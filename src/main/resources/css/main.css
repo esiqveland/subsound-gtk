@@ -14,8 +14,8 @@
     opacity: 1.0;
 }
 
-.library-sidebar{
-    border-right: 1px solid var(--window-bg-color);
+.library-sidebar {
+    border-right: 1px solid var(--border-color);
 }
 
 .now-playing-overlay-icon .np-icon {

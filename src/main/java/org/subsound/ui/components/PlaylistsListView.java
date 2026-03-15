@@ -175,7 +175,7 @@ public class PlaylistsListView extends Box {
         });
 
         var playlistScrollView = ScrolledWindow.builder()
-                .setChild(listView)
+                .setChild(this.listView)
                 .setHexpand(true)
                 .setVexpand(true)
                 .build();
