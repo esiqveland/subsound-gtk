@@ -117,7 +117,7 @@ public class ThumbnailCache {
     }
 
     public record ThumbLoaded(
-            CachehPath path,
+            CachePath path,
             byte[] blob
     ) {
     }
@@ -264,7 +264,7 @@ public class ThumbnailCache {
         return cacheKey;
     }
 
-    public record CachehPath(
+    public record CachePath(
             Path cachePath,
             Path tmpFilePath
     ) {
@@ -275,12 +275,12 @@ public class ThumbnailCache {
         return Files.exists(path) ? Optional.of(path) : Optional.empty();
     }
 
-    public static CachehPath toCachePath(Path root, String serverId, String coverArtId) {
+    public static CachePath toCachePath(Path root, String serverId, String coverArtId) {
         var key = toCacheKey(coverArtId);
         var fileName = "%s".formatted(coverArtId);
         var cachePath = joinPath(root, serverId, "thumbs", key.part1, key.part2, key.part3, fileName);
         var cachePathTmp = joinPath(cachePath.getParent(), fileName + ".tmp");
-        return new CachehPath(cachePath, cachePathTmp);
+        return new CachePath(cachePath, cachePathTmp);
     }
 
     // Vp9/webp is not supported by gdk Pixbuf. We must convert it to png/jpg first:
