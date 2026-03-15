@@ -63,7 +63,13 @@ public class SettingsPage extends Box {
 
         var formats = Arrays.stream(ServerClient.TranscodeFormat.values()).toList();
         var model = new StringList();
-        formats.forEach(val -> model.append(val.name()));
+        formats.forEach(val -> {
+            if (val == ServerClient.TranscodeFormat.source) {
+                model.append("Source");
+            } else {
+                model.append(val.name());
+            }
+        });
         List<ServerClient.TranscodeBitrate> bitRates = List.of(
                 new SourceQuality(),
                 MaximumBitrate.of(64),
