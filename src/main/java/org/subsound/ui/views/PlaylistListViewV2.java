@@ -1,10 +1,39 @@
 package org.subsound.ui.views;
 
+import org.gnome.adw.AlertDialog;
+import org.gnome.adw.Clamp;
+import org.gnome.gio.ListStore;
+import org.gnome.glib.Type;
+import org.gnome.gobject.GObject;
+import org.gnome.gtk.Align;
+import org.gnome.gtk.Box;
+import org.gnome.gtk.Button;
+import org.gnome.gtk.ColumnView;
+import org.gnome.gtk.ColumnViewColumn;
+import org.gnome.gtk.Entry;
+import org.gnome.gtk.EventControllerKey;
+import org.gnome.gtk.Label;
+import org.gnome.gtk.ListItem;
 import org.gnome.gtk.ListTabBehavior;
+import org.gnome.gtk.MenuButton;
+import org.gnome.gtk.Overlay;
+import org.gnome.gtk.Popover;
 import org.gnome.gtk.PropagationPhase;
+import org.gnome.gtk.ScrolledWindow;
+import org.gnome.gtk.Separator;
+import org.gnome.gtk.SignalListItemFactory;
+import org.gnome.gtk.SingleSelection;
+import org.gnome.gtk.SortListModel;
+import org.gnome.gtk.Stack;
+import org.gnome.pango.EllipsizeMode;
+import org.javagi.gobject.SignalConnection;
+import org.javagi.gobject.types.Types;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.subsound.app.state.AppManager;
 import org.subsound.app.state.PlayerAction;
+import org.subsound.app.state.PlaylistsStore.GPlaylist;
 import org.subsound.integration.ServerClient;
 import org.subsound.integration.ServerClient.ObjectIdentifier;
 import org.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier;
@@ -23,31 +52,6 @@ import org.subsound.ui.components.RoundedAlbumArt;
 import org.subsound.ui.components.StarButton;
 import org.subsound.ui.models.GSongInfo;
 import org.subsound.utils.Utils;
-import org.gnome.adw.AlertDialog;
-import org.gnome.gio.ListStore;
-import org.gnome.glib.Type;
-import org.gnome.gobject.GObject;
-import org.gnome.gtk.Align;
-import org.gnome.gtk.Box;
-import org.gnome.gtk.Button;
-import org.gnome.gtk.ColumnView;
-import org.gnome.gtk.ColumnViewColumn;
-import org.gnome.gtk.Entry;
-import org.gnome.gtk.EventControllerKey;
-import org.gnome.gtk.Label;
-import org.gnome.gtk.ListItem;
-import org.gnome.gtk.MenuButton;
-import org.gnome.gtk.Overlay;
-import org.gnome.gtk.Popover;
-import org.gnome.gtk.ScrolledWindow;
-import org.gnome.gtk.SignalListItemFactory;
-import org.gnome.gtk.SingleSelection;
-import org.gnome.gtk.SortListModel;
-import org.gnome.pango.EllipsizeMode;
-import org.javagi.gobject.SignalConnection;
-import org.javagi.gobject.types.Types;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
@@ -60,8 +64,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static org.subsound.ui.components.AdwDialogHelper.CANCEL_LABEL_ID;
-import static org.subsound.ui.views.AlbumInfoPage.infoLabel;
 import static org.gnome.adw.ResponseAppearance.DEFAULT;
 import static org.gnome.adw.ResponseAppearance.DESTRUCTIVE;
 import static org.gnome.adw.ResponseAppearance.SUGGESTED;
@@ -71,6 +73,8 @@ import static org.gnome.gtk.Align.FILL;
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
+import static org.subsound.ui.components.AdwDialogHelper.CANCEL_LABEL_ID;
+import static org.subsound.ui.views.AlbumInfoPage.infoLabel;
 
 public class PlaylistListViewV2 extends Box implements AppManager.StateListener {
     private static final Logger log = LoggerFactory.getLogger(PlaylistListViewV2.class);
@@ -136,7 +140,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             return gSong;
         }
 
-        public SongInfo info() {
+        public SongInfo song() {
             return gSong.getSongInfo();
         }
 
@@ -175,7 +179,14 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
                 .setTabBehavior(ListTabBehavior.ITEM)
                 .build();
 
-        // 2. Build columns with per-column factories and sorters, then append them
+        // 2. Wire sorting: ColumnView aggregates per-column sorters into one composite sorter
+        this.sortModel = new SortListModel<>(this.listModel, this.listView.getSorter());
+
+        // 3. Selection wraps sort model
+        this.selectionModel = new SingleSelection<>(this.sortModel);
+        this.listView.setModel(this.selectionModel);
+
+        // 4. Build columns with per-column factories and sorters, then append them
 
         // --- Now-playing / track-number column (60px, sortable by original position) ---
         var nowPlayingFactory = new SignalListItemFactory();
@@ -299,7 +310,8 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         var albumFactory = new SignalListItemFactory();
         albumFactory.onSetup(obj -> {
             var listItem = (ListItem) obj;
-            listItem.setChild(new AlbumCell(this.onNavigate));
+            var cell = new AlbumCell(this.onNavigate);
+            listItem.setChild(cell);
         });
         albumFactory.onBind(obj -> {
             var listItem = (ListItem) obj;
@@ -309,7 +321,13 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             }
             var child = listItem.getChild();
             if (child instanceof AlbumCell cell) {
-                cell.bind(entry.gSong());
+                cell.bind(listItem, entry);
+            }
+        });
+        albumFactory.onUnbind(obj -> {
+            var listItem = (ListItem) obj;
+            if (listItem.getChild() instanceof AlbumCell cell) {
+                cell.unbind();
             }
         });
         albumFactory.onTeardown(obj -> {
@@ -318,8 +336,8 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         });
 
         var albumSorter = new PlaylistEntrySorter((a, b) -> {
-            var albumA = a.info().album();
-            var albumB = b.info().album();
+            var albumA = a.song().album();
+            var albumB = b.song().album();
             albumA = albumA == null ? "" : albumA;
             albumB = albumB == null ? "" : albumB;
             return albumA.compareToIgnoreCase(albumB);
@@ -346,7 +364,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             }
             var child = listItem.getChild();
             if (child instanceof Label label) {
-                label.setLabel(Utils.formatDurationShort(entry.info().duration()));
+                label.setLabel(Utils.formatDurationShort(entry.song().duration()));
             }
         });
         durationFactory.onTeardown(obj -> {
@@ -354,17 +372,17 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             listItem.setChild(null);
         });
 
-        var durationSorter = new PlaylistEntrySorter(Comparator.comparingLong(a -> a.info().duration().toMillis()));
+        var durationSorter = new PlaylistEntrySorter(Comparator.comparingLong(a -> a.song().duration().toMillis()));
         var durationCol = new ColumnViewColumn("Duration", durationFactory);
         durationCol.setFixedWidth(80);
         durationCol.setSorter(durationSorter);
         this.listView.appendColumn(durationCol);
 
-        // --- Star column (48px, sortable by starred presence) ---
+        // --- Actions column (star + menu button, sortable by starred presence) ---
         var starFactory = new SignalListItemFactory();
         starFactory.onSetup(obj -> {
             var listItem = (ListItem) obj;
-            listItem.setChild(new StarCell(this.onAction));
+            listItem.setChild(new ActionCell(this.onAction));
         });
         starFactory.onBind(obj -> {
             var listItem = (ListItem) obj;
@@ -373,14 +391,14 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
                 return;
             }
             var child = listItem.getChild();
-            if (child instanceof StarCell cell) {
-                cell.bind(entry.gSong());
+            if (child instanceof ActionCell cell) {
+                cell.bind(listItem, entry);
             }
         });
         starFactory.onUnbind(obj -> {
             var listItem = (ListItem) obj;
             var child = listItem.getChild();
-            if (child instanceof StarCell cell) {
+            if (child instanceof ActionCell cell) {
                 cell.unbind();
             }
         });
@@ -390,21 +408,14 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         });
 
         var starSorter = new PlaylistEntrySorter((a, b) -> {
-            var sa = a.info().starred().isPresent();
-            var sb = b.info().starred().isPresent();
+            var sa = a.song().starred().isPresent();
+            var sb = b.song().starred().isPresent();
             return Boolean.compare(sb, sa);
         });
         var starCol = new ColumnViewColumn("★", starFactory);
-        starCol.setFixedWidth(48);
+        starCol.setFixedWidth(92);
         starCol.setSorter(starSorter);
         this.listView.appendColumn(starCol);
-
-        // 3. Wire sorting: ColumnView aggregates per-column sorters into one composite sorter
-        this.sortModel = new SortListModel<>(this.listModel, this.listView.getSorter());
-
-        // 4. Selection wraps sort model
-        this.selectionModel = new SingleSelection<>(this.sortModel);
-        this.listView.setModel(this.selectionModel);
 
         // Activate: play in sorted order so next/prev respect current sort.
         // Assign a UUID to every entry in the current sorted view so highlighting
@@ -418,12 +429,12 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             if (entry == null) {
                 return;
             }
-            log.info("listView.onActivate: {} {}", index, entry.info().title());
+            log.info("listView.onActivate: {} {}", index, entry.song().title());
             int n = (int) this.sortModel.getNItems();
             var slots = new ArrayList<PlayerAction.QueueSlot>(n);
             for (int i = 0; i < n; i++) {
                 var e = this.sortModel.getItem(i);
-                slots.add(new PlayerAction.QueueSlot(e.getQueueItemId(), e.info()));
+                slots.add(new PlayerAction.QueueSlot(e.getQueueItemId(), e.song()));
             }
             var playContext = new PlaylistIdentifier(playlist.id());
             this.onAction.apply(new PlayerAction.PlayAndReplaceQueue(playContext, slots, index));
@@ -452,36 +463,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             if (entry == null) {
                 return false;
             }
-            int deletedPos = entry.position();
-            AdwDialogHelper.ofDialog(
-                    PlaylistListViewV2.this,
-                    "Remove from playlist",
-                    "Remove \"%s\" from \"%s\"?".formatted(entry.info().title(), playlist.name()),
-                    List.of(
-                            new AdwDialogHelper.Response(CANCEL_LABEL_ID, "_Cancel", DEFAULT),
-                            new AdwDialogHelper.Response("delete", "_Remove", DESTRUCTIVE)
-                    )
-            ).thenAccept(result -> {
-                if (!"delete".equals(result.label())) {
-                    return;
-                }
-                onAction.apply(new PlayerAction.RemoveFromPlaylist(
-                        entry.info(), deletedPos, playlist.id(), playlist.name()));
-                Utils.runOnMainThread(() -> {
-                    for (int i = 0; i < listModel.getNItems(); i++) {
-                        if (listModel.getItem(i) == entry) {
-                            listModel.remove(i);
-                            break;
-                        }
-                    }
-                    for (int i = 0; i < listModel.getNItems(); i++) {
-                        var e = listModel.getItem(i);
-                        if (e.position() > deletedPos) {
-                            e.setPosition(e.position() - 1);
-                        }
-                    }
-                });
-            });
+            confirmRemoveFromPlaylist(entry);
             return true;
         });
         this.listView.addController(keyController);
@@ -843,18 +825,188 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         });
     }
 
+    private void confirmRemoveFromPlaylist(GPlaylistEntry entry) {
+        var playlist = currentPlaylist.get();
+        if (playlist == null || playlist.kind() != PlaylistKind.NORMAL) {
+            return;
+        }
+        int deletedPos = entry.position();
+        AdwDialogHelper.ofDialog(
+                PlaylistListViewV2.this,
+                "Remove from playlist",
+                "Remove \"%s\" from \"%s\"?".formatted(entry.song().title(), playlist.name()),
+                List.of(
+                        new AdwDialogHelper.Response(CANCEL_LABEL_ID, "_Cancel", DEFAULT),
+                        new AdwDialogHelper.Response("delete", "_Remove", DESTRUCTIVE)
+                )
+        ).thenAccept(result -> {
+            if (!"delete".equals(result.label())) {
+                return;
+            }
+            this.onAction.apply(new PlayerAction.RemoveFromPlaylist(
+                    entry.song(),
+                    deletedPos,
+                    playlist.id(),
+                    playlist.name()
+            ));
+            Utils.runOnMainThread(() -> {
+                for (int i = 0; i < listModel.getNItems(); i++) {
+                    if (listModel.getItem(i) == entry) {
+                        listModel.remove(i);
+                        break;
+                    }
+                }
+                for (int i = 0; i < listModel.getNItems(); i++) {
+                    var e = listModel.getItem(i);
+                    if (e.position() > deletedPos) {
+                        e.setPosition(e.position() - 1);
+                    }
+                }
+            });
+        });
+    }
+
+    private Popover buildRowContextMenu(GPlaylistEntry entry) {
+        var stack = new Stack();
+
+        var menuContent = Box.builder()
+                .setOrientation(VERTICAL)
+                .setSpacing(2)
+                .setMarginTop(4)
+                .setMarginBottom(4)
+                .setMarginStart(4)
+                .setMarginEnd(4)
+                .build();
+
+        var menuPopover = new Popover();
+        var menuClamp = new Clamp();
+        menuClamp.setMaximumSize(220);
+        menuClamp.setChild(stack);
+        menuPopover.setChild(menuClamp);
+
+        var playlist = currentPlaylist.get();
+        var playlistId = playlist != null ? playlist.id() : null;
+        var playlistIdentifier = playlistId != null ? new PlaylistIdentifier(playlistId) : null;
+
+        var playMenuItem = menuItem("Play");
+        playMenuItem.onClicked(() -> {
+            menuPopover.popdown();
+            if (playlistIdentifier == null) {
+                return;
+            }
+            int n = sortModel.getNItems();
+            var slots = new ArrayList<PlayerAction.QueueSlot>(n);
+            for (int i = 0; i < n; i++) {
+                var e = sortModel.getItem(i);
+                slots.add(new PlayerAction.QueueSlot(e.getQueueItemId(), e.song()));
+            }
+            // find the index of this entry in the sorted model
+            int idx = 0;
+            for (int i = 0; i < n; i++) {
+                if (sortModel.getItem(i) == entry) {
+                    idx = i;
+                    break;
+                }
+            }
+            onAction.apply(new PlayerAction.PlayAndReplaceQueue(playlistIdentifier, slots, idx));
+        });
+
+        var playNextMenuItem = menuItem("Play Next");
+        playNextMenuItem.onClicked(() -> {
+            menuPopover.popdown();
+            onAction.apply(new PlayerAction.Enqueue(entry.song()));
+        });
+
+        var addToQueueMenuItem = menuItem("Add to Queue");
+        addToQueueMenuItem.onClicked(() -> {
+            menuPopover.popdown();
+            onAction.apply(new PlayerAction.EnqueueLast(entry.song()));
+        });
+
+        var addToPlaylistMenuItem = menuItem("Add to Playlist\u2026");
+        addToPlaylistMenuItem.onClicked(() -> stack.setVisibleChildName("playlists"));
+
+        var downloadMenuItem = menuItem("Download");
+        downloadMenuItem.onClicked(() -> {
+            menuPopover.popdown();
+            onAction.apply(new PlayerAction.AddToDownloadQueue(entry.song()));
+        });
+
+        menuContent.append(playMenuItem);
+        menuContent.append(playNextMenuItem);
+        menuContent.append(addToQueueMenuItem);
+        menuContent.append(addToPlaylistMenuItem);
+        menuContent.append(downloadMenuItem);
+
+        if (playlist != null && playlist.kind() == PlaylistKind.NORMAL) {
+            var removeMenuItem = menuItem("Remove from Playlist");
+            removeMenuItem.onClicked(() -> {
+                menuPopover.popdown();
+                confirmRemoveFromPlaylist(entry);
+            });
+            menuContent.append(removeMenuItem);
+        }
+
+        // Playlist submenu
+        var playlistsView = Box.builder()
+                .setOrientation(VERTICAL)
+                .setSpacing(2)
+                .setMarginTop(4)
+                .setMarginBottom(4)
+                .setMarginStart(4)
+                .setMarginEnd(4)
+                .build();
+
+        var backButton = menuItem("\u2190 Back");
+        backButton.onClicked(() -> stack.setVisibleChildName("main"));
+        playlistsView.append(backButton);
+        playlistsView.append(new Separator(org.gnome.gtk.Orientation.HORIZONTAL));
+
+        var playlists = appManager.getPlaylistsListStore();
+        for (int i = 0; i < playlists.getNItems(); i++) {
+            GPlaylist gPlaylist = playlists.getItem(i);
+            if (gPlaylist.getPlaylist().kind() != PlaylistKind.NORMAL) {
+                continue;
+            }
+            String pid = gPlaylist.getId();
+            String pname = gPlaylist.getName();
+            var btn = menuItem(pname);
+            btn.onClicked(() -> {
+                menuPopover.popdown();
+                onAction.apply(new PlayerAction.AddToPlaylist(entry.song(), pid, pname));
+            });
+            playlistsView.append(btn);
+        }
+
+        var playlistsScroll = ScrolledWindow.builder()
+                .setPropagateNaturalWidth(true)
+                .setPropagateNaturalHeight(true)
+                .setMaxContentHeight(300)
+                .build();
+        playlistsScroll.setChild(playlistsView);
+
+        stack.addNamed(menuContent, "main");
+        stack.addNamed(playlistsScroll, "playlists");
+        stack.setVisibleChildName("main");
+
+        menuPopover.onClosed(() -> stack.setVisibleChildName("main"));
+
+        return menuPopover;
+    }
+
     private static Button menuItem(String label) {
         var button = Button.builder().setLabel(label).build();
         button.addCssClass("flat");
         if (button.getChild() instanceof Label child) {
             child.setHalign(START);
             child.addCssClass("body");
+            child.setSingleLineMode(true);
+            child.setEllipsize(EllipsizeMode.END);
         }
         return button;
     }
 
     // ---- Inner Cell Classes ----
-
     private static class NowPlayingCell extends Box {
         private final Label trackNumberLabel;
         private final ListItemPlayingIcon playingIcon;
@@ -868,9 +1020,10 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
 
         NowPlayingCell() {
             super(HORIZONTAL, 0);
-            this.setHalign(CENTER);
-            this.setValign(CENTER);
-            this.setHexpand(false);
+            this.setHalign(FILL);
+            this.setValign(FILL);
+            this.setHexpand(true);
+            this.setVexpand(true);
 
             this.trackNumberLabel = infoLabel("", Classes.labelDim.add(Classes.labelNumeric));
             this.trackNumberLabel.setValign(CENTER);
@@ -885,6 +1038,8 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             this.playingIcon.setValign(CENTER);
 
             var overlay = Overlay.builder().setChild(this.trackNumberLabel).build();
+            overlay.setHexpand(true);
+            overlay.setVexpand(true);
             overlay.addOverlay(this.playingIcon);
             this.append(overlay);
         }
@@ -997,9 +1152,10 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         TitleArtistCell(Consumer<AppRoute> onNavigate) {
             super(VERTICAL, 2);
             this.onNavigate = onNavigate;
-            this.setHalign(START);
-            this.setValign(CENTER);
+            this.setHalign(FILL);
+            this.setValign(FILL);
             this.setHexpand(true);
+            this.setVexpand(true);
             this.setMarginStart(4);
             this.setMarginEnd(4);
 
@@ -1027,8 +1183,12 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             this.artistLabel.setSingleLineMode(true);
             this.artistLabel.setEllipsize(org.gnome.pango.EllipsizeMode.END);
 
-            this.append(titleLabel);
-            this.append(artistLabel);
+            var inner = new Box(VERTICAL, 2);
+            inner.setVexpand(true);
+            inner.setValign(CENTER);
+            inner.append(titleLabel);
+            inner.append(artistLabel);
+            this.append(inner);
         }
 
         void bind(GPlaylistEntry entry, ListItem listItem, Optional<String> playingItemId) {
@@ -1080,13 +1240,17 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
     private static class AlbumCell extends Box {
         private final ClickLabel albumLabel;
         private final Consumer<AppRoute> onNavigate;
-        private GSongInfo gSong;
+        @Nullable private GSongInfo gSong;
+        @Nullable volatile GPlaylistEntry boundEntry;
+        @Nullable volatile ListItem listItem;
 
         AlbumCell(Consumer<AppRoute> onNavigate) {
             super(HORIZONTAL, 0);
             this.onNavigate = onNavigate;
             this.setHalign(START);
-            this.setValign(CENTER);
+            this.setValign(FILL);
+            this.setHexpand(true);
+            this.setVexpand(true);
             this.setMarginStart(4);
             this.setMarginEnd(4);
 
@@ -1109,24 +1273,39 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             this.append(albumLabel);
         }
 
-        void bind(GSongInfo gSong) {
-            this.gSong = gSong;
+        void bind(ListItem listItem, GPlaylistEntry entry) {
+            this.listItem = listItem;
+            this.boundEntry = entry;
+            this.gSong = entry.gSong();
+
             var album = gSong.getSongInfo().album();
             this.albumLabel.setLabel(album != null ? album : "");
         }
+
+        public void unbind() {
+            this.boundEntry = null;
+            this.listItem = null;
+            this.gSong = null;
+            this.albumLabel.setLabel("");
+        }
     }
 
-    private static class StarCell extends Box {
+    private class ActionCell extends Box {
         private final StarButton starButton;
+        private final Button menuButton;
         private final Function<PlayerAction, CompletableFuture<Void>> onAction;
         private GSongInfo gSong;
         private final AtomicReference<SignalConnection<?>> favoriteSignal = new AtomicReference<>();
+        @Nullable volatile GPlaylistEntry boundEntry;
+        @Nullable volatile ListItem listItem;
 
-        StarCell(Function<PlayerAction, CompletableFuture<Void>> onAction) {
+        ActionCell(Function<PlayerAction, CompletableFuture<Void>> onAction) {
             super(HORIZONTAL, 0);
             this.onAction = onAction;
-            this.setHalign(CENTER);
-            this.setValign(CENTER);
+            this.setHalign(FILL);
+            this.setValign(FILL);
+            this.setHexpand(true);
+            this.setVexpand(true);
 
             this.starButton = new StarButton(
                     Optional.empty(),
@@ -1140,11 +1319,32 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
                         return this.onAction.apply(action);
                     }
             );
+            this.starButton.setHalign(CENTER);
             this.append(starButton);
+
+            this.menuButton = Button.builder()
+                    .setIconName("view-more-symbolic")
+                    .setCssClasses(new String[]{"flat", "circular"})
+                    .setValign(CENTER)
+                    .build();
+            this.menuButton.onClicked(() -> {
+                var item = this.listItem;
+                if (item == null) { return; }
+                var entry = this.boundEntry;
+                if (entry == null) { return; }
+                selectionModel.setSelected(item.getPosition());
+                var popover = buildRowContextMenu(entry);
+                popover.setParent(this.menuButton);
+                popover.onClosed(() -> popover.unparent());
+                popover.popup();
+            });
+            this.append(menuButton);
         }
 
-        void bind(GSongInfo gSong) {
-            this.gSong = gSong;
+        void bind(ListItem listItem, GPlaylistEntry entry) {
+            this.listItem = listItem;
+            this.boundEntry = entry;
+            this.gSong = entry.gSong();
             this.starButton.setStarredAt(gSong.getSongInfo().starred());
             var conn = gSong.onNotify(
                     GSongInfo.Signal.IS_FAVORITE.getId(), _ -> {
@@ -1162,6 +1362,9 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             if (sig != null) {
                 sig.disconnect();
             }
+            this.boundEntry = null;
+            this.listItem = null;
+            this.gSong = null;
         }
     }
 
@@ -1181,4 +1384,5 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             this.albumArt.update(gSong.getSongInfo().coverArt());
         }
     }
+
 }
