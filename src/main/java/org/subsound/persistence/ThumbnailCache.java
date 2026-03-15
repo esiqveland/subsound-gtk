@@ -124,15 +124,15 @@ public class ThumbnailCache {
 
     // TODO: since we are using Pixbuf.fromFileAtSize anyway, we dont need the blob in memory any more.
     public CompletableFuture<ThumbLoaded> loadThumbAsync(CoverArt coverArt) {
-        var cachehPath = toCachePath(this.root, coverArt.serverId(), coverArt.coverArtId());
-        var cacheAbsPath = cachehPath.cachePath().toAbsolutePath();
+        var cachePath = toCachePath(this.root, coverArt.serverId(), coverArt.coverArtId());
+        var cacheAbsPath = cachePath.cachePath().toAbsolutePath();
         var cacheFile = cacheAbsPath.toFile();
         return Utils.doAsync(() -> {
             try {
                 semaphore.acquire(1);
                 var file = cacheAbsPath.toFile();
                 if (file.exists() && file.length() > 0) {
-                    return new ThumbLoaded(cachehPath, Files.readAllBytes(cacheAbsPath));
+                    return new ThumbLoaded(cachePath, Files.readAllBytes(cacheAbsPath));
                 }
                 var link = coverArt.coverArtLink();
                 var scheme = link.getScheme();
@@ -159,7 +159,7 @@ public class ThumbnailCache {
                 }
 
                 byte[] body = res.body();
-                return new ThumbLoaded(cachehPath, body);
+                return new ThumbLoaded(cachePath, body);
             } catch (IOException e) {
                 throw new RuntimeException("error loading: " + coverArt.coverArtLink().toString(), e);
             } catch (InterruptedException e) {
@@ -172,7 +172,7 @@ public class ThumbnailCache {
                 cacheAbsPath.getParent().toFile().mkdirs();
                 cacheFile.delete();
 
-                var tmpFilePath = cachehPath.tmpFilePath().toAbsolutePath();
+                var tmpFilePath = cachePath.tmpFilePath().toAbsolutePath();
                 var tmpFile = tmpFilePath.toFile();
                 if (tmpFile.exists()) {
                     tmpFile.delete();
