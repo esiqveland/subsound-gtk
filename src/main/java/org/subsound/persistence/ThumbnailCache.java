@@ -20,13 +20,13 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -49,9 +49,7 @@ public class ThumbnailCache {
     private final Path root;
     private final HttpClient client = new LoggingHttpClient(HttpClient.newBuilder().build());
     // semaphore limits concurrency a little, we could send 1000s request concurrently on page load of a e.g. starred page:
-    private final Semaphore semaphore = new Semaphore(2);
-    // A separate semaphore for querying the cache, so downloading new content does not block us from loading content we already have stored
-    private final Semaphore semaphorePixbuf = new Semaphore(2);
+    private final Semaphore semaphore = new Semaphore(4);
     private final Cache<PixbufCacheKey, CachedTexture> pixbufCache = Caffeine.newBuilder().maximumSize(1000).recordStats().build();
     private final int maxArtworkSize = 1024;
 
@@ -113,25 +111,24 @@ public class ThumbnailCache {
         });
     }
 
-    public record ThumbLoaded(
-            CachePath path,
-            byte[] blob
-    ) {
-    }
+    public record ThumbLoaded(CachePath path) {}
 
-    // TODO: since we are using Pixbuf.fromFileAtSize anyway, we dont need the blob in memory any more.
     public CompletableFuture<ThumbLoaded> loadThumbAsync(CoverArt coverArt) {
         var cachePath = toCachePath(this.root, coverArt.serverId(), coverArt.coverArtId());
         var cacheAbsPath = cachePath.cachePath().toAbsolutePath();
-        var cacheFile = cacheAbsPath.toFile();
         return Utils.doAsync(() -> {
+            // Fast path: already on disk
+            if (cacheAbsPath.toFile().exists() && cacheAbsPath.toFile().length() > 0) {
+                return new ThumbLoaded(cachePath);
+            }
             try {
-                var file = cacheAbsPath.toFile();
-                if (file.exists() && file.length() > 0) {
-                    return new ThumbLoaded(cachePath, Files.readAllBytes(cacheAbsPath));
-                }
+                semaphore.acquire(1);
                 try {
-                    semaphore.acquire(1);
+                    // Double-check after acquiring semaphore
+                    if (cacheAbsPath.toFile().exists() && cacheAbsPath.toFile().length() > 0) {
+                        return new ThumbLoaded(cachePath);
+                    }
+
                     var link = coverArt.coverArtLink();
                     var scheme = link.getScheme();
                     if (scheme == null || (!scheme.equals("http") && !scheme.equals("https"))) {
@@ -144,50 +141,39 @@ public class ThumbnailCache {
 
                     var req = HttpRequest.newBuilder().GET().uri(url.uri()).build();
                     var bodyHandler = HttpResponse.BodyHandlers.ofByteArray();
-                    //CompletableFuture<HttpResponse<Void>> httpResponseCompletableFuture = this.client.sendAsync(req, bodyHandler);
 
                     HttpResponse<byte[]> res = this.client.send(req, bodyHandler);
                     if (res.statusCode() != 200) {
-                        throw new RuntimeException("error loading: status=" + res.statusCode() + " link=" + link.toString());
+                        throw new RuntimeException("error loading: status=" + res.statusCode() + " link=" + link);
                     }
                     String contentType = res.headers().firstValue("content-type").orElse("image/webp");
                     if (contentType.isEmpty() || contentType.contains("xml") || contentType.contains("html") || contentType.contains("json")) {
-                        // response does not look like binary music data...
-                        throw new RuntimeException("error: statusCode=%d uri=%s contentType=%s".formatted(res.statusCode(), link.toString(), contentType));
+                        throw new RuntimeException("error: statusCode=%d uri=%s contentType=%s".formatted(res.statusCode(), link, contentType));
                     }
 
                     byte[] body = res.body();
-                    return new ThumbLoaded(cachePath, body);
+                    Files.createDirectories(cacheAbsPath.getParent());
+
+                    var tmpFilePath = cachePath.tmpFilePath().toAbsolutePath();
+                    tmpFilePath.toFile().deleteOnExit();
+                    try {
+                        try (var out = Files.newOutputStream(tmpFilePath)) {
+                            out.write(body);
+                        }
+                        Files.move(tmpFilePath, cacheAbsPath, StandardCopyOption.REPLACE_EXISTING);
+                    } catch (IOException ex) {
+                        Files.deleteIfExists(tmpFilePath);
+                        throw ex;
+                    }
+
+                    return new ThumbLoaded(cachePath);
                 } finally {
                     semaphore.release(1);
                 }
             } catch (IOException e) {
-                throw new RuntimeException("error loading: " + coverArt.coverArtLink().toString(), e);
+                throw new RuntimeException("error loading: " + coverArt.coverArtLink(), e);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
-            }
-        }).thenApply(thumbsLoaded -> {
-            try {
-                cacheAbsPath.getParent().toFile().mkdirs();
-                cacheFile.delete();
-
-                var tmpFilePath = cachePath.tmpFilePath().toAbsolutePath();
-                var tmpFile = tmpFilePath.toFile();
-                if (tmpFile.exists()) {
-                    tmpFile.delete();
-                }
-                tmpFile.createNewFile();
-                tmpFile.deleteOnExit();
-
-                var out = new FileOutputStream(tmpFile);
-                out.write(thumbsLoaded.blob);
-                out.close();
-
-                tmpFile.renameTo(cacheFile);
-
-                return thumbsLoaded;
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
             }
         });
     }
