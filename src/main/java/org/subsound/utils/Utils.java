@@ -452,10 +452,17 @@ public class Utils {
         });
         return result;
     }
-    public static <T> T timeIt(Consumer<Duration> durationConsumer, Supplier<T> operation) {
+
+    @FunctionalInterface
+    public interface CheckedSupplier<T, E extends Exception> {
+        T get() throws E; // Declare the checked exception E
+    }
+    public static <T, E extends Exception> T timeIt(Consumer<Duration> durationConsumer, CheckedSupplier<T, E> operation) {
         var start = System.nanoTime();
         try {
             return operation.get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         } finally {
             var end = System.nanoTime();
             var duration = end - start;
