@@ -2,6 +2,7 @@ package org.subsound.persistence;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import okhttp3.HttpUrl;
 import org.gnome.gdk.Texture;
 import org.gnome.gdkpixbuf.Pixbuf;
 import org.javagi.base.Out;
@@ -52,6 +53,7 @@ public class ThumbnailCache {
     // A separate semaphore for querying the cache, so downloading new content does not block us from loading content we already have stored
     private final Semaphore semaphorePixbuf = new Semaphore(2);
     private final Cache<PixbufCacheKey, CachedTexture> pixbufCache = Caffeine.newBuilder().maximumSize(1000).recordStats().build();
+    private final int maxArtworkSize = 1024;
 
     record PixbufCacheKey(
             CoverArt coverArt,
@@ -137,7 +139,12 @@ public class ThumbnailCache {
                 if (scheme == null || (!scheme.equals("http") && !scheme.equals("https"))) {
                     throw new RuntimeException("cover art not cached on disk and not downloadable: coverArtId=" + coverArt.coverArtId() + " path=" + cacheAbsPath);
                 }
-                var req = HttpRequest.newBuilder().GET().uri(link).build();
+                var url = HttpUrl.get(link).newBuilder()
+                        .setQueryParameter("size", "%d".formatted(this.maxArtworkSize))
+                        //.setQueryParameter("square", "true")
+                        .build();
+
+                var req = HttpRequest.newBuilder().GET().uri(url.uri()).build();
                 var bodyHandler = HttpResponse.BodyHandlers.ofByteArray();
                 //CompletableFuture<HttpResponse<Void>> httpResponseCompletableFuture = this.client.sendAsync(req, bodyHandler);
 
