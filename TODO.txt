@@ -1,21 +1,19 @@
 # TODO
 
-## RELEASE v1
-- [x] flatpak env: fix and verify handling of offline artwork after sync at the very least
-- [x] flatpak env: fix issue with offline mode triggering before onboarding is completed
-- [x] flatpak: need a svg icon for the app
-
-## RELEASE next
-- [X] flatpak: the parent config/cache folder must be named <app-id> `org.subsound.Subsound`
-- [ ] flatpak: maybe need to change <app-id> to `io.github.Subsound`
-- [ ] flatpak: fix frontpage screen not working after first launch configuration is completed
+## RELEASE V1
+- [X] flatpak: the parent config/cache folder must be named <app-id> `io.github.Subsound`
+- [X] flatpak: maybe need to change <app-id> to `io.github.Subsound`
+- [X] flatpak: fix frontpage screen not working after first launch configuration is completed
+- [ ] flatpak: logout/reset account
+- [ ] flatpak: decide how to store the password: config file or libsecret ?
+- [ ] flatpak: server config: allow setting custom headers?
+- [X] flatpak: other flatpak apps can not read the mpris:artUrl file path ( see https://gitlab.freedesktop.org/mpris/mpris-spec/-/merge_requests/4 )
+    - [X] mpris: attempt using a local http server to serve the artwork file
 
 ## release eventually
 - [ ] mobile adaptive UI
 - [ ] clicking album art should take you to the current playContext and select the correct song in the listview.
 if the playContext has been changed, select any song with same songId
-- [ ] flatpak: other flatpak apps can not read the mpris:artUrl file path ( see https://gitlab.freedesktop.org/mpris/mpris-spec/-/merge_requests/4 )
-    - mpris: attempt using a local http server to serve the artwork file
 
 ## General
 
