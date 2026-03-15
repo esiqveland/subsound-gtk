@@ -11,6 +11,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.file.Files;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Serves cached album artwork over a local HTTP server so that MPRIS clients can load it.
@@ -27,6 +28,7 @@ public class ArtworkHttpServer {
     private final ThumbnailCache thumbnailCache;
     private final HttpServer server;
     private final int port;
+    private final AtomicBoolean isStopped = new AtomicBoolean(false);
 
     public ArtworkHttpServer(ThumbnailCache thumbnailCache) {
         this.thumbnailCache = thumbnailCache;
@@ -65,9 +67,19 @@ public class ArtworkHttpServer {
         this.server.start();
         this.port = this.server.getAddress().getPort();
         log.info("ArtworkHttpServer started on port {}", port);
+        // make sure we always exit if JVM is shutting down:
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            if (!isStopped.compareAndSet(false, true)) {
+                return;
+            }
+            server.stop(0);
+        }));
     }
 
     public void stop() {
+        if (!isStopped.compareAndSet(false, true)) {
+            return;
+        }
         server.stop(0);
     }
 
