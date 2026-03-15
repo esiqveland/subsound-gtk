@@ -694,8 +694,36 @@ public class AppManager {
                     this.player.pause();
                     this.shutdown();
                     this.onQuit.run();
+                }
+                case PlayerAction.Logout _ -> {
+                    player.pause();
+                    shutdown();
+                    database.close();
+                    try {
+                        Files.deleteIfExists(config.getConfigFilePath());
+                    } catch (Exception e) {
+                        log.warn("delete config failed", e);
+                    }
+                    var dataDir = config.dataDir;
+                    // be careful before calling delete on a dir:
+                    if (dataDir != null && dataDir.toAbsolutePath().toString().toLowerCase().contains("subsound")) {
+                        deleteDirectoryRecursively(dataDir);
+                    }
+                    onQuit.run();
+                }
             }
         });
+    }
+
+    private static void deleteDirectoryRecursively(java.nio.file.Path dir) {
+        try (var walk = Files.walk(dir)) {
+            walk.sorted(Comparator.reverseOrder())
+                    .forEach(p -> {
+                        try { Files.delete(p); } catch (Exception e) { log.warn("Failed to delete {}", p, e); }
+                    });
+        } catch (Exception e) {
+            log.warn("Failed to walk dir for deletion: {}", dir, e);
+        }
     }
 
     private void toast(PlayerAction.Toast t) {

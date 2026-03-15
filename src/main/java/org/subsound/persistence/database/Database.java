@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import org.sqlite.SQLiteDataSource;
 import java.io.File;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -411,5 +412,11 @@ public class Database {
 
     public void close() {
         dataSource.close();
+    }
+
+    public Path getDbFilePath() {
+        String dataDir = PortalUtils.getUserDataDir();
+        File subsoundDir = new File(dataDir, Constants.APP_ID);
+        return new File(subsoundDir, DB_NAME).toPath();
     }
 }

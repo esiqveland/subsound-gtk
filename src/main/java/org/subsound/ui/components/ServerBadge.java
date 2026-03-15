@@ -2,6 +2,7 @@ package org.subsound.ui.components;
 
 import org.gnome.adw.ActionRow;
 import org.gnome.adw.Clamp;
+import org.gnome.adw.ResponseAppearance;
 import org.gnome.adw.SwitchRow;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
@@ -22,6 +23,7 @@ import org.subsound.ui.views.AboutView;
 import org.subsound.utils.Utils;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -43,6 +45,7 @@ public class ServerBadge extends Box implements AppManager.StateListener {
     private final SwitchRow offlineSwitch;
     private final ActionRow syncButton;
     private final ActionRow configureServerButton;
+    private final ActionRow logoutButton;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private ScheduledFuture<?> pingTask;
     private volatile NetworkStatus currentNetworkStatus = NetworkStatus.ONLINE;
@@ -175,6 +178,34 @@ public class ServerBadge extends Box implements AppManager.StateListener {
             appManager.navigateTo(new AppNavigation.AppRoute.SettingsPage());
         });
 
+        this.logoutButton = ActionRow.builder()
+                .setTitle("Log out")
+                .setActivatable(true)
+                .setTooltipText("Delete all settings and cached data, then quit")
+                .build();
+        var logoutIcon = Image.fromIconName("system-log-out-symbolic");
+        logoutIcon.setPixelSize(16);
+        logoutIcon.setSizeRequest(32, -1);
+        logoutIcon.setHalign(Align.CENTER);
+        logoutIcon.setValign(Align.CENTER);
+        logoutButton.addPrefix(logoutIcon);
+        logoutButton.addCssClass(Classes.flat.className());
+        logoutButton.addCssClass("error");
+        logoutButton.onActivated(() -> {
+            AdwDialogHelper.ofDialog(
+                    parentWindow,
+                    "Log out?",
+                    "This will delete all settings, cached songs, thumbnails, and the local database, then quit the app.",
+                    List.of(
+                            new AdwDialogHelper.Response("cancel", "_Cancel"),
+                            new AdwDialogHelper.Response("logout", "_Log out", ResponseAppearance.DESTRUCTIVE)
+                    )
+            ).thenAccept(result -> {
+                if ("logout".equals(result.label())) {
+                    appManager.handleAction(new PlayerAction.Logout());
+                }
+            });
+        });
 
         var list = ListBox.builder()
                 .setSelectionMode(SelectionMode.NONE)
@@ -187,6 +218,7 @@ public class ServerBadge extends Box implements AppManager.StateListener {
         list.append(syncButton);
         list.append(configureServerButton);
         list.append(aboutButton);
+        list.append(logoutButton);
 
         var clamp = new Clamp();
         clamp.setMaximumSize(240);
