@@ -75,7 +75,6 @@ public class ThumbnailCache {
     public CompletableFuture<CachedTexture> loadPixbuf(CoverArt coverArt, int size) {
         return Utils.doAsync(() -> {
             try {
-                semaphorePixbuf.acquire(1);
                 var key = new PixbufCacheKey(coverArt, coverArt.coverArtId(), size);
 
                 var pixbuf = pixbufCache.get(key, k -> {
@@ -110,8 +109,6 @@ public class ThumbnailCache {
             } catch (Throwable t) {
                 log.error("error loading pixbuf: val={} size={}", coverArt, size, t);
                 throw new RuntimeException(t);
-            } finally {
-                semaphorePixbuf.release(1);
             }
         });
     }
@@ -129,43 +126,45 @@ public class ThumbnailCache {
         var cacheFile = cacheAbsPath.toFile();
         return Utils.doAsync(() -> {
             try {
-                semaphore.acquire(1);
                 var file = cacheAbsPath.toFile();
                 if (file.exists() && file.length() > 0) {
                     return new ThumbLoaded(cachePath, Files.readAllBytes(cacheAbsPath));
                 }
-                var link = coverArt.coverArtLink();
-                var scheme = link.getScheme();
-                if (scheme == null || (!scheme.equals("http") && !scheme.equals("https"))) {
-                    throw new RuntimeException("cover art not cached on disk and not downloadable: coverArtId=" + coverArt.coverArtId() + " path=" + cacheAbsPath);
-                }
-                var url = HttpUrl.get(link).newBuilder()
-                        .setQueryParameter("size", "%d".formatted(this.maxArtworkSize))
-                        //.setQueryParameter("square", "true")
-                        .build();
+                try {
+                    semaphore.acquire(1);
+                    var link = coverArt.coverArtLink();
+                    var scheme = link.getScheme();
+                    if (scheme == null || (!scheme.equals("http") && !scheme.equals("https"))) {
+                        throw new RuntimeException("cover art not cached on disk and not downloadable: coverArtId=" + coverArt.coverArtId() + " path=" + cacheAbsPath);
+                    }
+                    var url = HttpUrl.get(link).newBuilder()
+                            .setQueryParameter("size", "%d".formatted(this.maxArtworkSize))
+                            //.setQueryParameter("square", "true")
+                            .build();
 
-                var req = HttpRequest.newBuilder().GET().uri(url.uri()).build();
-                var bodyHandler = HttpResponse.BodyHandlers.ofByteArray();
-                //CompletableFuture<HttpResponse<Void>> httpResponseCompletableFuture = this.client.sendAsync(req, bodyHandler);
+                    var req = HttpRequest.newBuilder().GET().uri(url.uri()).build();
+                    var bodyHandler = HttpResponse.BodyHandlers.ofByteArray();
+                    //CompletableFuture<HttpResponse<Void>> httpResponseCompletableFuture = this.client.sendAsync(req, bodyHandler);
 
-                HttpResponse<byte[]> res = this.client.send(req, bodyHandler);
-                if (res.statusCode() != 200) {
-                    throw new RuntimeException("error loading: status=" + res.statusCode() + " link=" + link.toString());
-                }
-                String contentType = res.headers().firstValue("content-type").orElse("image/webp");
-                if (contentType.isEmpty() || contentType.contains("xml") || contentType.contains("html") || contentType.contains("json")) {
-                    // response does not look like binary music data...
-                    throw new RuntimeException("error: statusCode=%d uri=%s contentType=%s".formatted(res.statusCode(), link.toString(), contentType));
-                }
+                    HttpResponse<byte[]> res = this.client.send(req, bodyHandler);
+                    if (res.statusCode() != 200) {
+                        throw new RuntimeException("error loading: status=" + res.statusCode() + " link=" + link.toString());
+                    }
+                    String contentType = res.headers().firstValue("content-type").orElse("image/webp");
+                    if (contentType.isEmpty() || contentType.contains("xml") || contentType.contains("html") || contentType.contains("json")) {
+                        // response does not look like binary music data...
+                        throw new RuntimeException("error: statusCode=%d uri=%s contentType=%s".formatted(res.statusCode(), link.toString(), contentType));
+                    }
 
-                byte[] body = res.body();
-                return new ThumbLoaded(cachePath, body);
+                    byte[] body = res.body();
+                    return new ThumbLoaded(cachePath, body);
+                } finally {
+                    semaphore.release(1);
+                }
             } catch (IOException e) {
                 throw new RuntimeException("error loading: " + coverArt.coverArtLink().toString(), e);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
-            } finally {
-                semaphore.release(1);
             }
         }).thenApply(thumbsLoaded -> {
             try {
