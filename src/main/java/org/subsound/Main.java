@@ -41,7 +41,9 @@ public class Main {
         // Initialisation Gst
         Gst.init(new Out<>(new String[]{}));
         var supportedImageFormats = Pixbuf.getFormats();
-        var supportedMsg = supportedImageFormats.stream().map(format -> format.getName()).collect(Collectors.joining(",")).toLowerCase();
+        var supportedMsg = supportedImageFormats.stream()
+                .map(format -> format.getName())
+                .collect(Collectors.joining(",")).toLowerCase();
         if (supportedMsg.contains("webp")) {
             log.info("pixbufFormats supported={}", supportedMsg);
         } else {
