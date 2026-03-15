@@ -45,7 +45,7 @@ Features:
 - [X] Browse artists
 - [X] Fast Search UI with ctrl+k
 - [X] MPRIS support
-- Offline mode
+- [X] Offline mode
   - [X] Force Offline/Online mode
   - [X] Offline mode detection/tracking
   - [X] Download songs to local cache
