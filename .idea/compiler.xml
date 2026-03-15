@@ -5,9 +5,9 @@
       <profile name="Gradle Imported" enabled="true">
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
-          <entry name="$PROJECT_DIR$/../../.gradle/caches/modules-2/files-2.1/io.soabase.record-builder/record-builder-processor/44/f790aa2c60440299a2fc20fb4ff32324fe76c153/record-builder-processor-44.jar" />
-          <entry name="$PROJECT_DIR$/../../.gradle/caches/modules-2/files-2.1/io.soabase.java-composer/java-composer/1.0/2b6a6f0e10a6608ba06e08fbe754923de32be5cf/java-composer-1.0.jar" />
-          <entry name="$PROJECT_DIR$/../../.gradle/caches/modules-2/files-2.1/io.soabase.record-builder/record-builder-core/44/7e1b9767bc504cc08f41f4c80de2dab1ef15a2e2/record-builder-core-44.jar" />
+          <entry name="$PROJECT_DIR$/../../.gradle/caches/modules-2/files-2.1/io.soabase.record-builder/record-builder-processor/52/ccfeb2a3109ad0683be9bcca27ea16e05fbe14b9/record-builder-processor-52.jar" />
+          <entry name="$PROJECT_DIR$/../../.gradle/caches/modules-2/files-2.1/com.palantir.javapoet/javapoet/0.7.0/d16c2720349a1108a6f835b3f2e049d21f80bb59/javapoet-0.7.0.jar" />
+          <entry name="$PROJECT_DIR$/../../.gradle/caches/modules-2/files-2.1/io.soabase.record-builder/record-builder-core/52/338e2cb3cf3ba6de52d0d6ef82ddae801187b357/record-builder-core-52.jar" />
         </processorPath>
         <module name="subsound-gtk.master.main" />
       </profile>
