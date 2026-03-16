@@ -70,6 +70,7 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
     public void run() {
         if (OsUtil.getOSPlatform() != OsUtil.OS.LINUX) {
             log.info("can not start dbus on platform={}", OsUtil.getOSPlatform());
+            countDownLatch.countDown();
             return;
         }
         var builder = DBusConnectionBuilder.forSessionBus().withShared(false);
