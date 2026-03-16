@@ -137,6 +137,9 @@ application {
     // Allow native access
     applicationDefaultJvmArgs += "--enable-native-access=ALL-UNNAMED"
 
+    // Prevent AWT GraphicsEnvironment deadlock on macOS where AppKit main thread is occupied by GTK
+    applicationDefaultJvmArgs += "-Djava.awt.headless=true"
+
     // Add common library directories to the library lookup path
     if (Os.isFamily(Os.FAMILY_MAC))
         applicationDefaultJvmArgs += [
