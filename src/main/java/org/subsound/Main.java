@@ -94,6 +94,7 @@ public class Main {
                 artworkServer.stop();
                 player.quit();
                 appManager.shutdown();
+                Utils.ASYNC_EXECUTOR.shutdownNow();
             });
             app.run(args);
         } finally {
