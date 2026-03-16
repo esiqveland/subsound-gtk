@@ -100,6 +100,7 @@ public class ThumbnailCache {
                         }
                         return new CachedTexture(texture, imageResult.palette(), backdropTexture);
                     } catch (Throwable e) {
+                        log.error("Failed to loadPixbuf: id={}", coverArt.coverArtId(), e);
                         throw new RuntimeException("unable to create pixbuf from path='%s'".formatted(path), e);
                     }
                 });
