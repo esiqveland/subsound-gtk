@@ -5,6 +5,7 @@ import org.gnome.gdk.PaintableFlags;
 import org.gnome.gobject.GObject;
 import org.gnome.graphene.Rect;
 import org.gnome.gsk.RoundedRect;
+import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.ContentFit;
 import org.gnome.gtk.GestureDrag;
@@ -89,7 +90,6 @@ public class PlayerScrubberV2 extends GObject implements org.gnome.gdk.Paintable
     // -------------------------------------------------------------------------
     // ScrubberWidget — GTK widget wrapping this paintable
     // -------------------------------------------------------------------------
-
     public static class ScrubberWidget extends Box {
         private static final String LABEL_ZERO = "-:--";
 
@@ -116,19 +116,21 @@ public class PlayerScrubberV2 extends GObject implements org.gnome.gdk.Paintable
                     .setLabel(LABEL_ZERO)
                     .setWidthChars(5)
                     .setMaxWidthChars(5)
-                    .setCssClasses(Utils.cssClasses("dim-label", "numeric"))
+                    .setValign(Align.CENTER)
+                    .setCssClasses(Utils.cssClasses("dim-label", "numeric", "caption"))
                     .build();
             endTimeLabel = Label.builder()
                     .setLabel(LABEL_ZERO)
                     .setWidthChars(5)
                     .setMaxWidthChars(5)
-                    .setCssClasses(Utils.cssClasses("dim-label", "numeric"))
+                    .setValign(Align.CENTER)
+                    .setCssClasses(Utils.cssClasses("dim-label", "numeric", "caption"))
                     .build();
 
             picture = Picture.forPaintable(paintable);
-            picture.setHexpand(true);
             picture.setContentFit(ContentFit.FILL);
-            picture.setSizeRequest(-1, 24);
+            picture.setValign(Align.CENTER);
+            picture.setSizeRequest(400, 20);
 
             setupGestures();
 
