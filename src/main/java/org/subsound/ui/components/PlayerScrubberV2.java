@@ -29,19 +29,22 @@ public class PlayerScrubberV2 extends GObject implements org.gnome.gdk.Paintable
     private RGBA fillColor = new RGBA(0.35f, 0.35f, 0.35f, 1.0f);
     private RGBA accentColor = org.gnome.adw.StyleManager.getDefault().getAccentColorRgba();
     private RGBA trackColor = new RGBA(0.24f, 0.24f, 0.24f, 1.0f);
+    private RGBA dotColor = new RGBA(1.0f, 1.0f, 1.0f, 0.9f);
 
 
     @Override
-    public void snapshot(org.gnome.gdk.Snapshot gdkSnapshot, double width, double height) {
+    public void snapshot(org.gnome.gdk.Snapshot gdkSnapshot, double w, double h) {
         try (var arena = Arena.ofConfined()) {
+            float width = (float) w;
+            float height = (float) h;
             var snapshot = (org.gnome.gtk.Snapshot) gdkSnapshot;
 
             float trackHeight = 3.0f;
-            float trackY = (float) ((height - trackHeight) / 2.0);
+            float trackY = (height - trackHeight) / 2.0f;
 
             float radius = 0.0f;
             // Track background
-            appendRoundedRect(arena, snapshot, 0, trackY, (float) width, trackHeight, radius, this.trackColor);
+            appendRoundedRect(arena, snapshot, 0, trackY, width, trackHeight, radius, this.trackColor);
 
             // Fill / buffer indicator
             if (fill > 0.0) {
@@ -59,13 +62,13 @@ public class PlayerScrubberV2 extends GObject implements org.gnome.gdk.Paintable
             if (isHover) {
                 float r = 5.0f;
                 // the dot is r wide, so we need to clamp it at the edges to avoid clipping half the circle at either end
-                float cx = Math.max(r, Math.min(progressWidth, (float) width - r));
-                float cy = (float) (height / 2.0);
+                float cx = Math.max(r, Math.min(progressWidth, width - r));
+                float cy = height / 2.0f;
                 var dotRect = new org.gnome.graphene.Rect(arena).init(cx - r, cy - r, r * 2, r * 2);
                 var rr = new org.gnome.gsk.RoundedRect(arena);
                 rr.initFromRect(dotRect, r);
                 snapshot.pushRoundedClip(rr);
-                snapshot.appendColor(new RGBA(1.0f, 1.0f, 1.0f, 0.9f), dotRect);
+                snapshot.appendColor(this.dotColor, dotRect);
                 snapshot.pop();
             }
         }
