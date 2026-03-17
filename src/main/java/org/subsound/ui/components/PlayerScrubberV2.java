@@ -25,6 +25,7 @@ public class PlayerScrubberV2 extends GObject implements org.gnome.gdk.Paintable
 
     private double position = 0.0;
     private double fill = 0.0;
+    private boolean isHover = false;
 
     @Override
     public void snapshot(org.gnome.gdk.Snapshot gdkSnapshot, double width, double height) {
@@ -51,6 +52,20 @@ public class PlayerScrubberV2 extends GObject implements org.gnome.gdk.Paintable
             if (progressWidth > 0) {
                 appendRoundedRect(arena, snapshot, 0, trackY, progressWidth, trackHeight, radius,
                         new RGBA(0.21f, 0.52f, 0.90f, 1.0f));
+            }
+
+            // Hover dot — small white circle at the hover position
+            if (isHover) {
+                float r = 5.0f;
+                //float cx = (float) (hoverX * width);
+                float cx = progressWidth;
+                float cy = (float) (height / 2.0);
+                var dotRect = new org.gnome.graphene.Rect(arena).init(cx - r, cy - r, r * 2, r * 2);
+                var rr = new org.gnome.gsk.RoundedRect(arena);
+                rr.initFromRect(dotRect, r);
+                snapshot.pushRoundedClip(rr);
+                snapshot.appendColor(new RGBA(1.0f, 1.0f, 1.0f, 0.9f), dotRect);
+                snapshot.pop();
             }
         }
     }
@@ -85,6 +100,16 @@ public class PlayerScrubberV2 extends GObject implements org.gnome.gdk.Paintable
 
     void setFill(double normalized) {
         fill = normalized;
+        invalidateContents();
+    }
+
+    void setHover(boolean isHover) {
+        this.isHover = isHover;
+        invalidateContents();
+    }
+
+    void clearHover() {
+        this.isHover = false;
         invalidateContents();
     }
 
@@ -154,6 +179,7 @@ public class PlayerScrubberV2 extends GObject implements org.gnome.gdk.Paintable
                 this.dragStartX = startX;
                 this.pictureWidthDrag = picture.getWidth();
                 gestureDrag.setState(EventSequenceState.CLAIMED);
+                paintable.setHover(true);
             });
             gestureDrag.onDragUpdate((offsetX, offsetY) -> {
                 dragPosition = clamp((dragStartX + offsetX) / this.pictureWidthDrag, 0.0, 1.0);
@@ -169,6 +195,11 @@ public class PlayerScrubberV2 extends GObject implements org.gnome.gdk.Paintable
                 onPositionChanged.accept(finalDuration);
             });
             picture.addController(gestureDrag);
+
+            var motion = new org.gnome.gtk.EventControllerMotion();
+            motion.onEnter((x, y) -> paintable.setHover(true));
+            motion.onLeave(() -> paintable.clearHover());
+            picture.addController(motion);
         }
 
         private Duration toAbsoluteDuration(double normalizedPosition) {
