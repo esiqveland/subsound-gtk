@@ -39,7 +39,7 @@ public class PlayerScrubberV2 extends GObject implements org.gnome.gdk.Paintable
             float height = (float) h;
             var snapshot = (org.gnome.gtk.Snapshot) gdkSnapshot;
 
-            float trackHeight = 3.0f;
+            float trackHeight = isHover ? 5.0f : 3.0f;
             float trackY = (height - trackHeight) / 2.0f;
 
             float radius = 0.0f;
@@ -52,15 +52,16 @@ public class PlayerScrubberV2 extends GObject implements org.gnome.gdk.Paintable
                 appendRoundedRect(arena, snapshot, 0, trackY, fillWidth, trackHeight, radius, this.fillColor);
             }
 
+            var progressColor = isHover ? accentColor : dotColor;
             // Progress
             float progressWidth = (float) (position * width);
             if (progressWidth > 0) {
-                appendRoundedRect(arena, snapshot, 0, trackY, progressWidth, trackHeight, radius, accentColor);
+                appendRoundedRect(arena, snapshot, 0, trackY, progressWidth, trackHeight, radius, progressColor);
             }
 
             // Hover dot — small white circle at the hover position
             if (isHover) {
-                float r = 5.0f;
+                float r = 7.0f;
                 // the dot is r wide, so we need to clamp it at the edges to avoid clipping half the circle at either end
                 float cx = Math.max(r, Math.min(progressWidth, width - r));
                 float cy = height / 2.0f;
