@@ -58,8 +58,8 @@ public class PlayerScrubberV2 extends GObject implements org.gnome.gdk.Paintable
             // Hover dot — small white circle at the hover position
             if (isHover) {
                 float r = 5.0f;
-                //float cx = (float) (hoverX * width);
-                float cx = progressWidth;
+                // the dot is r wide, so we need to clamp it at the edges to avoid clipping half the circle at either end
+                float cx = Math.max(r, Math.min(progressWidth, (float) width - r));
                 float cy = (float) (height / 2.0);
                 var dotRect = new org.gnome.graphene.Rect(arena).init(cx - r, cy - r, r * 2, r * 2);
                 var rr = new org.gnome.gsk.RoundedRect(arena);
