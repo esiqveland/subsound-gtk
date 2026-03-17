@@ -26,6 +26,10 @@ public class PlayerScrubberV2 extends GObject implements org.gnome.gdk.Paintable
     private double position = 0.0;
     private double fill = 0.0;
     private boolean isHover = false;
+    private RGBA fillColor = new RGBA(0.35f, 0.35f, 0.35f, 1.0f);
+    private RGBA accentColor = org.gnome.adw.StyleManager.getDefault().getAccentColorRgba();
+    private RGBA trackColor = new RGBA(0.24f, 0.24f, 0.24f, 1.0f);
+
 
     @Override
     public void snapshot(org.gnome.gdk.Snapshot gdkSnapshot, double width, double height) {
@@ -37,21 +41,18 @@ public class PlayerScrubberV2 extends GObject implements org.gnome.gdk.Paintable
 
             float radius = 0.0f;
             // Track background
-            appendRoundedRect(arena, snapshot, 0, trackY, (float) width, trackHeight, radius,
-                    new RGBA(0.24f, 0.24f, 0.24f, 1.0f));
+            appendRoundedRect(arena, snapshot, 0, trackY, (float) width, trackHeight, radius, this.trackColor);
 
             // Fill / buffer indicator
             if (fill > 0.0) {
                 float fillWidth = (float) (fill * width);
-                appendRoundedRect(arena, snapshot, 0, trackY, fillWidth, trackHeight, radius,
-                        new RGBA(0.35f, 0.35f, 0.35f, 1.0f));
+                appendRoundedRect(arena, snapshot, 0, trackY, fillWidth, trackHeight, radius, this.fillColor);
             }
 
             // Progress
             float progressWidth = (float) (position * width);
             if (progressWidth > 0) {
-                appendRoundedRect(arena, snapshot, 0, trackY, progressWidth, trackHeight, radius,
-                        new RGBA(0.21f, 0.52f, 0.90f, 1.0f));
+                appendRoundedRect(arena, snapshot, 0, trackY, progressWidth, trackHeight, radius, accentColor);
             }
 
             // Hover dot — small white circle at the hover position
@@ -113,6 +114,11 @@ public class PlayerScrubberV2 extends GObject implements org.gnome.gdk.Paintable
         invalidateContents();
     }
 
+    void refreshAccentColor() {
+        accentColor = org.gnome.adw.StyleManager.getDefault().getAccentColorRgba();
+        invalidateContents();
+    }
+
     // -------------------------------------------------------------------------
     // ScrubberWidget — GTK widget wrapping this paintable
     // -------------------------------------------------------------------------
@@ -138,7 +144,7 @@ public class PlayerScrubberV2 extends GObject implements org.gnome.gdk.Paintable
             super(Orientation.HORIZONTAL, 5);
             this.onPositionChanged = onPositionChanged;
             this.paintable = new PlayerScrubberV2();
-            //var widgetPaint = new WidgetPaintable();
+            org.gnome.adw.StyleManager.getDefault().onNotify("accent-color-rgba", ignored -> paintable.refreshAccentColor());
 
             currentTimeLabel = Label.builder()
                     .setLabel(LABEL_ZERO)
@@ -161,6 +167,7 @@ public class PlayerScrubberV2 extends GObject implements org.gnome.gdk.Paintable
             picture.setValign(Align.CENTER);
             picture.setSizeRequest(400, 32);
 
+            //org.gnome.adw.StyleManager.getDefault().onNotify()
             setupGestures();
 
             this.append(currentTimeLabel);
