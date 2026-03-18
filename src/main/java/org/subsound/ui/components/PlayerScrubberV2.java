@@ -39,7 +39,7 @@ public class PlayerScrubberV2 extends GObject implements org.gnome.gdk.Paintable
             float height = (float) h;
             var snapshot = (org.gnome.gtk.Snapshot) gdkSnapshot;
 
-            float trackHeight = isHover ? 5.0f : 3.0f;
+            float trackHeight = 2.0f;
             float trackY = (height - trackHeight) / 2.0f;
 
             float radius = 0.0f;
