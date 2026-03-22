@@ -56,7 +56,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
     private final Button skipForwardButton;
     private final Button shuffleModeButton;
     private final Button repeatModeButton;
-    private final PlayerScrubberV2.ScrubberWidget playerScrubber;
+    private final PlayerScrubberV2 playerScrubber;
     private final MenuButton queueButton;
     private final PlayQueuePopover queuePopover;
     private final VolumeButton volumeButton;
@@ -255,7 +255,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
         playPauseButton.setSizeRequest(48, 48);
         playPauseButton.onClicked(this::playPause);
         updatePlayingState(toPlayingState(appManager.getState().player().state()));
-        playerScrubber = new PlayerScrubberV2.ScrubberWidget(this.appManager::seekTo);
+        playerScrubber = new PlayerScrubberV2(this.appManager::seekTo);
 
         var playerControls = Box.builder()
                 .setSpacing(2)
