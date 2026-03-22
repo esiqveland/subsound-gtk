@@ -1084,39 +1084,6 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             }
         }
 
-        public void update(MiniState n) {
-            if (this.gSong == null) {
-                return;
-            }
-            var next = n.songInfo()
-                    .filter(s -> s.id().equals(this.gSong.getSongInfo().id()))
-                    .map(_ -> n.nowPlayingState())
-                    .orElse(NowPlayingState.NONE);
-//            if (next == this.playingState) {
-//                return;
-//            }
-            this.playingState = next;
-            Utils.runOnMainThread(() -> {
-                var currentSong = this.gSong;
-                if (currentSong == null) {
-                    return;
-                }
-                var listItem = this.listItem;
-                if (listItem == null) {
-                    return;
-                }
-                var thisPosition = listItem.getPosition();
-                // TODO: currentlyPlayingPosition is not sufficient, we also need to know which 'context'
-                // currentlyPlayingPosition is only the position in the current playQueue,
-                // so could be a position in a shuffled list, or a shuffled list with user-queued additional tracks in it
-                int currentlyPlayingPosition = n.position().orElse(-1);
-                var isCurrentlyPlayingThisPosition = thisPosition == currentlyPlayingPosition;
-
-                boolean isPlaying = currentSong.getIsPlaying() && isCurrentlyPlayingThisPosition;
-                updateCellIsPlaying(isPlaying, this.playingState);
-            });
-        }
-
         public void updateCellIsPlaying(boolean isPlayingNow, NowPlayingState playingState) {
             this.playingState = playingState;
             this.isCurrentlyPlaying = isPlayingNow;
