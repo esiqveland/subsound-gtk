@@ -147,7 +147,7 @@ public class AppManager {
                         return;
                     }
                     var gsongOpt = this.getSongStore().getExisting(downloadEvent.item().songId());
-                    gsongOpt.ifPresent(gsong -> gsong.setDownloadStateEnum(switch (downloadEvent.type()) {
+                    gsongOpt.ifPresent(gsong -> gsong.setDownloadState(switch (downloadEvent.type()) {
                         case DOWNLOAD_PENDING -> GDownloadState.PENDING;
                         case DOWNLOAD_STARTED -> GDownloadState.DOWNLOADING;
                         case DOWNLOAD_COMPLETED -> GDownloadState.DOWNLOADED;

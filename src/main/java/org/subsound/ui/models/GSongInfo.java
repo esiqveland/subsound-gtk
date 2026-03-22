@@ -109,32 +109,20 @@ public class GSongInfo extends GObject {
         return onNotify(Signal.IS_PLAYING.getId(), handler);
     }
 
-
     @Property
-    // for some reason java-gi throws an exception on startup if we return the raw enum here:
-    public int getDownloadState() {
-        return this.downloadState.ordinal();
-    }
-    @Property
-    public void setDownloadState(int next) {
-        var nex = GDownloadState.fromOrdinal(next);
-        if (this.downloadState != nex) {
-            this.downloadState = nex;
+    public void setDownloadState(GDownloadState next) {
+        if (this.downloadState != next) {
+            this.downloadState = next;
             runOnMainThread(() -> this.notify(Signal.DOWNLOAD_STATE.signal));
         }
     }
-    @Property(skip = true)
     public GDownloadState getDownloadStateEnum() {
         return this.downloadState;
     }
 
     @Property(skip = true)
-    public void setDownloadStateEnum(GDownloadState next) {
-        this.setDownloadState(next.ordinal());
-    }
-    @Property(skip = true)
     public void setDownloadStateEnum(DownloadStatus next) {
-        this.setDownloadStateEnum(switch (next) {
+        this.setDownloadState(switch (next) {
             case PENDING -> GDownloadState.PENDING;
             case DOWNLOADING -> GDownloadState.DOWNLOADING;
             case COMPLETED -> GDownloadState.DOWNLOADED;
