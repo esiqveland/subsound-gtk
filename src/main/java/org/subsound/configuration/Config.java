@@ -8,6 +8,7 @@ import org.subsound.integration.ServerClient.ServerType;
 import org.subsound.integration.ServerClient.TranscodeBitrate;
 import org.subsound.integration.ServerClient.TranscodeFormat;
 import org.subsound.integration.platform.PortalUtils;
+import org.subsound.integration.platform.secret.SecretService;
 import org.subsound.utils.Utils;
 import com.google.gson.annotations.SerializedName;
 import org.slf4j.Logger;
@@ -23,6 +24,7 @@ public class Config {
     private static final Logger log = LoggerFactory.getLogger(Config.class);
 
     private final Path configFilePath;
+    private final SecretService secretService;
     public static final int DEFAULT_WINDOW_WIDTH = 1250;
     public static final int DEFAULT_WINDOW_HEIGHT = 950;
 
@@ -32,10 +34,12 @@ public class Config {
     public OnboardingState onboarding;
     public int windowWidth = DEFAULT_WINDOW_WIDTH;
     public int windowHeight = DEFAULT_WINDOW_HEIGHT;
+    private boolean credentialsInKeyring = false;
 
 
-    public Config(Path configFilePath) {
+    public Config(Path configFilePath, SecretService secretService) {
         this.configFilePath = configFilePath;
+        this.secretService = secretService;
     }
 
     public void saveToFile() throws IOException {
@@ -55,18 +59,28 @@ public class Config {
         return Optional.ofNullable(this.serverConfig);
     }
 
+    public void setCredentialsInKeyring(boolean value) {
+        this.credentialsInKeyring = value;
+    }
+
+    public SecretService getSecretService() {
+        return secretService;
+    }
+
     private ConfigurationDTO toFileFormat() {
         var d = new ConfigurationDTO();
         d.onboarding = this.onboarding;
         d.windowWidth = this.windowWidth;
         d.windowHeight = this.windowHeight;
         if (this.serverConfig != null) {
+            // Only write password to config file if libsecret is not available
+            String passwordForFile = this.credentialsInKeyring ? null : this.serverConfig.password();
             d.server = new ServerConfigDTO(
                     this.serverConfig.id(),
                     this.serverConfig.type(),
                     this.serverConfig.url(),
                     this.serverConfig.username(),
-                    this.serverConfig.password(),
+                    passwordForFile,
                     this.serverConfig.audioFormat() != null ? this.serverConfig.audioFormat().name() : null,
                     switch (this.serverConfig.audioBitrate()) {
                         case null -> null;
@@ -76,6 +90,36 @@ public class Config {
             );
         }
         return d;
+    }
+
+    private record ResolvedCredentials(String username, String password, boolean inKeyring, boolean migrated) {}
+
+    private static ResolvedCredentials resolveCredentials(
+            SecretService secretService,
+            String serverId,
+            String username,
+            @Nullable String password
+    ) {
+        // Migrate legacy password from config file to keyring
+        if (secretService.isAvailable() && password != null && !password.isBlank()) {
+            boolean stored = secretService.storeCredentialsSync(serverId, username, password);
+            if (stored) {
+                log.info("Migrated credentials to keyring for server={}", serverId);
+                return new ResolvedCredentials(username, password, true, true);
+            } else {
+                log.warn("Failed to store credentials in keyring, keeping password in config file");
+                return new ResolvedCredentials(username, password, false, false);
+            }
+        }
+
+        // No password in config file — look up from keyring
+        var creds = secretService.lookupCredentialsSync(serverId);
+        if (creds != null) {
+            log.info("Loaded credentials from keyring for server={}", serverId);
+            return new ResolvedCredentials(creds.username(), creds.password(), true, false);
+        }
+
+        return new ResolvedCredentials(username, password, false, false);
     }
 
     public record ServerConfig(
@@ -90,11 +134,11 @@ public class Config {
             @Nullable TranscodeBitrate audioBitrate   // null = SourceQuality
     ) {}
 
-    public static Config createDefault() {
+    public static Config createDefault(SecretService secretService) {
         var configDir = defaultConfigDir();
         var configFilePath = configDir.resolve("config.json");
 
-        Config config = new Config(configFilePath);
+        Config config = new Config(configFilePath, secretService);
         config.dataDir = defaultStorageDir().toAbsolutePath();
         log.info("config.dataDir={}", config.dataDir);
 
@@ -121,16 +165,24 @@ public class Config {
                                 if (cfg.server.transcodeBitrate != null && cfg.server.transcodeBitrate > 0) {
                                     audioBitrate = TranscodeBitrate.MaximumBitrate.of(cfg.server.transcodeBitrate);
                                 }
+
+                                var creds = resolveCredentials(secretService, cfg.server.id, cfg.server.username, cfg.server.password);
+                                config.credentialsInKeyring = creds.inKeyring();
+
                                 config.serverConfig = new ServerConfig(
-                                        config.dataDir,
-                                        cfg.server.id,
-                                        cfg.server.type,
-                                        cfg.server.url,
-                                        cfg.server.username,
-                                        cfg.server.password,
-                                        audioFormat,
-                                        audioBitrate
+                                        config.dataDir, cfg.server.id, cfg.server.type,
+                                        cfg.server.url, creds.username(), creds.password(),
+                                        audioFormat, audioBitrate
                                 );
+
+                                if (creds.migrated()) {
+                                    try {
+                                        config.saveToFile();
+                                        log.info("Removed plain-text password from config file");
+                                    } catch (IOException e) {
+                                        log.warn("Failed to re-save config after migration", e);
+                                    }
+                                }
                             }
                         },
                         () -> log.debug("no config file found at path={}", configFilePath)

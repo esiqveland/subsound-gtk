@@ -696,9 +696,13 @@ public class AppManager {
                     this.onQuit.run();
                 }
                 case PlayerAction.Logout _ -> {
+                    var serverId = Optional.ofNullable(this.config.serverConfig.id()).orElse("");
                     player.pause();
                     shutdown();
                     database.close();
+                    if (!serverId.isBlank()) {
+                        this.config.getSecretService().deleteCredentials(serverId);
+                    }
                     try {
                         Files.deleteIfExists(config.getConfigFilePath());
                     } catch (Exception e) {
@@ -753,6 +757,17 @@ public class AppManager {
                 existingFormat,
                 existingBitrate
         );
+        // Store credentials in libsecret if available
+        var secretService = this.config.getSecretService();
+        boolean stored = secretService.storeCredentialsSync(
+                SERVER_ID,
+                settings.next().username(),
+                settings.next().password()
+        );
+        this.config.setCredentialsInKeyring(stored);
+        if (secretService.isAvailable() && !stored) {
+            log.warn("Failed to store credentials in keyring, password will be saved to config file");
+        }
         try {
             this.config.saveToFile();
             var newClient = ServerClient.create(this.config.serverConfig);

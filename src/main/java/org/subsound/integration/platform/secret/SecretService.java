@@ -1,49 +1,27 @@
 package org.subsound.integration.platform.secret;
 
-import org.gnome.secret.Schema;
-import org.gnome.secret.SchemaType;
-import org.gnome.secret.Secret;
-import org.javagi.base.GErrorException;
+import org.jspecify.annotations.Nullable;
+import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+public sealed interface SecretService permits LibsecretService, NoopSecretService {
 
-public class SecretService {
-    private static final Schema SCHEMA = Secret.getSchema(SchemaType.COMPAT_NETWORK);
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    record Credentials(String username, String password) {}
 
-    public CompletableFuture<Boolean> storePassword(
-            String serverId,
-            String username,
-            String password
-    ) {
-        return CompletableFuture.supplyAsync(
-                () -> {
-                    try {
-                        var attributes = Secret.attributesBuild(SCHEMA, "server", serverId, "user", username, null);
-                        return Secret.passwordStoreSync(SCHEMA, attributes, Secret.COLLECTION_DEFAULT, "SubSound", password, null);
-                    } catch (GErrorException e) {
-                        return false;
-                    }
-                },
-                executor
-        );
-    }
+    boolean storeCredentialsSync(String serverId, String username, String password);
 
-    public CompletableFuture<String> lookupPassword(String serverId, String username) {
-        return CompletableFuture.supplyAsync(
-                () -> {
-                    try {
-                        var attributes = Secret.attributesBuild(SCHEMA, "server", serverId, "user", username, null);
-                        attributes.insert("server", serverId);
-                        attributes.insert("user", username);
-                        return Secret.passwordLookupSync(SCHEMA, attributes, null);
-                    } catch (GErrorException e) {
-                        return null;
-                    }
-                },
-                executor
-        );
+    @Nullable Credentials lookupCredentialsSync(String serverId);
+
+    boolean deleteCredentials(String serverId);
+
+    boolean isAvailable();
+
+    static SecretService create() {
+        try {
+            return new LibsecretService();
+        } catch (Exception e) {
+            LoggerFactory.getLogger(SecretService.class)
+                    .warn("libsecret unavailable, credentials will be stored in config file: {}", e.getMessage());
+            return new NoopSecretService();
+        }
     }
 }

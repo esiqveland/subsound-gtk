@@ -4,6 +4,7 @@ import org.subsound.app.state.AppManager;
 import org.subsound.configuration.Config;
 import org.subsound.configuration.constants.Constants;
 import org.subsound.integration.ServerClient;
+import org.subsound.integration.platform.secret.SecretService;
 import org.subsound.integration.platform.mpriscontroller.ArtworkHttpServer;
 import org.subsound.integration.platform.mpriscontroller.MPrisController;
 import org.subsound.persistence.ThumbnailCache;
@@ -51,7 +52,8 @@ public class Main {
             log.warn("GDK pixbufFormats reports missing webp support");
         }
 
-        this.config = Config.createDefault();
+        var secretService = SecretService.create();
+        this.config = Config.createDefault(secretService);
         var thumbnailCache = new ThumbnailCache(config.dataDir);
         var client = Optional.ofNullable(config.serverConfig).map(ServerClient::create);
         var player = new PlaybinPlayer();

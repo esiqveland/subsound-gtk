@@ -1,6 +1,7 @@
 package org.subsound.integration.servers.subsonic;
 
 import org.subsound.configuration.Config;
+import org.subsound.integration.platform.secret.NoopSecretService;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -14,7 +15,7 @@ import java.util.Map;
 public class SubsonicClientIntegrationTest {
 
     private SubsonicClient createClient() {
-        var config = Config.createDefault();
+        var config = Config.createDefault(new NoopSecretService());
         var cfg = config.serverConfig;
         return SubsonicClient.create(cfg);
     }
