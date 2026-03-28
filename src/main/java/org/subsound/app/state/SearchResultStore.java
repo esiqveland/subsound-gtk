@@ -49,7 +49,10 @@ public class SearchResultStore {
         return Utils.doAsync(() -> {
             this.clear().join();
             try {
-                var searchResult = this.client.get().search(query);
+                var searchFuture = Utils.doAsync(() -> this.client.get().search(query));
+                var playlistsFuture = Utils.doAsync(() -> this.client.get().getPlaylists());
+                var searchResult = searchFuture.join();
+                var playlistsResult = playlistsFuture.join();
                 if (!id.equals(this.searchId.get())) {
                     // another search has already started, ignore this one and do not touch currentStatus
                     return searchResult;
@@ -61,7 +64,8 @@ public class SearchResultStore {
                         searchResult.albums(),
                         songs
                 );
-                this.setResults(sortedResult);
+                var matchingPlaylists = filterPlaylists(playlistsResult.playlists(), query);
+                this.setResults(sortedResult, matchingPlaylists);
                 return sortedResult;
             } catch (Exception e) {
                 this.currentStatus = SearchStatus.DONE;
@@ -71,15 +75,18 @@ public class SearchResultStore {
         });
     }
 
-    public void setResults(ServerClient.SearchResult result) {
+    public void setResults(ServerClient.SearchResult result, List<ServerClient.PlaylistSimple> playlists) {
         synchronized (lock) {
             var artistItems = result.artists().stream()
                     .map(GSearchResultItem::ofArtist);
             var albumItems = result.albums().stream()
                     .map(GSearchResultItem::ofAlbum);
+            var playlistItems = playlists.stream()
+                    .map(GSearchResultItem::ofPlaylist);
             var songItems = result.songs().stream()
                     .map(GSearchResultItem::ofSong);
-            var items = Stream.concat(Stream.concat(artistItems, albumItems), songItems)
+            var items = Stream.of(artistItems, albumItems, playlistItems, songItems)
+                    .flatMap(s -> s)
                     .toArray(GSearchResultItem[]::new);
 
             Utils.runOnMainThreadFuture(() -> {
@@ -87,7 +94,7 @@ public class SearchResultStore {
                 store.splice(0, 0, items);
             }).join();
 
-            log.info("setResults: albums={} songs={}", result.albums().size(), result.songs().size());
+            log.info("setResults: albums={} playlists={} songs={}", result.albums().size(), playlists.size(), result.songs().size());
         }
     }
 
@@ -112,6 +119,17 @@ public class SearchResultStore {
         // TODO: ok, it does not make all that much sense to distance the entire title against the query,
         // but at least its a little better than the default result ranking
         return LevenshteinSearch.DamerauLevenshtein.calculateDistance(lowerTitle, lowerQuery);
+    }
+
+    static List<ServerClient.PlaylistSimple> filterPlaylists(List<ServerClient.PlaylistSimple> playlists, String query) {
+        var lowerQuery = query.toLowerCase();
+        return playlists.stream()
+                .filter(p -> p.name().toLowerCase().contains(lowerQuery))
+                .sorted(Comparator
+                        .comparingInt((ServerClient.PlaylistSimple p) -> scoreTitle(p.name(), query)).reversed()
+                        .thenComparing((ServerClient.PlaylistSimple p) -> !p.name().toLowerCase().startsWith(lowerQuery))
+                )
+                .toList();
     }
 
     static List<ServerClient.SongInfo> sortByRelevance(List<ServerClient.SongInfo> songs, String query) {

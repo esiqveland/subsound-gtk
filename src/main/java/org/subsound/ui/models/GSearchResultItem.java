@@ -15,6 +15,7 @@ public class GSearchResultItem extends GObject {
         record ArtistEntry(ServerClient.ArtistEntry artist) implements SearchEntry {}
         record AlbumEntry(ServerClient.ArtistAlbumInfo album) implements SearchEntry {}
         record SongEntry(ServerClient.SongInfo song) implements SearchEntry {}
+        record PlaylistEntry(ServerClient.PlaylistSimple playlist) implements SearchEntry {}
     }
 
     private SearchEntry entry;
@@ -33,6 +34,7 @@ public class GSearchResultItem extends GObject {
             case SearchEntry.ArtistEntry a -> a.artist().id();
             case SearchEntry.AlbumEntry a -> a.album().id();
             case SearchEntry.SongEntry s -> s.song().id();
+            case SearchEntry.PlaylistEntry p -> p.playlist().id();
         };
     }
 
@@ -51,6 +53,12 @@ public class GSearchResultItem extends GObject {
     public static GSearchResultItem ofSong(ServerClient.SongInfo song) {
         GSearchResultItem item = GObject.newInstance(gtype);
         item.entry = new SearchEntry.SongEntry(song);
+        return item;
+    }
+
+    public static GSearchResultItem ofPlaylist(ServerClient.PlaylistSimple playlist) {
+        GSearchResultItem item = GObject.newInstance(gtype);
+        item.entry = new SearchEntry.PlaylistEntry(playlist);
         return item;
     }
 }

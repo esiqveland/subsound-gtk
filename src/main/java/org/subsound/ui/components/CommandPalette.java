@@ -3,6 +3,7 @@ package org.subsound.ui.components;
 import org.subsound.app.state.AppManager;
 import org.subsound.app.state.PlayerAction;
 import org.subsound.app.state.SearchResultStore;
+import org.subsound.integration.ServerClient;
 import org.subsound.integration.ServerClient.ArtistAlbumInfo;
 import org.subsound.integration.ServerClient.SongInfo;
 import org.subsound.ui.models.GSearchResultItem;
@@ -141,6 +142,13 @@ public class CommandPalette extends Overlay {
                 }
                 case GSearchResultItem.SearchEntry.SongEntry songEntry -> {
                     appManager.handleAction(new PlayerAction.PlaySong(songEntry.song()));
+                    hide();
+                }
+                case GSearchResultItem.SearchEntry.PlaylistEntry playlistEntry -> {
+                    var playlistId = new ServerClient.ObjectIdentifier.PlaylistIdentifier(
+                            playlistEntry.playlist().id()
+                    );
+                    appManager.navigateTo(new AppNavigation.AppRoute.RoutePlaylistsOverview(Optional.of(playlistId)));
                     hide();
                 }
             }
@@ -328,6 +336,16 @@ public class CommandPalette extends Overlay {
                     this.typeBadge.setVisible(false);
                     this.separatorLabel.setVisible(true);
                     this.albumArt.update(songInfo.coverArt());
+                }
+                case GSearchResultItem.SearchEntry.PlaylistEntry playlistEntry -> {
+                    var playlist = playlistEntry.playlist();
+                    this.titleLabel.setLabel(playlist.name());
+                    this.artistLabel.setLabel("Playlist");
+                    this.durationLabel.setLabel("%d songs".formatted(playlist.songCount()));
+                    this.typeBadge.setLabel("Playlist");
+                    this.typeBadge.setVisible(true);
+                    this.separatorLabel.setVisible(true);
+                    this.albumArt.update(playlist.coverArtId());
                 }
             }
         }
