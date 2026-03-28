@@ -92,7 +92,7 @@ public class Config {
         return d;
     }
 
-    private record ResolvedCredentials(String username, String password, boolean inKeyring, boolean migrated) {}
+    private record ResolvedCredentials(String username, @Nullable String password, boolean inKeyring, boolean migrated) {}
 
     private static ResolvedCredentials resolveCredentials(
             SecretService secretService,

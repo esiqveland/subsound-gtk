@@ -696,7 +696,8 @@ public class AppManager {
                     this.onQuit.run();
                 }
                 case PlayerAction.Logout _ -> {
-                    var serverId = Optional.ofNullable(this.config.serverConfig.id()).orElse("");
+                    var serverId = Optional.ofNullable(this.config.serverConfig)
+                            .map(Config.ServerConfig::id).orElse("");
                     player.pause();
                     shutdown();
                     database.close();

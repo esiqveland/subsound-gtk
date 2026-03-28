@@ -9,7 +9,6 @@ import org.gnome.secret.SearchFlags;
 import org.gnome.secret.Secret;
 import org.gnome.secret.Service;
 import org.gnome.secret.ServiceFlags;
-import org.javagi.base.GErrorException;
 import org.javagi.interop.Interop;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -77,9 +76,6 @@ public final class LibsecretService implements SecretService {
                 return null;
             }
             return new Credentials(username, password);
-        } catch (GErrorException e) {
-            log.warn("Failed to lookup credentials in libsecret for server={}: {}", serverId, e.getMessage());
-            return null;
         } catch (Exception e) {
             log.warn("Failed to lookup credentials in libsecret for server={}: {}", serverId, e.getMessage());
             return null;
@@ -91,9 +87,6 @@ public final class LibsecretService implements SecretService {
         try {
             var attributes = Secret.attributesBuild(SCHEMA, "server-id", serverId, null);
             return Secret.passwordClearSync(SCHEMA, attributes, null);
-        } catch (GErrorException e) {
-            log.warn("Failed to delete credentials in libsecret for server={}: {}", serverId, e.getMessage());
-            return false;
         } catch (Exception e) {
             log.warn("Failed to delete credentials in libsecret for server={}: {}", serverId, e.getMessage());
             return false;
