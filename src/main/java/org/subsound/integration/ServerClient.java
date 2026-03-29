@@ -1,7 +1,7 @@
 package org.subsound.integration;
 
 import org.subsound.configuration.Config.ServerConfig;
-import org.subsound.integration.servers.subsonic.SubsonicClient;
+import org.subsound.integration.servers.subsonic.SubsonicClientV2;
 import org.subsound.utils.Utils;
 import io.soabase.recordbuilder.core.RecordBuilder;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
@@ -320,7 +320,7 @@ public interface ServerClient {
 
     static ServerClient create(ServerConfig cfg) {
         return switch (cfg.type()) {
-            case SUBSONIC -> SubsonicClient.create(cfg);
+            case SUBSONIC -> SubsonicClientV2.create(cfg);
         };
     }
 
