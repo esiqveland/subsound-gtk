@@ -847,7 +847,25 @@ public class AppManager {
         // Do not force-sync the network status at creation: CachingClient defaults to ONLINE
         // so the server is tried first. The network monitor will update it once it has
         // queried the real connectivity (which in flatpak can take ~500 ms via the portal).
-        return new CachingClient(raw, this.dbService, SERVER_ID, this.config.dataDir);
+        var client = new CachingClient(raw, this.dbService, SERVER_ID, this.config.dataDir);
+        // Async DNS pre-check: if the server hostname can't be resolved within 5 seconds,
+        // flip to offline immediately so feign requests don't block on the OS DNS timeout (~30s on macOS).
+        if (this.config.serverConfig != null) {
+            var host = URI.create(this.config.serverConfig.url()).getHost();
+            CompletableFuture.runAsync(() -> {
+                try {
+                    java.net.InetAddress.getByName(host);
+                } catch (Exception e) {
+                    log.info("DNS pre-check: host {} not resolvable", host);
+                    client.setNetworkStatus(NetworkMonitoring.NetworkStatus.OFFLINE);
+                }
+            }).orTimeout(5, TimeUnit.SECONDS).exceptionally(e -> {
+                log.info("DNS pre-check: timed out resolving {}, switching to offline", host);
+                client.setNetworkStatus(NetworkMonitoring.NetworkStatus.OFFLINE);
+                return null;
+            });
+        }
+        return client;
     }
 
     /**
