@@ -441,7 +441,12 @@ public class AppManager {
     private LoadSongResult loadSourceSync(PlayerAction.PlaySong playCmd) {
         var songInfo = playCmd.song();
         try {
-            return loadSourceSyncInner(songInfo, playCmd.startPaused());
+            var result = loadSourceSyncInner(songInfo, playCmd.startPaused());
+            if (result == null) {
+                // Song was not available (e.g. offline and not cached)
+                return null;
+            }
+            return result;
         } catch (Exception e) {
             log.error("Failed to load song: id={} title={}", playCmd.song().id(), playCmd.song().title(), e);
             this.setState(old -> old.withNowPlaying(Optional.empty()));
@@ -456,7 +461,19 @@ public class AppManager {
         // resolve the songUri:
         // - authentication in the url may have been changed since it was generated
         // - transcode settings my have changed since it was generated
-        URI songUri = this.useClient(client -> client.getStreamUri(songInfo.id()));
+        var songUri = resolveStreamUri(songInfo);
+
+        // If server is unreachable and song is not cached, we can't play it
+        if (songUri.isEmpty()) {
+            var cacheQuery = new SongCache.SongCacheQuery(
+                    SERVER_ID, songInfo.id(), songInfo.transcodeInfo().streamFormat()
+            );
+            if (!songCache.isCached(cacheQuery)) {
+                this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Song not available offline")));
+                this.setState(old -> old.withNowPlaying(Optional.empty()));
+                return null;
+            }
+        }
 
         this.setState(old -> old.with()
                 .nowPlaying(Optional.of(new NowPlaying(
@@ -466,11 +483,14 @@ public class AppManager {
                         new BufferingProgress(songInfo.size(), 0),
                         Optional.empty()
                 )))
-                .player(old.player.withSource(Optional.of(new Source(
-                        songUri,
-                        Optional.of(Duration.ZERO),
-                        Optional.of(songInfo.duration())
-                ))))
+                .player(songUri
+                        .map(uri -> old.player.withSource(Optional.of(new Source(
+                                uri,
+                                Optional.of(Duration.ZERO),
+                                Optional.of(songInfo.duration())
+                        ))))
+                        .orElse(old.player)
+                )
                 .build()
         );
         AtomicBoolean isCancelled = new AtomicBoolean(false);
@@ -536,6 +556,15 @@ public class AppManager {
             this.player.waitUntilReady();
         }
         return cachedSong;
+    }
+
+    private Optional<URI> resolveStreamUri(SongInfo songInfo) {
+        try {
+            return Optional.of(this.useClient(client -> client.getStreamUri(songInfo.id())));
+        } catch (Exception e) {
+            log.warn("Failed to resolve stream URI for song={}", songInfo.id());
+            return Optional.empty();
+        }
     }
 
     public void play() {

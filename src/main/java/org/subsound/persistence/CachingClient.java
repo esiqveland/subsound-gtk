@@ -5,6 +5,7 @@ import org.subsound.integration.ServerClient;
 import org.subsound.persistence.database.Album;
 import org.subsound.persistence.database.Artist;
 import org.subsound.persistence.database.DatabaseServerService;
+import org.subsound.persistence.database.DownloadQueueItem;
 import org.subsound.persistence.database.PlaylistRow;
 import org.subsound.persistence.database.Song;
 import org.subsound.utils.Utils;
@@ -419,13 +420,19 @@ public class CachingClient implements ServerClient {
     private SongInfo toSongInfo(Song song) {
         // For offline mode, transcodeInfo and downloadUri are unavailable
         // streamUri is empty and will be resolved at play time if needed
+        // Check download_queue for the actual stream format used when caching this song,
+        // so the cache key matches the file on disk even if transcode settings changed since.
+        var downloadItem = dbService.getDownloadQueueItem(song.id());
+        var defaultSuffix = song.suffix().isEmpty() ? "mp3" : song.suffix();
+        var streamFormat = downloadItem.map(DownloadQueueItem::streamFormat).orElse(defaultSuffix);
+        var estimatedBitRate = downloadItem.map(DownloadQueueItem::estimatedBitRate).orElse(song.bitRate().orElse(0));
+
         var transcodeInfo = new TranscodeInfo(
                 song.id(),
                 song.bitRate(),
-                song.bitRate().orElse(0),
+                estimatedBitRate,
                 song.duration(),
-                song.suffix().isEmpty() ? "mp3" : song.suffix()
-                //, Optional.empty()
+                streamFormat
         );
         return new SongInfo(
                 song.id(),
@@ -446,7 +453,7 @@ public class CachingClient implements ServerClient {
                 song.starredAt(),
                 Optional.of(song.createdAt()),
                 song.coverArtId().flatMap(id -> toCoverArt(song.albumId(), new ObjectIdentifier.AlbumIdentifier(song.albumId()))),
-                song.suffix().isEmpty() ? "mp3" : song.suffix(),
+                streamFormat,
                 transcodeInfo,
                 URI.create("offline://unavailable/" + song.id())
         );
