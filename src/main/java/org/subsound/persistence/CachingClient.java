@@ -52,6 +52,26 @@ public class CachingClient implements ServerClient {
         return networkStatus == NetworkStatus.OFFLINE;
     }
 
+    /**
+     * If the exception is caused by a network error (IOException), auto-flip to OFFLINE mode.
+     * This avoids waiting for DNS/connection timeouts on every subsequent request.
+     * The GioNetworkMonitor will flip back to ONLINE when connectivity returns.
+     */
+    private void detectOffline(Exception e) {
+        if (networkStatus == NetworkStatus.OFFLINE) {
+            return;
+        }
+        Throwable cause = e;
+        while (cause != null) {
+            if (cause instanceof java.io.IOException) {
+                log.warn("Network error detected, auto-switching to offline mode");
+                this.networkStatus = NetworkStatus.OFFLINE;
+                return;
+            }
+            cause = cause.getCause();
+        }
+    }
+
     @Override
     public ListArtists getArtists() {
         if (isOffline()) {
@@ -62,6 +82,7 @@ public class CachingClient implements ServerClient {
         try {
             return delegate.getArtists();
         } catch (Exception e) {
+            detectOffline(e);
             log.warn("Failed to fetch artists from server, falling back to database", e);
             var artists = dbService.listArtists();
             return new ListArtists(artists.stream().map(this::toArtistEntry).toList());
@@ -79,6 +100,7 @@ public class CachingClient implements ServerClient {
         try {
             return delegate.getArtistInfo(artistId);
         } catch (Exception e) {
+            detectOffline(e);
             log.warn("Failed to fetch artist info from server, falling back to database: {}", artistId, e);
             return dbService.getArtistById(artistId)
                     .map(this::toArtistInfo)
@@ -97,6 +119,7 @@ public class CachingClient implements ServerClient {
         try {
             return delegate.getArtistWithAlbums(artistId);
         } catch (Exception e) {
+            detectOffline(e);
             log.warn("Failed to fetch artist with albums from server, falling back to database: {}", artistId, e);
             return dbService.getArtistById(artistId)
                     .map(this::toArtistInfo)
@@ -115,6 +138,7 @@ public class CachingClient implements ServerClient {
         try {
             return delegate.getAlbumInfo(albumId);
         } catch (Exception e) {
+            detectOffline(e);
             log.warn("Failed to fetch album info from server, falling back to database: {}", albumId, e);
             return dbService.getAlbumById(albumId)
                     .map(this::toAlbumInfo)
@@ -132,6 +156,7 @@ public class CachingClient implements ServerClient {
         try {
             return delegate.getPlaylists();
         } catch (Exception e) {
+            detectOffline(e);
             log.warn("Failed to fetch playlists from server, falling back to database", e);
             var playlists = dbService.listPlaylists();
             return new ListPlaylists(playlists.stream().map(this::toPlaylistSimple).toList());
@@ -151,6 +176,7 @@ public class CachingClient implements ServerClient {
             persistPlaylist(playlist);
             return playlist;
         } catch (Exception e) {
+            detectOffline(e);
             log.warn("Failed to fetch playlist from server, falling back to database: {}", playlistId, e);
             return dbService.getPlaylistById(playlistId)
                     .map(this::toPlaylist)
@@ -208,6 +234,7 @@ public class CachingClient implements ServerClient {
         try {
             return delegate.getStarred();
         } catch (Exception e) {
+            detectOffline(e);
             log.warn("Failed to fetch starred from server, falling back to database", e);
             var songs = dbService.listSongsByStarredAt();
             return new ListStarred(songs.stream().map(this::toSongInfo).toList());
@@ -225,6 +252,7 @@ public class CachingClient implements ServerClient {
         try {
             return delegate.getSong(songId);
         } catch (Exception e) {
+            detectOffline(e);
             log.warn("Failed to fetch song from server, falling back to database: {}", songId, e);
             return dbService.getSongById(songId)
                     .map(this::toSongInfo)
@@ -255,6 +283,7 @@ public class CachingClient implements ServerClient {
         try {
             return delegate.getHomeOverview();
         } catch (Exception e) {
+            detectOffline(e);
             log.warn("Failed to fetch home overview from server, falling back to database", e);
             var recentAlbums = dbService.listAlbumsByAddedAt();
             var albumsByYear = dbService.listAlbumsByYear(20);
