@@ -288,31 +288,31 @@
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/gradleup/shadow/com.gradleup.shadow.gradle.plugin/9.4.1/com.gradleup.shadow.gradle.plugin-9.4.1.pom",
-    "sha512": "5f2d2886dc500ca87edffa7577377cbf8cdce757d5ad34d78691681367de97dbdbc7e08db02de3c23fa20823b14051ae6dbff9af3e481ca7425251f1e7f7fdd3",
-    "dest": "./offline-repository/com/gradleup/shadow/com.gradleup.shadow.gradle.plugin/9.4.1",
-    "dest-filename": "com.gradleup.shadow.gradle.plugin-9.4.1.pom"
+    "url": "https://repo.maven.apache.org/maven2/com/gradleup/shadow/com.gradleup.shadow.gradle.plugin/9.4.2/com.gradleup.shadow.gradle.plugin-9.4.2.pom",
+    "sha512": "14f28e5c7a12aee993685256c0057fc637f430d9b8618b2f653cc8bcba08c41112fe23c12e1e398f1b52d32b93d0f319842e4271c1feb82a912d8fa9468206f2",
+    "dest": "./offline-repository/com/gradleup/shadow/com.gradleup.shadow.gradle.plugin/9.4.2",
+    "dest-filename": "com.gradleup.shadow.gradle.plugin-9.4.2.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/gradleup/shadow/shadow-gradle-plugin/9.4.1/shadow-gradle-plugin-9.4.1.jar",
+    "url": "https://repo.maven.apache.org/maven2/com/gradleup/shadow/shadow-gradle-plugin/9.4.2/shadow-gradle-plugin-9.4.2.jar",
     "sha512": "0a34a61f7f3884384509ebdfcddacb57a3f634b986d7bfcf7a18e1ed09567631574722e49688c6ce77e2eb686c6ada91c48a5533db110330d186a3b0ffcd2bae",
-    "dest": "./offline-repository/com/gradleup/shadow/shadow-gradle-plugin/9.4.1",
-    "dest-filename": "shadow-gradle-plugin-9.4.1.jar"
+    "dest": "./offline-repository/com/gradleup/shadow/shadow-gradle-plugin/9.4.2",
+    "dest-filename": "shadow-gradle-plugin-9.4.2.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/gradleup/shadow/shadow-gradle-plugin/9.4.1/shadow-gradle-plugin-9.4.1.module",
-    "sha512": "4e94a7ca87394175654654743ea3476078e5fbb984aa158f10e27ec412d5e428f3a86e3f508025c07679243d322cfcf569531cc29423adbe71616f06411eb0d1",
-    "dest": "./offline-repository/com/gradleup/shadow/shadow-gradle-plugin/9.4.1",
-    "dest-filename": "shadow-gradle-plugin-9.4.1.module"
+    "url": "https://repo.maven.apache.org/maven2/com/gradleup/shadow/shadow-gradle-plugin/9.4.2/shadow-gradle-plugin-9.4.2.module",
+    "sha512": "e2dc56c7a481f2e0adbee03c71113a54ff2f15a4dd00aaac70d316383cc786f79f780487f294b66e69b6161af648ef667e9dc7b18d1ff1659ea673e550d817c2",
+    "dest": "./offline-repository/com/gradleup/shadow/shadow-gradle-plugin/9.4.2",
+    "dest-filename": "shadow-gradle-plugin-9.4.2.module"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/com/gradleup/shadow/shadow-gradle-plugin/9.4.1/shadow-gradle-plugin-9.4.1.pom",
-    "sha512": "a2694123b22b8dc63faedf46f75d4118ccff2e0e03945cb1abca5f7c9a7ce6253506edec9ae8fe57467a64bc6c2283dda306251b272ffc317e7c9a3129ce931f",
-    "dest": "./offline-repository/com/gradleup/shadow/shadow-gradle-plugin/9.4.1",
-    "dest-filename": "shadow-gradle-plugin-9.4.1.pom"
+    "url": "https://repo.maven.apache.org/maven2/com/gradleup/shadow/shadow-gradle-plugin/9.4.2/shadow-gradle-plugin-9.4.2.pom",
+    "sha512": "f18cbdfbe35d0e491fd8e381127db663c1344a20649d27b817b189c0cee70c504b53d979c6a0d0d5ac7f59363c0f28d656945fc2cb97119f660eb55292d1e273",
+    "dest": "./offline-repository/com/gradleup/shadow/shadow-gradle-plugin/9.4.2",
+    "dest-filename": "shadow-gradle-plugin-9.4.2.pom"
   },
   {
     "type": "file",
@@ -2094,17 +2094,17 @@
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/org/vafer/jdependency/2.15/jdependency-2.15.jar",
-    "sha512": "58089ecd6a4390c45612e45ab88e45d1d41d00723e55e8d6dc357268ebfa0131bf0009a829cfdfa3402ce80b0c54fad1bf94c31978fd4c826e62b65c8b091278",
-    "dest": "./offline-repository/org/vafer/jdependency/2.15",
-    "dest-filename": "jdependency-2.15.jar"
+    "url": "https://repo.maven.apache.org/maven2/org/vafer/jdependency/2.16/jdependency-2.16.jar",
+    "sha512": "dd85441a5a8a0c08d5e3d170803f6c298eb19ab4f200c2c5a51918a8d42df23d024e04bbf759d52d54b8024bcca0b31f892a24b379f59800ca20fb50f3eb95c5",
+    "dest": "./offline-repository/org/vafer/jdependency/2.16",
+    "dest-filename": "jdependency-2.16.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/org/vafer/jdependency/2.15/jdependency-2.15.pom",
-    "sha512": "8922a9dcf93709bb3f497afc6577e2db6b20790b5701b232d99314ffe37c871ff3fbc98dcd7e06c7c3474cd692ffc5bab3a2b34f52bd559f5a1e22f13272d040",
-    "dest": "./offline-repository/org/vafer/jdependency/2.15",
-    "dest-filename": "jdependency-2.15.pom"
+    "url": "https://repo.maven.apache.org/maven2/org/vafer/jdependency/2.16/jdependency-2.16.pom",
+    "sha512": "b60a36a4f4cf9e5bdd1de5dc7372a9d5275529e22f1a8c3bad8d9a166f8545cb7be322b571f459f0380dd9dd46dea360c26d27cedaa8e26cb4d7b5ba3f88019b",
+    "dest": "./offline-repository/org/vafer/jdependency/2.16",
+    "dest-filename": "jdependency-2.16.pom"
   },
   {
     "type": "file",
