@@ -291,8 +291,17 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
                 var currentState = appManager.getState();
                 var playingItem = buildPlayItemId(currentState);
                 var nowPlayingState = getNowPlayingState(currentState.player().state());
-                cell.bind(entry, listItem, nowPlayingState, playingItem);
+                boolean isPlaying = cell.bind(entry, listItem, nowPlayingState, playingItem);
                 nowPlayingBySongId.computeIfAbsent(entry.song().id(), _ -> new ArrayList<>()).add(cell);
+                // A cell highlighted at bind time must be registered for O(1) clearing on the
+                // next song change, or the highlight leaks when refreshAllHighlights ran while
+                // this row was offscreen (typical after playNext in shuffle mode).
+                if (isPlaying) {
+                    if (this.highlightedNowPlayingCell != null && this.highlightedNowPlayingCell != cell) {
+                        this.highlightedNowPlayingCell.updateCellIsPlaying(false, NowPlayingState.NONE);
+                    }
+                    this.highlightedNowPlayingCell = cell;
+                }
             }
         });
         nowPlayingFactory.onUnbind(obj -> {
@@ -336,8 +345,15 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             var child = listItem.getChild();
             if (child instanceof TitleArtistCell cell) {
                 var playingItem = buildPlayItemId(appManager.getState());
-                cell.bind(entry, listItem, playingItem);
+                boolean isPlaying = cell.bind(entry, listItem, playingItem);
                 titleBySongId.computeIfAbsent(entry.song().id(), _ -> new ArrayList<>()).add(cell);
+                // See nowPlayingFactory.onBind: register bind-time highlights for later clearing.
+                if (isPlaying) {
+                    if (this.highlightedTitleCell != null && this.highlightedTitleCell != cell) {
+                        this.highlightedTitleCell.updateRow(false);
+                    }
+                    this.highlightedTitleCell = cell;
+                }
             }
         });
         titleFactory.onUnbind(obj -> {
@@ -1375,7 +1391,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             this.append(overlay);
         }
 
-        void bind(GPlaylistEntry entry, ListItem listItem, NowPlayingState nowPlayingState, Optional<PlayItemId> playingItem) {
+        boolean bind(GPlaylistEntry entry, ListItem listItem, NowPlayingState nowPlayingState, Optional<PlayItemId> playingItem) {
             this.boundEntry = entry;
             this.gSong = entry.gSong();
             this.listItem = listItem;
@@ -1386,6 +1402,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             );
             boolean isPlaying = isPlayingEntry(entry.playItemId(), playingItem);
             updateCellIsPlaying(isPlaying, nowPlayingState);
+            return isPlaying;
         }
 
         private static boolean isPlayingEntry(PlayItemId entryItem, Optional<PlayItemId> playingItem) {
@@ -1482,7 +1499,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             this.append(inner);
         }
 
-        void bind(GPlaylistEntry entry, ListItem listItem, Optional<PlayItemId> playingItem) {
+        boolean bind(GPlaylistEntry entry, ListItem listItem, Optional<PlayItemId> playingItem) {
             this.gSong = entry.gSong();
             this.listItem = listItem;
             this.boundEntry = entry;
@@ -1500,6 +1517,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             this.albumArt.update(info.coverArt().orElse(null));
             boolean isPlaying = isPlayingEntry(entry.playItemId(), playingItem);
             updateRow(isPlaying);
+            return isPlaying;
         }
 
         private static boolean isPlayingEntry(PlayItemId entryItem, Optional<PlayItemId> playingItem) {
