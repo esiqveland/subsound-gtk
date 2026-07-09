@@ -134,11 +134,13 @@ scale slider {
   margin: 6px;
 }
 
+/*
 @define-color background_color_0 rgb(33,26,11);
 @define-color background_color_1 rgb(222,208,167);
 @define-color background_color_2 rgb(130,59,28);
 @define-color background_color_3 rgb(155,123,62);
 @define-color background_color_4 rgb(143,128,87);
+*/
 
 /*
 @define-color background_color_0 rgb(62,33,48);
