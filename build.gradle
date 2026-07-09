@@ -16,7 +16,7 @@ repositories {
     google()
 }
 
-def javagiVersion = "0.15.0"
+def javagiVersion = "1.0.0-RC2"
 def recordBuilderVersion = "52"
 def moshiVersion = "1.15.2"
 
