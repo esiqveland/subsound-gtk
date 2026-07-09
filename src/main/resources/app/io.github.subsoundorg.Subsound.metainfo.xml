@@ -58,7 +58,16 @@
   </branding>
 
   <releases>
-    <release version="@version@" date="2026-05-18">
+    <release version="@version@" date="2026-07-09">
+      <description>
+        <ul>
+          <li>Improved: playlists list view is smoother and less janky when scrolling and switching playlists</li>
+          <li>Improved: color theme falls back to the standard Adwaita palette for a cleaner look</li>
+          <li>Bugfix: sometimes the currently playing row was not highlighted correctly after shuffle</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.7.2" date="2026-05-18">
       <description>
         <ul>
           <li>New: desktop media controls can now toggle shuffle and repeat via MPRIS, and reflect the current mode</li>
