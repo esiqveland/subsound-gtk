@@ -104,8 +104,14 @@ java {
     }
 }
 
+// Shared JVM args applied to run, test, and the installed application launcher (used by flatpak).
+ext.commonJvmArgs = [
+        "--enable-native-access=ALL-UNNAMED",
+        "-XX:+UseCompactObjectHeaders",
+]
+
 test {
-    jvmArgs += "--enable-native-access=ALL-UNNAMED"
+    jvmArgs += commonJvmArgs
     useJUnit()
 }
 
@@ -128,7 +134,7 @@ testlogger {
 
 tasks.named('run') {
     //jvmArgs += "-XstartOnFirstThread"
-    jvmArgs += "--enable-native-access=ALL-UNNAMED"
+    jvmArgs += commonJvmArgs
     jvmArgs += "-Djava.library.path=/usr/lib64:/lib64:/lib:/usr/lib:/lib/x86_64-linux-gnu "
     //jvmArgs += "-Djava.library.path=/usr/lib64:/lib64:/lib:/usr/lib:/lib/x86_64-linux-gnu:/opt/homebrew/lib "
 }
@@ -143,8 +149,8 @@ application {
     applicationName = "Subsound"
     mainClass = "org.subsound.Main"
 
-    // Allow native access
-    applicationDefaultJvmArgs += "--enable-native-access=ALL-UNNAMED"
+    // Allow native access + enable JDK 25 compact object headers (JEP 519).
+    applicationDefaultJvmArgs += commonJvmArgs
 
     // Prevent AWT GraphicsEnvironment deadlock on macOS where AppKit main thread is occupied by GTK
     applicationDefaultJvmArgs += "-Djava.awt.headless=true"
