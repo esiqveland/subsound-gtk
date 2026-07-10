@@ -64,6 +64,8 @@ public class PlayerBar extends Box implements AppManager.StateListener {
     private final PlayerScrubberV2 playerScrubber;
     private final MenuButton queueButton;
     private final PlayQueuePopover queuePopover;
+    private final MenuButton lyricsButton;
+    private final LyricsPopover lyricsPopover;
     private final VolumeButton volumeButton;
     private final StarButton starButton;
     private final Scale volumeScale;
@@ -265,10 +267,23 @@ public class PlayerBar extends Box implements AppManager.StateListener {
                 .setDirection(org.gnome.gtk.ArrowType.UP)
                 .build();
 
+        // Lyrics button with popover
+        lyricsPopover = new LyricsPopover(
+                song -> this.appManager.useClient(client -> client.getSongLyrics(song.id())),
+                this.appManager::seekTo
+        );
+        lyricsButton = MenuButton.builder()
+                .setIconName(Icons.Microphone.getIconName())
+                .setTooltipText("Lyrics")
+                .setPopover(lyricsPopover)
+                .setDirection(org.gnome.gtk.ArrowType.UP)
+                .build();
+
         var volumeBox = Box.builder()
                 .setOrientation(Orientation.HORIZONTAL)
                 .setValign(Align.CENTER)
                 .build();
+        volumeBox.append(lyricsButton);
         volumeBox.append(queueButton);
         volumeBox.append(volumeButton);
         volumeBox.append(volumeScale);
@@ -439,12 +454,20 @@ public class PlayerBar extends Box implements AppManager.StateListener {
                 // On PLAYING → non-PLAYING the last extrapolated tick may be a few ms ahead of
                 // the real pause point; snap the scrubber back to the authoritative position.
                 // Also covers LOADING/EOS where we want a definite frame.
-                runOnMainThread(() -> this.playerScrubber.updatePosition(position));
+                runOnMainThread(() -> {
+                    this.playerScrubber.updatePosition(position);
+                    this.lyricsPopover.updatePosition(position);
+                });
             } else if (!wasPlaying) {
                 // non-PLAYING → PLAYING: seed the scrubber at `position` immediately; the tick
                 // takes over from the next frame.
-                runOnMainThread(() -> this.playerScrubber.updatePosition(position));
+                runOnMainThread(() -> {
+                    this.playerScrubber.updatePosition(position);
+                    this.lyricsPopover.updatePosition(position);
+                });
             }
+
+            this.lyricsPopover.setNowPlaying(playing.map(NowPlaying::song));
 
             Optional<SongInfo> prevSongInfo = prevState.nowPlaying().map(NowPlaying::song);
             var prevSongTitle = prevSongInfo.map(SongInfo::title).orElse("");
@@ -511,6 +534,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
         }
         // Runs on GTK main thread, so updatePosition's runOnMainThread is a no-op hop.
         this.playerScrubber.updatePosition(pos);
+        this.lyricsPopover.updatePosition(pos);
     }
 
     private void updatePlayMode(PlayerAction.PlayMode playMode) {

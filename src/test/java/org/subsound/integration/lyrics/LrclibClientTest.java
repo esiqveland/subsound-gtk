@@ -8,6 +8,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -83,6 +85,12 @@ public class LrclibClientTest {
         server.close();
     }
 
+    private static List<LrclibClient.LyricLine> syncedLines(Optional<LyricsResult> result) {
+        assertThat(result).isPresent();
+        assertThat(result.get()).isInstanceOf(LyricsResult.SyncedLyrics.class);
+        return ((LyricsResult.SyncedLyrics) result.get()).lines();
+    }
+
     @Test
     public void testExactMatchReturnsLyrics() throws Exception {
         server.enqueue(new MockResponse.Builder()
@@ -93,8 +101,7 @@ public class LrclibClientTest {
 
         var result = client.getLyrics("Sultans Of Swing", "Dire Straits", null, 349);
 
-        assertThat(result).isPresent();
-        var lines = result.get();
+        var lines = syncedLines(result);
         assertThat(lines).isNotEmpty();
         assertThat(lines.getFirst().text()).isEqualTo("You get a shiver in the dark, it's raining in the park, but meantime");
         assertThat(lines.getFirst().timeMs()).isEqualTo(12840);
@@ -156,8 +163,7 @@ public class LrclibClientTest {
 
         var result = client.getLyrics("Sultans Of Swing", "Dire Straits", null, 347);
 
-        assertThat(result).isPresent();
-        var lines = result.get();
+        var lines = syncedLines(result);
         assertThat(lines).isNotEmpty();
         assertThat(lines.getFirst().text()).isEqualTo("You get a shiver in the dark");
 
@@ -226,7 +232,7 @@ public class LrclibClientTest {
     }
 
     @Test
-    public void testReturnsEmptyWhenNoSyncedLyrics() throws Exception {
+    public void testFallsBackToPlainLyricsWhenNoSynced() throws Exception {
         var noSyncedResponse = """
                 {
                   "id": 999,
@@ -244,7 +250,7 @@ public class LrclibClientTest {
                 .addHeader("Content-Type", "application/json")
                 .body(noSyncedResponse)
                 .build());
-        // search also returns empty
+        // search returns no synced candidates either
         server.enqueue(new MockResponse.Builder()
                 .code(200)
                 .addHeader("Content-Type", "application/json")
@@ -253,7 +259,56 @@ public class LrclibClientTest {
 
         var result = client.getLyrics("Test", "Test Artist", null, null);
 
-        assertThat(result).isEmpty();
+        assertThat(result).isPresent();
+        assertThat(result.get()).isInstanceOf(LyricsResult.PlainLyrics.class);
+        var plain = (LyricsResult.PlainLyrics) result.get();
+        assertThat(plain.lines()).containsExactly("Just plain lyrics here");
+    }
+
+    @Test
+    public void testSyncedFromSearchBeatsPlainFromExactMatch() throws Exception {
+        var plainOnlyResponse = """
+                {
+                  "id": 999,
+                  "trackName": "Sultans Of Swing",
+                  "artistName": "Dire Straits",
+                  "albumName": "Test Album",
+                  "duration": 347.0,
+                  "instrumental": false,
+                  "plainLyrics": "Just plain lyrics here",
+                  "syncedLyrics": null
+                }
+                """;
+        server.enqueue(new MockResponse.Builder()
+                .code(200)
+                .addHeader("Content-Type", "application/json")
+                .body(plainOnlyResponse)
+                .build());
+        // search has synced candidates: they must win over the exact match's plain lyrics
+        server.enqueue(new MockResponse.Builder()
+                .code(200)
+                .addHeader("Content-Type", "application/json")
+                .body(SEARCH_RESPONSE)
+                .build());
+
+        var result = client.getLyrics("Sultans Of Swing", "Dire Straits", null, 347);
+
+        var lines = syncedLines(result);
+        assertThat(lines.getFirst().text()).isEqualTo("You get a shiver in the dark");
+    }
+
+    @Test
+    public void testParsePlainSplitsAndTrims() {
+        var text = "First line\n  Second line  \n\n\nThird line\n";
+        var lines = LrclibClient.parsePlain(text);
+
+        assertThat(lines).containsExactly("First line", "Second line", "Third line");
+    }
+
+    @Test
+    public void testParsePlainEmptyInput() {
+        assertThat(LrclibClient.parsePlain("")).isEmpty();
+        assertThat(LrclibClient.parsePlain(null)).isEmpty();
     }
 
     @Test

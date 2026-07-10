@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static org.subsound.utils.LogUtils.loggingInterceptor;
@@ -25,12 +26,15 @@ import static org.subsound.utils.LogUtils.userAgentInterceptor;
 
 /**
  * Client for lrclib.net — a free synced lyrics API.
- * Fetches time-synced LRC lyrics by exact match or search fallback.
+ * Fetches time-synced LRC lyrics by exact match or search fallback,
+ * falling back to plain unsynced lyrics when no synced version exists.
  */
 public class LrclibClient {
     private static final String DEFAULT_BASE_URL = "https://lrclib.net";
     private static final int DURATION_TOLERANCE_SECONDS = 5;
     private static final Pattern LRC_TIMESTAMP = Pattern.compile("\\[(\\d{2}):(\\d{2})\\.(\\d{2,3})]");
+    private static final Predicate<LrcLibResult> HAS_SYNCED = r -> r.syncedLyrics() != null && !r.syncedLyrics().isBlank();
+    private static final Predicate<LrcLibResult> HAS_PLAIN = r -> r.plainLyrics() != null && !r.plainLyrics().isBlank();
 
     private final Logger log = LoggerFactory.getLogger(LrclibClient.class);
     private final String baseUrl;
@@ -68,41 +72,59 @@ public class LrclibClient {
     }
 
     /**
-     * Fetch synced lyrics for a song. Tries exact match first, then search fallback.
+     * Fetch lyrics for a song. Tries exact match first, then search fallback.
+     * Synced lyrics always win; plain lyrics are only returned when no synced version exists.
      *
-     * @return synced lyric lines sorted by time, or empty if not found
+     * @return synced lyric lines sorted by time, plain text lines as fallback, or empty if not found
      */
-    public Optional<List<LyricLine>> getLyrics(String title, String artist, @Nullable String album, @Nullable Integer durationSeconds) {
+    public Optional<LyricsResult> getLyrics(String title, String artist, @Nullable String album, @Nullable Integer durationSeconds) {
         if ((title == null || title.isBlank()) && (artist == null || artist.isBlank())) {
             return Optional.empty();
         }
         try {
             var exact = fetchExactMatch(title, artist, album, durationSeconds);
-            if (exact != null && exact.syncedLyrics() != null && !exact.syncedLyrics().isBlank()) {
-                var lines = parseLrc(exact.syncedLyrics());
-                if (!lines.isEmpty()) {
-                    return Optional.of(lines);
-                }
+            var exactSynced = toSyncedResult(exact);
+            if (exactSynced.isPresent()) {
+                return exactSynced;
             }
 
             var searchResults = fetchSearch(title, artist);
-            if (searchResults == null || searchResults.length == 0) {
-                return Optional.empty();
+            var searchSynced = toSyncedResult(pickBestMatch(searchResults, durationSeconds, HAS_SYNCED));
+            if (searchSynced.isPresent()) {
+                return searchSynced;
             }
 
-            var best = pickBestMatch(searchResults, durationSeconds);
-            if (best != null && best.syncedLyrics() != null && !best.syncedLyrics().isBlank()) {
-                var lines = parseLrc(best.syncedLyrics());
-                if (!lines.isEmpty()) {
-                    return Optional.of(lines);
-                }
+            var exactPlain = toPlainResult(exact);
+            if (exactPlain.isPresent()) {
+                return exactPlain;
             }
-
-            return Optional.empty();
+            return toPlainResult(pickBestMatch(searchResults, durationSeconds, HAS_PLAIN));
         } catch (Exception e) {
             log.warn("Failed to fetch lyrics for '{}' by '{}': {}", title, artist, e.getMessage());
             return Optional.empty();
         }
+    }
+
+    private static Optional<LyricsResult> toSyncedResult(@Nullable LrcLibResult result) {
+        if (result == null || !HAS_SYNCED.test(result)) {
+            return Optional.empty();
+        }
+        var lines = parseLrc(result.syncedLyrics());
+        if (lines.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(new LyricsResult.SyncedLyrics(lines));
+    }
+
+    private static Optional<LyricsResult> toPlainResult(@Nullable LrcLibResult result) {
+        if (result == null || !HAS_PLAIN.test(result)) {
+            return Optional.empty();
+        }
+        var lines = parsePlain(result.plainLyrics());
+        if (lines.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(new LyricsResult.PlainLyrics(lines));
     }
 
     private @Nullable LrcLibResult fetchExactMatch(String title, String artist, @Nullable String album, @Nullable Integer durationSeconds) {
@@ -126,23 +148,26 @@ public class LrclibClient {
         return fetchJsonOrNull(buildUrl("/api/search", Map.of("q", query)), LrcLibResult[].class);
     }
 
-    private static @Nullable LrcLibResult pickBestMatch(LrcLibResult[] results, @Nullable Integer durationSeconds) {
-        var withSynced = new ArrayList<LrcLibResult>();
+    private static @Nullable LrcLibResult pickBestMatch(LrcLibResult @Nullable [] results, @Nullable Integer durationSeconds, Predicate<LrcLibResult> hasLyrics) {
+        if (results == null || results.length == 0) {
+            return null;
+        }
+        var candidates = new ArrayList<LrcLibResult>();
         for (var r : results) {
-            if (r.syncedLyrics() != null && !r.syncedLyrics().isBlank()) {
-                withSynced.add(r);
+            if (hasLyrics.test(r)) {
+                candidates.add(r);
             }
         }
-        if (withSynced.isEmpty()) {
+        if (candidates.isEmpty()) {
             return null;
         }
         if (durationSeconds == null || durationSeconds <= 0) {
-            return withSynced.getFirst();
+            return candidates.getFirst();
         }
 
         LrcLibResult best = null;
         double bestDiff = Double.MAX_VALUE;
-        for (var r : withSynced) {
+        for (var r : candidates) {
             double diff = r.duration() != null ? Math.abs(r.duration() - durationSeconds) : 0;
             if (diff < bestDiff) {
                 bestDiff = diff;
@@ -188,6 +213,16 @@ public class LrclibClient {
         }
         lines.sort(Comparator.comparingLong(LyricLine::timeMs));
         return List.copyOf(lines);
+    }
+
+    static List<String> parsePlain(@Nullable String plainText) {
+        if (plainText == null || plainText.isBlank()) {
+            return List.of();
+        }
+        return plainText.lines()
+                .map(String::strip)
+                .filter(s -> !s.isEmpty())
+                .toList();
     }
 
     private HttpUrl buildUrl(String path, Map<String, String> params) {

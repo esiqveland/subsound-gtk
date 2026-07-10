@@ -45,6 +45,7 @@ public enum Icons {
     ListAdd("list-add-symbolic"),
     ListRemove("list-remove-symbolic"),
     FolderDownload("folder-download-symbolic"),
+    Microphone("audio-input-microphone-symbolic"),
     NetworkError("network-error-symbolic"),
     CheckmarkCircle("checkmark-circle-symbolic"),
     ;

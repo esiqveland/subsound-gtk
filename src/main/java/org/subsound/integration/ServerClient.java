@@ -1,6 +1,7 @@
 package org.subsound.integration;
 
 import org.subsound.configuration.Config.ServerConfig;
+import org.subsound.integration.lyrics.LyricsResult;
 import org.subsound.integration.servers.subsonic.SubsonicClientV2;
 import org.subsound.utils.Utils;
 import io.soabase.recordbuilder.core.RecordBuilder;
@@ -57,6 +58,14 @@ public interface ServerClient {
     CoverArtResponse downloadCoverArt(CoverArt coverArt, int maxSize);
     ScanStatus scanStatus();
     ScanStatus startScan(boolean quickScan);
+
+    /**
+     * Fetch lyrics for a song from the server (OpenSubsonic songLyrics extension).
+     * Returns empty when the server does not support lyrics or has none for the song.
+     */
+    default Optional<LyricsResult> getSongLyrics(String songId) {
+        return Optional.empty();
+    }
 
     sealed interface ScanStatus {
         record Scanning(long count) implements ScanStatus {}

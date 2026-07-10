@@ -210,3 +210,16 @@ scale slider {
 .playlist-loading-overlay.visible {
     opacity: 1;
 }
+
+/* Synced lyrics popover: inactive lines are dimmed, the active line pops. */
+.lyrics-line {
+    font-size: 12pt;
+    opacity: 0.55;
+    transition: opacity 150ms ease-out;
+}
+
+.lyrics-line-active {
+    opacity: 1.0;
+    font-weight: 700;
+    color: #ffffff;
+}

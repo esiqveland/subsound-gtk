@@ -2,6 +2,7 @@ package org.subsound.persistence;
 
 import org.subsound.app.state.NetworkMonitoring.NetworkStatus;
 import org.subsound.integration.ServerClient;
+import org.subsound.integration.lyrics.LyricsResult;
 import org.subsound.persistence.database.Album;
 import org.subsound.persistence.database.Artist;
 import org.subsound.persistence.database.DatabaseServerService;
@@ -432,6 +433,20 @@ public class CachingClient implements ServerClient {
     @Override
     public ScanStatus startScan(boolean quickScan) {
         return delegate.startScan(quickScan);
+    }
+
+    @Override
+    public Optional<LyricsResult> getSongLyrics(String songId) {
+        if (isOffline()) {
+            return Optional.empty();
+        }
+        try {
+            return delegate.getSongLyrics(songId);
+        } catch (Exception e) {
+            detectOffline(e);
+            log.warn("Failed to fetch lyrics from server for songId={}: {}", songId, e.getMessage());
+            return Optional.empty();
+        }
     }
 
     @Override

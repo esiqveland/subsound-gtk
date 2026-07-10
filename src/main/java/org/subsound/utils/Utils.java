@@ -51,6 +51,7 @@ import java.util.function.Supplier;
 
 
 public class Utils {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Utils.class);
     public static final ExecutorService ASYNC_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
     private static final HexFormat HEX = HexFormat.of().withLowerCase();
     private static final Gson GSON = new GsonBuilder()

@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 import org.subsound.configuration.Config.ServerConfig;
 import org.subsound.configuration.constants.Constants;
 import org.subsound.integration.ServerClient;
+import org.subsound.integration.lyrics.LrclibClient.LyricLine;
+import org.subsound.integration.lyrics.LyricsResult;
 import org.subsound.integration.ServerClient.ObjectIdentifier.AlbumIdentifier;
 import org.subsound.integration.ServerClient.ObjectIdentifier.ArtistIdentifier;
 import org.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier;
@@ -38,6 +40,8 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
@@ -1275,6 +1279,88 @@ public class SubsonicClientV2 implements ServerClient {
         } catch (IOException e) {
             throw new RuntimeException("Failed to download coverArt=%s".formatted(coverArt.coverArtId()), e);
         }
+    }
+
+    public static class LyricsListRes {
+        public static class StructuredLyrics {
+            String displayArtist;
+            String displayTitle;
+            // lang is three letter language code
+            String lang;
+            int offset;
+            boolean synced;
+            List<Line> line;
+            static class Line {
+                int start;
+                String value;
+            }
+        }
+        List<StructuredLyrics> structuredLyrics;
+    }
+    static class GetSongLyricsResponse implements HasStatus {
+        @SerializedName("subsonic-response")
+        GetSongLyricsInner subsonicResponse;
+        static class GetSongLyricsInner {
+            String status;
+            LyricsListRes lyricsList;
+        }
+        @Override public String getStatus() { return subsonicResponse.status; }
+    }
+
+    public record GetSongLyricsRequest(String songId){}
+
+    // https://opensubsonic.netlify.app/docs/endpoints/getlyricsbysongid/
+    public LyricsListRes getSongLyrics(GetSongLyricsRequest req) {
+        var res = fetchAndCheck("/rest/getLyricsBySongId.view", Map.of("id", req.songId()), GetSongLyricsResponse.class);
+        return res.subsonicResponse.lyricsList;
+    }
+
+    @Override
+    public Optional<LyricsResult> getSongLyrics(String songId) {
+        if (!isLyricsSupported()) {
+            return Optional.empty();
+        }
+        var lyricsList = getSongLyrics(new GetSongLyricsRequest(songId));
+        return toLyricsResult(lyricsList);
+    }
+
+    static Optional<LyricsResult> toLyricsResult(@Nullable LyricsListRes res) {
+        if (res == null || res.structuredLyrics == null) {
+            return Optional.empty();
+        }
+        // synced lyrics win; fall back to the first entry with any text lines
+        for (var entry : res.structuredLyrics) {
+            if (!entry.synced || entry.line == null) {
+                continue;
+            }
+            var lines = new ArrayList<LyricLine>();
+            for (var line : entry.line) {
+                if (line.value == null || line.value.isBlank()) {
+                    continue;
+                }
+                // LRC offset semantics: positive offset shifts lyrics earlier
+                long timeMs = Math.max(0L, (long) line.start - entry.offset);
+                lines.add(new LyricLine(timeMs, line.value.strip()));
+            }
+            if (!lines.isEmpty()) {
+                lines.sort(Comparator.comparingLong(LyricLine::timeMs));
+                return Optional.of(new LyricsResult.SyncedLyrics(List.copyOf(lines)));
+            }
+        }
+        for (var entry : res.structuredLyrics) {
+            if (entry.line == null) {
+                continue;
+            }
+            var lines = entry.line.stream()
+                    .map(line -> line.value)
+                    .filter(value -> value != null && !value.isBlank())
+                    .map(String::strip)
+                    .toList();
+            if (!lines.isEmpty()) {
+                return Optional.of(new LyricsResult.PlainLyrics(lines));
+            }
+        }
+        return Optional.empty();
     }
 
     public static SubsonicClientV2 create(ServerConfig cfg) {

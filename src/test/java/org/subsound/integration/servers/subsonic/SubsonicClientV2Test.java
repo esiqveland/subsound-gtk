@@ -1,6 +1,7 @@
 package org.subsound.integration.servers.subsonic;
 
 import org.junit.Test;
+import org.subsound.integration.lyrics.LyricsResult;
 import org.subsound.utils.Utils;
 
 import java.time.Instant;
@@ -531,6 +532,145 @@ public class SubsonicClientV2Test {
         // md5("sesame" + "c19b2d") = "26719a1196d2a940705a59634eb18eab"
         String result = SubsonicClientV2.md5("sesamec19b2d");
         assertThat(result).isEqualTo("26719a1196d2a940705a59634eb18eab");
+    }
+
+    @Test
+    public void testParseGetSongLyricsResponsePrefersSynced() {
+        // example response from https://opensubsonic.netlify.app/docs/endpoints/getlyricsbysongid/
+        String json = """
+                {
+                  "subsonic-response": {
+                    "status": "ok",
+                    "version": "1.16.1",
+                    "type": "AwesomeServerName",
+                    "serverVersion": "0.1.3 (tag)",
+                    "openSubsonic": true,
+                    "lyricsList": {
+                      "structuredLyrics": [
+                        {
+                          "displayArtist": "Muse",
+                          "displayTitle": "Hysteria",
+                          "lang": "eng",
+                          "offset": -100,
+                          "synced": true,
+                          "line": [
+                            { "start": 0, "value": "It's bugging me" },
+                            { "start": 2000, "value": "Grating me" },
+                            { "start": 3001, "value": "And twisting me around..." }
+                          ]
+                        },
+                        {
+                          "displayArtist": "Muse",
+                          "displayTitle": "Hysteria",
+                          "lang": "und",
+                          "offset": 100,
+                          "synced": false,
+                          "line": [
+                            { "value": "It's bugging me" },
+                            { "value": "Grating me" },
+                            { "value": "And twisting me around..." }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+                """;
+        var parsed = Utils.fromJson(json, SubsonicClientV2.GetSongLyricsResponse.class);
+        assertThat(parsed.getStatus()).isEqualTo("ok");
+
+        var result = SubsonicClientV2.toLyricsResult(parsed.subsonicResponse.lyricsList);
+
+        assertThat(result).isPresent();
+        assertThat(result.get()).isInstanceOf(LyricsResult.SyncedLyrics.class);
+        var lines = ((LyricsResult.SyncedLyrics) result.get()).lines();
+        assertThat(lines).hasSize(3);
+        // offset -100 shifts the lyrics 100ms later: timeMs = start - offset
+        assertThat(lines.getFirst().timeMs()).isEqualTo(100);
+        assertThat(lines.getFirst().text()).isEqualTo("It's bugging me");
+        assertThat(lines.getLast().timeMs()).isEqualTo(3101);
+        assertThat(lines.getLast().text()).isEqualTo("And twisting me around...");
+    }
+
+    @Test
+    public void testToLyricsResultFallsBackToUnsynced() {
+        String json = """
+                {
+                  "subsonic-response": {
+                    "status": "ok",
+                    "lyricsList": {
+                      "structuredLyrics": [
+                        {
+                          "lang": "und",
+                          "offset": 0,
+                          "synced": false,
+                          "line": [
+                            { "value": "First line" },
+                            { "value": "  " },
+                            { "value": "Second line" }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+                """;
+        var parsed = Utils.fromJson(json, SubsonicClientV2.GetSongLyricsResponse.class);
+
+        var result = SubsonicClientV2.toLyricsResult(parsed.subsonicResponse.lyricsList);
+
+        assertThat(result).isPresent();
+        assertThat(result.get()).isInstanceOf(LyricsResult.PlainLyrics.class);
+        var lines = ((LyricsResult.PlainLyrics) result.get()).lines();
+        assertThat(lines).containsExactly("First line", "Second line");
+    }
+
+    @Test
+    public void testToLyricsResultEmptyCases() {
+        assertThat(SubsonicClientV2.toLyricsResult(null)).isEmpty();
+
+        String noLyricsJson = """
+                {
+                  "subsonic-response": {
+                    "status": "ok",
+                    "lyricsList": {}
+                  }
+                }
+                """;
+        var parsed = Utils.fromJson(noLyricsJson, SubsonicClientV2.GetSongLyricsResponse.class);
+        assertThat(SubsonicClientV2.toLyricsResult(parsed.subsonicResponse.lyricsList)).isEmpty();
+    }
+
+    @Test
+    public void testToLyricsResultClampsNegativeTimesToZero() {
+        String json = """
+                {
+                  "subsonic-response": {
+                    "status": "ok",
+                    "lyricsList": {
+                      "structuredLyrics": [
+                        {
+                          "lang": "eng",
+                          "offset": 500,
+                          "synced": true,
+                          "line": [
+                            { "start": 200, "value": "Starts early" },
+                            { "start": 2000, "value": "Second" }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+                """;
+        var parsed = Utils.fromJson(json, SubsonicClientV2.GetSongLyricsResponse.class);
+
+        var result = SubsonicClientV2.toLyricsResult(parsed.subsonicResponse.lyricsList);
+
+        var lines = ((LyricsResult.SyncedLyrics) result.orElseThrow()).lines();
+        // positive offset shifts lyrics earlier; 200 - 500 clamps to 0
+        assertThat(lines.getFirst().timeMs()).isEqualTo(0);
+        assertThat(lines.getLast().timeMs()).isEqualTo(1500);
     }
 
     @Test
