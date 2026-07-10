@@ -19,6 +19,7 @@ import org.gnome.gtk.Viewport;
 import org.gnome.gtk.Widget;
 import org.gnome.gtk.Window;
 import org.gnome.graphene.Rect;
+import org.gnome.pango.WrapMode;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -257,6 +258,13 @@ public class LyricsPopover extends Popover {
 
     private void configureLine(Label label) {
         label.setWrap(true);
+        // With hscrollbar-policy NEVER the ScrolledWindow ignores max-content-width and
+        // propagates the child's natural width — and a wrapping Label still reports its
+        // full single-line text as natural width. Clamp the natural width on the label
+        // itself so long lines wrap instead of widening the popover.
+        label.setMaxWidthChars(40);
+        // break inside overlong words too, so a single word can't force the width up:
+        label.setWrapMode(WrapMode.WORD_CHAR);
         label.setJustify(Justification.CENTER);
         label.setHalign(Align.CENTER);
         label.addCssClass(Classes.lyricsLine.className());
