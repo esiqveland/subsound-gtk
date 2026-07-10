@@ -457,4 +457,78 @@ public class DatabaseServerServiceTest {
         queue = service.listDownloadQueue();
         Assertions.assertThat(queue).isEmpty();
     }
+
+    @Test
+    public void testReEnqueueFailedDownloadResetsToPending() throws Exception {
+        File dbFile = folder.newFile("test_download_retry.db");
+        Database db = new Database("jdbc:sqlite:" + dbFile.getAbsolutePath());
+
+        UUID serverId = UUID.randomUUID();
+        DatabaseServerService service = new DatabaseServerService(serverId, db);
+        SongInfo songInfo = downloadableSong("song-1");
+
+        service.addToDownloadQueue(songInfo);
+        service.updateDownloadProgress("song-1", DownloadQueueItem.DownloadStatus.FAILED, 0.0, "boom");
+        Assertions.assertThat(service.getDownloadQueueItem("song-1").orElseThrow().status())
+                .isEqualTo(DownloadQueueItem.DownloadStatus.FAILED);
+
+        // Re-adding a FAILED song must reset it to PENDING so it gets retried
+        service.addToDownloadQueue(songInfo);
+        DownloadQueueItem item = service.getDownloadQueueItem("song-1").orElseThrow();
+        Assertions.assertThat(item.status()).isEqualTo(DownloadQueueItem.DownloadStatus.PENDING);
+        Assertions.assertThat(item.errorMessage()).isNull();
+
+        // A DOWNLOADING row must not be reset by a duplicate enqueue
+        service.updateDownloadProgress("song-1", DownloadQueueItem.DownloadStatus.DOWNLOADING, 0.5, null);
+        service.addToDownloadQueue(songInfo);
+        Assertions.assertThat(service.getDownloadQueueItem("song-1").orElseThrow().status())
+                .isEqualTo(DownloadQueueItem.DownloadStatus.DOWNLOADING);
+    }
+
+    @Test
+    public void testStatusUpdateWithoutChecksumPreservesStoredChecksum() throws Exception {
+        File dbFile = folder.newFile("test_download_checksum.db");
+        Database db = new Database("jdbc:sqlite:" + dbFile.getAbsolutePath());
+
+        UUID serverId = UUID.randomUUID();
+        DatabaseServerService service = new DatabaseServerService(serverId, db);
+        SongInfo songInfo = downloadableSong("song-1");
+
+        service.addToDownloadQueue(songInfo);
+        service.updateDownloadProgress("song-1", DownloadQueueItem.DownloadStatus.COMPLETED, 1.0, null, "abc123");
+        Assertions.assertThat(service.getDownloadQueueItem("song-1").orElseThrow().checksum())
+                .contains("abc123");
+
+        // Demoting COMPLETED -> CACHED (file unchanged on disk) must keep the checksum
+        service.updateDownloadProgress("song-1", DownloadQueueItem.DownloadStatus.CACHED, 1.0, null);
+        DownloadQueueItem item = service.getDownloadQueueItem("song-1").orElseThrow();
+        Assertions.assertThat(item.status()).isEqualTo(DownloadQueueItem.DownloadStatus.CACHED);
+        Assertions.assertThat(item.checksum()).contains("abc123");
+
+        // The explicit-checksum overload still overwrites
+        service.updateDownloadProgress("song-1", DownloadQueueItem.DownloadStatus.COMPLETED, 1.0, null, "def456");
+        Assertions.assertThat(service.getDownloadQueueItem("song-1").orElseThrow().checksum())
+                .contains("def456");
+    }
+
+    private static SongInfo downloadableSong(String songId) {
+        return ServerClientSongInfoBuilder.builder()
+                .id(songId)
+                .title("Song " + songId)
+                .mainArtist(new ServerClient.ArtistId("artist-1", "Artist Name"))
+                .albumId("album-1")
+                .album("Album Name")
+                .duration(Duration.ofMinutes(3))
+                .size(1000L)
+                .suffix("mp3")
+                .transcodeInfo(new TranscodeInfo(
+                        songId,
+                        Optional.of(320),
+                        128,
+                        Duration.ofMinutes(3),
+                        "mp3"
+                ))
+                .downloadUri(URI.create("http://example.com/download"))
+                .build();
+    }
 }

@@ -46,17 +46,24 @@ public class Database {
         org.sqlite.SQLiteConfig sqliteConfig = new org.sqlite.SQLiteConfig();
         sqliteConfig.setJournalMode(org.sqlite.SQLiteConfig.JournalMode.WAL);
         sqliteConfig.setSynchronous(org.sqlite.SQLiteConfig.SynchronousMode.NORMAL);
+        // Writers still serialize at the SQLite level; busy_timeout makes a blocked
+        // writer wait instead of failing immediately with SQLITE_BUSY.
+        sqliteConfig.setBusyTimeout(5000);
+        // BEGIN IMMEDIATE for explicit transactions: take the write lock up front so
+        // read-then-write transactions can't fail with SQLITE_BUSY_SNAPSHOT mid-way.
+        sqliteConfig.setTransactionMode(org.sqlite.SQLiteConfig.TransactionMode.IMMEDIATE);
         SQLiteDataSource ds = new SQLiteDataSource(sqliteConfig);
         ds.setUrl(url);
         var cfg = new HikariConfig();
         //cfg.setJdbcUrl(url);
         cfg.setDataSource(ds);
-        // SQLITE only support single connection per db file, so limit at 1 connection in pool:
-        cfg.setMaximumPoolSize(1);
+        // WAL mode supports many concurrent readers plus one writer, so a small pool
+        // keeps reads (e.g. playback lookups) from queueing behind large sync writes:
+        cfg.setMaximumPoolSize(4);
         cfg.setMinimumIdle(1);
         cfg.setAutoCommit(true);
         //cfg.setTransactionIsolation();
-        cfg.setConnectionTimeout(120000);
+        cfg.setConnectionTimeout(10000);
         return new HikariDataSource(cfg);
     }
 
@@ -123,6 +130,8 @@ public class Database {
         migrations.add(new MigrationV13());
         migrations.add(new MigrationV14());
         migrations.add(new MigrationV15());
+        migrations.add(new MigrationV16());
+        migrations.add(new MigrationV17());
         return migrations;
     }
 
@@ -468,6 +477,58 @@ public class Database {
                 stmt.execute("ALTER TABLE songs ADD COLUMN artists_json TEXT");
                 stmt.execute("ALTER TABLE songs ADD COLUMN album_artists_json TEXT");
                 stmt.execute("ALTER TABLE songs ADD COLUMN moods_json TEXT");
+            }
+        }
+    }
+
+    static class MigrationV16 implements Migration {
+        @Override
+        public int version() { return 16; }
+
+        @Override
+        public void apply(Connection conn) throws SQLException {
+            try (Statement stmt = conn.createStatement()) {
+                // Covering the hot query shapes; download_queue's PK starts with song_id,
+                // so (server_id, status) lookups need their own index.
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_songs_server_album ON songs (server_id, album_id)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_songs_server_starred ON songs (server_id, starred_at_ms) WHERE starred_at_ms IS NOT NULL");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_albums_server_artist ON albums (server_id, artist_id)");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_download_queue_server_status ON download_queue (server_id, status)");
+            }
+        }
+    }
+
+    static class MigrationV17 implements Migration {
+        @Override
+        public int version() { return 17; }
+
+        @Override
+        public void apply(Connection conn) throws SQLException {
+            // servers.created_at is read/written as epoch millis from Java, but the old
+            // schema default was strftime('%s','now') (seconds). Rebuild with a millis
+            // default and normalize any rows that were created via the old default.
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("""
+                    CREATE TABLE servers_new (
+                        id TEXT PRIMARY KEY,
+                        is_primary BOOL NOT NULL,
+                        server_type TEXT NOT NULL,
+                        server_url TEXT NOT NULL,
+                        username TEXT NOT NULL,
+                        created_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+                        tls_skip_verify BOOL NOT NULL DEFAULT 0,
+                        audio_format TEXT DEFAULT NULL,
+                        audio_bitrate INTEGER DEFAULT NULL
+                    )
+                """);
+                stmt.execute("""
+                    INSERT INTO servers_new (id, is_primary, server_type, server_url, username, created_at, tls_skip_verify, audio_format, audio_bitrate)
+                    SELECT id, is_primary, server_type, server_url, username, created_at, tls_skip_verify, audio_format, audio_bitrate FROM servers
+                """);
+                stmt.execute("DROP TABLE servers");
+                stmt.execute("ALTER TABLE servers_new RENAME TO servers");
+                // Values below ~1973 in millis can only be second-resolution timestamps:
+                stmt.execute("UPDATE servers SET created_at = created_at * 1000 WHERE created_at IS NOT NULL AND created_at < 100000000000");
             }
         }
     }

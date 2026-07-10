@@ -41,6 +41,7 @@ public class DatabaseService {
         String sql = """
             INSERT INTO servers (%s) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
+                is_primary = excluded.is_primary,
                 server_type = excluded.server_type,
                 server_url = excluded.server_url,
                 username = excluded.username,
@@ -59,7 +60,7 @@ public class DatabaseService {
     }
 
     public Optional<Server> getDefaultServer() {
-        String sql = "SELECT " + ALL_COLUMNS + " FROM servers WHERE is_primary = 1 LIMIT 1";
+        String sql = "SELECT " + ALL_COLUMNS + " FROM servers WHERE is_primary = 1 ORDER BY created_at ASC LIMIT 1";
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {

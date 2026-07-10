@@ -17,6 +17,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Types;
 import java.time.Duration;
 import java.time.Instant;
@@ -25,7 +26,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class DatabaseServerService {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseServerService.class);
@@ -356,6 +356,35 @@ public class DatabaseServerService {
         }
     }
 
+    /**
+     * Upserts all songs in a single transaction. Prefer this over per-song
+     * {@link #insert(DBSong)} in sync paths: one commit instead of N.
+     */
+    public void insertSongs(List<DBSong> songs) {
+        if (songs.isEmpty()) {
+            return;
+        }
+        try (Connection conn = database.openConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement pstmt = conn.prepareStatement(SONG_INSERT_SQL)) {
+                    for (DBSong song : songs) {
+                        bindSong(pstmt, song);
+                        pstmt.addBatch();
+                    }
+                    pstmt.executeBatch();
+                }
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to batch insert {} songs", songs.size(), e);
+            throw new RuntimeException("Failed to batch insert songs", e);
+        }
+    }
+
     public void syncAlbumBatch(Album album, List<DBSong> songs) {
         String albumSql = """
                 INSERT OR REPLACE INTO albums (id, server_id, artist_id, name, song_count, year, artist_name, duration_ms, starred_at_ms, cover_art_id, added_at_ms, genre)
@@ -451,7 +480,8 @@ public class DatabaseServerService {
     }
 
     /**
-     * Returns every song that has any row in {@code download_queue} for this server.
+     * Returns every song with a non-CACHED row in {@code download_queue} for this server,
+     * i.e. the explicitly requested downloads (CACHED rows only track ad-hoc playback caching).
      * One DB round trip; intended for the Downloads playlist view to avoid a per-song server fan-out.
      */
     public List<DBSong> listDownloadedSongs() {
@@ -508,16 +538,36 @@ public class DatabaseServerService {
             }
             return;
         }
-        String placeholders = starredSongIds.stream().map(_ -> "?").collect(Collectors.joining(","));
-        String sql = "UPDATE songs SET starred_at_ms = NULL WHERE server_id = ? AND starred_at_ms IS NOT NULL AND id NOT IN (" + placeholders + ")";
-        try (Connection conn = database.openConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, this.serverId.toString());
-            int idx = 2;
-            for (String id : starredSongIds) {
-                pstmt.setString(idx++, id);
+        // Stage the keep-set in a temp table instead of an IN (?,?,...) list, so we
+        // never hit SQLite's bound-variable limit. Temp tables are per-connection,
+        // so create/clear/drop within the same transaction.
+        try (Connection conn = database.openConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (Statement stmt = conn.createStatement()) {
+                    stmt.execute("CREATE TEMP TABLE IF NOT EXISTS temp_starred_keep (id TEXT PRIMARY KEY)");
+                    stmt.execute("DELETE FROM temp_starred_keep");
+                }
+                try (PreparedStatement pstmt = conn.prepareStatement("INSERT OR IGNORE INTO temp_starred_keep (id) VALUES (?)")) {
+                    for (String id : starredSongIds) {
+                        pstmt.setString(1, id);
+                        pstmt.addBatch();
+                    }
+                    pstmt.executeBatch();
+                }
+                String sql = "UPDATE songs SET starred_at_ms = NULL WHERE server_id = ? AND starred_at_ms IS NOT NULL AND id NOT IN (SELECT id FROM temp_starred_keep)";
+                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    pstmt.setString(1, this.serverId.toString());
+                    pstmt.executeUpdate();
+                }
+                try (Statement stmt = conn.createStatement()) {
+                    stmt.execute("DROP TABLE temp_starred_keep");
+                }
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
             }
-            pstmt.executeUpdate();
         } catch (SQLException e) {
             logger.error("Failed to clear stale starred songs", e);
             throw new RuntimeException("Failed to clear stale starred songs", e);
@@ -611,29 +661,115 @@ public class DatabaseServerService {
 
     // Playlist methods
 
+    private static final String PLAYLIST_UPSERT_SQL = """
+            INSERT OR REPLACE INTO playlists (id, server_id, name, song_count, duration_ms, cover_art_id, created_at_ms, updated_at_ms)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """;
+
+    private static void bindPlaylist(PreparedStatement pstmt, PlaylistRow playlist) throws SQLException {
+        pstmt.setString(1, playlist.id());
+        pstmt.setString(2, playlist.serverId().toString());
+        pstmt.setString(3, playlist.name());
+        pstmt.setInt(4, playlist.songCount());
+        pstmt.setLong(5, playlist.duration().toMillis());
+        if (playlist.coverArtId().isPresent()) {
+            pstmt.setString(6, playlist.coverArtId().get());
+        } else {
+            pstmt.setNull(6, Types.VARCHAR);
+        }
+        pstmt.setLong(7, playlist.createdAt().toEpochMilli());
+        pstmt.setLong(8, playlist.updatedAt().toEpochMilli());
+    }
+
     public void upsertPlaylist(PlaylistRow playlist) {
-        String sql = """
-                INSERT OR REPLACE INTO playlists (id, server_id, name, song_count, duration_ms, cover_art_id, created_at_ms, updated_at_ms)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """;
         try (Connection conn = database.openConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, playlist.id());
-            pstmt.setString(2, playlist.serverId().toString());
-            pstmt.setString(3, playlist.name());
-            pstmt.setInt(4, playlist.songCount());
-            pstmt.setLong(5, playlist.duration().toMillis());
-            if (playlist.coverArtId().isPresent()) {
-                pstmt.setString(6, playlist.coverArtId().get());
-            } else {
-                pstmt.setNull(6, Types.VARCHAR);
-            }
-            pstmt.setLong(7, playlist.createdAt().toEpochMilli());
-            pstmt.setLong(8, playlist.updatedAt().toEpochMilli());
+             PreparedStatement pstmt = conn.prepareStatement(PLAYLIST_UPSERT_SQL)) {
+            bindPlaylist(pstmt, playlist);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             logger.error("Failed to insert playlist", e);
             throw new RuntimeException("Failed to insert playlist", e);
+        }
+    }
+
+    /**
+     * Replaces a playlist's full contents in one transaction: upserts the playlist row
+     * and the songs, and rewrites playlist_songs with sort_order following list order.
+     * Prefer this over per-song insert/insertPlaylistSong loops: one commit instead of 2N.
+     */
+    public void syncPlaylistBatch(PlaylistRow playlist, List<DBSong> songs) {
+        String deleteSongsSql = "DELETE FROM playlist_songs WHERE playlist_id = ? AND server_id = ?";
+        String insertPlaylistSongSql = "INSERT OR REPLACE INTO playlist_songs (playlist_id, server_id, song_id, sort_order) VALUES (?, ?, ?, ?)";
+        try (Connection conn = database.openConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement pstmt = conn.prepareStatement(PLAYLIST_UPSERT_SQL)) {
+                    bindPlaylist(pstmt, playlist);
+                    pstmt.executeUpdate();
+                }
+                try (PreparedStatement pstmt = conn.prepareStatement(deleteSongsSql)) {
+                    pstmt.setString(1, playlist.id());
+                    pstmt.setString(2, this.serverId.toString());
+                    pstmt.executeUpdate();
+                }
+                try (PreparedStatement pstmt = conn.prepareStatement(SONG_INSERT_SQL)) {
+                    for (DBSong song : songs) {
+                        bindSong(pstmt, song);
+                        pstmt.addBatch();
+                    }
+                    pstmt.executeBatch();
+                }
+                try (PreparedStatement pstmt = conn.prepareStatement(insertPlaylistSongSql)) {
+                    for (int i = 0; i < songs.size(); i++) {
+                        pstmt.setString(1, playlist.id());
+                        pstmt.setString(2, this.serverId.toString());
+                        pstmt.setString(3, songs.get(i).id());
+                        pstmt.setInt(4, i);
+                        pstmt.addBatch();
+                    }
+                    pstmt.executeBatch();
+                }
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to sync playlist batch: playlistId={}", playlist.id(), e);
+            throw new RuntimeException("Failed to sync playlist batch", e);
+        }
+    }
+
+    /**
+     * Inserts all playlist->song mappings in one transaction, with sort_order
+     * following list order. One commit instead of N.
+     */
+    public void insertPlaylistSongs(String playlistId, List<String> songIds) {
+        if (songIds.isEmpty()) {
+            return;
+        }
+        String sql = "INSERT OR REPLACE INTO playlist_songs (playlist_id, server_id, song_id, sort_order) VALUES (?, ?, ?, ?)";
+        try (Connection conn = database.openConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    for (int i = 0; i < songIds.size(); i++) {
+                        pstmt.setString(1, playlistId);
+                        pstmt.setString(2, this.serverId.toString());
+                        pstmt.setString(3, songIds.get(i));
+                        pstmt.setInt(4, i);
+                        pstmt.addBatch();
+                    }
+                    pstmt.executeBatch();
+                }
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to batch insert playlist songs: playlistId={}", playlistId, e);
+            throw new RuntimeException("Failed to batch insert playlist songs", e);
         }
     }
 
@@ -715,13 +851,26 @@ public class DatabaseServerService {
     }
 
     public void deletePlaylist(String playlistId) {
-        deletePlaylistSongs(playlistId);
-        String sql = "DELETE FROM playlists WHERE id = ? AND server_id = ?";
-        try (Connection conn = database.openConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, playlistId);
-            pstmt.setString(2, this.serverId.toString());
-            pstmt.executeUpdate();
+        String deleteSongsSql = "DELETE FROM playlist_songs WHERE playlist_id = ? AND server_id = ?";
+        String deletePlaylistSql = "DELETE FROM playlists WHERE id = ? AND server_id = ?";
+        try (Connection conn = database.openConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement pstmt = conn.prepareStatement(deleteSongsSql)) {
+                    pstmt.setString(1, playlistId);
+                    pstmt.setString(2, this.serverId.toString());
+                    pstmt.executeUpdate();
+                }
+                try (PreparedStatement pstmt = conn.prepareStatement(deletePlaylistSql)) {
+                    pstmt.setString(1, playlistId);
+                    pstmt.setString(2, this.serverId.toString());
+                    pstmt.executeUpdate();
+                }
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
         } catch (SQLException e) {
             logger.error("Failed to delete playlist", e);
             throw new RuntimeException("Failed to delete playlist", e);
@@ -905,13 +1054,14 @@ public class DatabaseServerService {
                 ON CONFLICT(song_id, server_id) DO UPDATE SET
                     status = ?,
                     progress = 0.0,
+                    error_message = NULL,
                     stream_uri = excluded.stream_uri,
                     stream_format = excluded.stream_format,
                     original_size = excluded.original_size,
                     original_bitrate = excluded.original_bitrate,
                     estimated_bitrate = excluded.estimated_bitrate,
                     duration_seconds = excluded.duration_seconds
-                WHERE download_queue.status = 'CACHED'
+                WHERE download_queue.status IN ('CACHED', 'FAILED')
                 """;
         try (Connection conn = database.openConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, songInfo.id());
@@ -986,20 +1136,27 @@ public class DatabaseServerService {
         String selectSql = "SELECT song_id FROM download_queue WHERE server_id = ? AND status = ?";
         String deleteSql = "DELETE FROM download_queue WHERE server_id = ? AND status = ?";
         try (Connection conn = database.openConnection()) {
-            try (PreparedStatement pstmt = conn.prepareStatement(selectSql)) {
-                pstmt.setString(1, this.serverId.toString());
-                pstmt.setString(2, status.toString());
-                try (ResultSet rs = pstmt.executeQuery()) {
-                    while (rs.next()) {
-                        deletedSongIds.add(rs.getString("song_id"));
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement pstmt = conn.prepareStatement(selectSql)) {
+                    pstmt.setString(1, this.serverId.toString());
+                    pstmt.setString(2, status.toString());
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        while (rs.next()) {
+                            deletedSongIds.add(rs.getString("song_id"));
+                        }
                     }
                 }
-            }
-            try (PreparedStatement pstmt = conn.prepareStatement(deleteSql)) {
-                pstmt.setString(1, this.serverId.toString());
-                pstmt.setString(2, status.toString());
-                int deleted = pstmt.executeUpdate();
-                logger.info("Cleared {} cached songs for server {}", deleted, serverId);
+                try (PreparedStatement pstmt = conn.prepareStatement(deleteSql)) {
+                    pstmt.setString(1, this.serverId.toString());
+                    pstmt.setString(2, status.toString());
+                    int deleted = pstmt.executeUpdate();
+                    logger.info("Cleared {} cached songs for server {}", deleted, serverId);
+                }
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
             }
         } catch (SQLException e) {
             logger.error("Failed to clear cached songs", e);
@@ -1073,13 +1230,30 @@ public class DatabaseServerService {
         return items;
     }
 
+    /**
+     * Update status/progress without touching the stored checksum. The checksum
+     * describes whatever file is on disk, which this transition does not change
+     * (e.g. demoting COMPLETED to CACHED in removeFromQueue).
+     */
     public void updateDownloadProgress(
             String songId,
             DownloadQueueItem.DownloadStatus status,
             double progress,
             String errorMessage
     ) {
-        updateDownloadProgress(songId, status, progress, errorMessage, null);
+        String sql = "UPDATE download_queue SET status = ?, progress = ?, error_message = ? WHERE song_id = ? AND server_id = ?";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, status.name());
+            pstmt.setDouble(2, progress);
+            pstmt.setString(3, errorMessage);
+            pstmt.setString(4, songId);
+            pstmt.setString(5, this.serverId.toString());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Failed to update download progress for song: {}", songId, e);
+            throw new RuntimeException("Failed to update download progress", e);
+        }
     }
 
     public void updateDownloadProgress(
@@ -1236,24 +1410,29 @@ public class DatabaseServerService {
         """;
         try (Connection conn = database.openConnection()) {
             conn.setAutoCommit(false);
-            try (PreparedStatement deleteStmt = conn.prepareStatement(deleteSql)) {
-                deleteStmt.setString(1, this.serverId.toString());
-                deleteStmt.executeUpdate();
-            }
-            try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
-                for (var item : items) {
-                    insertStmt.setString(1, this.serverId.toString());
-                    insertStmt.setInt(2, item.sortOrder());
-                    insertStmt.setString(3, item.songId());
-                    insertStmt.setString(4, item.queueItemId());
-                    insertStmt.setString(5, item.queueKind());
-                    insertStmt.setInt(6, item.originalOrder());
-                    insertStmt.setInt(7, item.shuffleOrder());
-                    insertStmt.addBatch();
+            try {
+                try (PreparedStatement deleteStmt = conn.prepareStatement(deleteSql)) {
+                    deleteStmt.setString(1, this.serverId.toString());
+                    deleteStmt.executeUpdate();
                 }
-                insertStmt.executeBatch();
+                try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
+                    for (var item : items) {
+                        insertStmt.setString(1, this.serverId.toString());
+                        insertStmt.setInt(2, item.sortOrder());
+                        insertStmt.setString(3, item.songId());
+                        insertStmt.setString(4, item.queueItemId());
+                        insertStmt.setString(5, item.queueKind());
+                        insertStmt.setInt(6, item.originalOrder());
+                        insertStmt.setInt(7, item.shuffleOrder());
+                        insertStmt.addBatch();
+                    }
+                    insertStmt.executeBatch();
+                }
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
             }
-            conn.commit();
         } catch (SQLException e) {
             logger.error("Failed to save play queue items", e);
             throw new RuntimeException("Failed to save play queue items", e);

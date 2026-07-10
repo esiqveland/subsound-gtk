@@ -225,15 +225,10 @@ public class CachingClient implements ServerClient {
         );
         Utils.doAsync(() -> {
             try {
-                dbService.upsertPlaylist(row);
-                dbService.deletePlaylistSongs(playlist.id());
-
-                var playlistSongs = playlist.songs();
-                for (int i = 0; i < playlistSongs.size(); i++) {
-                    var songInfo = playlistSongs.get(i);
-                    dbService.insert(DBSong.from(songInfo, serverUUID));
-                    dbService.insertPlaylistSong(playlist.id(), songInfo.id(), i);
-                }
+                var dbSongs = playlist.songs().stream()
+                        .map(songInfo -> DBSong.from(songInfo, serverUUID))
+                        .toList();
+                dbService.syncPlaylistBatch(row, dbSongs);
             } catch (Exception e) {
                 log.warn("Failed to persist playlist {} to database", playlist.id(), e);
             }

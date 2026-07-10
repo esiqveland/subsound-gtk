@@ -234,9 +234,7 @@ public class StarredListStore {
             return;
         }
         var newIdSet = newSongs.stream().map(SongInfo::id).collect(Collectors.toSet());
-        for (var song : newSongs) {
-            dbService.insert(DBSong.from(song, serverUUID));
-        }
+        dbService.insertSongs(newSongs.stream().map(song -> DBSong.from(song, serverUUID)).toList());
         dbService.clearStarredExcept(newIdSet);
         log.info("persisted {} starred songs to database", newSongs.size());
     }
