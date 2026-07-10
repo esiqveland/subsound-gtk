@@ -103,8 +103,8 @@ public class SubsonicClientV2 implements ServerClient {
 
         var httpBuilder = new OkHttpClient.Builder()
                 .connectTimeout(5, TimeUnit.SECONDS)
-                .readTimeout(10, TimeUnit.SECONDS)
-                .callTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .callTimeout(30, TimeUnit.SECONDS)
                 .addInterceptor(userAgentInterceptor(Constants.USER_AGENT))
                 .addInterceptor(loggingInterceptor(log));
 
@@ -268,11 +268,11 @@ public class SubsonicClientV2 implements ServerClient {
             request = new Request.Builder().url(url).get().build();
         }
         try (Response response = httpClient.newCall(request).execute()) {
-            var body = response.body() != null ? response.body().string() : "";
             if (!response.isSuccessful()) {
+                var body = response.body().string();
                 throw new HttpException(response.code(), body);
             }
-            return Utils.fromJson(body, responseClass);
+            return Utils.fromJson(response.body().byteStream(), responseClass);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

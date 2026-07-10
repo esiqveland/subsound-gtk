@@ -26,7 +26,9 @@ import org.subsound.utils.javahttp.InstantAdapter;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -373,6 +375,15 @@ public class Utils {
         return Label.builder().setLabel(labelText).setHalign(Align.START).setCssClasses(cssClasses("title-3"));
     }
 
+    public static <T> T fromJson(InputStream inputStream, Class<T> clazz) {
+        // 3. Wrap the InputStream in an InputStreamReader specifying UTF-8
+        try (Reader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
+            // 4. Parse directly from the reader into your Java object
+            return GSON.fromJson(reader, clazz);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
     public static <T> T fromJson(String s, Class<T> clazz) {
         return GSON.fromJson(s, clazz);
     }
