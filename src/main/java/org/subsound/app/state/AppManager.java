@@ -75,6 +75,8 @@ import java.util.function.Function;
 
 import static org.subsound.app.state.AppManager.NowPlaying.State.LOADING;
 import static org.subsound.app.state.AppManager.NowPlaying.State.READY;
+import static org.subsound.i18n.I18n.tr;
+import static org.subsound.i18n.I18n.trn;
 import static org.subsound.utils.Utils.doAsync;
 import static org.subsound.utils.Utils.runOnMainThread;
 import static org.subsound.utils.Utils.timeIt;
@@ -615,7 +617,7 @@ public class AppManager {
             log.error("Failed to load song: id={} title={}", playCmd.song().id(), playCmd.song().title(), e);
             this.setState(old -> old.withNowPlaying(Optional.empty()));
             this.scrobbleSession.set(null);
-            this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Failed to load song")));
+            this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(tr("Failed to load song"))));
             throw e;
         }
     }
@@ -631,7 +633,7 @@ public class AppManager {
         // If server is unreachable and song is not cached, we can't play it
         if (songUri.isEmpty()) {
             if (!this.downloadManager.isAvailableOffline(songInfo)) {
-                this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Song not available offline")));
+                this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(tr("Song not available offline"))));
                 this.setState(old -> old.withNowPlaying(Optional.empty()));
                 this.scrobbleSession.set(null);
                 return null;
@@ -823,7 +825,7 @@ public class AppManager {
                 case PlayerAction.AddToPlaylist a -> {
                     this.useClient(c -> c.addToPlaylist(new ServerClient.AddSongToPlaylist(a.playlistId(), List.of(a.song().id()))));
                     this.playlistsStore.refreshPlaylistAsync(a.playlistId());
-                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Added to " + a.playlistName())));
+                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(tr("Added to %s").formatted(a.playlistName()))));
                 }
                 case PlayerAction.AddManyToPlaylist a -> {
                     doAsync(() -> {
@@ -831,7 +833,8 @@ public class AppManager {
                         this.useClient(c -> c.addToPlaylist(new ServerClient.AddSongToPlaylist(a.playlistId(), songsIds)));
                         this.playlistsStore.refreshPlaylistAsync(a.playlistId());
                     });
-                    String msg = "Adding %d items to %s".formatted(a.songs().size(), a.playlistName());
+                    String msg = trn("Adding %1$d item to %2$s", "Adding %1$d items to %2$s", a.songs().size())
+                            .formatted(a.songs().size(), a.playlistName());
                     this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(msg)));
                 }
                 case PlayerAction.RemoveFromPlaylist a -> {
@@ -847,7 +850,7 @@ public class AppManager {
                 }
                 case PlayerAction.AddToDownloadQueue a -> {
                     this.downloadManager.enqueue(a.song());
-                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Added to download queue")));
+                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(tr("Added to download queue"))));
                 }
                 case PlayerAction.CreatePlaylist c -> {
                     var songs = c.songs().stream().map(GSongInfo::getId).toList();
@@ -856,7 +859,7 @@ public class AppManager {
                             songs
                     )));
                     this.playlistsStore.addNewPlaylist(createdPlaylist);
-                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Created playlist %s".formatted(c.playlistName()))));
+                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(tr("Created playlist %s").formatted(c.playlistName()))));
                 }
                 case PlayerAction.DeletePlaylist d -> {
                     this.useClient1(client -> client.playlistDelete(new PlaylistDeleteRequest(d.playlistId())));
@@ -871,7 +874,9 @@ public class AppManager {
                     for (var song : a.songs()) {
                         this.downloadManager.enqueue(song.getSongInfo());
                     }
-                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Added %d items to download queue".formatted(a.songs().size()))));
+                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(
+                            trn("Added %d item to download queue", "Added %d items to download queue", a.songs().size())
+                                    .formatted(a.songs().size()))));
                 }
                 case PlayerAction.OverrideNetworkStatus(var a) -> {
                     this.networkMonitor.setOverrideState(a);
@@ -882,7 +887,7 @@ public class AppManager {
                     );
                     var stats = syncService.syncAll();
                     this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(
-                            "Synced %d artists, %d albums, %d songs".formatted(
+                            tr("Synced %1$d artists, %2$d albums, %3$d songs").formatted(
                                     stats.artists(), stats.albums(), stats.songs()
                             )
                     )));
@@ -890,21 +895,21 @@ public class AppManager {
                 case PlayerAction.ClearSongCache _ -> {
                     this.downloadManager.resetSongCache();
                     this.songCache.clearSongs(SERVER_ID);
-                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Song cache cleared")));
+                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(tr("Song cache cleared"))));
                 }
                 case PlayerAction.ClearThumbnailCache _ -> {
                     this.thumbnailCache.clearThumbnails(SERVER_ID);
-                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Thumbnail cache cleared")));
+                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(tr("Thumbnail cache cleared"))));
                 }
                 case PlayerAction.TriggerServerScan arg -> {
                     Utils.doAsync(() -> this.useClient(c -> c.startScan(arg.quickScan())))
                             .thenApply(status -> {
-                                this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Started server scan")));
+                                this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(tr("Started server scan"))));
                                 return status;
                             })
                             .exceptionally(throwable -> {
                                 log.error("Failed to start server scan", throwable);
-                                this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Failed to start server: %s".formatted(throwable.getMessage()))));
+                                this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(tr("Failed to start server: %s").formatted(throwable.getMessage()))));
                                 return null;
                             });
                 }

@@ -3,6 +3,7 @@ package org.subsound.ui.components;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Inscription;
 import org.subsound.ui.models.GDownloadState;
+import static org.subsound.i18n.I18n.tr;
 
 /**
  * Lightweight download-state indicator. Uses {@link Inscription} (GTK4's high-performance
@@ -40,23 +41,23 @@ public class SongDownloadStatusIcon extends Inscription {
         switch (state) {
             case DOWNLOADED -> {
                 this.setText(GLYPH_DOWNLOADED);
-                this.setTooltipText("Available offline");
+                this.setTooltipText(tr("Available offline"));
                 this.addCssClass(Classes.colorSuccess.className());
                 this.setOpacity(1);
             }
             case CACHED -> {
                 this.setText(GLYPH_CACHED);
-                this.setTooltipText("Cached - available offline");
+                this.setTooltipText(tr("Cached - available offline"));
                 this.setOpacity(1);
             }
             case PENDING -> {
                 this.setText(GLYPH_PENDING);
-                this.setTooltipText("Download pending");
+                this.setTooltipText(tr("Download pending"));
                 this.setOpacity(1);
             }
             case DOWNLOADING -> {
                 this.setText(GLYPH_DOWNLOADING);
-                this.setTooltipText("Downloading...");
+                this.setTooltipText(tr("Downloading..."));
                 this.setOpacity(1);
             }
             case NONE -> {

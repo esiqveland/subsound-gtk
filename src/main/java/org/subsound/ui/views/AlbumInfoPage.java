@@ -76,6 +76,8 @@ import static org.gnome.gtk.Align.END;
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
+import static org.subsound.i18n.I18n.tr;
+import static org.subsound.i18n.I18n.trn;
 
 public class AlbumInfoPage extends Box implements StateListener {
     private final AppManager appManager;
@@ -412,7 +414,7 @@ public class AlbumInfoPage extends Box implements StateListener {
             var menuPopover = new Popover();
             menuPopover.setChild(scrolledWindow);
 
-            var playMenuItem = menuItem("Play");
+            var playMenuItem = menuItem(tr("Play"));
             playMenuItem.onClicked(() -> {
                 menuPopover.popdown();
                 int idx = this.index;
@@ -433,19 +435,19 @@ public class AlbumInfoPage extends Box implements StateListener {
                 ));
             });
 
-            var playNextMenuItem = menuItem("Play Next");
+            var playNextMenuItem = menuItem(tr("Play Next"));
             playNextMenuItem.onClicked(() -> {
                 menuPopover.popdown();
                 this.onAction.apply(new PlayerAction.Enqueue(songInfo));
             });
 
-            var addToQueueMenuItem = menuItem("Add to Queue");
+            var addToQueueMenuItem = menuItem(tr("Add to Queue"));
             addToQueueMenuItem.onClicked(() -> {
                 menuPopover.popdown();
                 this.onAction.apply(new PlayerAction.EnqueueLast(songInfo));
             });
 
-            var favoriteMenuItem = menuItem(songInfo.isStarred() ? "Unstar" : "Add to Starred");
+            var favoriteMenuItem = menuItem(songInfo.isStarred() ? tr("Unstar") : tr("Add to Starred"));
             favoriteMenuItem.onClicked(() -> {
                 menuPopover.popdown();
                 var action = songInfo.isStarred()
@@ -454,12 +456,12 @@ public class AlbumInfoPage extends Box implements StateListener {
                 this.onAction.apply(action);
             });
 
-            var addToPlaylistMenuItem = menuItem("Add to Playlist\u2026");
+            var addToPlaylistMenuItem = menuItem(tr("Add to Playlist\u2026"));
             addToPlaylistMenuItem.onClicked(() -> {
                 stack.setVisibleChildName("playlists");
             });
 
-            var downloadMenuItem = menuItem("Download");
+            var downloadMenuItem = menuItem(tr("Download"));
             downloadMenuItem.onClicked(() -> {
                 menuPopover.popdown();
                 this.onAction.apply(new PlayerAction.AddToDownloadQueue(songInfo));
@@ -485,7 +487,7 @@ public class AlbumInfoPage extends Box implements StateListener {
                     //.setMarginEnd(4)
                     .build();
 
-            var backButton = menuItem("\u2190 Back");
+            var backButton = menuItem(tr("\u2190 Back"));
             backButton.onClicked(() -> stack.setVisibleChildName("main"));
             playlistsView.append(backButton);
             playlistsView.append(new Separator(org.gnome.gtk.Orientation.HORIZONTAL));
@@ -646,14 +648,14 @@ public class AlbumInfoPage extends Box implements StateListener {
         this.artistNameLabel.setLabel(this.info.album().artistName());
         this.albumInfoBox.append(this.artistNameLabel);
         this.albumInfoBox.append(infoLabel(this.info.album().year().map(String::valueOf).orElse(""), Classes.labelDim.add(Classes.bodyText)));
-        this.albumInfoBox.append(infoLabel("%d songs, %s".formatted(this.info.album().songCount(), formatDurationMedium(this.info.album().totalPlayTime())), Classes.labelDim.add(Classes.bodyText)));
+        this.albumInfoBox.append(infoLabel(trn("%1$d song, %2$s", "%1$d songs, %2$s", this.info.album().songCount()).formatted(this.info.album().songCount(), formatDurationMedium(this.info.album().totalPlayTime())), Classes.labelDim.add(Classes.bodyText)));
         //this.albumInfoBox.append(infoLabel("%s playtime".formatted(formatDurationMedium(this.albumInfo.totalPlayTime())), Classes.labelDim.add(Classes.bodyText)));
 
         var downloadAllButtonContent = Box.builder()
                 .setOrientation(HORIZONTAL)
                 .setSpacing(6)
                 .build();
-        downloadAllButtonContent.append(Label.builder().setLabel("Download all").build());
+        downloadAllButtonContent.append(Label.builder().setLabel(tr("Download all")).build());
         downloadAllButtonContent.append(org.gnome.gtk.Image.fromIconName(Icons.FolderDownload.getIconName()));
         var downloadAllButton = Button.builder()
                 //.setLabel("Download All")
@@ -668,7 +670,7 @@ public class AlbumInfoPage extends Box implements StateListener {
         });
         this.playlistPopover = buildPlaylistPopover();
         var addToPlaylistButton = MenuButton.builder()
-                .setLabel("Add to Playlist\u2026")
+                .setLabel(tr("Add to Playlist\u2026"))
                 .setIconName(Icons.Playlists.getIconName())
                 .setPopover(this.playlistPopover)
                 .setHalign(CENTER)

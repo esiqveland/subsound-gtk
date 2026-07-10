@@ -72,6 +72,8 @@ import static org.gnome.gtk.Orientation.VERTICAL;
 import static org.subsound.ui.views.ArtistInfoFlowBox.BIG_SPACING;
 import static org.subsound.utils.Utils.borderBox;
 import static org.subsound.utils.Utils.heading1;
+import static org.subsound.i18n.I18n.tr;
+import static org.subsound.i18n.I18n.trn;
 
 public class FrontpagePage extends Box implements AppManager.StateListener {
     private static final Logger log = LoggerFactory.getLogger(FrontpagePage.class);
@@ -137,7 +139,7 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
 
         var homeBox = borderBox(HORIZONTAL, 0).build();
         homeBox.setHalign(Align.FILL);
-        var homeLabel = Label.builder().setLabel("Home").setHalign(START).setCssClasses(Classes.titleLarge.add()).build();
+        var homeLabel = Label.builder().setLabel(tr("Home")).setHalign(START).setCssClasses(Classes.titleLarge.add()).build();
         var reloadButton = new RefreshButton(this::doLoad);
         reloadButton.setHexpand(true);
         reloadButton.setVexpand(true);
@@ -239,11 +241,11 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
 
         private HomeOverview data;
 
-        private final Label playlistsLabel = heading1("Playlists").build();
-        private final Label recentLabel = heading1("Recently played").build();
-        private final Label newLabel = heading1("Recently added releases").build();
-        private final Label mostLabel = heading1("Most played").build();
-        private final Label yearlyLabel = heading1("Most recent").build();
+        private final Label playlistsLabel = heading1(tr("Playlists")).build();
+        private final Label recentLabel = heading1(tr("Recently played")).build();
+        private final Label newLabel = heading1(tr("Recently added releases")).build();
+        private final Label mostLabel = heading1(tr("Most played")).build();
+        private final Label yearlyLabel = heading1(tr("Most recent")).build();
 
         private final HorizontalPlaylistsView playlistsView;
         private final BoxHolder<HorizontalAlbumsFlowBoxV3> recentList;
@@ -613,7 +615,7 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
             }
             var playlist = gp.getPlaylist();
             this.nameLabel.setLabel(playlist.name());
-            this.countLabel.setLabel(playlist.songCount() + " songs");
+            this.countLabel.setLabel(trn("%d song", "%d songs", playlist.songCount()).formatted(playlist.songCount()));
             this.art.update(playlist.coverArtId());
         }
 
@@ -702,18 +704,18 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
                 this.hostLabel.setLabel(serverUrl);
             }
             this.versionLabel.setLabel(
-                info.serverVersion().map(v -> v.startsWith("v") ? v : "v%s".formatted(v)).map(v -> "Version: %s".formatted(v)).orElse("Version: ")
+                info.serverVersion().map(v -> v.startsWith("v") ? v : "v%s".formatted(v)).map(v -> tr("Version: %s").formatted(v)).orElse(tr("Version: "))
             );
-            this.apiVersionLabel.setLabel(Optional.ofNullable(info.apiVersion()).map(v -> "API Version: %s".formatted(v)).orElse("API Version: "));
-            this.songsLabel.setLabel(String.format("%,d songs", info.songCount()));
+            this.apiVersionLabel.setLabel(Optional.ofNullable(info.apiVersion()).map(v -> tr("API Version: %s").formatted(v)).orElse(tr("API Version: ")));
+            this.songsLabel.setLabel(trn("%,d song", "%,d songs", info.songCount()).formatted(info.songCount()));
             info.folderCount().ifPresentOrElse(
-                f -> { this.foldersLabel.setLabel(f + " folders"); this.foldersLabel.setVisible(true); },
+                f -> { this.foldersLabel.setLabel(trn("%d folder", "%d folders", f).formatted(f)); this.foldersLabel.setVisible(true); },
                 () -> this.foldersLabel.setVisible(false)
             );
             info.lastScan().ifPresentOrElse(
                 scan -> {
                     var age = Duration.between(scan, Instant.now());
-                    this.lastScanLabel.setLabel("Scanned " + Utils.formatDurationMedium(age) + " ago");
+                    this.lastScanLabel.setLabel(tr("Scanned %s ago").formatted(Utils.formatDurationMedium(age)));
                     this.lastScanLabel.setVisible(true);
                 },
                 () -> this.lastScanLabel.setVisible(false)

@@ -19,6 +19,8 @@ import org.gnome.gtk.Window;
 
 import java.util.function.IntConsumer;
 
+import static org.subsound.i18n.I18n.tr;
+
 public class PlayQueuePopover extends Popover {
     private final AppManager appManager;
     private final ListView queueListView;
@@ -101,13 +103,13 @@ public class PlayQueuePopover extends Popover {
                 .setMarginEnd(16)
                 .build();
         var emptyLabel = Label.builder()
-                .setLabel("Queue is empty")
+                .setLabel(tr("Queue is empty"))
                 .build();
         emptyLabel.addCssClass("dim-label");
         emptyStateBox.append(emptyLabel);
 
         var queueHeader = Label.builder()
-                .setLabel("Play Queue")
+                .setLabel(tr("Play Queue"))
                 .setMarginTop(8)
                 .setMarginBottom(8)
                 .build();

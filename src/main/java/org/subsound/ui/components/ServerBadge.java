@@ -31,6 +31,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.subsound.i18n.I18n.tr;
+import static org.subsound.i18n.I18n.trn;
 import static org.subsound.ui.components.Classes.boxedList;
 
 public class ServerBadge extends Box implements AppManager.StateListener {
@@ -69,7 +71,7 @@ public class ServerBadge extends Box implements AppManager.StateListener {
         this.setMarginEnd(8);
 
         var aboutButton = ActionRow.builder()
-                .setTitle("About")
+                .setTitle(tr("About"))
                 .setActivatable(true)
                 .build();
         var aboutIcon = Image.fromIconName("help-about-symbolic");
@@ -89,14 +91,14 @@ public class ServerBadge extends Box implements AppManager.StateListener {
         this.statusDot = Label.builder()
                 .setLabel("\u25CF") // ●
                 .setValign(Align.CENTER)
-                .setTooltipText("Checking…")
+                .setTooltipText(tr("Checking…"))
                 .build();
         this.statusDot.addCssClass(Classes.labelDim.className());
 
         // Server hostname + username row
         this.serverRow = ActionRow.builder()
                 .setTitle(getServerHostNameOrNotConnected())
-                .setSubtitle("Checking connectivity…")
+                .setSubtitle(tr("Checking connectivity…"))
                 .setUseMarkup(false)
                 .build();
         this.serverRow.setSubtitleLines(1);
@@ -113,8 +115,8 @@ public class ServerBadge extends Box implements AppManager.StateListener {
 
         // Offline mode toggle
         this.offlineSwitch = SwitchRow.builder()
-                .setTitle("Offline mode")
-                .setSubtitle("Use only cached data. Remember to Sync Library to enable offline mode.")
+                .setTitle(tr("Offline mode"))
+                .setSubtitle(tr("Use only cached data. Remember to Sync Library to enable offline mode."))
                 .build();
         this.offlineSwitch.onNotify("active", _ -> {
             if (updatingSwitch.get()) return;
@@ -126,7 +128,7 @@ public class ServerBadge extends Box implements AppManager.StateListener {
         });
 
         this.configureServerButton = ActionRow.builder()
-                .setTitle("Configure server")
+                .setTitle(tr("Configure server"))
                 .setActivatable(true)
                 .build();
         var configIcon = Image.fromIconName(Icons.Settings.getIconName());
@@ -143,9 +145,9 @@ public class ServerBadge extends Box implements AppManager.StateListener {
         });
 
         this.logoutButton = ActionRow.builder()
-                .setTitle("Log out")
+                .setTitle(tr("Log out"))
                 .setActivatable(true)
-                .setTooltipText("Delete all settings and cached data, then quit")
+                .setTooltipText(tr("Delete all settings and cached data, then quit"))
                 .build();
         var logoutIcon = Image.fromIconName("system-log-out-symbolic");
         logoutIcon.setPixelSize(16);
@@ -159,11 +161,12 @@ public class ServerBadge extends Box implements AppManager.StateListener {
             onClose.run();
             AdwDialogHelper.ofDialog(
                     parentWindow,
-                    "Log out?",
-                    "This will delete all settings, cached songs, thumbnails, and the local database, then quit the app.",
+                    tr("Log out?"),
+                    tr("This will delete all settings, cached songs, thumbnails, and the local database, then quit the app."),
                     List.of(
-                            new AdwDialogHelper.Response("cancel", "_Cancel"),
-                            new AdwDialogHelper.Response("logout", "_Log out", ResponseAppearance.DESTRUCTIVE)
+                            // TRANSLATORS: "_" marks the mnemonic key
+                            new AdwDialogHelper.Response("cancel", tr("_Cancel")),
+                            new AdwDialogHelper.Response("logout", tr("_Log out"), ResponseAppearance.DESTRUCTIVE)
                     )
             ).thenAccept(result -> {
                 if ("logout".equals(result.label())) {
@@ -254,12 +257,12 @@ public class ServerBadge extends Box implements AppManager.StateListener {
             statusDot.removeCssClass("error");
             statusDot.removeCssClass(Classes.labelDim.className());
             statusDot.addCssClass("success");
-            statusDot.setTooltipText("Online");
+            statusDot.setTooltipText(tr("Online"));
 
             if (status.serverInfo() != null) {
                 var info = status.serverInfo();
-                var folders = info.folderCount().map(" · %d folders"::formatted).orElse("");
-                statsRow.setTitle("%,d songs%s".formatted(info.songCount(), folders));
+                var folders = info.folderCount().map(n -> trn(" · %d folder", " · %d folders", n).formatted(n)).orElse("");
+                statsRow.setTitle(trn("%1$,d song%2$s", "%1$,d songs%2$s", (int) Math.min(info.songCount(), Integer.MAX_VALUE)).formatted(info.songCount(), folders));
                 statsRow.setSubtitle(
                         info.serverVersion().map("v%s"::formatted)
                                 .orElse("API v" + info.apiVersion())
@@ -270,13 +273,13 @@ public class ServerBadge extends Box implements AppManager.StateListener {
             statusDot.removeCssClass("success");
             statusDot.removeCssClass(Classes.labelDim.className());
             statusDot.addCssClass("error");
-            statusDot.setTooltipText("Offline");
+            statusDot.setTooltipText(tr("Offline"));
             statsRow.setVisible(false);
         }
     }
 
     private String getServerHostNameOrNotConnected() {
-        return getServerHostName().map(ss -> Utils.getEnv("SERVER_HOST", "").equals(ss) ? "server.example.org" : ss).orElse("Not connected");
+        return getServerHostName().map(ss -> Utils.getEnv("SERVER_HOST", "").equals(ss) ? "server.example.org" : ss).orElse(tr("Not connected"));
     }
 
     private Optional<String> getServerHostName() {

@@ -34,6 +34,7 @@ modules:
       - install --mode=0644 -D src/main/resources/icons/hicolor/scalable/status/checkmark-circle-symbolic.svg -t /app/share/icons/hicolor/scalable/status/
       - install --mode=0644 -D src/main/resources/app/io.github.subsoundorg.Subsound.desktop  -t /app/share/applications/
       - install --mode=0644 -D build/resources/main/app/io.github.subsoundorg.Subsound.metainfo.xml -t /app/share/metainfo/
+      - if [ -d build/locale ]; then mkdir -p /app/share && cp -a build/locale /app/share/locale; fi
     sources:
 #      - type: dir
 #        path: .

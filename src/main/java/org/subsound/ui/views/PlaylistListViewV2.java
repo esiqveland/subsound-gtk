@@ -75,6 +75,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static org.subsound.i18n.I18n.tr;
 import static com.twelvemonkeys.lang.StringUtil.containsIgnoreCase;
 import static org.gnome.adw.ResponseAppearance.DEFAULT;
 import static org.gnome.adw.ResponseAppearance.DESTRUCTIVE;
@@ -244,7 +245,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         // Search bar — revealer that slides down above the list. Must be constructed
         // before the key controller since the Ctrl+F handler references these fields.
         this.searchEntry = SearchEntry.builder()
-                .setPlaceholderText("Filter by title, artist, or album")
+                .setPlaceholderText(tr("Filter by title, artist, or album"))
                 .setHexpand(true)
                 .build();
         this.searchBar = SearchBar.builder()
@@ -373,7 +374,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         });
 
         this.titleSorter = new TitleArtistColumnSorter();
-        final String titleColDefaultTitle = "Title";
+        final String titleColDefaultTitle = tr("Title");
         this.titleCol = new ColumnViewColumn(titleColDefaultTitle, titleFactory);
         titleCol.setExpand(true);
         titleCol.setSorter(titleSorter);
@@ -451,7 +452,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             albumB = albumB == null ? "" : albumB;
             return albumA.compareToIgnoreCase(albumB);
         });
-        var albumCol = new ColumnViewColumn("Album", albumFactory);
+        var albumCol = new ColumnViewColumn(tr("Album"), albumFactory);
         albumCol.setFixedWidth(200);
         albumCol.setSorter(albumSorter);
         this.columnView.appendColumn(albumCol);
@@ -482,7 +483,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         });
 
         var durationSorter = new PlaylistEntrySorter(Comparator.comparingLong(a -> a.song().duration().toMillis()));
-        var durationCol = new ColumnViewColumn("Duration", durationFactory);
+        var durationCol = new ColumnViewColumn(tr("Duration"), durationFactory);
         durationCol.setFixedWidth(80);
         durationCol.setSorter(durationSorter);
         this.columnView.appendColumn(durationCol);
@@ -657,7 +658,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         this.menuButton.addCssClass("flat");
         this.menuButton.addCssClass("circular");
         this.reloadButton = new Button();
-        this.reloadButton.setTooltipText("Refresh playlist");
+        this.reloadButton.setTooltipText(tr("Refresh playlist"));
         //this.reloadButton.setLabel("Sync library");
         this.reloadButton.setIconName("view-refresh-symbolic");
         this.reloadButton.addCssClass("flat");
@@ -685,7 +686,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
     private void resetColumnSorting() {
         // this should be safe since we also reset columnView.sortByColumn right after:
         this.titleSorter.resetSorter();
-        this.titleCol.setTitle("Title");
+        this.titleCol.setTitle(tr("Title"));
         this.columnView.sortByColumn(null, SortType.ASCENDING);
     }
 
@@ -1047,9 +1048,9 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
                 .setMarginEnd(4)
                 .build();
 
-        var renameItem = menuItem("Rename\u2026");
-        var downloadAllItem = menuItem("Download all");
-        var deleteItem = menuItem("Delete Playlist\u2026");
+        var renameItem = menuItem(tr("Rename\u2026"));
+        var downloadAllItem = menuItem(tr("Download all"));
+        var deleteItem = menuItem(tr("Delete Playlist\u2026"));
         deleteItem.addCssClass("destructive-action");
 
         popoverBox.append(renameItem);
@@ -1092,17 +1093,18 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         }
 
         var entry = Entry.builder()
-                .setPlaceholderText("Playlist name")
+                .setPlaceholderText(tr("Playlist name"))
                 .setText(playlist.name())
                 .setActivatesDefault(true)
                 .build();
 
         var dialog = AlertDialog.builder()
-                .setTitle("Rename Playlist")
-                .setBody("Enter a new name for \"%s\"".formatted(playlist.name()))
+                .setTitle(tr("Rename Playlist"))
+                .setBody(tr("Enter a new name for \"%s\"").formatted(playlist.name()))
                 .build();
-        dialog.addResponse("cancel", "_Cancel");
-        dialog.addResponse("rename", "_Rename");
+        // TRANSLATORS: "_" marks the mnemonic key
+        dialog.addResponse("cancel", tr("_Cancel"));
+        dialog.addResponse("rename", tr("_Rename"));
         dialog.setResponseAppearance("rename", SUGGESTED);
         dialog.setDefaultResponse("rename");
         dialog.setCloseResponse("cancel");
@@ -1141,11 +1143,12 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
 
         AdwDialogHelper.ofDialog(
                 this,
-                "Delete Playlist",
-                "Delete \"%s\"? This cannot be undone.".formatted(playlist.name()),
+                tr("Delete Playlist"),
+                tr("Delete \"%s\"? This cannot be undone.").formatted(playlist.name()),
                 List.of(
-                        new AdwDialogHelper.Response(CANCEL_LABEL_ID, "_Cancel", DEFAULT),
-                        new AdwDialogHelper.Response("delete", "_Delete", DESTRUCTIVE)
+                        // TRANSLATORS: "_" marks the mnemonic key
+                        new AdwDialogHelper.Response(CANCEL_LABEL_ID, tr("_Cancel"), DEFAULT),
+                        new AdwDialogHelper.Response("delete", tr("_Delete"), DESTRUCTIVE)
                 )
         ).thenAccept(result -> {
             if (!"delete".equals(result.label())) {
@@ -1226,7 +1229,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         var playlistId = playlist != null ? playlist.id() : null;
         var playlistIdentifier = playlistId != null ? new PlaylistIdentifier(playlistId) : null;
 
-        var playMenuItem = menuItem("Play");
+        var playMenuItem = menuItem(tr("Play"));
         playMenuItem.onClicked(() -> {
             menuPopover.popdown();
             if (playlistIdentifier == null) {
@@ -1249,22 +1252,22 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             onAction.apply(new PlayerAction.PlayAndReplaceQueue(playlistIdentifier, slots, idx));
         });
 
-        var playNextMenuItem = menuItem("Play Next");
+        var playNextMenuItem = menuItem(tr("Play Next"));
         playNextMenuItem.onClicked(() -> {
             menuPopover.popdown();
             onAction.apply(new PlayerAction.Enqueue(entry.song()));
         });
 
-        var addToQueueMenuItem = menuItem("Add to Queue");
+        var addToQueueMenuItem = menuItem(tr("Add to Queue"));
         addToQueueMenuItem.onClicked(() -> {
             menuPopover.popdown();
             onAction.apply(new PlayerAction.EnqueueLast(entry.song()));
         });
 
-        var addToPlaylistMenuItem = menuItem("Add to Playlist\u2026");
+        var addToPlaylistMenuItem = menuItem(tr("Add to Playlist\u2026"));
         addToPlaylistMenuItem.onClicked(() -> stack.setVisibleChildName("playlists"));
 
-        var downloadMenuItem = menuItem("Download");
+        var downloadMenuItem = menuItem(tr("Download"));
         downloadMenuItem.onClicked(() -> {
             menuPopover.popdown();
             onAction.apply(new PlayerAction.AddToDownloadQueue(entry.song()));
@@ -1277,7 +1280,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         menuContent.append(downloadMenuItem);
 
         if (playlist != null && playlist.kind() == PlaylistKind.NORMAL) {
-            var removeMenuItem = menuItem("Remove from Playlist");
+            var removeMenuItem = menuItem(tr("Remove from Playlist"));
             removeMenuItem.onClicked(() -> {
                 menuPopover.popdown();
                 removeFromPlaylist(entry);
@@ -1286,7 +1289,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         }
 
         if (playlist != null && playlist.kind() == PlaylistKind.DOWNLOADED) {
-            var removeMenuItem = menuItem("Remove from Downloads");
+            var removeMenuItem = menuItem(tr("Remove from Downloads"));
             removeMenuItem.addCssClass("destructive-action");
             removeMenuItem.onClicked(() -> {
                 menuPopover.popdown();
@@ -1305,7 +1308,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
                 .setMarginEnd(4)
                 .build();
 
-        var backButton = menuItem("\u2190 Back");
+        var backButton = menuItem(tr("\u2190 Back"));
         backButton.onClicked(() -> stack.setVisibleChildName("main"));
         playlistsView.append(backButton);
         playlistsView.append(new Separator(HORIZONTAL));

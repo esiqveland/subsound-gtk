@@ -15,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 import static org.subsound.app.state.AppManager.ASYNC_EXECUTOR;
+import static org.subsound.i18n.I18n.tr;
 
 public class FutureLoader<T, WIDGET extends Widget> extends Box {
     private static final Logger log = LoggerFactory.getLogger(FutureLoader.class);
@@ -27,7 +28,7 @@ public class FutureLoader<T, WIDGET extends Widget> extends Box {
         super(Orientation.VERTICAL, 0);
         this.future = future;
         this.builder = builder;
-        this.statusPage = StatusPage.builder().setChild(LoadingSpinner.fullscreen("Loading...")).build();
+        this.statusPage = StatusPage.builder().setChild(LoadingSpinner.fullscreen(tr("Loading..."))).build();
         this.append(statusPage);
 
         this.future.whenCompleteAsync((value, exception) -> {
@@ -35,7 +36,7 @@ public class FutureLoader<T, WIDGET extends Widget> extends Box {
                 log.warn("error loading: {}", exception.getMessage(), exception);
                 Utils.runOnMainThread(() -> {
                     this.remove(statusPage);
-                    this.append(StatusPage.builder().setChild(new Label("Error loading: %s".formatted(exception.getMessage()))).build());
+                    this.append(StatusPage.builder().setChild(new Label(tr("Error loading: %s").formatted(exception.getMessage()))).build());
                 });
             } else {
                 Utils.runOnMainThread(() -> {

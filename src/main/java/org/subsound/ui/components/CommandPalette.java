@@ -34,6 +34,8 @@ import static org.gnome.gtk.Align.CENTER;
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
+import static org.subsound.i18n.I18n.tr;
+import static org.subsound.i18n.I18n.trn;
 
 public class CommandPalette extends Overlay {
     private final AppManager appManager;
@@ -87,7 +89,7 @@ public class CommandPalette extends Overlay {
 
         // Search entry
         this.searchEntry = new SearchEntry();
-        this.searchEntry.setPlaceholderText("Search...");
+        this.searchEntry.setPlaceholderText(tr("Search..."));
         this.searchEntry.setHexpand(true);
 
         // Results list backed by the store
@@ -292,7 +294,7 @@ public class CommandPalette extends Overlay {
             contentBox.append(subtitleBox);
 
             this.typeBadge = Label.builder()
-                    .setLabel("Album")
+                    .setLabel(tr("Album"))
                     .setHalign(Align.END)
                     .setValign(CENTER)
                     .build();
@@ -311,9 +313,9 @@ public class CommandPalette extends Overlay {
                 case GSearchResultItem.SearchEntry.ArtistEntry artistEntry -> {
                     var artist = artistEntry.artist();
                     this.titleLabel.setLabel(artist.name());
-                    this.artistLabel.setLabel("Artist");
-                    this.durationLabel.setLabel("%d albums".formatted(artist.albumCount()));
-                    this.typeBadge.setLabel("Artist");
+                    this.artistLabel.setLabel(tr("Artist"));
+                    this.durationLabel.setLabel(trn("%d album", "%d albums", artist.albumCount()).formatted(artist.albumCount()));
+                    this.typeBadge.setLabel(tr("Artist"));
                     this.typeBadge.setVisible(true);
                     this.separatorLabel.setVisible(true);
                     this.albumArt.update(artist.coverArt());
@@ -323,7 +325,7 @@ public class CommandPalette extends Overlay {
                     this.titleLabel.setLabel(album.name());
                     this.artistLabel.setLabel(album.artistName());
                     this.durationLabel.setLabel(album.year().map(String::valueOf).orElse(""));
-                    this.typeBadge.setLabel("Album");
+                    this.typeBadge.setLabel(tr("Album"));
                     this.typeBadge.setVisible(true);
                     this.separatorLabel.setVisible(true);
                     this.albumArt.update(album.coverArt());
@@ -340,9 +342,9 @@ public class CommandPalette extends Overlay {
                 case GSearchResultItem.SearchEntry.PlaylistEntry playlistEntry -> {
                     var playlist = playlistEntry.playlist();
                     this.titleLabel.setLabel(playlist.name());
-                    this.artistLabel.setLabel("Playlist");
-                    this.durationLabel.setLabel("%d songs".formatted(playlist.songCount()));
-                    this.typeBadge.setLabel("Playlist");
+                    this.artistLabel.setLabel(tr("Playlist"));
+                    this.durationLabel.setLabel(trn("%d song", "%d songs", playlist.songCount()).formatted(playlist.songCount()));
+                    this.typeBadge.setLabel(tr("Playlist"));
                     this.typeBadge.setVisible(true);
                     this.separatorLabel.setVisible(true);
                     this.albumArt.update(playlist.coverArtId());

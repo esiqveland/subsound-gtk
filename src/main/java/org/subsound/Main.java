@@ -3,6 +3,7 @@ package org.subsound;
 import org.subsound.app.state.AppManager;
 import org.subsound.configuration.Config;
 import org.subsound.configuration.constants.Constants;
+import org.subsound.i18n.I18n;
 import org.subsound.integration.platform.secret.SecretService;
 import org.subsound.integration.platform.mpriscontroller.ArtworkHttpServer;
 import org.subsound.integration.platform.mpriscontroller.MPrisController;
@@ -117,6 +118,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
+        I18n.init();
         new Main(args);
     }
 }

@@ -35,6 +35,8 @@ import static org.gnome.gtk.Align.FILL;
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
+import static org.subsound.i18n.I18n.tr;
+import static org.subsound.i18n.I18n.trn;
 
 public class ArtistsListView extends Box {
     private final ThumbnailCache thumbLoader;
@@ -66,7 +68,7 @@ public class ArtistsListView extends Box {
         this.contentPage = NavigationPage.builder().setTag("page-2").setChild(this.artistInfoLoader).setTitle("ArtistView").build();
 
         var b = Box.builder().setValign(Align.CENTER).setHalign(Align.CENTER).build();
-        b.append(Label.builder().setLabel("Select an artist to view").setCssClasses(cssClasses("title-1")).build());
+        b.append(Label.builder().setLabel(tr("Select an artist to view")).setCssClasses(cssClasses("title-1")).build());
         var statusPage = StatusPage.builder().setChild(b).build();
         this.initialPage = NavigationPage.builder().setTag("page-2-initial").setChild(statusPage).build();
         // https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/migrating-to-breakpoints.html#sidebar
@@ -146,7 +148,7 @@ public class ArtistsListView extends Box {
 
         var artistView = ScrolledWindow.builder().setChild(this.listView).setHexpand(true).setVexpand(true).build();
         // https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/migrating-to-breakpoints.html#sidebar
-        this.page1 = NavigationPage.builder().setTag("page-1").setChild(artistView).setTitle("Artists").build();
+        this.page1 = NavigationPage.builder().setTag("page-1").setChild(artistView).setTitle(tr("Artists")).build();
         this.view.setSidebar(this.page1);
         this.view.setMaxSidebarWidth(300);
         this.view.setShowContent(true);
@@ -245,7 +247,7 @@ public class ArtistsListView extends Box {
         public void bind(GArtistEntry entry) {
             var artist = entry.getArtist();
             this.titleLabel.setLabel(artist.name());
-            this.subtitleLabel.setLabel("%d %s".formatted(artist.albumCount(), Utils.plural(artist.albumCount(), "album", "albums")));
+            this.subtitleLabel.setLabel(trn("%d album", "%d albums", artist.albumCount()).formatted(artist.albumCount()));
             this.prefixArt.update(artist.coverArt());
         }
 

@@ -5,6 +5,8 @@ import org.gnome.gtk.License;
 import org.gnome.gtk.Widget;
 import org.subsound.configuration.constants.Constants;
 
+import static org.subsound.i18n.I18n.tr;
+
 public class AboutView {
     public static void show(Widget parent) {
         var dialog = AboutDialog.builder()
@@ -16,7 +18,9 @@ public class AboutView {
                 .setLicenseType(License.GPL_3_0)
                 .setWebsite("https://github.com/subsoundorg/Subsound")
                 .setIssueUrl("https://github.com/subsoundorg/Subsound/issues")
-                .setComments("A GTK4/Adwaita streaming music player for Navidrome / Subsonic servers.")
+                .setComments(tr("A GTK4/Adwaita streaming music player for Navidrome / Subsonic servers."))
+                // TRANSLATORS: Replace with your name and email, one translator per line
+                .setTranslatorCredits(tr("translator-credits"))
                 //.setDebugInfo("")
                 //.setCopyright("© 2026 Subsound contributors")
                 .build();

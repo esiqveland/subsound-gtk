@@ -21,6 +21,8 @@ import java.util.stream.Collectors;
 
 import static org.subsound.utils.Utils.borderBox;
 import static org.subsound.utils.Utils.cssClasses;
+import static org.subsound.i18n.I18n.tr;
+import static org.subsound.i18n.I18n.trn;
 
 public class ArtistInfoFlowBox extends Box {
     public static final int BIG_SPACING = 48;
@@ -54,12 +56,12 @@ public class ArtistInfoFlowBox extends Box {
         this.infoContainer.append(this.artistImage);
         this.infoContainer.append(this.artistInfoBox);
         this.artistInfoBox.append(Label.builder().setLabel(this.artist.name()).setHalign(Align.START).setCssClasses(cssClasses("title-1")).build());
-        this.artistInfoBox.append(Label.builder().setLabel("%d albums".formatted(this.artist.albumCount())).setHalign(Align.START).setCssClasses(cssClasses("title-3")).build());
-        this.artistInfoBox.append(Label.builder().setLabel("%d songs".formatted(this.artist.songCount())).setHalign(Align.START).setCssClasses(cssClasses("dim-label")).build());
-        this.artistInfoBox.append(Label.builder().setLabel("%s playtime".formatted(formatDuration(this.artist.totalPlayTime()))).setHalign(Align.START).setCssClasses(cssClasses("dim-label")).build());
+        this.artistInfoBox.append(Label.builder().setLabel(trn("%d album", "%d albums", this.artist.albumCount()).formatted(this.artist.albumCount())).setHalign(Align.START).setCssClasses(cssClasses("title-3")).build());
+        this.artistInfoBox.append(Label.builder().setLabel(trn("%d song", "%d songs", this.artist.songCount()).formatted(this.artist.songCount())).setHalign(Align.START).setCssClasses(cssClasses("dim-label")).build());
+        this.artistInfoBox.append(Label.builder().setLabel(tr("%s playtime").formatted(formatDuration(this.artist.totalPlayTime()))).setHalign(Align.START).setCssClasses(cssClasses("dim-label")).build());
 
         this.biographyBoxBox = borderBox(Orientation.VERTICAL, BIG_SPACING).setSpacing(BIG_SPACING/4).build();
-        this.biographyBoxBox.append(Label.builder().setLabel("About").setHalign(Align.START).setCssClasses(cssClasses("title-3")).build());
+        this.biographyBoxBox.append(Label.builder().setLabel(tr("About")).setHalign(Align.START).setCssClasses(cssClasses("title-3")).build());
         this.biographyBoxBox.append(Label.builder().setLabel(this.artist.biography().cleaned()).setWrap(true).setWrapMode(WrapMode.WORD).setNaturalWrapMode(NaturalWrapMode.WORD).setUseMarkup(false).setHalign(Align.START).setCssClasses(cssClasses("dim-label")).build());
         this.biographyBoxBox.append(Label.builder().setLabel(this.artist.biography().link()).setWrap(true).setWrapMode(WrapMode.WORD).setNaturalWrapMode(NaturalWrapMode.WORD).setUseMarkup(true).setHalign(Align.START).build());
         this.biographyBox = Box.builder().setOrientation(Orientation.VERTICAL).setHexpand(true).setCssClasses(cssClasses("card")).build();

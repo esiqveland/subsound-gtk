@@ -137,7 +137,40 @@ tasks.named('run') {
     jvmArgs += commonJvmArgs
     jvmArgs += "-Djava.library.path=/usr/lib64:/lib64:/lib:/usr/lib:/lib/x86_64-linux-gnu "
     //jvmArgs += "-Djava.library.path=/usr/lib64:/lib64:/lib:/usr/lib:/lib/x86_64-linux-gnu:/opt/homebrew/lib "
+    dependsOn("compileMessages")
+    jvmArgs += "-Dsubsound.localedir=${layout.buildDirectory.dir("locale").get().asFile.absolutePath}"
 }
+
+// Compile gettext translation catalogs (po/*.po) to binary .mo files in build/locale.
+// The layout matches the standard locale dir structure: <lang>/LC_MESSAGES/<domain>.mo
+def gettextDomain = "io.github.subsoundorg.Subsound"
+def localeDir = layout.buildDirectory.dir("locale")
+
+def compileMessages = tasks.register("compileMessages") {
+    group = "i18n"
+    description = "Compile po/*.po to build/locale/<lang>/LC_MESSAGES/*.mo"
+}
+
+fileTree(dir: "po", include: "*.po").files.sort().each { poFile ->
+    def lang = poFile.name - ".po"
+    def moFile = localeDir.map { it.file("${lang}/LC_MESSAGES/${gettextDomain}.mo") }
+    def langTask = tasks.register("compileMessages${lang.capitalize()}", Exec) {
+        group = "i18n"
+        description = "Compile po/${lang}.po"
+        inputs.file(poFile)
+        outputs.file(moFile)
+        executable = "msgfmt"
+        argumentProviders.add({
+            ["--check", "-o", moFile.get().asFile.absolutePath, poFile.absolutePath]
+        } as CommandLineArgumentProvider)
+        doFirst {
+            moFile.get().asFile.parentFile.mkdirs()
+        }
+    }
+    compileMessages.configure { dependsOn(langTask) }
+}
+
+tasks.named("assemble") { dependsOn(compileMessages) }
 
 tasks.flatpakGradleGenerator {
     outputFile = file('flatpak-sources.json')

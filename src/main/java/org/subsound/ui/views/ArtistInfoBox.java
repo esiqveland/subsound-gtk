@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import static org.subsound.i18n.I18n.trn;
 
 public class ArtistInfoBox extends Box {
     private final AppManager thumbLoader;
@@ -43,8 +44,8 @@ public class ArtistInfoBox extends Box {
         this.infoContainer = Box.builder().setOrientation(Orientation.VERTICAL).setHexpand(true).setVexpand(true).build();
         this.infoContainer.append(this.artistImage);
         this.infoContainer.append(new Label(this.artist.name()));
-        this.infoContainer.append(new Label("%d albums".formatted(this.artist.albumCount())));
-        this.infoContainer.append(new Label("%d songs".formatted(this.artist.songCount())));
+        this.infoContainer.append(new Label(trn("%d album", "%d albums", this.artist.albumCount()).formatted(this.artist.albumCount())));
+        this.infoContainer.append(new Label(trn("%d song", "%d songs", this.artist.songCount()).formatted(this.artist.songCount())));
         this.infoContainer.append(new Label("%s playtime".formatted(formatDuration(this.artist.totalPlayTime()))));
 
         this.artistsMap = artistInfo.albums().stream().collect(Collectors.toMap(

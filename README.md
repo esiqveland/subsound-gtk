@@ -89,7 +89,7 @@ Features:
     - This kind of already works, but there is no UI that shows status for each item
 
 Later goals:
- - [ ] Internationalize
+ - [X] Internationalize
 
 Potential goals:
  - [ ] Lyrics support
@@ -108,6 +108,44 @@ Possible ideas:
   - Shared remote control, think something like Spotify Connect
   - Chromecast support
   - Player for local media, not just for a streaming server
+
+## Translations
+
+Subsound uses gettext (`.po` files), the standard translation mechanism for GTK4/GNOME apps.
+User-visible strings are marked in the Java code with `tr(...)` / `trn(...)` / `trc(...)`
+from `org.subsound.i18n.I18n`, extracted into `po/io.github.subsoundorg.Subsound.pot`,
+and translated per-language in `po/<lang>.po`.
+
+**English needs no translation file.** In gettext the `msgid` *is* the English source
+text, not an abstract key like `settings.title`. So `tr("Settings")` returns the literal
+`"Settings"` unless a catalog for the active locale translates it — there is nothing to
+"fall back" to, because the English string is already embedded in the code. This has a
+few practical consequences:
+
+- **No missing-key failure mode.** A brand-new string works immediately in English, even
+  before the catalogs are updated. Untranslated or stale entries in other languages also
+  just show English rather than a placeholder key.
+- **English edits invalidate translations.** Rewording an English string changes its
+  msgid — `msgmerge` marks the old translation as fuzzy (near matches) or drops it.
+  That is intended: the translation genuinely needs review after the source changed.
+- **English variants are still possible.** An `en_GB.po` ("Favourites") can be added
+  like any other language.
+- The one exception is `tr("translator-credits")` in the About dialog — a magic msgid
+  that AdwAboutDialog recognizes: if it comes back untranslated the credits section is
+  hidden, and each language's `.po` fills in its own translators' names.
+
+To add or update a language:
+
+```bash
+# Add the language code to po/LINGUAS (one per line), then:
+./po/update-po.sh          # regenerate the .pot template and merge into all .po files
+
+# Translate the msgstr entries in po/<lang>.po, then verify and build:
+./gradlew compileMessages  # runs msgfmt --check and compiles to build/locale/
+
+# Try it:
+LANGUAGE=<lang> ./gradlew run
+```
 
 ## Credits
 

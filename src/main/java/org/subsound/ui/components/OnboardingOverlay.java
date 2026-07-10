@@ -16,6 +16,8 @@ import org.subsound.app.state.AppManager;
 import org.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
 import org.subsound.utils.Utils;
 
+import static org.subsound.i18n.I18n.tr;
+
 public class OnboardingOverlay extends Overlay {
     private final AppManager appManager;
     private final ServerConfigForm serverConfigForm;
@@ -45,10 +47,10 @@ public class OnboardingOverlay extends Overlay {
         this.headerBar = new HeaderBar();
         this.headerBar.setTitleWidget(Label.builder().setLabel("").setCssClasses(Classes.title1.add()).build());
         this.contentBox = Box.builder().setOrientation(Orientation.VERTICAL).setSpacing(0).build();
-        this.contentBox.append(Label.builder().setLabel("Welcome").setJustify(Justification.CENTER).setCssClasses(Classes.titleLarge.add()).setMarginBottom(20).build());
+        this.contentBox.append(Label.builder().setLabel(tr("Welcome")).setJustify(Justification.CENTER).setCssClasses(Classes.titleLarge.add()).setMarginBottom(20).build());
         this.contentBox.append(this.logo);
         var bodyTextLabel = new Label();
-        bodyTextLabel.setLabel("Login to your server to get started");
+        bodyTextLabel.setLabel(tr("Login to your server to get started"));
         bodyTextLabel.setJustify(Justification.CENTER);
         bodyTextLabel.addCssClass(Classes.bodyText.className());
         bodyTextLabel.setMarginBottom(10);

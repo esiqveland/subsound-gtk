@@ -3,12 +3,13 @@ package org.subsound.ui.components;
 import org.gnome.gtk.*;
 
 import static org.subsound.utils.Utils.cssClasses;
+import static org.subsound.i18n.I18n.tr;
 
 public class LoadingSpinner extends Box {
     private final Label label;
 
     public LoadingSpinner() {
-        this("Loading...");
+        this(tr("Loading..."));
     }
     public LoadingSpinner(String text) {
         super(Orientation.VERTICAL, 8);

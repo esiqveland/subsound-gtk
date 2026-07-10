@@ -19,6 +19,7 @@ import java.util.function.BiConsumer;
 
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.VERTICAL;
+import static org.subsound.i18n.I18n.tr;
 
 /**
  * A popover that shows a scrollable list of playlists for the user to pick from.
@@ -85,7 +86,7 @@ public class PlaylistChooser extends Popover {
                 .setPropagateNaturalHeight(true)
                 .build();
 
-        var label = new Label("Add all to playlist:");
+        var label = new Label(tr("Add all to playlist:"));
         label.setHalign(START);
         label.addCssClass("body");
         var box = new Box(VERTICAL, 2);

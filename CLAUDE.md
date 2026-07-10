@@ -97,6 +97,21 @@ SQLite only. All migrations are versioned in `Database.java` as inner classes (`
 
 The playlists view prepends synthetic entries (Starred, Downloaded) to the server's playlist list. These use `PlaylistKind` enum values (`STARRED`, `DOWNLOADED`) and are handled specially in `PlaylistsListView.setSelectedPlaylist()`.
 
+## Translations (i18n)
+
+We use gettext with `.po` files, the standard for GTK4/GNOME apps. English source strings are the msgids (no English catalog exists). Catalogs live in `po/`, text domain is `io.github.subsoundorg.Subsound`.
+
+Rules when writing UI code:
+- Wrap all user-visible string literals with statically imported `tr(...)` from `org.subsound.i18n.I18n`; plurals use `trn(singular, plural, n).formatted(n)`, contexts `trc(...)`.
+- Never wrap server-provided data (song/artist/album/playlist names).
+- Keep `.formatted(...)` outside the `tr()` call. Msgids with 2+ format args must use positional `%1$s`, `%2$s` so translators can reorder.
+- Do not call `tr()` in static/enum field initializers — they may run before `I18n.init()`.
+
+Workflow:
+- After adding/changing user-visible strings: run `./po/update-po.sh` (xgettext extraction + msgmerge into all `po/*.po`).
+- `./gradlew compileMessages` compiles `.po` → `build/locale/` with `msgfmt --check`; it runs automatically as part of `assemble` and `run`.
+- Test with `LANGUAGE=nb ./gradlew run`.
+
 # Code style guide
 
 - primarily google style guide: https://google.github.io/styleguide/javaguide.html

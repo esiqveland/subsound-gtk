@@ -13,6 +13,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static org.gnome.gtk.Orientation.VERTICAL;
+import static org.subsound.i18n.I18n.tr;
 
 //            var menuPopover = new SongContextMenu(action -> {
 //                int idx = this.index;
@@ -64,19 +65,19 @@ public class SongContextMenu extends Popover {
                 .setMarginEnd(4)
                 .build();
 
-        var playMenuItem = menuItem("Play");
+        var playMenuItem = menuItem(tr("Play"));
         playMenuItem.onClicked(() -> {
             menuPopover.popdown();
             this.onContextAction.accept(new SongContextAction.Play());
         });
 
-        var playNextMenuItem = menuItem("Play Next");
+        var playNextMenuItem = menuItem(tr("Play Next"));
         playNextMenuItem.onClicked(() -> {
             menuPopover.popdown();
             this.onContextAction.accept(new SongContextAction.PlayNext());
         });
 
-        var addToQueueMenuItem = menuItem("Add to Queue");
+        var addToQueueMenuItem = menuItem(tr("Add to Queue"));
         addToQueueMenuItem.onClicked(() -> {
             menuPopover.popdown();
             this.onContextAction.accept(new SongContextAction.PlayLast());
@@ -90,14 +91,14 @@ public class SongContextMenu extends Popover {
 //                    : new PlayerAction.Star(songInfo);
 //            this.onAction.apply(action);
 //        });
-        var favoriteMenuItem = menuItem("Add to Favorite");
+        var favoriteMenuItem = menuItem(tr("Add to Favorite"));
         favoriteMenuItem.onClicked(() -> {
             menuPopover.popdown();
             this.onContextAction.accept(new SongContextAction.Star());
         });
 
         // TODO: need to open submenu with a list of playlists
-        var addToPlaylistMenuItem = menuItem("Add to Playlist\u2026");
+        var addToPlaylistMenuItem = menuItem(tr("Add to Playlist\u2026"));
         addToPlaylistMenuItem.setTooltipText("TODO");
         addToPlaylistMenuItem.setSensitive(false);
         addToPlaylistMenuItem.onClicked(() -> {
@@ -108,7 +109,7 @@ public class SongContextMenu extends Popover {
             //this.onContextAction.apply(new SongContextAction.AddToPlaylist(id));
         });
 
-        var downloadMenuItem = menuItem("Download");
+        var downloadMenuItem = menuItem(tr("Download"));
         downloadMenuItem.onClicked(() -> {
             menuPopover.popdown();
             this.onContextAction.accept(new SongContextAction.AddToDownload());

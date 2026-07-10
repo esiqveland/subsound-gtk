@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.gnome.gtk.Orientation.VERTICAL;
+import static org.subsound.i18n.I18n.tr;
 import static org.subsound.ui.components.Classes.destructiveAction;
 import static org.subsound.utils.Utils.borderBox;
 
@@ -71,16 +72,16 @@ public class SettingsPage extends Box {
         this.appManager = appManager;
         this.setValign(Align.FILL);
         this.setHalign(Align.FILL);
-        this.clearSongCacheButton = ButtonRow.builder().setTitle("Clear song cache").build();
+        this.clearSongCacheButton = ButtonRow.builder().setTitle(tr("Clear song cache")).build();
         this.clearSongCacheButton.addCssClass(destructiveAction.className());
         this.clearSongCacheButton.onActivated(() -> appManager.handleAction(new PlayerAction.ClearSongCache()));
 
-        this.clearThumbnailCacheButton = ButtonRow.builder().setTitle("Clear thumbnail cache").build();
+        this.clearThumbnailCacheButton = ButtonRow.builder().setTitle(tr("Clear thumbnail cache")).build();
         this.clearThumbnailCacheButton.addCssClass(destructiveAction.className());
         this.clearThumbnailCacheButton.onActivated(() -> appManager.handleAction(new PlayerAction.ClearThumbnailCache()));
 
         this.localSettings = new PreferencesGroup();
-        this.localSettings.setTitle("Local Settings");
+        this.localSettings.setTitle(tr("Local Settings"));
         this.localSettings.setSeparateRows(false);
         this.localSettings.add(clearSongCacheButton);
         this.localSettings.add(clearThumbnailCacheButton);
@@ -89,7 +90,7 @@ public class SettingsPage extends Box {
         var model = new StringList();
         formats.forEach(val -> {
             if (val == ServerClient.TranscodeFormat.source) {
-                model.append("Source");
+                model.append(tr("Source"));
             } else {
                 model.append(val.name());
             }
@@ -106,18 +107,18 @@ public class SettingsPage extends Box {
         );
 
         this.audioFormatCombo = new ComboRow();
-        this.audioFormatCombo.setTitle("Audio format");
+        this.audioFormatCombo.setTitle(tr("Audio format"));
         this.audioFormatCombo.setModel(model);
         var initialFormat = transcodeSettings != null ? transcodeSettings.format() : ServerClient.TranscodeFormat.opus;
         this.audioFormatCombo.setSelected(formats.indexOf(initialFormat));
 
         var bitrateModelList = new StringList();
         bitRates.stream().map(value -> switch (value) {
-            case SourceQuality _ -> "Source";
+            case SourceQuality _ -> tr("Source");
             case MaximumBitrate(var bitrate) -> String.format("%d", bitrate);
         }).forEach(bitrateModelList::append);
         this.audioBitrateCombo = new ComboRow();
-        this.audioBitrateCombo.setTitle("Max bitrate");
+        this.audioBitrateCombo.setTitle(tr("Max bitrate"));
         this.audioBitrateCombo.setModel(bitrateModelList);
         var initialBitrate = transcodeSettings != null ? transcodeSettings.bitrate() : new SourceQuality();
         initialBitrate = initialBitrate == null ? new SourceQuality() : initialBitrate;
@@ -143,30 +144,30 @@ public class SettingsPage extends Box {
         );
 
         this.serverInformation = new PreferencesGroup();
-        this.serverInformation.setTitle("Server information");
+        this.serverInformation.setTitle(tr("Server information"));
         this.serverInformation.setSeparateRows(false);
-        this.serverTypeLabel = newRow("Type");
-        this.serverVersionLabel = newRow("Version");
-        this.apiVersionLabel = newRow("API Version");
-        this.serverOpenSubsonic = newRow("OpenSubsonic support");
+        this.serverTypeLabel = newRow(tr("Type"));
+        this.serverVersionLabel = newRow(tr("Version"));
+        this.apiVersionLabel = newRow(tr("API Version"));
+        this.serverOpenSubsonic = newRow(tr("OpenSubsonic support"));
         this.serverInformation.add(serverTypeLabel);
         this.serverInformation.add(serverVersionLabel);
         this.serverInformation.add(apiVersionLabel);
         this.serverInformation.add(serverOpenSubsonic);
-        this.serverOpenSubsonicGroup.setTitle("OpenSubsonic extensions");
+        this.serverOpenSubsonicGroup.setTitle(tr("OpenSubsonic extensions"));
         this.serverOpenSubsonicFeatureList.forEach(this.serverOpenSubsonicGroup::add);
         this.serverOpenSubsonicGroup.setVisible(false);
 
         this.transcodeSettings = new PreferencesGroup();
-        this.transcodeSettings.setTitle("Transcode Settings");
+        this.transcodeSettings.setTitle(tr("Transcode Settings"));
         this.transcodeSettings.setSeparateRows(false);
         this.transcodeSettings.add(audioFormatCombo);
         this.transcodeSettings.add(audioBitrateCombo);
 
         this.librarySyncRow = ButtonRow.builder()
-                .setTitle("Full scan")
+                .setTitle(tr("Full scan"))
                 .setActivatable(true)
-                .setTooltipText("Start server scan for new songs and folders")
+                .setTooltipText(tr("Start server scan for new songs and folders"))
                 .build();
         this.librarySyncRow.setStartIconName(Icons.Search.getIconName());
         this.librarySyncRow.onActivated(() ->
@@ -174,34 +175,34 @@ public class SettingsPage extends Box {
         );
 
         this.libraryQuickScanRow = ButtonRow.builder()
-                .setTitle("Quick scan")
+                .setTitle(tr("Quick scan"))
                 .setActivatable(true)
-                .setTooltipText("Start server quick scan for new songs and folders")
+                .setTooltipText(tr("Start server quick scan for new songs and folders"))
                 .build();
         this.libraryQuickScanRow.setStartIconName(Icons.RefreshView.getIconName());
         this.libraryQuickScanRow.onActivated(() ->
                 this.appManager.handleAction(new PlayerAction.TriggerServerScan(true))
         );
 
-        this.libraryLastScanAtRow = newRow("Last Scanned at");
-        this.libraryScanStatus = newRow("Status");
-        this.librarySongsRow = newRow("Server songs");
+        this.libraryLastScanAtRow = newRow(tr("Last Scanned at"));
+        this.libraryScanStatus = newRow(tr("Status"));
+        this.librarySongsRow = newRow(tr("Server songs"));
         this.librarySongsRow.setSubtitle("…");
         this.serverLibrary = new PreferencesGroup();
-        this.serverLibrary.setTitle("Library");
+        this.serverLibrary.setTitle(tr("Library"));
         this.serverLibrary.setSeparateRows(false);
         this.serverLibrary.add(libraryScanStatus);
         this.serverLibrary.add(librarySongsRow);
         this.serverLibrary.add(libraryQuickScanRow);
         this.serverLibrary.add(librarySyncRow);
 
-        this.localSongsRow = newRow("Local songs");
+        this.localSongsRow = newRow(tr("Local songs"));
         this.localSongsRow.setSubtitle("…");
 
         this.localSongsTriggerSync = ButtonRow.builder()
-                .setTitle("Sync library")
+                .setTitle(tr("Sync library"))
                 .setActivatable(true)
-                .setTooltipText("Syncs metadata for offline use")
+                .setTooltipText(tr("Syncs metadata for offline use"))
                 .build();
         this.localSongsTriggerSync.setStartIconName(Icons.FolderDownload.getIconName());
         this.localSongsTriggerSync.onActivated(() -> {
@@ -216,7 +217,7 @@ public class SettingsPage extends Box {
         });
 
         this.syncGroup = new PreferencesGroup();
-        this.syncGroup.setTitle("Local Library");
+        this.syncGroup.setTitle(tr("Local Library"));
         this.syncGroup.setSeparateRows(false);
         this.syncGroup.add(localSongsRow);
         this.syncGroup.add(localSongsTriggerSync);
@@ -274,10 +275,10 @@ public class SettingsPage extends Box {
     private void update(ServerClient.ServerInfo serverInfo) {
         Utils.runOnMainThread(() -> {
             boolean isNavidrome = serverInfo.serverType().map(type -> type.toLowerCase().contains("navidrome")).orElse(false);
-            this.serverTypeLabel.setSubtitle(serverInfo.serverType().orElse("Unknown"));
-            this.serverVersionLabel.setSubtitle(serverInfo.serverVersion().orElse("Unknown"));
+            this.serverTypeLabel.setSubtitle(serverInfo.serverType().orElse(tr("Unknown")));
+            this.serverVersionLabel.setSubtitle(serverInfo.serverVersion().orElse(tr("Unknown")));
             this.apiVersionLabel.setSubtitle(serverInfo.apiVersion());
-            this.serverOpenSubsonic.setSubtitle(serverInfo.isOpenSubsonic() ? "Yes" : "No");
+            this.serverOpenSubsonic.setSubtitle(serverInfo.isOpenSubsonic() ? tr("Yes") : tr("No"));
             if (serverInfo.openSubsonicExtensions().isPresent()) {
                 var extensions = serverInfo.openSubsonicExtensions().get();
                 this.serverOpenSubsonicFeatureList.forEach(this.serverOpenSubsonicGroup::remove);

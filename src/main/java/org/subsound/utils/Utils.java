@@ -41,6 +41,7 @@ import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
@@ -50,6 +51,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import static org.subsound.i18n.I18n.trn;
 
 
 public class Utils {
@@ -162,10 +165,20 @@ public class Utils {
         long minutes = d.toMinutes();
         d = d.minusMinutes(minutes);
         long seconds = d.getSeconds();
-        return  (days == 0 ? "" : days + " days, ") +
-                (hours == 0 ? "" : hours + " hours, ") +
-                (minutes == 0 ? "" : minutes + " minutes, ") +
-                (seconds == 0 ? "" : seconds + " seconds");
+        var parts = new ArrayList<String>(4);
+        if (days > 0) {
+            parts.add(trn("%d day", "%d days", days).formatted(days));
+        }
+        if (hours > 0) {
+            parts.add(trn("%d hour", "%d hours", hours).formatted(hours));
+        }
+        if (minutes > 0) {
+            parts.add(trn("%d minute", "%d minutes", minutes).formatted(minutes));
+        }
+        if (seconds > 0) {
+            parts.add(trn("%d second", "%d seconds", seconds).formatted(seconds));
+        }
+        return String.join(", ", parts);
     }
 
     public static String formatDurationMedium(Duration d) {
@@ -176,16 +189,22 @@ public class Utils {
         long minutes = d.toMinutes();
         d = d.minusMinutes(minutes);
         long seconds = d.getSeconds();
-        var string = (days == 0 ? "" : days + " days, ") +
-                (hours == 0 ? "" : hours + " hr, ") +
-                (minutes == 0 ? "" : minutes + " min, ") +
-                (seconds > 0 && days > 0 ? "" : seconds == 0 ? "" : seconds + " sec");
-        string = string.trim();
-        while (string.endsWith(",")) {
-            string = string.substring(0, string.length() - 1);
-            string = string.trim();
+        var parts = new ArrayList<String>(4);
+        if (days > 0) {
+            parts.add(trn("%d day", "%d days", days).formatted(days));
         }
-        return string;
+        // Abbreviated units are invariant in English but may pluralize in other languages,
+        // so the singular and plural msgids are intentionally identical.
+        if (hours > 0) {
+            parts.add(trn("%d hr", "%d hr", hours).formatted(hours));
+        }
+        if (minutes > 0) {
+            parts.add(trn("%d min", "%d min", minutes).formatted(minutes));
+        }
+        if (seconds > 0 && days == 0) {
+            parts.add(trn("%d sec", "%d sec", seconds).formatted(seconds));
+        }
+        return String.join(", ", parts);
     }
 
     public static String formatDurationShort(Duration d) {
@@ -266,13 +285,6 @@ public class Utils {
 
     public static String[] cssClasses(String... clazz) {
         return clazz;
-    }
-
-    public static String plural(int i, String singular, String plural) {
-        if (i == 1) {
-            return singular;
-        }
-        return plural;
     }
 
     public static String getEnv(String envName, String defaultValue) {

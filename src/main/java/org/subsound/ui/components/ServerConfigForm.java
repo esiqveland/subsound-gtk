@@ -29,6 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 import static org.gnome.gtk.Orientation.VERTICAL;
+import static org.subsound.i18n.I18n.tr;
 import static org.subsound.ui.components.Classes.boxedList;
 import static org.subsound.ui.components.Classes.colorError;
 import static org.subsound.ui.components.Classes.colorSuccess;
@@ -85,15 +86,15 @@ public class ServerConfigForm extends Box {
         this.setHalign(Align.FILL);
         this.setHexpand(true);
 
-        this.serverTypeInfoLabel = Label.builder().setLabel("New Server").setCssClasses(titleLarge.add()).build();
-        this.serverUrlEntry = EntryRow.builder().setTitle("Server URL").setText("https://").build();
-        this.tlsSwitchEntry = SwitchRow.builder().setTitle("Skip TLS verification").setSubtitle("Accept self-signed certificates").build();
-        this.usernameEntry = EntryRow.builder().setTitle("Username").build();
-        this.passwordEntry = PasswordEntryRow.builder().setTitle("Password").build();
+        this.serverTypeInfoLabel = Label.builder().setLabel(tr("New Server")).setCssClasses(titleLarge.add()).build();
+        this.serverUrlEntry = EntryRow.builder().setTitle(tr("Server URL")).setText("https://").build();
+        this.tlsSwitchEntry = SwitchRow.builder().setTitle(tr("Skip TLS verification")).setSubtitle(tr("Accept self-signed certificates")).build();
+        this.usernameEntry = EntryRow.builder().setTitle(tr("Username")).build();
+        this.passwordEntry = PasswordEntryRow.builder().setTitle(tr("Password")).build();
 
-        this.testButton = ButtonRow.builder().setTitle("Test").build();
+        this.testButton = ButtonRow.builder().setTitle(tr("Test")).build();
         this.testButton.onActivated(() -> this.testConnection());
-        this.saveButton = ButtonRow.builder().setTitle("Save").setSensitive(false).build();
+        this.saveButton = ButtonRow.builder().setTitle(tr("Save")).setSensitive(false).build();
         this.saveButton.onActivated(() -> this.saveForm());
         this.saveButton.addCssClass(suggestedAction.className());
 
@@ -138,13 +139,13 @@ public class ServerConfigForm extends Box {
             if (success) {
                 Toast build = Toast.builder()
                         .setTimeout(1)
-                        .setCustomTitle(Label.builder().setLabel("Connection OK!").setCssClasses(title1.add(colorSuccess)).build())
+                        .setCustomTitle(Label.builder().setLabel(tr("Connection OK!")).setCssClasses(title1.add(colorSuccess)).build())
                         .build();
                 this.onAction.apply(new PlayerAction.Toast(build));
             } else {
                 Toast build = Toast.builder()
                         .setTimeout(2)
-                        .setCustomTitle(Label.builder().setLabel("Connection failed!").setCssClasses(title1.add(colorWarning)).build())
+                        .setCustomTitle(Label.builder().setLabel(tr("Connection failed!")).setCssClasses(title1.add(colorWarning)).build())
                         .build();
                 this.onAction.apply(new PlayerAction.Toast(build));
             }
@@ -162,7 +163,7 @@ public class ServerConfigForm extends Box {
             return;
         }
         Utils.runOnMainThread(() -> {
-            this.serverTypeInfoLabel.setLabel("%s server".formatted(capitalize(s.type.name())));
+            this.serverTypeInfoLabel.setLabel(tr("%s server").formatted(capitalize(s.type.name())));
             this.serverUrlEntry.setText(s.serverUrl);
             this.tlsSwitchEntry.setActive(s.tlsSkipVerify);
             this.usernameEntry.setText(s.username);
@@ -178,7 +179,7 @@ public class ServerConfigForm extends Box {
         if (dataOpt.isEmpty()) {
             Toast toast = Toast.builder()
                     .setTimeout(5)
-                    .setCustomTitle(Label.builder().setLabel("Error saving configuration!").setCssClasses(title1.add(colorError)).build())
+                    .setCustomTitle(Label.builder().setLabel(tr("Error saving configuration!")).setCssClasses(title1.add(colorError)).build())
                     .build();
             this.onAction.apply(new PlayerAction.Toast(toast));
             return;
@@ -190,14 +191,14 @@ public class ServerConfigForm extends Box {
                         log.error("saveForm: data={} error: ", data, throwable);
                         Toast toast = Toast.builder()
                                 .setTimeout(5)
-                                .setCustomTitle(Label.builder().setLabel("Error saving configuration!").setCssClasses(title1.add(colorError)).build())
+                                .setCustomTitle(Label.builder().setLabel(tr("Error saving configuration!")).setCssClasses(title1.add(colorError)).build())
                                 .build();
                         return new PlayerAction.Toast(toast);
                     } else {
                         log.info("saveForm: data={} success!", data);
                         Toast toast = Toast.builder()
                                 .setTimeout(4)
-                                .setCustomTitle(Label.builder().setLabel("Configuration saved!").setCssClasses(title1.add(colorSuccess)).build())
+                                .setCustomTitle(Label.builder().setLabel(tr("Configuration saved!")).setCssClasses(title1.add(colorSuccess)).build())
                                 .build();
                         return new PlayerAction.Toast(toast);
                     }

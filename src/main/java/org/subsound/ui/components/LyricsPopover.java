@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import static org.subsound.i18n.I18n.tr;
 
 /**
  * Popover showing lyrics for the currently playing song.
@@ -119,7 +120,7 @@ public class LyricsPopover extends Popover {
         this.scrolled.addController(scrollController);
 
         this.emptyLabel = Label.builder()
-                .setLabel("No lyrics found")
+                .setLabel(tr("No lyrics found"))
                 .setMarginTop(16)
                 .setMarginBottom(16)
                 .setMarginStart(16)
@@ -137,7 +138,7 @@ public class LyricsPopover extends Popover {
         this.stack.addNamed(scrolled, PAGE_LYRICS);
 
         var header = Label.builder()
-                .setLabel("Lyrics")
+                .setLabel(tr("Lyrics"))
                 .setMarginTop(8)
                 .setMarginBottom(8)
                 .build();
@@ -193,7 +194,7 @@ public class LyricsPopover extends Popover {
     private void loadForCurrentSong() {
         var songOpt = this.currentSong;
         if (songOpt.isEmpty()) {
-            emptyLabel.setLabel("Nothing playing");
+            emptyLabel.setLabel(tr("Nothing playing"));
             stack.setVisibleChildName(PAGE_EMPTY);
             return;
         }
@@ -250,7 +251,7 @@ public class LyricsPopover extends Popover {
                 stack.setVisibleChildName(PAGE_LYRICS);
             }
             case null -> {
-                emptyLabel.setLabel("No lyrics found");
+                emptyLabel.setLabel(tr("No lyrics found"));
                 stack.setVisibleChildName(PAGE_EMPTY);
             }
         }

@@ -29,6 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
+import static org.subsound.i18n.I18n.tr;
+
 public class PlaylistsStore {
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(PlaylistsStore.class);
 
@@ -135,7 +137,7 @@ public class PlaylistsStore {
 
         var starred = new PlaylistSimple(
                 STARRED_ID,
-                "Starred",
+                tr("Starred"),
                 PlaylistKind.STARRED,
                 Optional.empty(),
                 starredCount,
@@ -144,7 +146,7 @@ public class PlaylistsStore {
         );
         var downloaded = new PlaylistSimple(
                 DOWNLOADED_ID,
-                "Downloaded",
+                tr("Downloaded"),
                 PlaylistKind.DOWNLOADED,
                 Optional.empty(),
                 downloadCount,

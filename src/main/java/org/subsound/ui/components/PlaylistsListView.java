@@ -44,6 +44,8 @@ import static org.gnome.gtk.Align.FILL;
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
+import static org.subsound.i18n.I18n.tr;
+import static org.subsound.i18n.I18n.trn;
 import static org.subsound.utils.Utils.cssClasses;
 import static org.subsound.utils.Utils.doAsync;
 
@@ -107,13 +109,13 @@ public class PlaylistsListView extends Box {
         this.starredPlaylistPage = NavigationPage.builder()
                 .setTag("page-2-starred")
                 .setChild(this.starredPlaylistView)
-                .setTitle("Starred")
+                .setTitle(tr("Starred"))
                 .setHexpand(true)
                 .build();
         this.starredPlaylistView.bindSource(appManager.getStarredList(), buildStarredPlaceholder());
 
         var b = Box.builder().setValign(Align.CENTER).setHalign(Align.CENTER).build();
-        b.append(Label.builder().setLabel("Select a playlist to view").setCssClasses(cssClasses("title-1")).build());
+        b.append(Label.builder().setLabel(tr("Select a playlist to view")).setCssClasses(cssClasses("title-1")).build());
         var statusPage = StatusPage.builder().setChild(b).build();
         this.initialPage = NavigationPage.builder().setTag("page-2-initial").setChild(statusPage).build();
 
@@ -238,7 +240,7 @@ public class PlaylistsListView extends Box {
                 .build();
 
         var headerLabel = Label.builder()
-                .setLabel("Library")
+                .setLabel(tr("Library"))
                 .setHalign(START)
                 .setHexpand(true)
                 .setCssClasses(cssClasses("title-3"))
@@ -246,7 +248,7 @@ public class PlaylistsListView extends Box {
 
         var newPlaylistButton = Button.builder()
                 .setIconName(Icons.ListAdd.getIconName())
-                .setTooltipText("New playlist")
+                .setTooltipText(tr("New playlist"))
                 .setValign(CENTER)
                 .build();
         newPlaylistButton.addCssClass("flat");
@@ -270,7 +272,7 @@ public class PlaylistsListView extends Box {
         this.page1 = NavigationPage.builder()
                 .setTag("page-1")
                 .setChild(sidebarBox)
-                .setTitle("Playlists")
+                .setTitle(tr("Playlists"))
                 .build();
         this.view.setSidebar(this.page1);
         this.view.setMaxSidebarWidth(300);
@@ -292,7 +294,7 @@ public class PlaylistsListView extends Box {
         var now = Instant.now();
         return new PlaylistSimple(
                 PlaylistsStore.STARRED_ID,
-                "Starred",
+                tr("Starred"),
                 PlaylistKind.STARRED,
                 Optional.empty(),
                 0,
@@ -355,16 +357,17 @@ public class PlaylistsListView extends Box {
 
     private void showNewPlaylistDialog() {
         var entry = Entry.builder()
-                .setPlaceholderText("Playlist name")
+                .setPlaceholderText(tr("Playlist name"))
                 .setActivatesDefault(true)
                 .build();
 
         var dialog = AlertDialog.builder()
-                .setTitle("Create Playlist")
-                .setBody("Enter a name for the new playlist")
+                .setTitle(tr("Create Playlist"))
+                .setBody(tr("Enter a name for the new playlist"))
                 .build();
-        dialog.addResponse("cancel", "_Cancel");
-        dialog.addResponse("create", "_Create");
+        // TRANSLATORS: "_" marks the mnemonic key
+        dialog.addResponse("cancel", tr("_Cancel"));
+        dialog.addResponse("create", tr("_Create"));
         dialog.setResponseAppearance("create", ResponseAppearance.SUGGESTED);
         dialog.setDefaultResponse("create");
         dialog.setCloseResponse("cancel");
@@ -511,19 +514,19 @@ public class PlaylistsListView extends Box {
                     this.subtitleLabel.setLabel(counts.completed() + " / " + counts.total());
                 } else if (counts != null && counts.allDone()) {
                     // All done — green checkmark next to subtitle
-                    this.subtitleLabel.setLabel(playlist.songCount() + " items");
+                    this.subtitleLabel.setLabel(trn("%d item", "%d items", playlist.songCount()).formatted(playlist.songCount()));
                     this.subtitleCheckmark.setVisible(true);
                 } else {
                     // Empty queue
-                    this.subtitleLabel.setLabel(playlist.songCount() + " items");
+                    this.subtitleLabel.setLabel(trn("%d item", "%d items", playlist.songCount()).formatted(playlist.songCount()));
                 }
             } else if (playlist.kind() == PlaylistKind.STARRED) {
-                this.subtitleLabel.setLabel(playlist.songCount() + " items");
+                this.subtitleLabel.setLabel(trn("%d item", "%d items", playlist.songCount()).formatted(playlist.songCount()));
                 this.prefixArt.setVisible(false);
                 this.prefixIconDownload.setVisible(false);
                 this.prefixIconStar.setVisible(true);
             } else {
-                this.subtitleLabel.setLabel(playlist.songCount() + " items");
+                this.subtitleLabel.setLabel(trn("%d item", "%d items", playlist.songCount()).formatted(playlist.songCount()));
                 this.prefixIconDownload.setVisible(false);
                 this.prefixIconStar.setVisible(false);
                 this.prefixArt.setVisible(true);

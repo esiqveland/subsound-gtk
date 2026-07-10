@@ -36,6 +36,8 @@ import static org.subsound.ui.components.PlayerBar.CoverArtDiff.SAME;
 import static org.subsound.utils.Utils.runOnMainThread;
 import static org.subsound.utils.Utils.withinEpsilon;
 
+import static org.subsound.i18n.I18n.tr;
+
 public class PlayerBar extends Box implements AppManager.StateListener {
     private final Logger log = LoggerFactory.getLogger(PlayerBar.class);
     private static final int ARTWORK_SIZE = 64;
@@ -262,7 +264,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
 
         queueButton = MenuButton.builder()
                 .setIconName(Icons.Playlists.getIconName())
-                .setTooltipText("Play Queue")
+                .setTooltipText(tr("Play Queue"))
                 .setPopover(queuePopover)
                 .setDirection(org.gnome.gtk.ArrowType.UP)
                 .build();
@@ -274,7 +276,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
         );
         lyricsButton = MenuButton.builder()
                 .setIconName(Icons.Microphone.getIconName())
-                .setTooltipText("Lyrics")
+                .setTooltipText(tr("Lyrics"))
                 .setPopover(lyricsPopover)
                 .setDirection(org.gnome.gtk.ArrowType.UP)
                 .build();
@@ -296,7 +298,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
         skipForwardButton.onClicked(this::onNext);
         shuffleModeButton = Button.builder().setIconName(Icons.PlaylistShuffle.getIconName()).build();
         shuffleModeButton.addCssClass("circular");
-        shuffleModeButton.setTooltipText("Shuffle");
+        shuffleModeButton.setTooltipText(tr("Shuffle"));
         shuffleModeButton.onClicked(() -> {
             AppState state = this.appManager.getState();
             var currentMode = state.queue().playMode();
@@ -311,7 +313,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
 
         repeatModeButton = Button.builder().setIconName(Icons.PlaylistRepeatSong.getIconName()).build();
         repeatModeButton.addCssClass("circular");
-        repeatModeButton.setTooltipText("Repeat song");
+        repeatModeButton.setTooltipText(tr("Repeat song"));
         repeatModeButton.onClicked(() -> {
             AppState state = this.appManager.getState();
             var currentMode = state.queue().playMode();

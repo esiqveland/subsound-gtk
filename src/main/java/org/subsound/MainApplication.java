@@ -59,6 +59,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.subsound.i18n.I18n.tr;
 import static org.subsound.utils.Utils.mustRead;
 
 public class MainApplication {
@@ -164,7 +165,7 @@ public class MainApplication {
 
         settingsButton = MenuButton.builder()
                 .setIconName(Icons.Settings.getIconName())
-                .setTooltipText("Settings")
+                .setTooltipText(tr("Settings"))
                 .setPopover(this.settingsPopover)
                 .build();
 
@@ -175,15 +176,15 @@ public class MainApplication {
 
         this.backButton = Button.builder()
                 .setIconName("go-previous-symbolic")
-                .setTooltipText("Back")
+                .setTooltipText(tr("Back"))
                 .build();
         this.backButton.addCssClass(Classes.flat.className());
         this.backButton.setVisible(false);
         this.backButton.onClicked(() -> navigationView.pop());
 
         var searchButton = new Button();
-        searchButton.setLabel("Search");
-        searchButton.setTooltipText("Search");
+        searchButton.setLabel(tr("Search"));
+        searchButton.setTooltipText(tr("Search"));
         searchButton.onClicked(() -> this.commandPalette.toggle());
         searchButton.addCssClass("flat");
         searchButton.setIconName(Icons.Search.getIconName());
@@ -296,7 +297,7 @@ public class MainApplication {
                         cfg.dataDir,
                         transcodeSettings
                 );
-                NavigationPage navPage = NavigationPage.builder().setChild(settings).setTitle("Settings").build();
+                NavigationPage navPage = NavigationPage.builder().setChild(settings).setTitle(tr("Settings")).build();
                 navigationView.push(navPage);
 
                 yield true;
@@ -304,7 +305,7 @@ public class MainApplication {
             case AppNavigation.AppRoute.RouteAlbumInfo route -> {
                 var viewAlbumPage = new AlbumInfoLoader(this.thumbLoader, this.appManager, appManager::handleAction)
                         .setAlbumId(route.albumId());
-                NavigationPage albumPage = NavigationPage.builder().setChild(viewAlbumPage).setTitle("Album").build();
+                NavigationPage albumPage = NavigationPage.builder().setChild(viewAlbumPage).setTitle(tr("Album")).build();
                 //var albumPage = new SubsoundPage(viewAlbumPage, "Album");
                 navigationView.push(albumPage);
 
@@ -333,13 +334,13 @@ public class MainApplication {
                     albumInfo -> this.appNavigation.navigateTo(new AppNavigation.AppRoute.RouteAlbumInfo(albumInfo.id())),
                     this.appNavigation::navigateTo
             );
-            ViewStackPage frontPage = viewStack.addTitledWithIcon(frontPageContainer, "frontPage", "Home", Icons.GoHome.getIconName());
+            ViewStackPage frontPage = viewStack.addTitledWithIcon(frontPageContainer, "frontPage", tr("Home"), Icons.GoHome.getIconName());
         }
         {
             var playlistsContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
             this.playlistsViewLoader = new PlaylistsViewLoader(thumbLoader, appManager, appNavigation::navigateTo);
             playlistsContainer.append(this.playlistsViewLoader);
-            ViewStackPage starredPage = viewStack.addTitledWithIcon(playlistsContainer, "playlistPage", "Playlists", Icons.Starred.getIconName());
+            ViewStackPage starredPage = viewStack.addTitledWithIcon(playlistsContainer, "playlistPage", tr("Playlists"), Icons.Starred.getIconName());
         }
         {
             var artistsContainer = BoxFullsize().setValign(Align.FILL).setHalign(Align.FILL).build();
@@ -349,7 +350,7 @@ public class MainApplication {
                     this.appNavigation::navigateTo
             );
             artistsContainer.append(artistListBox);
-            ViewStackPage artistsPage = viewStack.addTitledWithIcon(artistsContainer, "artistsPage", "Artists", Icons.Artist.getIconName());
+            ViewStackPage artistsPage = viewStack.addTitledWithIcon(artistsContainer, "artistsPage", tr("Artists"), Icons.Artist.getIconName());
         }
         if (cfg.onboarding != OnboardingState.DONE) {
             var onboardingOverlay = getOnboardingOverlay(this.appManager, viewStack);
