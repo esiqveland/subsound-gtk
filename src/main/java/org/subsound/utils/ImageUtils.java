@@ -21,7 +21,7 @@ import java.util.List;
 public class ImageUtils {
 
     public static Pixbuf readPixbuf(byte[] bytes) {
-        try (var stream = MemoryInputStream.fromData(bytes)) {
+        try (var stream = MemoryInputStream.fromBytes(bytes)) {
             return readPixbuf(stream);
         } catch (IOException e) {
             throw new RuntimeException(e);

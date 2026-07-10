@@ -53,6 +53,7 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.javagi.base.Filename;
 import static org.subsound.i18n.I18n.trn;
 
 
@@ -497,7 +498,7 @@ public class Utils {
         return (long) estimatedBytes;
     }
 
-    public record FileDialogResult(String path) {}
+    public record FileDialogResult(Filename path) {}
 
     public static CompletableFuture<FileDialogResult> selectFolder(Window parentWindow) {
         var result = new CompletableFuture<FileDialogResult>();
