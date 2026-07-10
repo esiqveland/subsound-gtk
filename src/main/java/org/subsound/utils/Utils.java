@@ -59,7 +59,6 @@ import static org.subsound.i18n.I18n.trn;
 public class Utils {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Utils.class);
     public static final ExecutorService ASYNC_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Utils.class);
     private static final HexFormat HEX = HexFormat.of().withLowerCase();
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
