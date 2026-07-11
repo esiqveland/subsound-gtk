@@ -1,7 +1,5 @@
 package org.subsound.ui.components;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.EventControllerScroll;
@@ -35,7 +33,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import static org.subsound.i18n.I18n.tr;
@@ -58,10 +55,6 @@ public class LyricsPopover extends Popover {
 
     private final Function<SongInfo, Optional<LyricsResult>> lyricsProvider;
     private final Consumer<Duration> onSeek;
-    // future-valued so concurrent opens dedupe to one request per song:
-    private final Cache<String, CompletableFuture<Optional<LyricsResult>>> cache = Caffeine.newBuilder()
-            .maximumSize(100)
-            .build();
 
     private final Stack stack;
     private final ScrolledWindow scrolled;
@@ -205,7 +198,9 @@ public class LyricsPopover extends Popover {
             return;
         }
         stack.setVisibleChildName(PAGE_LOADING);
-        var future = cache.get(song.id(), id -> Utils.doAsync(() -> lyricsProvider.apply(song)));
+        // Concurrent same-song fetches are deduped one layer down by CachingClient;
+        // reopens for an already-built song short-circuit on loadedSongId above.
+        var future = Utils.doAsync(() -> lyricsProvider.apply(song));
         future.whenComplete((result, err) -> {
             if (!Optional.of(song.id()).equals(this.currentSong.map(SongInfo::id))) {
                 // stale: song changed while fetching
@@ -213,8 +208,6 @@ public class LyricsPopover extends Popover {
             }
             if (err != null) {
                 log.warn("failed to fetch lyrics for songId={}: {}", song.id(), err.getMessage());
-                // allow a retry the next time the popover opens:
-                cache.invalidate(song.id());
             }
             var res = err != null ? Optional.<LyricsResult>empty() : result;
             Utils.runOnMainThread(() -> showResult(song.id(), res));
