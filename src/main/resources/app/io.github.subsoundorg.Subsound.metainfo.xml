@@ -58,7 +58,18 @@
   </branding>
 
   <releases>
-    <release version="@version@" date="2026-07-09">
+    <release version="@version@" date="2026-07-11">
+      <description>
+        <ul>
+          <li>New: synced lyrics for the current song from the player bar</li>
+          <li>New: lyrics with offline support</li>
+          <li>New: Subsound is now translatable</li>
+          <li>Improved: faster and more reliable local database writes, especially when syncing large libraries</li>
+          <li>Bugfix: a failed download can now be retried by re-adding it to the download queue</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.7.3" date="2026-07-09">
       <description>
         <ul>
           <li>Improved: playlists list view is smoother and less janky when scrolling and switching playlists</li>
