@@ -74,6 +74,8 @@ Features:
 - [X] Browse artists
 - [X] Fast Search UI with ctrl+k
 - [X] MPRIS support
+- [X] Internationalize (support is started, missing translations)
+- [X] Lyrics support
 - [X] Offline mode
   - [X] Force Offline/Online mode
   - [X] Offline mode detection/tracking
@@ -89,10 +91,9 @@ Features:
     - This kind of already works, but there is no UI that shows status for each item
 
 Later goals:
- - [X] Internationalize
+- [ ] Offline lyrics
 
 Potential goals:
- - [ ] Lyrics support
  - [ ] support multiple server types (native Navidrome API, OpenSubsonic, Jellyfish etc)
  - [ ] make it look OK in light mode?
  - [ ] Chromecast support
