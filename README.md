@@ -91,15 +91,13 @@ Features:
     - This kind of already works, but there is no UI that shows status for each item
 
 Later goals:
-- [ ] Offline lyrics
+- [X] Offline lyrics
 
 Potential goals:
  - [ ] support multiple server types (native Navidrome API, OpenSubsonic, Jellyfish etc)
  - [ ] make it look OK in light mode?
  - [ ] Chromecast support
  - [ ] support the subsonic podcast features
- - [ ] consider using fanart.tv
- - [ ] support embedded image tags? https://github.com/neithern/g4music/blob/bf80b5cad448a57c635f01d0a315671fef045d14/src/gst/tag-parser.vala#L99
 
 Non-goals:
  - Video support  
