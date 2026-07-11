@@ -26,17 +26,22 @@ GSongInfo:
 
 - [ ] mobile adaptive UI
 
+lyrics:
+- [ ] loading lyrics can be super slow (20-25s on cold server cache): always request lyrics in the background when we switch song, no matter if the lyrics view has been shown or not.
+- [ ] store lyrics for offline usage in the database. store the full json body (getLyricsBySongId response), so we can re-parse it raw later if we add new features.
+- [ ] make the lyrics view a navigation screen (AppRoute + NavigationPage) instead of a popover on the playerbar. easier to make it prettier as a fullscreen-ish experience.
+
 playqueue:
 - [X] database as a backing store for the PlayQueue, so we can persist the queue across restarts.
 - [X] when a song fails to download or otherwise start playing, skip to the next song in the playqueue
 
 navidrome:
  - [X] report current playing song to navidrome: `scrobble?submission=false`
- - [ ] playbackReport: https://opensubsonic.netlify.app/docs/extensions/playbackreport/
+ - [X] playbackReport: https://opensubsonic.netlify.app/docs/extensions/playbackreport/
  - [ ] "switch" to opensubsonic api: https://github.com/navidrome/navidrome/issues/2695
- - [ ] feature detection for opensubsonic api
-    - [ ] load the available opensubsonic features
- - [ ] switch to navidrome or opensubsonic authentication spec
+ - [X] feature detection for opensubsonic api
+    - [X] load the available opensubsonic features
+ - [X] switch to navidrome or opensubsonic authentication spec
 
 worklog:
 
