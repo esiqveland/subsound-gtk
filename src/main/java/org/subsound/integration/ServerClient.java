@@ -60,11 +60,26 @@ public interface ServerClient {
     ScanStatus startScan(boolean quickScan);
 
     /**
-     * Fetch lyrics for a song from the server (OpenSubsonic songLyrics extension).
-     * Returns empty when the server does not support lyrics or has none for the song.
+     * Fetch the raw getLyricsBySongId response body from the server (OpenSubsonic songLyrics
+     * extension). Returns empty when the server does not support lyrics or has none for the song.
+     */
+    default Optional<String> getSongLyricsRaw(String songId) {
+        return Optional.empty();
+    }
+
+    /**
+     * Display-facing convenience: parsed lyrics only, derived from the raw response body.
      */
     default Optional<LyricsResult> getSongLyrics(String songId) {
-        return Optional.empty();
+        return getSongLyricsRaw(songId).flatMap(ServerClient::parseSongLyrics);
+    }
+
+    /**
+     * Parse a raw getLyricsBySongId response body (fresh or loaded from the lyrics table).
+     * Never throws.
+     */
+    static Optional<LyricsResult> parseSongLyrics(String rawBody) {
+        return SubsonicClientV2.parseLyricsBody(rawBody);
     }
 
     sealed interface ScanStatus {

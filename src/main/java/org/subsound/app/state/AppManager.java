@@ -710,6 +710,7 @@ public class AppManager {
                 false
         ));
         Utils.doAsync(this::prefetchNextSong);
+        Utils.doAsync(() -> prefetchLyrics(songInfo));
 
         this.setState(old -> old.withNowPlaying(Optional.of(new NowPlaying(
                 songInfo,
@@ -740,6 +741,19 @@ public class AppManager {
             }
             return null;
         });
+    }
+
+    private void prefetchLyrics(SongInfo songInfo) {
+        try {
+            var client = this.client.get();
+            if (client == null) {
+                return;
+            }
+            // warms the CachingClient in-flight future + lyrics DB row; result intentionally unused
+            client.getSongLyrics(songInfo.id());
+        } catch (Exception e) {
+            log.warn("prefetchLyrics failed for songId={}: {}", songInfo.id(), e.getMessage());
+        }
     }
 
     private Optional<URI> resolveStreamUri(SongInfo songInfo) {
@@ -900,6 +914,10 @@ public class AppManager {
                 case PlayerAction.ClearThumbnailCache _ -> {
                     this.thumbnailCache.clearThumbnails(SERVER_ID);
                     this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(tr("Thumbnail cache cleared"))));
+                }
+                case PlayerAction.ClearLyricsCache _ -> {
+                    this.dbService.clearLyrics();
+                    this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(tr("Lyrics cache cleared"))));
                 }
                 case PlayerAction.TriggerServerScan arg -> {
                     Utils.doAsync(() -> this.useClient(c -> c.startScan(arg.quickScan())))

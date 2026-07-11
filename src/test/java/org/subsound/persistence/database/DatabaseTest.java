@@ -40,7 +40,12 @@ public class DatabaseTest {
             // Check version
             try (ResultSet rs = stmt.executeQuery("SELECT MAX(version) FROM schema_version")) {
                 Assertions.assertThat(rs.next()).isTrue();
-                Assertions.assertThat(rs.getInt(1)).isEqualTo(17);
+                Assertions.assertThat(rs.getInt(1)).isEqualTo(18);
+            }
+
+            // Check if lyrics table exists
+            try (ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='lyrics'")) {
+                Assertions.assertThat(rs.next()).isTrue();
             }
 
             // Check if artists table exists

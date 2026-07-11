@@ -1338,13 +1338,34 @@ public class SubsonicClientV2 implements ServerClient {
     }
 
     @Override
-    public Optional<LyricsResult> getSongLyrics(String songId) {
+    public Optional<String> getSongLyricsRaw(String songId) {
         if (!isLyricsSupported()) {
             return Optional.empty();
         }
         var res = getSongLyrics(new GetSongLyricsRequest(songId));
-        var lyricsList = res.parsed.subsonicResponse.lyricsList;
-        return toLyricsResult(lyricsList);
+        return Optional.of(res.rawBody());
+    }
+
+    /**
+     * Parse a raw getLyricsBySongId response body into a display-facing LyricsResult.
+     * Used both for fresh responses and for rows loaded from the lyrics table, so it
+     * must never throw on malformed input.
+     */
+    public static Optional<LyricsResult> parseLyricsBody(String rawBody) {
+        if (rawBody == null || rawBody.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            var parsed = Utils.fromJson(rawBody, GetSongLyricsResponse.class);
+            if (parsed == null || parsed.subsonicResponse == null) {
+                return Optional.empty();
+            }
+            return toLyricsResult(parsed.subsonicResponse.lyricsList);
+        } catch (Exception e) {
+            LoggerFactory.getLogger(SubsonicClientV2.class)
+                    .warn("Failed to parse lyrics body: {}", e.getMessage());
+            return Optional.empty();
+        }
     }
 
     static Optional<LyricsResult> toLyricsResult(@Nullable LyricsListRes res) {

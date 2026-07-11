@@ -132,6 +132,7 @@ public class Database {
         migrations.add(new MigrationV15());
         migrations.add(new MigrationV16());
         migrations.add(new MigrationV17());
+        migrations.add(new MigrationV18());
         return migrations;
     }
 
@@ -529,6 +530,29 @@ public class Database {
                 stmt.execute("ALTER TABLE servers_new RENAME TO servers");
                 // Values below ~1973 in millis can only be second-resolution timestamps:
                 stmt.execute("UPDATE servers SET created_at = created_at * 1000 WHERE created_at IS NOT NULL AND created_at < 100000000000");
+            }
+        }
+    }
+
+    static class MigrationV18 implements Migration {
+        @Override
+        public int version() { return 18; }
+
+        @Override
+        public void apply(Connection conn) throws SQLException {
+            try (Statement stmt = conn.createStatement()) {
+                // Stores the full raw getLyricsBySongId response body so it can be
+                // re-parsed later (new features, offline mode). JSON declared type has
+                // TEXT affinity; the json_valid CHECK keeps stored rows re-parseable.
+                stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS lyrics (
+                        server_id TEXT NOT NULL,
+                        song_id TEXT NOT NULL,
+                        raw_json JSON NOT NULL CHECK (json_valid(raw_json)),
+                        fetched_at_ms INTEGER NOT NULL,
+                        PRIMARY KEY (server_id, song_id)
+                    )
+                """);
             }
         }
     }

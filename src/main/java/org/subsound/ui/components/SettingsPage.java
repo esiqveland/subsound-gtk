@@ -39,6 +39,7 @@ public class SettingsPage extends Box {
     private final ServerConfigForm form;
     private final ButtonRow clearSongCacheButton;
     private final ButtonRow clearThumbnailCacheButton;
+    private final ButtonRow clearLyricsCacheButton;
     private final PreferencesGroup serverInformation;
     private final ActionRow serverTypeLabel;
     private final ActionRow serverVersionLabel;
@@ -80,11 +81,16 @@ public class SettingsPage extends Box {
         this.clearThumbnailCacheButton.addCssClass(destructiveAction.className());
         this.clearThumbnailCacheButton.onActivated(() -> appManager.handleAction(new PlayerAction.ClearThumbnailCache()));
 
+        this.clearLyricsCacheButton = ButtonRow.builder().setTitle(tr("Clear lyrics cache")).build();
+        this.clearLyricsCacheButton.addCssClass(destructiveAction.className());
+        this.clearLyricsCacheButton.onActivated(() -> appManager.handleAction(new PlayerAction.ClearLyricsCache()));
+
         this.localSettings = new PreferencesGroup();
         this.localSettings.setTitle(tr("Local Settings"));
         this.localSettings.setSeparateRows(false);
         this.localSettings.add(clearSongCacheButton);
         this.localSettings.add(clearThumbnailCacheButton);
+        this.localSettings.add(clearLyricsCacheButton);
 
         var formats = Arrays.stream(ServerClient.TranscodeFormat.values()).toList();
         var model = new StringList();

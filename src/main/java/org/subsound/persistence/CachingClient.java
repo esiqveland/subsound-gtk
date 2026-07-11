@@ -9,6 +9,7 @@ import org.subsound.persistence.database.DatabaseServerService;
 import org.subsound.persistence.database.DownloadQueueItem;
 import org.subsound.persistence.database.PlaylistRow;
 import org.subsound.persistence.database.DBSong;
+import org.subsound.persistence.database.DBLyrics;
 import org.subsound.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import static org.subsound.persistence.ThumbnailCache.toCachePath;
@@ -435,18 +438,45 @@ public class CachingClient implements ServerClient {
         return delegate.startScan(quickScan);
     }
 
+    // Prefetch (on song load) and popover-open race during the 20s cold fetches;
+    // dedupe concurrent fetches on songId per project convention.
+    private final ConcurrentHashMap<String, CompletableFuture<Optional<LyricsResult>>> lyricsInFlight = new ConcurrentHashMap<>();
+
     @Override
     public Optional<LyricsResult> getSongLyrics(String songId) {
+        var stored = dbService.getLyricsBySongId(songId);
+        if (stored.isPresent()) {
+            var parsed = ServerClient.parseSongLyrics(stored.get().rawJson());
+            if (parsed.isPresent()) {
+                return parsed;   // instant, no network
+            }
+            // stored negative result: retry online below; it still serves offline mode
+        }
         if (isOffline()) {
             return Optional.empty();
         }
+        var future = lyricsInFlight.computeIfAbsent(songId, id ->
+                Utils.doAsync(() -> fetchAndStoreLyrics(id))
+                        .whenComplete((r, e) -> lyricsInFlight.remove(id)));
         try {
-            return delegate.getSongLyrics(songId);
+            return future.join();
         } catch (Exception e) {
             detectOffline(e);
             log.warn("Failed to fetch lyrics from server for songId={}: {}", songId, e.getMessage());
             return Optional.empty();
         }
+    }
+
+    private Optional<LyricsResult> fetchAndStoreLyrics(String songId) {
+        var rawBody = delegate.getSongLyricsRaw(songId);
+        if (rawBody.isEmpty()) {
+            return Optional.empty();   // unsupported server: store nothing
+        }
+        var raw = rawBody.get();
+        // write-through: persist the raw body for offline mode + instant reopens
+        Utils.doAsync(() -> dbService.upsertLyrics(
+                new DBLyrics(songId, UUID.fromString(serverId), raw, Instant.now())));
+        return ServerClient.parseSongLyrics(raw);
     }
 
     @Override

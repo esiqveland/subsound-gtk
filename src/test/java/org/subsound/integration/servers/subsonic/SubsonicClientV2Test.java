@@ -694,4 +694,47 @@ public class SubsonicClientV2Test {
         assertThat(lastScan).isNotNull();
         assertThat(lastScan.getEpochSecond()).isEqualTo(Instant.parse("2024-07-18T22:20:25.220976486Z").getEpochSecond());
     }
+
+    @Test
+    public void testParseLyricsBodyReparsesStoredJson() {
+        // A stored raw body (spec example) re-parses to SyncedLyrics.
+        String json = """
+                {
+                  "subsonic-response": {
+                    "status": "ok",
+                    "version": "1.16.1",
+                    "openSubsonic": true,
+                    "lyricsList": {
+                      "structuredLyrics": [
+                        {
+                          "displayArtist": "Muse",
+                          "displayTitle": "Hysteria",
+                          "lang": "eng",
+                          "offset": -100,
+                          "synced": true,
+                          "line": [
+                            { "start": 0, "value": "It's bugging me" },
+                            { "start": 2000, "value": "Grating me" }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+                """;
+        var result = SubsonicClientV2.parseLyricsBody(json);
+        assertThat(result).isPresent();
+        assertThat(result.get()).isInstanceOf(LyricsResult.SyncedLyrics.class);
+        assertThat(((LyricsResult.SyncedLyrics) result.get()).lines()).hasSize(2);
+    }
+
+    @Test
+    public void testParseLyricsBodyHandlesGarbageWithoutThrowing() {
+        assertThat(SubsonicClientV2.parseLyricsBody("")).isEmpty();
+        assertThat(SubsonicClientV2.parseLyricsBody("   ")).isEmpty();
+        assertThat(SubsonicClientV2.parseLyricsBody(null)).isEmpty();
+        assertThat(SubsonicClientV2.parseLyricsBody("not json at all")).isEmpty();
+        assertThat(SubsonicClientV2.parseLyricsBody("{}")).isEmpty();
+        assertThat(SubsonicClientV2.parseLyricsBody("{\"subsonic-response\":{\"status\":\"ok\"}}")).isEmpty();
+    }
 }

@@ -68,6 +68,7 @@ public sealed interface PlayerAction {
     record SyncDatabase() implements PlayerAction {}
     record ClearSongCache() implements PlayerAction {}
     record ClearThumbnailCache() implements PlayerAction {}
+    record ClearLyricsCache() implements PlayerAction {}
     record OverrideNetworkStatus(Optional<NetworkMonitoring.NetworkStatus> overrideStatus) implements PlayerAction {}
     record RaiseWindow() implements PlayerAction {}
     record Quit() implements PlayerAction {}

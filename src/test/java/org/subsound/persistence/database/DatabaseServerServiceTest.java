@@ -511,6 +511,50 @@ public class DatabaseServerServiceTest {
                 .contains("def456");
     }
 
+    @Test
+    public void testLyricsOperations() throws Exception {
+        File dbFile = folder.newFile("test_lyrics_service.db");
+        String url = "jdbc:sqlite:" + dbFile.getAbsolutePath();
+        Database db = new Database(url);
+
+        UUID serverId = UUID.randomUUID();
+        UUID otherServerId = UUID.randomUUID();
+        DatabaseServerService service = new DatabaseServerService(serverId, db);
+        DatabaseServerService otherService = new DatabaseServerService(otherServerId, db);
+
+        // unknown songId -> empty
+        Assertions.assertThat(service.getLyricsBySongId("song-1")).isEmpty();
+
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+        String raw1 = "{\"subsonic-response\":{\"status\":\"ok\",\"version\":\"1.16.1\"}}";
+        service.upsertLyrics(new DBLyrics("song-1", serverId, raw1, now));
+
+        Optional<DBLyrics> stored = service.getLyricsBySongId("song-1");
+        Assertions.assertThat(stored).isPresent();
+        Assertions.assertThat(stored.get().songId()).isEqualTo("song-1");
+        Assertions.assertThat(stored.get().serverId()).isEqualTo(serverId);
+        Assertions.assertThat(stored.get().rawJson()).isEqualTo(raw1);
+        Assertions.assertThat(stored.get().fetchedAt()).isEqualTo(now);
+
+        // upsert replaces the existing row
+        String raw2 = "{\"subsonic-response\":{\"status\":\"ok\",\"version\":\"1.16.1\",\"lyricsList\":{}}}";
+        Instant later = now.plus(1, ChronoUnit.HOURS);
+        service.upsertLyrics(new DBLyrics("song-1", serverId, raw2, later));
+        Optional<DBLyrics> replaced = service.getLyricsBySongId("song-1");
+        Assertions.assertThat(replaced).isPresent();
+        Assertions.assertThat(replaced.get().rawJson()).isEqualTo(raw2);
+        Assertions.assertThat(replaced.get().fetchedAt()).isEqualTo(later);
+
+        // rows are scoped by serverId
+        Assertions.assertThat(otherService.getLyricsBySongId("song-1")).isEmpty();
+
+        // clearLyrics removes only this server's rows
+        otherService.upsertLyrics(new DBLyrics("song-2", otherServerId, raw1, now));
+        service.clearLyrics();
+        Assertions.assertThat(service.getLyricsBySongId("song-1")).isEmpty();
+        Assertions.assertThat(otherService.getLyricsBySongId("song-2")).isPresent();
+    }
+
     private static SongInfo downloadableSong(String songId) {
         return ServerClientSongInfoBuilder.builder()
                 .id(songId)

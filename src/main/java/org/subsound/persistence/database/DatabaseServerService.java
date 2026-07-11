@@ -592,6 +592,57 @@ public class DatabaseServerService {
         return Optional.empty();
     }
 
+    public void upsertLyrics(DBLyrics lyrics) {
+        String sql = "INSERT OR REPLACE INTO lyrics (server_id, song_id, raw_json, fetched_at_ms) VALUES (?, ?, ?, ?)";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, lyrics.serverId().toString());
+            pstmt.setString(2, lyrics.songId());
+            pstmt.setString(3, lyrics.rawJson());
+            pstmt.setLong(4, lyrics.fetchedAt().toEpochMilli());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Failed to upsert lyrics for songId: {}", lyrics.songId(), e);
+            throw new RuntimeException("Failed to upsert lyrics", e);
+        }
+    }
+
+    public Optional<DBLyrics> getLyricsBySongId(String songId) {
+        String sql = "SELECT server_id, song_id, raw_json, fetched_at_ms FROM lyrics WHERE server_id = ? AND song_id = ?";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            pstmt.setString(2, songId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(new DBLyrics(
+                            rs.getString("song_id"),
+                            UUID.fromString(rs.getString("server_id")),
+                            rs.getString("raw_json"),
+                            Instant.ofEpochMilli(rs.getLong("fetched_at_ms"))
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to get lyrics by songId: {}", songId, e);
+            throw new RuntimeException("Failed to get lyrics by songId", e);
+        }
+        return Optional.empty();
+    }
+
+    public void clearLyrics() {
+        String sql = "DELETE FROM lyrics WHERE server_id = ?";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            int deleted = pstmt.executeUpdate();
+            logger.info("Deleted {} lyrics rows for server {}", deleted, serverId);
+        } catch (SQLException e) {
+            logger.error("Failed to clear lyrics", e);
+            throw new RuntimeException("Failed to clear lyrics", e);
+        }
+    }
+
     private static DBSong mapResultSetToSong(ResultSet rs) throws SQLException {
         int year = rs.getInt("year");
         Optional<Integer> yearOptional = rs.wasNull() ? Optional.empty() : Optional.of(year);
