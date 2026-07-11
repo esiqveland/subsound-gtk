@@ -6,17 +6,18 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.subsound.configuration.Config.ServerConfig;
 import org.subsound.configuration.constants.Constants;
 import org.subsound.integration.ServerClient;
-import org.subsound.integration.lyrics.LrclibClient.LyricLine;
-import org.subsound.integration.lyrics.LyricsResult;
 import org.subsound.integration.ServerClient.ObjectIdentifier.AlbumIdentifier;
 import org.subsound.integration.ServerClient.ObjectIdentifier.ArtistIdentifier;
 import org.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier;
+import org.subsound.integration.lyrics.LrclibClient.LyricLine;
+import org.subsound.integration.lyrics.LyricsResult;
 import org.subsound.utils.Lazy;
 import org.subsound.utils.Utils;
 import org.subsound.utils.javahttp.TextUtils;
@@ -50,6 +51,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.lang.annotation.ElementType.TYPE_USE;
@@ -252,6 +254,10 @@ public class SubsonicClientV2 implements ServerClient {
     }
 
     private <T> T fetchJson(String path, Map<String, String> params, Class<T> responseClass) {
+        return fetchRaw(path, params, body -> Utils.fromJson(body.byteStream(), responseClass));
+    }
+
+    private <T> T fetchRaw(String path, Map<String, String> params, Function<ResponseBody, T> parser) {
         var url = buildUrl(path, params);
 
         Request request;
@@ -272,7 +278,7 @@ public class SubsonicClientV2 implements ServerClient {
                 var body = response.body().string();
                 throw new HttpException(response.code(), body);
             }
-            return Utils.fromJson(response.body().byteStream(), responseClass);
+            return parser.apply(response.body());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -1309,10 +1315,26 @@ public class SubsonicClientV2 implements ServerClient {
 
     public record GetSongLyricsRequest(String songId){}
 
+    public record GetSongLyricsResult(
+            GetSongLyricsResponse parsed,
+            String rawBody
+    ){}
+
     // https://opensubsonic.netlify.app/docs/endpoints/getlyricsbysongid/
-    public LyricsListRes getSongLyrics(GetSongLyricsRequest req) {
-        var res = fetchAndCheck("/rest/getLyricsBySongId.view", Map.of("id", req.songId()), GetSongLyricsResponse.class);
-        return res.subsonicResponse.lyricsList;
+    public GetSongLyricsResult getSongLyrics(GetSongLyricsRequest req) {
+        var rawString = fetchRaw(
+                "/rest/getLyricsBySongId.view",
+                Map.of("id", req.songId()),
+                body -> {
+                    try {
+                        return body.string();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+        );
+        var res = Utils.fromJson(rawString, GetSongLyricsResponse.class);
+        return new GetSongLyricsResult(res, rawString);
     }
 
     @Override
@@ -1320,7 +1342,8 @@ public class SubsonicClientV2 implements ServerClient {
         if (!isLyricsSupported()) {
             return Optional.empty();
         }
-        var lyricsList = getSongLyrics(new GetSongLyricsRequest(songId));
+        var res = getSongLyrics(new GetSongLyricsRequest(songId));
+        var lyricsList = res.parsed.subsonicResponse.lyricsList;
         return toLyricsResult(lyricsList);
     }
 
