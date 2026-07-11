@@ -211,15 +211,18 @@ scale slider {
     opacity: 1;
 }
 
-/* Synced lyrics popover: inactive lines are dimmed, the active line pops. */
+/* Synced lyrics popover: inactive lines are dimmed, the active line pops.
+ * Every line is bold so activating a line never changes the text metrics —
+ * a weight change makes the text wider, moving its wrap point and reflowing
+ * the whole list. Only opacity/color may differ between the two states. */
 .lyrics-line {
     font-size: 12pt;
+    font-weight: 700;
     opacity: 0.55;
-    transition: opacity 150ms ease-out;
+    transition: opacity 150ms ease-out, color 150ms ease-out;
 }
 
 .lyrics-line-active {
     opacity: 1.0;
-    font-weight: 700;
     color: #ffffff;
 }
