@@ -21,7 +21,10 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+
+import org.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -366,6 +369,107 @@ public class PlayQueueTest {
     }
 
     @Test
+    public void testReplaceQueueSetsPlayingItemId() {
+        List<SongInfo> songs = List.of(
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
+        );
+        playQueue.replaceQueue(songs, 1).join();
+
+        assertThat(playQueue.getState().playingItemId())
+                .hasValue(playQueue.getListStore().get(1).getQueueItemId());
+    }
+
+    @Test
+    public void testPlayPositionUpdatesPlayingItemId() {
+        List<SongInfo> songs = List.of(
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
+        );
+        playQueue.replaceQueue(songs, 0).join();
+        playQueue.playPosition(1);
+
+        assertThat(playQueue.getState().playingItemId())
+                .hasValue(playQueue.getListStore().get(1).getQueueItemId());
+    }
+
+    @Test
+    public void testAttemptPlayNextAndPrevUpdatePlayingItemId() {
+        List<SongInfo> songs = List.of(
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
+        );
+        playQueue.replaceQueue(songs, 0).join();
+
+        playQueue.attemptPlayNext();
+        assertThat(playQueue.getState().playingItemId())
+                .hasValue(playQueue.getListStore().get(1).getQueueItemId());
+
+        playQueue.attemptPlayPrev();
+        assertThat(playQueue.getState().playingItemId())
+                .hasValue(playQueue.getListStore().get(0).getQueueItemId());
+    }
+
+    @Test
+    public void testRemoveCurrentUpdatesPlayingItemId() {
+        List<SongInfo> songs = List.of(
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
+        );
+        playQueue.replaceQueue(songs, 1).join();
+
+        playQueue.removeAt(1);
+
+        // Position adjusted to 0; playingItemId follows the item at the adjusted position.
+        assertThat(playQueue.getState().playingItemId())
+                .hasValue(playQueue.getListStore().get(0).getQueueItemId());
+    }
+
+    @Test
+    public void testRemoveCurrentAtStartClearsPlayingItemId() {
+        List<SongInfo> songs = List.of(
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
+        );
+        playQueue.replaceQueue(songs, 0).join();
+
+        playQueue.removeAt(0);
+
+        assertThat(playQueue.getState().position()).isEmpty();
+        assertThat(playQueue.getState().playingItemId()).isEmpty();
+    }
+
+    @Test
+    public void testPlayAndReplaceQueuePlayingItemIdAvailableAtOnPlay() {
+        // Seed the queue with old content so the eager id cannot come from the rebuilt list.
+        List<SongInfo> oldSongs = List.of(
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
+        );
+        playQueue.replaceQueue(oldSongs, 0).join();
+
+        var slots = List.of(
+                new PlayerAction.QueueSlot("slot-0", songInfoFactory.newRandomSongInfo()),
+                new PlayerAction.QueueSlot("slot-1", songInfoFactory.newRandomSongInfo())
+        );
+
+        // The onPlay callback must already observe the new playingItemId — AppManager
+        // snapshots the queue state there to eagerly move the now-playing highlight.
+        var observedAtOnPlay = new AtomicReference<Optional<String>>();
+        playRecorder.onAccept = () -> observedAtOnPlay.set(playQueue.getState().playingItemId());
+
+        playQueue.playAndReplaceQueue(new PlayerAction.PlayAndReplaceQueue(
+                new PlaylistIdentifier("playlist-1"), slots, 1
+        )).join();
+
+        assertThat(observedAtOnPlay.get()).hasValue("slot-1");
+        assertThat(playQueue.getState().playingItemId()).hasValue("slot-1");
+        assertThat(playQueue.getState().position()).hasValue(1);
+    }
+
+    @Test
     public void testRemoveCurrentAtEndThenPlayNextDoesNothing() {
         List<SongInfo> songs = List.of(
                 songInfoFactory.newRandomSongInfo(),
@@ -419,9 +523,13 @@ public class PlayQueueTest {
 
     private static class SongInfoRecorder implements Consumer<GSongInfo> {
         final List<SongInfo> songs = new ArrayList<>();
+        Runnable onAccept;
         @Override
         public void accept(GSongInfo songInfo) {
             songs.add(songInfo.getSongInfo());
+            if (onAccept != null) {
+                onAccept.run();
+            }
         }
     }
 }

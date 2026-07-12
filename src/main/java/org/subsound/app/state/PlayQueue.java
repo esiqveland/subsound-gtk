@@ -42,6 +42,10 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
     private final GSongStore songstore;
     private Optional<ObjectIdentifier> playContext = Optional.empty();
     private Optional<Integer> position = Optional.empty();
+    // Stored explicitly (not derived from listStore) so it is correct synchronously on a
+    // play transition, before the main-thread listStore rebuild has landed. This lets
+    // AppManager snapshot a consistent queue state eagerly when a song switch starts.
+    private Optional<String> playingItemId = Optional.empty();
     private PlayMode playMode = PlayMode.NORMAL;
 
     public PlayQueue(
@@ -63,11 +67,15 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
 
     public PlayQueueState getState() {
         synchronized (lock) {
-            var playingItemId = position
-                    .filter(p -> p >= 0 && p < listStore.getNItems())
-                    .map(p -> listStore.getItem(p).getQueueItemId());
             return new PlayQueueState(this.playContext, position, playingItemId, playMode);
         }
+    }
+
+    /** Must be called while holding {@code lock}. */
+    private Optional<String> queueItemIdAt(Optional<Integer> pos) {
+        return pos
+                .filter(p -> p >= 0 && p < listStore.getNItems())
+                .map(p -> listStore.getItem(p).getQueueItemId());
     }
 
     public void playPosition(int newPosition) {
@@ -83,6 +91,7 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
             var newItem = listStore.get(newPosition);
             int oldPosition = this.position.orElse(-1);
             this.position = Optional.of(newPosition);
+            this.playingItemId = Optional.ofNullable(newItem.getQueueItemId());
             updateCurrentItemStyling(oldPosition, newPosition);
             this.onPlay.accept(newItem.getSongInfo());
             this.notifyState();
@@ -107,6 +116,7 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
             this.listStore.removeAll();
             this.listStore.splice(0, 0, items.toArray(GQueueItem[]::new));
             var pos = this.position.filter(p -> p >= 0 && p < listStore.getNItems());
+            this.playingItemId = queueItemIdAt(pos);
             if (pos.isPresent()) {
                 listStore.getItem(pos.get()).getSongInfo().setIsPlaying(true);
             }
@@ -117,18 +127,26 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
 
     public CompletableFuture<Void> playAndReplaceQueue(PlayerAction.PlayAndReplaceQueue a) {
         return Utils.doAsync(() -> {
-            this.playContext = Optional.ofNullable(a.playContext());
             int targetPos = a.position();
+            boolean targetValid = targetPos >= 0 && targetPos < a.queue().size();
+            // Commit the new play identity (position + queueItemId) before the listStore
+            // rebuild, so the eager state snapshot taken in onPlay (AppManager.loadSourceAsync)
+            // already carries the new playingItemId and the UI highlight moves immediately.
+            synchronized (lock) {
+                this.playContext = Optional.ofNullable(a.playContext());
+                if (targetValid) {
+                    this.position = Optional.of(targetPos);
+                    this.playingItemId = Optional.ofNullable(a.queue().get(targetPos).id());
+                }
+            }
 
-            var queueFuture = replaceQueueSlots(a.queue(), a.position());
-
-            if (targetPos >= 0 && targetPos < a.queue().size()) {
+            if (targetValid) {
                 var targetSong = songstore.newInstance(a.queue().get(targetPos).song());
                 this.onPlay.accept(targetSong);
             }
 
             // Wait for the queue display to finish rebuilding before returning.
-            queueFuture.join();
+            replaceQueueSlots(a.queue(), a.position()).join();
         });
     }
 
@@ -187,6 +205,7 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
             }
             var queueItem = listStore.get(nextIdx);
             this.position = Optional.of(nextIdx);
+            this.playingItemId = Optional.ofNullable(queueItem.getQueueItemId());
             updateCurrentItemStyling(oldIdx, nextIdx);
             this.onPlay.accept(queueItem.getSongInfo());
             this.notifyState();
@@ -217,6 +236,7 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
             }
             var queueItem = listStore.get(prevIdx);
             this.position = Optional.of(prevIdx);
+            this.playingItemId = Optional.ofNullable(queueItem.getQueueItemId());
             updateCurrentItemStyling(oldIdx, prevIdx);
             this.onPlay.accept(queueItem.getSongInfo());
             this.notifyState();
@@ -275,6 +295,7 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
                         ? Optional.of(currentPos - 1)
                         : Optional.empty();
             }
+            this.playingItemId = queueItemIdAt(this.position);
             this.notifyState();
         }
     }
@@ -296,6 +317,7 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
                 // leak into the new queue if the same song appears at a different position.
                 int oldPos = this.position.orElse(-1);
                 this.position = startPosition.filter(pos -> pos >= 0 && pos < newList.length);
+                this.playingItemId = this.position.map(pos -> newList[pos].getQueueItemId());
                 Utils.runOnMainThreadFuture(() -> {
                     // TODO: updating prev song is-playing should probably be done in AppState and AppManager by the switch to a new song
                     if (oldPos >= 0 && oldPos < listStore.getNItems()) {

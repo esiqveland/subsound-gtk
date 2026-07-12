@@ -579,19 +579,44 @@ public class AppManager {
 
     public CompletableFuture<LoadSongResult> loadSourceAsync(PlayerAction.PlaySong songInfo) {
         int myGeneration = loadGeneration.incrementAndGet();
+        UUID requestId = UUID.randomUUID();
+        // Eagerly mark the new song as loading, before the async hop and the network work
+        // in loadSourceSyncInner, so the UI (row highlight, player bar) switches to the new
+        // song immediately instead of after the stream URI has resolved. The queue state is
+        // snapshotted in the same setState so nowPlaying.song.id and queue.playingItemId
+        // land atomically — a mismatched pair would clear the highlight in the views.
+        // The snapshot is taken outside the modifier to keep lock ordering
+        // PlayQueue -> AppManager, same as the PlayQueue.notifyState path.
+        var song = songInfo.song();
+        var queueState = this.playQueue.getState();
+        this.setState(old -> old.with()
+                .nowPlaying(Optional.of(new NowPlaying(
+                        song,
+                        LOADING,
+                        requestId,
+                        new BufferingProgress(song.size(), 0),
+                        Optional.empty()
+                )))
+                .queue(queueState)
+                .build()
+        );
         return CompletableFuture.supplyAsync(
-                () -> this.loadSourceSync(songInfo),
+                () -> this.loadSourceSync(songInfo, requestId),
                 ASYNC_EXECUTOR
         ).handle((result, throwable) -> {
             boolean isCurrentLoad = loadGeneration.get() == myGeneration;
+            // In REPEAT_ONE, attemptPlayNext replays the same song, which would retry the
+            // same failing load forever — don't auto-advance past a failed song then.
+            boolean skipAhead = isCurrentLoad
+                                && this.playQueue.getState().playMode() != PlayerAction.PlayMode.REPEAT_ONE;
             if (throwable != null) {
                 log.error("loadSourceAsync: failed to load: {} {}", songInfo.song().id(), songInfo.song().title(), throwable);
-                if (isCurrentLoad) {
+                if (skipAhead) {
                     this.playQueue.attemptPlayNext();
                 }
                 return null;
             }
-            if (result == null && isCurrentLoad) {
+            if (result == null && skipAhead) {
                 // loadSourceSync returned null (song not available); toast already shown
                 this.playQueue.attemptPlayNext();
             }
@@ -608,10 +633,10 @@ public class AppManager {
         void update(ProgressUpdate u);
     }
 
-    private LoadSongResult loadSourceSync(PlayerAction.PlaySong playCmd) {
+    private LoadSongResult loadSourceSync(PlayerAction.PlaySong playCmd, UUID requestId) {
         var songInfo = playCmd.song();
         try {
-            var result = loadSourceSyncInner(songInfo, playCmd.startPaused());
+            var result = loadSourceSyncInner(songInfo, playCmd.startPaused(), requestId);
             if (result == null) {
                 // Song was not available (e.g. offline and not cached)
                 return null;
@@ -619,16 +644,37 @@ public class AppManager {
             return result;
         } catch (Exception e) {
             log.error("Failed to load song: id={} title={}", playCmd.song().id(), playCmd.song().title(), e);
-            this.setState(old -> old.withNowPlaying(Optional.empty()));
-            this.scrobbleSession.set(null);
+            this.abortFailedLoad(requestId);
             this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(tr("Failed to load song"))));
             throw e;
         }
     }
 
-    private LoadSongResult loadSourceSyncInner(SongInfo songInfo, boolean startPaused) {
+    /**
+     * Cleanup after a failed load: unload the stale track from GStreamer so a later
+     * Play cannot resume the previous song while the UI shows a different one, and
+     * clear nowPlaying. Guarded on requestId so a newer load that has already taken
+     * over the player state is left untouched.
+     */
+    private void abortFailedLoad(UUID requestId) {
+        var currentRequestId = this.currentState.getValue().nowPlaying().map(NowPlaying::requestId).orElse(null);
+        if (!requestId.equals(currentRequestId)) {
+            return;
+        }
+        this.player.unloadSource();
+        this.setState(old -> {
+            var np = old.nowPlaying();
+            if (np.isPresent() && !np.get().requestId().equals(requestId)) {
+                // a newer load owns the state now
+                return old;
+            }
+            return old.withNowPlaying(Optional.empty());
+        });
+        this.scrobbleSession.set(null);
+    }
+
+    private LoadSongResult loadSourceSyncInner(SongInfo songInfo, boolean startPaused, UUID requestId) {
         this.pause();
-        UUID requestId = UUID.randomUUID();
         // resolve the songUri:
         // - authentication in the url may have been changed since it was generated
         // - transcode settings my have changed since it was generated
@@ -638,8 +684,7 @@ public class AppManager {
         if (songUri.isEmpty()) {
             if (!this.downloadManager.isAvailableOffline(songInfo)) {
                 this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(tr("Song not available offline"))));
-                this.setState(old -> old.withNowPlaying(Optional.empty()));
-                this.scrobbleSession.set(null);
+                this.abortFailedLoad(requestId);
                 return null;
             }
         }

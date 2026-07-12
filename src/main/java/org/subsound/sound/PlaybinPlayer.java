@@ -339,6 +339,13 @@ public class PlaybinPlayer implements Player {
     }
 
     public void play() {
+        if (currentUri == null) {
+            // Nothing loaded (e.g. the last load failed and the source was unloaded).
+            // playbin may still have a stale uri property set, and a bare
+            // setState(PLAYING) would restart that old track.
+            log.info("Player: play() ignored, no source loaded");
+            return;
+        }
         if (pipelineState == State.PLAYING) {
             return;
         }
@@ -365,6 +372,28 @@ public class PlaybinPlayer implements Player {
             return;
         }
         playbinEl.setState(State.PAUSED);
+    }
+
+    /**
+     * Drop the current source entirely: tear the pipeline down to NULL and forget the
+     * loaded uri, so a later {@link #play()} cannot resume a stale track. Used when
+     * loading a new song fails (e.g. offline and not cached) after the previous track
+     * was already paused.
+     */
+    public void unloadSource() {
+        log.info("Player: unloadSource");
+        this.currentUri = null;
+        this.position = null;
+        this.duration = null;
+        this.playbackStartedAtMillis = 0;
+        this.positionAnchorAtMillis = 0;
+        var ret = this.playbinEl.setState(State.NULL);
+        log.debug("Player: unloadSource: NULL={}", ret.name());
+        // The bus does not deliver state-changed messages once the pipeline is NULL,
+        // so update the mirrored state directly instead of waiting for busCall.
+        this.pipelineState = State.NULL;
+        this.setPlayerState(INIT);
+        this.notifyState();
     }
 
     private void seekToStart() {
