@@ -75,7 +75,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static org.subsound.i18n.I18n.tr;
 import static com.twelvemonkeys.lang.StringUtil.containsIgnoreCase;
 import static org.gnome.adw.ResponseAppearance.DEFAULT;
 import static org.gnome.adw.ResponseAppearance.DESTRUCTIVE;
@@ -86,6 +85,7 @@ import static org.gnome.gtk.Align.FILL;
 import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
+import static org.subsound.i18n.I18n.tr;
 import static org.subsound.ui.components.AdwDialogHelper.CANCEL_LABEL_ID;
 import static org.subsound.ui.views.AlbumInfoPage.infoLabel;
 
@@ -96,6 +96,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
     private final ColumnView columnView;
     private final Function<PlayerAction, CompletableFuture<Void>> onAction;
     private final ScrolledWindow scroll;
+    private final PlaylistMenu playlistMenu;
     private final Label titleLabel;
     private final Button reloadButton;
     private final MenuButton menuButton;
@@ -649,9 +650,15 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         this.titleLabel.setSingleLineMode(true);
         this.titleLabel.addCssClass("title-2");
 
+        this.playlistMenu = new PlaylistMenu(
+                this::showRenameDialog,
+                this::downloadAll,
+                this::showDeleteDialog
+        );
+
         this.menuButton = MenuButton.builder()
                 .setIconName(Icons.OpenMenu.getIconName())
-                .setPopover(buildMenuPopover())
+                .setPopover(this.playlistMenu)
                 .setValign(CENTER)
                 .setVisible(false)
                 .build();
@@ -760,8 +767,16 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             }
             long tMainStart = System.nanoTime();
             this.titleLabel.setLabel(playlist.name());
-            this.menuButton.setVisible(playlist.kind() == PlaylistKind.NORMAL);
-            this.reloadButton.setVisible(playlist.kind() == PlaylistKind.NORMAL);
+
+            this.playlistMenu.updatePlaylist(playlist);
+            this.menuButton.setVisible(switch (playlist.kind()) {
+                case PlaylistKind.NORMAL, PlaylistKind.STARRED -> true;
+                case PlaylistKind.DOWNLOADED -> false;
+            });
+            this.reloadButton.setVisible(switch (playlist.kind()) {
+                case PlaylistKind.NORMAL, PlaylistKind.STARRED -> true;
+                case PlaylistKind.DOWNLOADED -> false;
+            });
             if (playlistChanged) {
                 // Reset the search/filter when navigating to a different playlist.
                 this.searchEntry.setText("");
@@ -1037,42 +1052,69 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
     }
 
     // ---- Playlist menu ----
+    public static class PlaylistMenu extends Popover {
+        private final Button renameItem = menuItem(tr("Rename\u2026"));
+        private final Button downloadAllItem = menuItem(tr("Download all"));
+        private final Button deleteItem = menuItem(tr("Delete Playlist\u2026"));
 
-    private Popover buildMenuPopover() {
-        var popoverBox = Box.builder()
-                .setOrientation(VERTICAL)
-                .setSpacing(0)
-                .setMarginTop(4)
-                .setMarginBottom(4)
-                .setMarginStart(4)
-                .setMarginEnd(4)
-                .build();
+        public PlaylistMenu(
+                Runnable onRename,
+                Runnable onDownloadAll,
+                Runnable onDelete
+        ) {
+            super();
+            deleteItem.addCssClass("destructive-action");
+            renameItem.onClicked(() -> {
+                this.popdown();
+                //onPop.run();
+                onRename.run();
+            });
+            downloadAllItem.onClicked(() -> {
+                this.popdown();
+                //onPop.run();
+                onDownloadAll.run();
+            });
+            deleteItem.onClicked(() -> {
+                this.popdown();
+                //onPop.run();
+                onDelete.run();
+            });
 
-        var renameItem = menuItem(tr("Rename\u2026"));
-        var downloadAllItem = menuItem(tr("Download all"));
-        var deleteItem = menuItem(tr("Delete Playlist\u2026"));
-        deleteItem.addCssClass("destructive-action");
+            var popoverBox = new Box(VERTICAL, 0);
+            popoverBox.setMarginTop(4);
+            popoverBox.setMarginBottom(4);
+            popoverBox.setMarginStart(4);
+            popoverBox.setMarginEnd(4);
 
-        popoverBox.append(renameItem);
-        popoverBox.append(downloadAllItem);
-        popoverBox.append(deleteItem);
+            popoverBox.append(renameItem);
+            popoverBox.append(downloadAllItem);
+            popoverBox.append(deleteItem);
 
-        var popover = Popover.builder().setChild(popoverBox).build();
+            this.setChild(popoverBox);
+        }
 
-        renameItem.onClicked(() -> {
-            popover.popdown();
-            showRenameDialog();
-        });
-        downloadAllItem.onClicked(() -> {
-            popover.popdown();
-            downloadAll();
-        });
-        deleteItem.onClicked(() -> {
-            popover.popdown();
-            showDeleteDialog();
-        });
-
-        return popover;
+        // Note: never call setVisible on the Popover itself — for popovers the
+        // "visible" property is the popped-up state, so setVisible(true) acts
+        // like popup(). Hiding the whole menu is the MenuButton's job.
+        public void updatePlaylist(ServerClient.PlaylistSimple playlist) {
+            switch (playlist.kind()) {
+                case PlaylistKind.NORMAL -> {
+                    renameItem.setVisible(true);
+                    downloadAllItem.setVisible(true);
+                    deleteItem.setVisible(true);
+                }
+                case PlaylistKind.DOWNLOADED -> {
+                    renameItem.setVisible(false);
+                    downloadAllItem.setVisible(false);
+                    deleteItem.setVisible(false);
+                }
+                case PlaylistKind.STARRED -> {
+                    renameItem.setVisible(false);
+                    downloadAllItem.setVisible(true);
+                    deleteItem.setVisible(false);
+                }
+            }
+        }
     }
 
     private void downloadAll() {
