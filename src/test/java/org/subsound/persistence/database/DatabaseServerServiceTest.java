@@ -555,6 +555,125 @@ public class DatabaseServerServiceTest {
         Assertions.assertThat(otherService.getLyricsBySongId("song-2")).isPresent();
     }
 
+    @Test
+    public void testOfflineSearchNorwegianMatching() throws Exception {
+        File dbFile = folder.newFile("test_search.db");
+        Database db = new Database("jdbc:sqlite:" + dbFile.getAbsolutePath());
+        UUID serverId = UUID.randomUUID();
+        UUID otherServerId = UUID.randomUUID();
+        DatabaseServerService service = new DatabaseServerService(serverId, db);
+        DatabaseServerService otherService = new DatabaseServerService(otherServerId, db);
+
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+        service.insert(searchTestArtist("artist-1", serverId, "Øystein Sunde"));
+        otherService.insert(searchTestArtist("artist-2", otherServerId, "Øystein Kopi"));
+        service.insert(searchTestAlbum("album-1", serverId, "artist-1", "På Sangens Vinger", "Øystein Sunde", now));
+        service.insert(searchTestSong("song-1", serverId, "album-1", "Bårds Vise", "artist-1", "Øystein Sunde", "På Sangens Vinger", now));
+
+        // every spelling of Øystein finds the artist, including as-you-type prefixes
+        for (String query : List.of("øystein", "oystein", "oeystein", "Øys", "oys")) {
+            Assertions.assertThat(service.searchArtists(query, 20))
+                    .as("artist query: %s", query)
+                    .extracting(Artist::name)
+                    .containsExactly("Øystein Sunde");
+        }
+        // results are scoped to the service's server
+        Assertions.assertThat(otherService.searchArtists("oystein", 20))
+                .extracting(Artist::name)
+                .containsExactly("Øystein Kopi");
+
+        // every spelling of Bård finds the song
+        for (String query : List.of("bård", "baard", "bard")) {
+            Assertions.assertThat(service.searchSongs(query, 50))
+                    .as("song query: %s", query)
+                    .extracting(DBSong::name)
+                    .containsExactly("Bårds Vise");
+        }
+        // songs also match on artist and album name, and multi-word queries are ANDed
+        Assertions.assertThat(service.searchSongs("sunde", 50)).hasSize(1);
+        Assertions.assertThat(service.searchSongs("vinger baards", 50)).hasSize(1);
+        Assertions.assertThat(service.searchSongs("vinger nothere", 50)).isEmpty();
+        // albums match on name and artist name
+        Assertions.assertThat(service.searchAlbums("sangens", 20)).hasSize(1);
+        Assertions.assertThat(service.searchAlbums("oystein", 20)).hasSize(1);
+        // blank or symbol-only queries return nothing instead of failing
+        Assertions.assertThat(service.searchSongs("   ", 50)).isEmpty();
+        Assertions.assertThat(service.searchSongs("\"(*", 50)).isEmpty();
+    }
+
+    @Test
+    public void testOfflineSearchCjkBehavior() throws Exception {
+        File dbFile = folder.newFile("test_search_cjk.db");
+        Database db = new Database("jdbc:sqlite:" + dbFile.getAbsolutePath());
+        UUID serverId = UUID.randomUUID();
+        DatabaseServerService service = new DatabaseServerService(serverId, db);
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+
+        service.insert(searchTestArtist("artist-iu", serverId, "아이유"));
+        service.insert(searchTestSong("song-ko", serverId, "album-1", "좋은 날", "artist-iu", "아이유", "Real", now));
+        service.insert(searchTestSong("song-zh", serverId, "album-2", "月亮代表我的心", "artist-teresa", "鄧麗君", "淡淡幽情", now));
+        service.insert(searchTestSong("song-mixed", serverId, "album-3", "BTS의 노래", "artist-bts", "BTS", "Proof", now));
+
+        // Korean: space-separated words match on the word and on word prefixes
+        Assertions.assertThat(service.searchArtists("아이유", 20)).extracting(Artist::name).containsExactly("아이유");
+        Assertions.assertThat(service.searchArtists("아이", 20)).extracting(Artist::name).containsExactly("아이유");
+        Assertions.assertThat(service.searchSongs("좋은", 50)).extracting(DBSong::name).containsExactly("좋은 날");
+
+        // Chinese/Japanese: an unspaced title is a single FTS token, so title-start prefixes match...
+        Assertions.assertThat(service.searchSongs("月亮", 50)).extracting(DBSong::name).containsExactly("月亮代表我的心");
+        Assertions.assertThat(service.searchSongs("鄧麗君", 50)).extracting(DBSong::name).containsExactly("月亮代表我的心");
+        // ...but words from the middle of the title do not. Known limitation; the fix, if ever
+        // wanted, is character-bigram emission in SearchNormalizer plus a search_text re-backfill
+        // migration.
+        Assertions.assertThat(service.searchSongs("代表", 50)).isEmpty();
+
+        // Mixed script: Latin and Hangul runs stay contiguous, prefix search still applies
+        Assertions.assertThat(service.searchSongs("bts", 50)).extracting(DBSong::name).containsExactly("BTS의 노래");
+    }
+
+    @Test
+    public void testSearchIndexStaysInSyncAcrossReplaceAndDelete() throws Exception {
+        File dbFile = folder.newFile("test_search_sync.db");
+        Database db = new Database("jdbc:sqlite:" + dbFile.getAbsolutePath());
+        UUID serverId = UUID.randomUUID();
+        DatabaseServerService service = new DatabaseServerService(serverId, db);
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+
+        service.insert(searchTestSong("song-1", serverId, "album-1", "Original Title", "artist-1", "Some Artist", "Some Album", now));
+        Assertions.assertThat(service.searchSongs("original", 50)).hasSize(1);
+
+        // INSERT OR REPLACE of the same key must drop the old index entry (requires
+        // recursive_triggers so the conflict-delete fires the FTS delete trigger)
+        service.insert(searchTestSong("song-1", serverId, "album-1", "Replaced Title", "artist-1", "Some Artist", "Some Album", now));
+        Assertions.assertThat(service.searchSongs("original", 50)).isEmpty();
+        Assertions.assertThat(service.searchSongs("replaced", 50)).hasSize(1);
+
+        // bulk deletes go through the triggers too
+        service.deleteAllSongs();
+        Assertions.assertThat(service.searchSongs("replaced", 50)).isEmpty();
+
+        // verify the FTS index is consistent with the content table; raises SQLITE_CORRUPT_VTAB if not
+        try (var conn = db.openConnection(); var stmt = conn.createStatement()) {
+            stmt.execute("INSERT INTO songs_fts(songs_fts, rank) VALUES('integrity-check', 1)");
+        }
+    }
+
+    private static Artist searchTestArtist(String id, UUID serverId, String name) {
+        return new Artist(id, serverId, name, 1, Optional.empty(), Optional.empty(), Optional.empty());
+    }
+
+    private static Album searchTestAlbum(String id, UUID serverId, String artistId, String name, String artistName, Instant now) {
+        return new Album(id, serverId, artistId, name, 1, Optional.empty(), artistName,
+                Duration.ofMinutes(40), Optional.empty(), Optional.empty(), now, Optional.empty());
+    }
+
+    private static DBSong searchTestSong(String id, UUID serverId, String albumId, String title, String artistId, String artistName, String albumName, Instant now) {
+        return new DBSong(id, serverId, albumId, albumName, title, Optional.empty(), artistId, artistName,
+                Duration.ofMinutes(3), Optional.empty(), Optional.empty(), now,
+                Optional.empty(), Optional.empty(), Optional.empty(), 1000L, "", "mp3",
+                Optional.empty(), Optional.empty(), List.of());
+    }
+
     private static SongInfo downloadableSong(String songId) {
         return ServerClientSongInfoBuilder.builder()
                 .id(songId)

@@ -479,9 +479,34 @@ public class CachingClient implements ServerClient {
         return ServerClient.parseSongLyrics(raw);
     }
 
+    private static final int SEARCH_ARTIST_LIMIT = 20;
+    private static final int SEARCH_ALBUM_LIMIT = 20;
+    private static final int SEARCH_SONG_LIMIT = 50;
+
     @Override
     public SearchResult search(String query) {
-        return delegate.search(query);
+        if (isOffline()) {
+            log.info("Offline mode: searching database for query: {}", query);
+            return searchDatabase(query);
+        }
+        try {
+            return delegate.search(query);
+        } catch (Exception e) {
+            detectOffline(e);
+            log.warn("Failed to search on server, falling back to database", e);
+            return searchDatabase(query);
+        }
+    }
+
+    private SearchResult searchDatabase(String query) {
+        var artists = dbService.searchArtists(query, SEARCH_ARTIST_LIMIT);
+        var albums = dbService.searchAlbums(query, SEARCH_ALBUM_LIMIT);
+        var songs = dbService.searchSongs(query, SEARCH_SONG_LIMIT);
+        return new SearchResult(
+                artists.stream().map(this::toArtistEntry).toList(),
+                albums.stream().map(this::toArtistAlbumInfo).toList(),
+                songs.stream().map(this::toSongInfo).toList()
+        );
     }
 
     // Conversion methods: database records -> ServerClient types

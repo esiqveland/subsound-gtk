@@ -43,41 +43,93 @@ public class DatabaseServerService {
         return serverId;
     }
 
-    public void insert(Album album) {
+    public List<Artist> searchArtists(String rawQuery, int limit) {
+        return searchFts("artists", rawQuery, limit, this::mapResultSetToArtist);
+    }
+
+    public List<Album> searchAlbums(String rawQuery, int limit) {
+        return searchFts("albums", rawQuery, limit, this::mapResultSetToAlbum);
+    }
+
+    public List<DBSong> searchSongs(String rawQuery, int limit) {
+        return searchFts("songs", rawQuery, limit, DatabaseServerService::mapResultSetToSong);
+    }
+
+    private interface RowMapper<T> {
+        T map(ResultSet rs) throws SQLException;
+    }
+
+    private <T> List<T> searchFts(String table, String rawQuery, int limit, RowMapper<T> mapper) {
+        Optional<String> ftsQuery = SearchNormalizer.toFtsQuery(rawQuery);
+        if (ftsQuery.isEmpty()) {
+            return List.of();
+        }
         String sql = """
-                INSERT OR REPLACE INTO albums (id, server_id, artist_id, name, song_count, year, artist_name, duration_ms, starred_at_ms, cover_art_id, added_at_ms, genre)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """;
+                SELECT t.* FROM %1$s_fts
+                JOIN %1$s t ON t.rowid = %1$s_fts.rowid
+                WHERE %1$s_fts MATCH ? AND t.server_id = ?
+                ORDER BY %1$s_fts.rank
+                LIMIT ?
+                """.formatted(table);
+        List<T> results = new ArrayList<>();
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, album.id());
-            pstmt.setString(2, album.serverId().toString());
-            pstmt.setString(3, album.artistId());
-            pstmt.setString(4, album.name());
-            pstmt.setInt(5, album.songCount());
-            if (album.year().isPresent()) {
-                pstmt.setInt(6, album.year().get());
-            } else {
-                pstmt.setNull(6, Types.INTEGER);
+            pstmt.setString(1, ftsQuery.get());
+            pstmt.setString(2, this.serverId.toString());
+            pstmt.setInt(3, limit);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    results.add(mapper.map(rs));
+                }
             }
-            pstmt.setString(7, album.artistName());
-            pstmt.setLong(8, album.duration().toMillis());
-            if (album.starredAt().isPresent()) {
-                pstmt.setLong(9, album.starredAt().get().toEpochMilli());
-            } else {
-                pstmt.setNull(9, Types.INTEGER);
-            }
-            if (album.coverArtId().isPresent()) {
-                pstmt.setString(10, album.coverArtId().get());
-            } else {
-                pstmt.setNull(10, Types.VARCHAR);
-            }
-            pstmt.setLong(11, album.addedAt().toEpochMilli());
-            if (album.genre().isPresent()) {
-                pstmt.setString(12, album.genre().get());
-            } else {
-                pstmt.setNull(12, Types.VARCHAR);
-            }
+        } catch (SQLException e) {
+            logger.error("Failed to search {} for query: {}", table, rawQuery, e);
+            throw new RuntimeException("Failed to search " + table, e);
+        }
+        return results;
+    }
+
+    private static final String ALBUM_INSERT_SQL = """
+            INSERT OR REPLACE INTO albums (id, server_id, artist_id, name, song_count, year, artist_name, duration_ms, starred_at_ms, cover_art_id, added_at_ms, genre, search_text)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """;
+
+    private static void bindAlbum(PreparedStatement pstmt, Album album) throws SQLException {
+        pstmt.setString(1, album.id());
+        pstmt.setString(2, album.serverId().toString());
+        pstmt.setString(3, album.artistId());
+        pstmt.setString(4, album.name());
+        pstmt.setInt(5, album.songCount());
+        if (album.year().isPresent()) {
+            pstmt.setInt(6, album.year().get());
+        } else {
+            pstmt.setNull(6, Types.INTEGER);
+        }
+        pstmt.setString(7, album.artistName());
+        pstmt.setLong(8, album.duration().toMillis());
+        if (album.starredAt().isPresent()) {
+            pstmt.setLong(9, album.starredAt().get().toEpochMilli());
+        } else {
+            pstmt.setNull(9, Types.INTEGER);
+        }
+        if (album.coverArtId().isPresent()) {
+            pstmt.setString(10, album.coverArtId().get());
+        } else {
+            pstmt.setNull(10, Types.VARCHAR);
+        }
+        pstmt.setLong(11, album.addedAt().toEpochMilli());
+        if (album.genre().isPresent()) {
+            pstmt.setString(12, album.genre().get());
+        } else {
+            pstmt.setNull(12, Types.VARCHAR);
+        }
+        pstmt.setString(13, SearchNormalizer.normalizeIndexText(album.name(), album.artistName()));
+    }
+
+    public void insert(Album album) {
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(ALBUM_INSERT_SQL)) {
+            bindAlbum(pstmt, album);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             logger.error("Failed to insert album", e);
@@ -189,7 +241,7 @@ public class DatabaseServerService {
     }
 
     public void insert(Artist artist) {
-        String sql = "INSERT OR REPLACE INTO artists (id, server_id, name, album_count, starred_at, cover_art_id, biography) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT OR REPLACE INTO artists (id, server_id, name, album_count, starred_at, cover_art_id, biography, search_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, artist.id());
@@ -213,6 +265,7 @@ public class DatabaseServerService {
             } else {
                 pstmt.setNull(7, Types.BLOB);
             }
+            pstmt.setString(8, SearchNormalizer.normalizeIndexText(artist.name()));
             pstmt.executeUpdate();
         } catch (SQLException e) {
             logger.error("Failed to insert artist", e);
@@ -281,8 +334,8 @@ public class DatabaseServerService {
     }
 
     private static final String SONG_INSERT_SQL = """
-            INSERT OR REPLACE INTO songs (id, server_id, album_id, album_name, name, year, artist_id, artist_name, duration_ms, starred_at_ms, cover_art_id, created_at_ms, track_number, disc_number, bit_rate, size, genre, suffix, artists_json, album_artists_json, moods_json)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO songs (id, server_id, album_id, album_name, name, year, artist_id, artist_name, duration_ms, starred_at_ms, cover_art_id, created_at_ms, track_number, disc_number, bit_rate, size, genre, suffix, artists_json, album_artists_json, moods_json, search_text)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
     private static void bindSong(PreparedStatement pstmt, DBSong song) throws SQLException {
@@ -343,6 +396,7 @@ public class DatabaseServerService {
         } else {
             pstmt.setNull(21, Types.VARCHAR);
         }
+        pstmt.setString(22, SearchNormalizer.normalizeIndexText(song.name(), song.artistName(), song.albumName()));
     }
 
     public void insert(DBSong song) {
@@ -386,43 +440,12 @@ public class DatabaseServerService {
     }
 
     public void syncAlbumBatch(Album album, List<DBSong> songs) {
-        String albumSql = """
-                INSERT OR REPLACE INTO albums (id, server_id, artist_id, name, song_count, year, artist_name, duration_ms, starred_at_ms, cover_art_id, added_at_ms, genre)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """;
         String songSql = SONG_INSERT_SQL;
         try (Connection conn = database.openConnection()) {
             conn.setAutoCommit(false);
             try {
-                try (PreparedStatement pstmt = conn.prepareStatement(albumSql)) {
-                    pstmt.setString(1, album.id());
-                    pstmt.setString(2, album.serverId().toString());
-                    pstmt.setString(3, album.artistId());
-                    pstmt.setString(4, album.name());
-                    pstmt.setInt(5, album.songCount());
-                    if (album.year().isPresent()) {
-                        pstmt.setInt(6, album.year().get());
-                    } else {
-                        pstmt.setNull(6, Types.INTEGER);
-                    }
-                    pstmt.setString(7, album.artistName());
-                    pstmt.setLong(8, album.duration().toMillis());
-                    if (album.starredAt().isPresent()) {
-                        pstmt.setLong(9, album.starredAt().get().toEpochMilli());
-                    } else {
-                        pstmt.setNull(9, Types.INTEGER);
-                    }
-                    if (album.coverArtId().isPresent()) {
-                        pstmt.setString(10, album.coverArtId().get());
-                    } else {
-                        pstmt.setNull(10, Types.VARCHAR);
-                    }
-                    pstmt.setLong(11, album.addedAt().toEpochMilli());
-                    if (album.genre().isPresent()) {
-                        pstmt.setString(12, album.genre().get());
-                    } else {
-                        pstmt.setNull(12, Types.VARCHAR);
-                    }
+                try (PreparedStatement pstmt = conn.prepareStatement(ALBUM_INSERT_SQL)) {
+                    bindAlbum(pstmt, album);
                     pstmt.executeUpdate();
                 }
                 try (PreparedStatement pstmt = conn.prepareStatement(songSql)) {

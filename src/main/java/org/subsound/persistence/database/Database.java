@@ -11,6 +11,7 @@ import org.sqlite.SQLiteDataSource;
 import java.io.File;
 import java.nio.file.Path;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -52,6 +53,10 @@ public class Database {
         // BEGIN IMMEDIATE for explicit transactions: take the write lock up front so
         // read-then-write transactions can't fail with SQLITE_BUSY_SNAPSHOT mid-way.
         sqliteConfig.setTransactionMode(org.sqlite.SQLiteConfig.TransactionMode.IMMEDIATE);
+        // The *_fts external-content indexes are maintained by triggers. INSERT OR REPLACE
+        // only fires the DELETE trigger for the replaced row when recursive_triggers is on;
+        // without it the FTS index silently accumulates stale duplicate entries.
+        sqliteConfig.enableRecursiveTriggers(true);
         SQLiteDataSource ds = new SQLiteDataSource(sqliteConfig);
         ds.setUrl(url);
         var cfg = new HikariConfig();
@@ -133,6 +138,7 @@ public class Database {
         migrations.add(new MigrationV16());
         migrations.add(new MigrationV17());
         migrations.add(new MigrationV18());
+        migrations.add(new MigrationV19());
         return migrations;
     }
 
@@ -553,6 +559,75 @@ public class Database {
                         PRIMARY KEY (server_id, song_id)
                     )
                 """);
+            }
+        }
+    }
+
+    static class MigrationV19 implements Migration {
+        @Override
+        public int version() { return 19; }
+
+        @Override
+        public void apply(Connection conn) throws SQLException {
+            // Offline search: pre-normalized search_text (see SearchNormalizer) indexed by
+            // FTS5 external-content tables kept in sync with triggers. Normalization happens
+            // in Java, so the column is backfilled here row by row before the index is built.
+            addSearchIndex(conn, "artists", "name");
+            addSearchIndex(conn, "albums", "name", "artist_name");
+            addSearchIndex(conn, "songs", "name", "artist_name", "album_name");
+        }
+
+        private void addSearchIndex(Connection conn, String table, String... sourceColumns) throws SQLException {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("ALTER TABLE " + table + " ADD COLUMN search_text TEXT");
+            }
+            backfillSearchText(conn, table, sourceColumns);
+            String fts = table + "_fts";
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("CREATE VIRTUAL TABLE %s USING fts5(search_text, content='%s', content_rowid='rowid')"
+                        .formatted(fts, table));
+                stmt.execute("INSERT INTO %1$s(%1$s) VALUES('rebuild')".formatted(fts));
+                stmt.execute("""
+                        CREATE TRIGGER %1$s_ai AFTER INSERT ON %2$s BEGIN
+                          INSERT INTO %1$s(rowid, search_text) VALUES (new.rowid, new.search_text);
+                        END
+                        """.formatted(fts, table));
+                stmt.execute("""
+                        CREATE TRIGGER %1$s_ad AFTER DELETE ON %2$s BEGIN
+                          INSERT INTO %1$s(%1$s, rowid, search_text) VALUES ('delete', old.rowid, old.search_text);
+                        END
+                        """.formatted(fts, table));
+                stmt.execute("""
+                        CREATE TRIGGER %1$s_au AFTER UPDATE ON %2$s BEGIN
+                          INSERT INTO %1$s(%1$s, rowid, search_text) VALUES ('delete', old.rowid, old.search_text);
+                          INSERT INTO %1$s(rowid, search_text) VALUES (new.rowid, new.search_text);
+                        END
+                        """.formatted(fts, table));
+            }
+        }
+
+        private void backfillSearchText(Connection conn, String table, String[] sourceColumns) throws SQLException {
+            String select = "SELECT rowid, " + String.join(", ", sourceColumns) + " FROM " + table;
+            String update = "UPDATE " + table + " SET search_text = ? WHERE rowid = ?";
+            try (Statement sel = conn.createStatement();
+                 ResultSet rs = sel.executeQuery(select);
+                 PreparedStatement upd = conn.prepareStatement(update)) {
+                int batched = 0;
+                while (rs.next()) {
+                    long rowid = rs.getLong(1);
+                    String[] fields = new String[sourceColumns.length];
+                    for (int i = 0; i < sourceColumns.length; i++) {
+                        fields[i] = rs.getString(i + 2);
+                    }
+                    upd.setString(1, SearchNormalizer.normalizeIndexText(fields));
+                    upd.setLong(2, rowid);
+                    upd.addBatch();
+                    batched++;
+                    if (batched % 500 == 0) {
+                        upd.executeBatch();
+                    }
+                }
+                upd.executeBatch();
             }
         }
     }
