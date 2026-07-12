@@ -35,6 +35,7 @@ public class PlayQueueTest {
     private SongInfoRecorder playRecorder;
     private PlayQueue playQueue;
     private SongInfoFactory songInfoFactory;
+    private GSongStore songStore;
 
     @Before
     public void setUp() {
@@ -43,20 +44,21 @@ public class PlayQueueTest {
         stateChangedRecorder = new PlayQueueStateRecorder();
         playRecorder = new SongInfoRecorder();
         songInfoFactory = new SongInfoFactory();
+        songStore = new GSongStore(
+                key -> this.songInfoFactory.getSongById(key),
+                new DownloadNotifier() {
+                    @Override
+                    public void subscribe(Consumer<DownloadManager.DownloadManagerEvent> listener) {}
+                    @Override
+                    public Optional<DownloadQueueItem> getSongStatus(String songId) {
+                        return Optional.empty();
+                    }
+                }
+        );
 
         playQueue = new PlayQueue(
                 player,
-                new GSongStore(
-                        key -> this.songInfoFactory.getSongById(key),
-                        new DownloadNotifier() {
-                            @Override
-                            public void subscribe(Consumer<DownloadManager.DownloadManagerEvent> listener) {}
-                            @Override
-                            public Optional<DownloadQueueItem> getSongStatus(String songId) {
-                                return Optional.empty();
-                            }
-                        }
-                ),
+                songStore,
                 stateChangedRecorder,
                 playRecorder
         );
@@ -467,6 +469,29 @@ public class PlayQueueTest {
         assertThat(observedAtOnPlay.get()).hasValue("slot-1");
         assertThat(playQueue.getState().playingItemId()).hasValue("slot-1");
         assertThat(playQueue.getState().position()).hasValue(1);
+    }
+
+    @Test
+    public void testPlayAndReplaceQueueClearsPreviousIsPlaying() {
+        // Regression: playAndReplaceQueue overwrites position before replaceQueueSlots
+        // runs, so replaceQueueSlots can no longer identify the previously playing song.
+        // The shared GSongInfo of the old song must still get isPlaying=false, otherwise
+        // signal-driven rows (AlbumInfoPage) keep the stale now-playing highlight.
+        var slots = List.of(
+                new PlayerAction.QueueSlot("slot-0", songInfoFactory.newRandomSongInfo()),
+                new PlayerAction.QueueSlot("slot-1", songInfoFactory.newRandomSongInfo())
+        );
+        var context = new PlaylistIdentifier("playlist-1");
+
+        playQueue.playAndReplaceQueue(new PlayerAction.PlayAndReplaceQueue(context, slots, 0)).join();
+        var song0 = songStore.getExisting(slots.get(0).song().id()).orElseThrow();
+        var song1 = songStore.getExisting(slots.get(1).song().id()).orElseThrow();
+        assertThat(song0.getIsPlaying()).isTrue();
+        assertThat(song1.getIsPlaying()).isFalse();
+
+        playQueue.playAndReplaceQueue(new PlayerAction.PlayAndReplaceQueue(context, slots, 1)).join();
+        assertThat(song0.getIsPlaying()).isFalse();
+        assertThat(song1.getIsPlaying()).isTrue();
     }
 
     @Test

@@ -132,8 +132,10 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
             // Commit the new play identity (position + queueItemId) before the listStore
             // rebuild, so the eager state snapshot taken in onPlay (AppManager.loadSourceAsync)
             // already carries the new playingItemId and the UI highlight moves immediately.
+            int oldPos;
             synchronized (lock) {
                 this.playContext = Optional.ofNullable(a.playContext());
+                oldPos = this.position.orElse(-1);
                 if (targetValid) {
                     this.position = Optional.of(targetPos);
                     this.playingItemId = Optional.ofNullable(a.queue().get(targetPos).id());
@@ -142,6 +144,17 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
 
             if (targetValid) {
                 var targetSong = songstore.newInstance(a.queue().get(targetPos).song());
+                // Move the shared isPlaying flag here: replaceQueueSlots derives its "old"
+                // position from this.position, which was just overwritten above, so it can
+                // no longer clear the previously playing song. GSongInfo instances are
+                // interned per song id, so signal-driven rows (e.g. AlbumInfoPage) also
+                // switch immediately instead of after the queue rebuild.
+                Utils.runOnMainThread(() -> {
+                    if (oldPos >= 0 && oldPos < listStore.getNItems()) {
+                        listStore.getItem(oldPos).getSongInfo().setIsPlaying(false);
+                    }
+                    targetSong.setIsPlaying(true);
+                });
                 this.onPlay.accept(targetSong);
             }
 
