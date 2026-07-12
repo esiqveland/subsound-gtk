@@ -58,7 +58,15 @@
   </branding>
 
   <releases>
-    <release version="@version@" date="2026-07-11">
+    <release version="@version@" date="2026-07-12">
+      <description>
+        <ul>
+          <li>New: download starred list for offline play</li>
+          <li>New: search now uses local database in offline mode</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.7.4" date="2026-07-11">
       <description>
         <ul>
           <li>New: synced lyrics for the current song from the player bar</li>
