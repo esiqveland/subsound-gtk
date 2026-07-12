@@ -1,24 +1,28 @@
 package org.subsound;
 
-import org.subsound.app.state.AppManager;
-import org.subsound.configuration.Config;
-import org.subsound.configuration.constants.Constants;
-import org.subsound.i18n.I18n;
-import org.subsound.integration.platform.secret.SecretService;
-import org.subsound.integration.platform.mpriscontroller.ArtworkHttpServer;
-import org.subsound.integration.platform.mpriscontroller.MPrisController;
-import org.subsound.persistence.ThumbnailCache;
-import org.subsound.sound.PlaybinPlayer;
-import org.subsound.utils.LogUtils;
-import org.subsound.utils.Utils;
 import org.freedesktop.gstreamer.gst.Gst;
+import org.gnome.adw.Adw;
 import org.gnome.adw.Application;
+import org.gnome.gdk.Gdk;
+import org.gnome.gdkpixbuf.GdkPixbuf;
 import org.gnome.gdkpixbuf.Pixbuf;
 import org.gnome.gio.ApplicationFlags;
+import org.gnome.glib.GLib;
 import org.javagi.base.Out;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
+import org.subsound.app.state.AppManager;
+import org.subsound.configuration.Config;
+import org.subsound.configuration.constants.Constants;
+import org.subsound.i18n.I18n;
+import org.subsound.integration.platform.mpriscontroller.ArtworkHttpServer;
+import org.subsound.integration.platform.mpriscontroller.MPrisController;
+import org.subsound.integration.platform.secret.SecretService;
+import org.subsound.persistence.ThumbnailCache;
+import org.subsound.sound.PlaybinPlayer;
+import org.subsound.utils.LogUtils;
+import org.subsound.utils.Utils;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -39,6 +43,12 @@ public class Main {
     private final ArtworkHttpServer artworkServer;
 
     public Main(String[] args) {
+        GLib.javagi$ensureInitialized();
+        Gdk.javagi$ensureInitialized();
+        GdkPixbuf.javagi$ensureInitialized();
+        Adw.javagi$ensureInitialized();
+        Gst.javagi$ensureInitialized();
+
         // Initialisation Gst
         Gst.init(new Out<>(new String[]{}));
         var supportedImageFormats = Pixbuf.getFormats();
