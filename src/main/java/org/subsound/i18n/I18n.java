@@ -9,7 +9,7 @@ import java.lang.invoke.MethodHandle;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
-import org.javagi.util.Intl;
+import org.gnome.glib.GLib;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,9 +43,9 @@ public final class I18n {
         }
         String localeDir = resolveLocaleDir();
         if (localeDir != null) {
-            // Intl.bindtextdomain permanently disables translations if the dir does not exist,
-            // so resolveLocaleDir only ever returns existing directories.
-            Intl.bindtextdomain(DOMAIN, localeDir);
+            // resolveLocaleDir only ever returns existing directories: binding a non-existing
+            // dir would shadow the default search path for no benefit.
+            bindtextdomain(DOMAIN, localeDir);
             if (isLinux()) {
                 bindTextdomainCodeset(DOMAIN, "UTF-8");
             }
@@ -53,27 +53,27 @@ public final class I18n {
         } else {
             log.info("i18n: no locale dir found, using system default search path");
         }
-        Intl.textdomain(DOMAIN);
+        textdomain(DOMAIN);
     }
 
     /** Translate a message. */
     public static String tr(String msgid) {
-        return Intl.i18n(msgid);
+        return GLib.dgettext(DOMAIN, msgid);
     }
 
     /** Translate a message with singular/plural forms selected by n. */
     public static String trn(String msgid, String msgidPlural, int n) {
-        return Intl.i18n(msgid, msgidPlural, n);
+        return GLib.dngettext(DOMAIN, msgid, msgidPlural, n);
     }
 
     /** Translate a message with singular/plural forms selected by n. */
     public static String trn(String msgid, String msgidPlural, long n) {
-        return Intl.i18n(msgid, msgidPlural, (int) Math.min(n, Integer.MAX_VALUE));
+        return GLib.dngettext(DOMAIN, msgid, msgidPlural, (int) Math.min(n, Integer.MAX_VALUE));
     }
 
     /** Translate a message with a disambiguating context. */
     public static String trc(String context, String msgid) {
-        return Intl.i18n(context, msgid);
+        return GLib.dpgettext2(DOMAIN, context, msgid);
     }
 
     private static @Nullable String resolveLocaleDir() {
@@ -114,6 +114,45 @@ public final class I18n {
             }
         } catch (Throwable t) {
             log.warn("i18n: setlocale failed", t);
+        }
+    }
+
+    // bindtextdomain/textdomain live in libc on glibc. java-gi's Intl helper insists on
+    // dlopen-ing libgettextlib, which the GNOME flatpak Platform runtime does not ship,
+    // and disables translations entirely when it is missing — so call libc directly.
+    private static void bindtextdomain(String domain, String dir) {
+        try {
+            Linker linker = Linker.nativeLinker();
+            var symbol = linker.defaultLookup().find("bindtextdomain");
+            if (symbol.isEmpty()) {
+                log.info("i18n: bindtextdomain not available, translations disabled");
+                return;
+            }
+            MethodHandle handle = linker.downcallHandle(symbol.get(),
+                    FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS));
+            try (Arena arena = Arena.ofConfined()) {
+                var ignored = (MemorySegment) handle.invokeExact(
+                        arena.allocateFrom(domain), arena.allocateFrom(dir));
+            }
+        } catch (Throwable t) {
+            log.warn("i18n: bindtextdomain failed", t);
+        }
+    }
+
+    private static void textdomain(String domain) {
+        try {
+            Linker linker = Linker.nativeLinker();
+            var symbol = linker.defaultLookup().find("textdomain");
+            if (symbol.isEmpty()) {
+                return;
+            }
+            MethodHandle handle = linker.downcallHandle(symbol.get(),
+                    FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.ADDRESS));
+            try (Arena arena = Arena.ofConfined()) {
+                var ignored = (MemorySegment) handle.invokeExact(arena.allocateFrom(domain));
+            }
+        } catch (Throwable t) {
+            log.warn("i18n: textdomain failed", t);
         }
     }
 
