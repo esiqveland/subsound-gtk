@@ -165,8 +165,11 @@ public class PlaybinPlayer implements Player {
         this.positionAnchorAtMillis = 0;
         this.position = null;
         var fileUri = uri.toString();
-        if ("file".equals(uri.getScheme())) {
-            fileUri = fileUri.replace("file:/", "file:///");
+        // File.toURI() produces the single-slash "file:/path" form; GStreamer wants
+        // "file:///path". Only rewrite that form — a blind replace would corrupt an
+        // already-correct "file:///path" into "file://///path".
+        if ("file".equals(uri.getScheme()) && fileUri.startsWith("file:/") && !fileUri.startsWith("file://")) {
+            fileUri = "file://" + fileUri.substring("file:".length());
         }
         // https://gstreamer.freedesktop.org/documentation/additional/design/playback-gapless.html?gi-language=c
         // https://gstreamer.freedesktop.org/documentation/playback/playbin3.html?gi-language=c
