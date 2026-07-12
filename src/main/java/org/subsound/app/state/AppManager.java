@@ -502,11 +502,15 @@ public class AppManager {
     public List<ServerClient.SongInfo> listDownloadedSongInfos() {
         var cl = this.client.get();
         if (cl == null) {
+            log.warn("listDownloadedSongInfos: client is null, returning empty list");
             return List.of();
         }
-        return this.downloadManager.listDownloadedDBSongs().stream()
+        var dbSongs = this.downloadManager.listDownloadedDBSongs();
+        var result = dbSongs.stream()
                 .map(cl::dbSongToSongInfo)
                 .toList();
+        log.info("listDownloadedSongInfos: dbSongs={} mapped={}", dbSongs.size(), result.size());
+        return result;
     }
 
     public record AlbumInfo(

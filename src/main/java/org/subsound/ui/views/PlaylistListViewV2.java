@@ -761,58 +761,67 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         long tAfterAlloc = System.nanoTime();
         var done = new CompletableFuture<Void>();
         Utils.runOnMainThread(() -> {
-            if (this.setSongsGeneration.get() != generation) {
-                done.complete(null);
-                return;
-            }
-            long tMainStart = System.nanoTime();
-            this.titleLabel.setLabel(playlist.name());
+            // Any throw in here (e.g. a data-dependent failure while clearing/splicing or
+            // wiring the notify signal) must complete `done` — otherwise the caller's
+            // future never resolves, its loading overlay stays up, and the throw is
+            // swallowed by the FFM upcall handler, leaving the view permanently blank.
+            try {
+                if (this.setSongsGeneration.get() != generation) {
+                    done.complete(null);
+                    return;
+                }
+                long tMainStart = System.nanoTime();
+                this.titleLabel.setLabel(playlist.name());
 
-            this.playlistMenu.updatePlaylist(playlist);
-            this.menuButton.setVisible(switch (playlist.kind()) {
-                case PlaylistKind.NORMAL, PlaylistKind.STARRED -> true;
-                case PlaylistKind.DOWNLOADED -> false;
-            });
-            this.reloadButton.setVisible(switch (playlist.kind()) {
-                case PlaylistKind.NORMAL, PlaylistKind.STARRED -> true;
-                case PlaylistKind.DOWNLOADED -> false;
-            });
-            if (playlistChanged) {
-                // Reset the search/filter when navigating to a different playlist.
-                this.searchEntry.setText("");
-                this.searchBar.setSearchMode(false);
-                this.searchQuery = "";
-                this.searchFilter.changed(FilterChange.DIFFERENT);
-            }
-            int oldN = this.listModel.getNItems();
-            if (oldN > 0 && n > 0) {
-                this.columnView.scrollTo(0, this.titleCol, ListScrollFlags.NONE, null);
-            }
-            this.listModel.splice(0, oldN, new GPlaylistEntry[0]);
-            this.resetColumnSorting();
-            long tAfterClear = System.nanoTime();
+                this.playlistMenu.updatePlaylist(playlist);
+                this.menuButton.setVisible(switch (playlist.kind()) {
+                    case PlaylistKind.NORMAL, PlaylistKind.STARRED -> true;
+                    case PlaylistKind.DOWNLOADED -> false;
+                });
+                this.reloadButton.setVisible(switch (playlist.kind()) {
+                    case PlaylistKind.NORMAL, PlaylistKind.STARRED -> true;
+                    case PlaylistKind.DOWNLOADED -> false;
+                });
+                if (playlistChanged) {
+                    // Reset the search/filter when navigating to a different playlist.
+                    this.searchEntry.setText("");
+                    this.searchBar.setSearchMode(false);
+                    this.searchQuery = "";
+                    this.searchFilter.changed(FilterChange.DIFFERENT);
+                }
+                int oldN = this.listModel.getNItems();
+                if (oldN > 0 && n > 0) {
+                    this.columnView.scrollTo(0, this.titleCol, ListScrollFlags.NONE, null);
+                }
+                this.listModel.splice(0, oldN, new GPlaylistEntry[0]);
+                this.resetColumnSorting();
+                long tAfterClear = System.nanoTime();
 
-            // Subscribe to GPlaylist metadata changes for the current playlist
-            if (this.playlistNotifySignal != null) {
-                this.playlistNotifySignal.disconnect();
-                this.playlistNotifySignal = null;
-            }
-            if (playlist.kind() == PlaylistKind.NORMAL) {
-                var store = appManager.getPlaylistsListStore();
-                for (int i = 0; i < store.getNItems(); i++) {
-                    var gp = store.getItem(i);
-                    if (playlist.id().equals(gp.getId())) {
-                        this.playlistNotifySignal = gp.onNotify("name", _ -> {
-                            if (gp.getPlaylist().songCount() != this.lastKnownSongCount) {
-                                this.reloadNeeded = true;
-                            }
-                        });
-                        break;
+                // Subscribe to GPlaylist metadata changes for the current playlist
+                if (this.playlistNotifySignal != null) {
+                    this.playlistNotifySignal.disconnect();
+                    this.playlistNotifySignal = null;
+                }
+                if (playlist.kind() == PlaylistKind.NORMAL) {
+                    var store = appManager.getPlaylistsListStore();
+                    for (int i = 0; i < store.getNItems(); i++) {
+                        var gp = store.getItem(i);
+                        if (playlist.id().equals(gp.getId())) {
+                            this.playlistNotifySignal = gp.onNotify("name", _ -> {
+                                if (gp.getPlaylist().songCount() != this.lastKnownSongCount) {
+                                    this.reloadNeeded = true;
+                                }
+                            });
+                            break;
+                        }
                     }
                 }
-            }
 
-            spliceChunked(items, 0, generation, done, tStart, tAfterAlloc, tMainStart, oldN, tAfterClear);
+                spliceChunked(items, 0, generation, done, tStart, tAfterAlloc, tMainStart, oldN, tAfterClear);
+            } catch (Throwable t) {
+                log.error("setSongs: main-thread step failed for playlist {} ({})", playlist.name(), playlist.kind(), t);
+                done.completeExceptionally(t);
+            }
         });
         return done;
     }
@@ -837,7 +846,15 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         if (end > from) {
             var chunk = new GPlaylistEntry[end - from];
             System.arraycopy(items, from, chunk, 0, end - from);
-            this.listModel.splice(this.listModel.getNItems(), 0, chunk);
+            try {
+                this.listModel.splice(this.listModel.getNItems(), 0, chunk);
+            } catch (Throwable t) {
+                // A mid-chunk failure must complete `done` (exceptionally) so the caller's
+                // loading overlay is lifted instead of hanging forever on the pending future.
+                log.error("spliceChunked: splice failed at from={} end={} of {}", from, end, items.length, t);
+                done.completeExceptionally(t);
+                return;
+            }
         }
         if (end < items.length) {
             Utils.runOnMainThread(() -> spliceChunked(items, end, generation, done,

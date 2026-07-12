@@ -346,8 +346,17 @@ public class PlaylistsListView extends Box {
             case STARRED -> throw new IllegalStateException("handled above");
         }).thenAccept(data -> {
             var songs = data.stream().map(songStore::newInstance).toList();
+            // whenComplete (not thenRun): thenRun only fires on normal completion, so a
+            // setSongs future that completes exceptionally — or an internal throw — would
+            // leave the opaque loading overlay stuck over the whole view (blank title +
+            // headers). Always lift the curtain, and log any swallowed exception.
             this.playlistListView.setSongs(songs, playlist)
-                    .thenRun(() -> this.loadingOverlay.removeCssClass("visible"));
+                    .whenComplete((v, ex) -> {
+                        if (ex != null) {
+                            log.warn("setSongs failed for playlist {} ({})", playlist.id(), playlist.kind(), ex);
+                        }
+                        Utils.runOnMainThread(() -> this.loadingOverlay.removeCssClass("visible"));
+                    });
         }).exceptionally(ex -> {
             log.warn("setSelectedPlaylist failed for {}", playlist.id(), ex);
             Utils.runOnMainThread(() -> this.loadingOverlay.removeCssClass("visible"));
