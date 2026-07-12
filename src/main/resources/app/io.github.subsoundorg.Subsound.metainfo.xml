@@ -63,6 +63,7 @@
         <ul>
           <li>New: download starred list for offline play</li>
           <li>New: search now uses local database in offline mode</li>
+          <li>Improved: faster hightlight when switching songs on slower machines</li>
         </ul>
       </description>
     </release>
