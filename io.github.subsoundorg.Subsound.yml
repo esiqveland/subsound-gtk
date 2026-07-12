@@ -31,7 +31,10 @@ modules:
       - install -Dm644 build/libs/*-final.jar /app/lib/Subsound.jar
       - install -Dm755 src/main/resources/app/Subsound.sh /app/bin/Subsound
       - install --mode=0644 -D src/main/resources/icons/icon.svg /app/share/icons/hicolor/scalable/apps/io.github.subsoundorg.Subsound.svg
-      - install --mode=0644 -D src/main/resources/icons/hicolor/scalable/status/checkmark-circle-symbolic.svg -t /app/share/icons/hicolor/scalable/status/
+      #- install --mode=0644 -D src/main/resources/icons/hicolor/scalable/status/checkmark-circle-symbolic.svg -t /app/share/icons/hicolor/scalable/status/
+      # Bundle app-id-prefixed copies of the GNOME icons we use (from the SDK's Adwaita
+      # theme) so a host icon theme cannot override and break them. Driven by the Icons enum.
+      - bash install-bundled-icons.sh /app/share/icons/hicolor
       - install --mode=0644 -D src/main/resources/app/io.github.subsoundorg.Subsound.desktop  -t /app/share/applications/
       - install --mode=0644 -D build/resources/main/app/io.github.subsoundorg.Subsound.metainfo.xml -t /app/share/metainfo/
       - if [ -d build/locale ]; then mkdir -p /app/share && cp -a build/locale /app/share/locale; fi
