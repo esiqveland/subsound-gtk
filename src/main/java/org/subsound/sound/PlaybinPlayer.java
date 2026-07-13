@@ -36,7 +36,7 @@ public class PlaybinPlayer implements Player {
 
     private static final int GST_PLAY_FLAG_AUDIO = 2;
     private static final int GST_PLAY_FLAG_SOFT_VOLUME = 0x00000010;
-    private static final List<OnStateChanged> listeners = new CopyOnWriteArrayList<>();
+    private final List<OnStateChanged> listeners = new CopyOnWriteArrayList<>();
 
     public interface OnStateChanged {
         void onState(PlayerState next);

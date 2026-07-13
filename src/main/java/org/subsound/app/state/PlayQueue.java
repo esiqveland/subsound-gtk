@@ -231,7 +231,9 @@ public class PlayQueue implements AutoCloseable, PlaybinPlayer.OnStateChanged {
                 return;
             }
             var state = player.getState();
-            var currentPlayPosition = state.source().flatMap(Source::position).orElse(Duration.ZERO);
+            // Use the live position: PlayerState.source().position() is only refreshed on
+            // discrete events (seek/pause/EOS) and stays stale while PLAYING.
+            var currentPlayPosition = player.getCurrentPosition().orElse(Duration.ZERO);
             if (currentPlayPosition.getSeconds() >= 4) {
                 if (state.source().isPresent()) {
                     // its likely we can seek this source

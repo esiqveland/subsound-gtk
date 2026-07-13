@@ -1219,7 +1219,7 @@ public class AppManager {
                 .map(SongInfo::id)
                 .orElse(null);
         var currentSource = this.player.getState().source();
-        var playerPosition = currentSource.flatMap(Source::position).orElse(Duration.ZERO);
+        var playerPosition = this.player.getCurrentPosition().orElse(Duration.ZERO);
         var playerDuration = currentSource.flatMap(Source::duration).orElse(Duration.ZERO);
 
         String playContextType = null;
