@@ -7,6 +7,7 @@ import org.apache.commons.codec.Resources;
 import org.apache.commons.io.IOUtils;
 import org.gnome.gio.File;
 import org.gnome.glib.GLib;
+import org.gnome.glib.MainContext;
 import org.gnome.glib.SourceOnceFunc;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
@@ -98,6 +99,17 @@ public class Utils {
 
     public static CompletableFuture<Void> runOnMainThreadFuture(SourceOnceFunc fn) {
         var future = new CompletableFuture<Void>();
+        if (!testMode && MainContext.default_().isOwner()) {
+            // Already on the main thread: run inline. Deferring to an idle and letting the
+            // caller join() the future would deadlock the main loop against itself.
+            try {
+                fn.run();
+                future.complete(null);
+            } catch (Throwable e) {
+                future.completeExceptionally(e);
+            }
+            return future;
+        }
         runOnMainThread(() -> {
             try {
                 fn.run();
