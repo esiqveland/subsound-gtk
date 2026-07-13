@@ -175,6 +175,16 @@ public class AppManager {
         );
         initServerConfig(config);
 
+        this.currentState = BehaviorSubject.createDefault(buildState());
+        var disposable = this.currentState
+                .throttleLatest(250, TimeUnit.MILLISECONDS, true)
+                //.throttleLatest(50, TimeUnit.MILLISECONDS, true)
+                .observeOn(Schedulers.io())
+                .subscribeOn(Schedulers.io())
+                .forEach(next -> this.notifyListeners());
+
+        // Register the player listener only after currentState exists: the listener calls
+        // setState, and a GStreamer notification arriving before this point would NPE.
         player.onStateChanged(next -> {
             this.setState(old -> old.withPlayer(next));
             var sessionNow = this.scrobbleSession.get();
@@ -185,18 +195,15 @@ public class AppManager {
             // On real transitions, score the PREVIOUS observation — its startedAt is the outgoing
             // session's, which is the correct input for the threshold calc even after setSource
             // has since reset the player's live playbackStartedAt.
-            if (prev != null && !prev.equals(obs)) {
+            // Only score observations that were PLAYING: since evaluateScrobble measures
+            // wall-clock time from startedAt to "now", scoring e.g. a PAUSED observation
+            // would count the entire pause as listening time (pause 10s in, wait 5 min,
+            // skip => false scrobble). Anything listened up to a non-PLAYING observation
+            // was already scored when that observation replaced its PLAYING predecessor.
+            if (prev != null && !prev.equals(obs) && prev.state() == PlaybinPlayer.PlayerStates.PLAYING) {
                 this.evaluateScrobble(prev.session(), prev.playbackStartedAtMs());
             }
         });
-
-        this.currentState = BehaviorSubject.createDefault(buildState());
-        var disposable = this.currentState
-                .throttleLatest(250, TimeUnit.MILLISECONDS, true)
-                //.throttleLatest(50, TimeUnit.MILLISECONDS, true)
-                .observeOn(Schedulers.io())
-                .subscribeOn(Schedulers.io())
-                .forEach(next -> this.notifyListeners());
 
         // restore saved volume:
         this.player.setVolume(savedPlayerState.volume());
@@ -455,10 +462,16 @@ public class AppManager {
             return;
         }
         // Catch a threshold-met scrobble on clean quit: no further transitions will fire.
-        this.evaluateScrobble(
-                this.scrobbleSession.get(),
-                this.player.getState().playbackStartedAt().map(Instant::toEpochMilli).orElse(0L)
-        );
+        // Only while PLAYING — when paused/stopped, everything listened was already scored
+        // at the transition out of PLAYING, and the wall-clock measurement in
+        // evaluateScrobble would count the pause as listening time.
+        var playerStateAtShutdown = this.player.getState();
+        if (playerStateAtShutdown.state() == PlaybinPlayer.PlayerStates.PLAYING) {
+            this.evaluateScrobble(
+                    this.scrobbleSession.get(),
+                    playerStateAtShutdown.playbackStartedAt().map(Instant::toEpochMilli).orElse(0L)
+            );
+        }
         this.removeOnStateChanged(this.playbackReporter);
         this.playbackReporter.close();
         var start = System.currentTimeMillis();
@@ -657,19 +670,22 @@ public class AppManager {
      * over the player state is left untouched.
      */
     private void abortFailedLoad(UUID requestId) {
-        var currentRequestId = this.currentState.getValue().nowPlaying().map(NowPlaying::requestId).orElse(null);
-        if (!requestId.equals(currentRequestId)) {
-            return;
-        }
-        this.player.unloadSource();
+        // Decide ownership atomically inside setState (serialized with the eager setState of
+        // any newer load), so a check-then-unload race cannot tear down a newer load's state.
+        var owned = new AtomicBoolean(false);
         this.setState(old -> {
             var np = old.nowPlaying();
-            if (np.isPresent() && !np.get().requestId().equals(requestId)) {
+            if (np.isEmpty() || !np.get().requestId().equals(requestId)) {
                 // a newer load owns the state now
                 return old;
             }
+            owned.set(true);
             return old.withNowPlaying(Optional.empty());
         });
+        if (!owned.get()) {
+            return;
+        }
+        this.player.unloadSource();
         this.scrobbleSession.set(null);
     }
 
@@ -863,7 +879,8 @@ public class AppManager {
                 case PlayerAction.EnqueueLast a -> this.playQueue.enqueueLast(a.song());
                 case PlayerAction.RemoveFromQueue a -> this.playQueue.removeAt(a.position());
                 case PlayPositionInQueue a -> this.playQueue.playPosition(a.position());
-                case PlayerAction.PlayAndReplaceQueue a -> this.playQueue.playAndReplaceQueue(a);
+                // join so the returned handleAction future completes after the queue swap:
+                case PlayerAction.PlayAndReplaceQueue a -> this.playQueue.playAndReplaceQueue(a).join();
                 case PlayerAction.Pause a -> this.pause();
                 case PlayerAction.Play a -> this.play();
                 case PlayerAction.PlayNext a -> this.playQueue.attemptPlayNext();
@@ -1219,6 +1236,9 @@ public class AppManager {
                 .map(SongInfo::id)
                 .orElse(null);
         var currentSource = this.player.getState().source();
+        // Use the live extrapolated position: PlayerState.source().position() is only refreshed
+        // on discrete events (seek/pause/EOS) and is stale while PLAYING — e.g. on window-close
+        // quit, where the pipeline goes straight to NULL without a position refresh.
         var playerPosition = this.player.getCurrentPosition().orElse(Duration.ZERO);
         var playerDuration = currentSource.flatMap(Source::duration).orElse(Duration.ZERO);
 

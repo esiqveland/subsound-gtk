@@ -195,19 +195,44 @@ public class PlayQueueTest {
         );
         playQueue.replaceQueue(songs, 0).join();
 
-        PlayerState endOfStreamState = new PlayerState(
-                PlayerStates.END_OF_STREAM,
-                1.0,
-                false,
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty()
-        );
-
-        playQueue.onState(endOfStreamState);
+        player.fireStreamEnded(PlaybinPlayer.StreamEndCause.END_OF_STREAM);
 
         assertThat(playQueue.getState().position()).hasValue(1);
         assertThat(playRecorder.songs).contains(songs.get(1));
+    }
+
+    @Test
+    public void testRepeatOneReplaysCurrentOnEndOfStream() {
+        List<SongInfo> songs = List.of(
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
+        );
+        playQueue.replaceQueue(songs, 0).join();
+        playQueue.setPlayMode(PlayerAction.PlayMode.REPEAT_ONE);
+        playRecorder.songs.clear();
+
+        player.fireStreamEnded(PlaybinPlayer.StreamEndCause.END_OF_STREAM);
+
+        assertThat(playQueue.getState().position()).hasValue(0);
+        assertThat(playRecorder.songs).containsExactly(songs.get(0));
+    }
+
+    @Test
+    public void testRepeatOneDoesNotReplayOnStreamError() {
+        // A fatal stream error in REPEAT_ONE must not replay the same failing source —
+        // that would error again immediately, in a tight load/error loop.
+        List<SongInfo> songs = List.of(
+                songInfoFactory.newRandomSongInfo(),
+                songInfoFactory.newRandomSongInfo()
+        );
+        playQueue.replaceQueue(songs, 0).join();
+        playQueue.setPlayMode(PlayerAction.PlayMode.REPEAT_ONE);
+        playRecorder.songs.clear();
+
+        player.fireStreamEnded(PlaybinPlayer.StreamEndCause.ERROR);
+
+        assertThat(playQueue.getState().position()).hasValue(0);
+        assertThat(playRecorder.songs).isEmpty();
     }
 
     @Test
@@ -343,7 +368,7 @@ public class PlayQueueTest {
 
         // Queue: [song0, song2], position adjusted to 0
         // End of stream should advance to the next song (song2)
-        playQueue.onState(new PlayerState(PlayerStates.END_OF_STREAM, 1.0, false, Optional.empty(), Optional.empty(), Optional.empty()));
+        player.fireStreamEnded(PlaybinPlayer.StreamEndCause.END_OF_STREAM);
         assertThat(playQueue.getState().position()).hasValue(1);
         assertThat(playRecorder.songs).containsExactly(songs.get(2));
     }
@@ -424,9 +449,10 @@ public class PlayQueueTest {
 
         playQueue.removeAt(1);
 
-        // Position adjusted to 0; playingItemId follows the item at the adjusted position.
-        assertThat(playQueue.getState().playingItemId())
-                .hasValue(playQueue.getListStore().get(0).getQueueItemId());
+        // Position adjusted to 0 so "next" plays the song that followed the removed one,
+        // but the playing song no longer has a queue row: nothing should be highlighted.
+        assertThat(playQueue.getState().position()).hasValue(0);
+        assertThat(playQueue.getState().playingItemId()).isEmpty();
     }
 
     @Test
@@ -516,6 +542,7 @@ public class PlayQueueTest {
     private static class StubPlayer implements Player {
         PlayerState currentState = new PlayerState(PlayerStates.INIT, 1.0, false, Optional.empty(), Optional.empty(), Optional.empty());
         Duration seekedTo;
+        final List<PlaybinPlayer.OnStreamEnded> streamEndedListeners = new ArrayList<>();
 
         @Override
         public PlayerState getState() {
@@ -535,6 +562,22 @@ public class PlayQueueTest {
         @Override
         public void removeOnStateChanged(PlaybinPlayer.OnStateChanged listener) {
             // NOP
+        }
+
+        @Override
+        public void onStreamEnded(PlaybinPlayer.OnStreamEnded listener) {
+            streamEndedListeners.add(listener);
+        }
+
+        @Override
+        public void removeOnStreamEnded(PlaybinPlayer.OnStreamEnded listener) {
+            streamEndedListeners.remove(listener);
+        }
+
+        void fireStreamEnded(PlaybinPlayer.StreamEndCause cause) {
+            for (PlaybinPlayer.OnStreamEnded listener : List.copyOf(streamEndedListeners)) {
+                listener.onStreamEnded(cause);
+            }
         }
     }
 

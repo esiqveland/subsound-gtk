@@ -37,9 +37,20 @@ public class PlaybinPlayer implements Player {
     private static final int GST_PLAY_FLAG_AUDIO = 2;
     private static final int GST_PLAY_FLAG_SOFT_VOLUME = 0x00000010;
     private final List<OnStateChanged> listeners = new CopyOnWriteArrayList<>();
+    private final List<OnStreamEnded> streamEndedListeners = new CopyOnWriteArrayList<>();
 
     public interface OnStateChanged {
         void onState(PlayerState next);
+    }
+
+    /** Why a stream ended: played to completion, or died on a fatal error. */
+    public enum StreamEndCause {
+        END_OF_STREAM,
+        ERROR,
+    }
+
+    public interface OnStreamEnded {
+        void onStreamEnded(StreamEndCause cause);
     }
 
     public void onStateChanged(OnStateChanged listener) {
@@ -48,6 +59,23 @@ public class PlaybinPlayer implements Player {
 
     public void removeOnStateChanged(OnStateChanged listener) {
         listeners.remove(listener);
+    }
+
+    @Override
+    public void onStreamEnded(OnStreamEnded listener) {
+        streamEndedListeners.add(listener);
+    }
+
+    @Override
+    public void removeOnStreamEnded(OnStreamEnded listener) {
+        streamEndedListeners.remove(listener);
+    }
+
+    /** Fires the one-shot end-of-stream edge event (EOS or fatal stream error). */
+    private void notifyStreamEnded(StreamEndCause cause) {
+        for (OnStreamEnded listener : streamEndedListeners) {
+            listener.onStreamEnded(cause);
+        }
     }
 
     public PlayerState getState() {
@@ -205,6 +233,7 @@ public class PlaybinPlayer implements Player {
             this.pause();
             this.setPlayerState(END_OF_STREAM);
             this.notifyState();
+            this.notifyStreamEnded(StreamEndCause.END_OF_STREAM);
         } else if (msgTypes.contains(MessageType.ERROR)) {
             Out<GError> error = new Out<>();
             Out<String> debug = new Out<>();
@@ -212,6 +241,8 @@ public class PlaybinPlayer implements Player {
             log.error("Player: GStreamer error: {}", error.get().readMessage());
             setPlayerState(END_OF_STREAM);
             notifyState();
+            // Treat a fatal stream error like an ended stream so the queue skips ahead.
+            notifyStreamEnded(StreamEndCause.ERROR);
         } else if (msgTypes.contains(MessageType.ASYNC_DONE)) {
             // if the seek operation succeeded.
             // Flushing seeks will trigger a preroll, which will emit MessageType.ASYNC_DONE
