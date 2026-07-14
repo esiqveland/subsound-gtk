@@ -28,6 +28,7 @@ public class AppNavigation {
         record RouteAlbumsOverview() implements AppRoute {}
         record RouteArtistInfo(String artistId) implements AppRoute {}
         record RouteAlbumInfo(String albumId) implements AppRoute {}
+        record RouteLyrics() implements AppRoute {}
     }
 
     public void navigateTo(AppRoute route) {

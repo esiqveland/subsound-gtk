@@ -50,6 +50,7 @@ public enum Icons {
     ListRemove("list-remove-symbolic"),
     FolderDownload("folder-download-symbolic"),
     Microphone("audio-input-microphone-symbolic"),
+    Fullscreen("view-fullscreen-symbolic"),
     NetworkError("network-error-symbolic"),
     CheckmarkCircle("checkmark-circle-symbolic"),
     ;

@@ -272,7 +272,8 @@ public class PlayerBar extends Box implements AppManager.StateListener {
         // Lyrics button with popover
         lyricsPopover = new LyricsPopover(
                 song -> this.appManager.useClient(client -> client.getSongLyrics(song.id())),
-                this.appManager::seekTo
+                this.appManager::seekTo,
+                () -> this.appManager.navigateTo(new AppNavigation.AppRoute.RouteLyrics())
         );
         lyricsButton = MenuButton.builder()
                 .setIconName(Icons.Microphone.getIconName())

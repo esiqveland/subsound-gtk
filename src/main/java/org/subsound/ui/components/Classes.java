@@ -54,6 +54,7 @@ public enum Classes {
     queueAutomatic("queue-automatic"),
     lyricsLine("lyrics-line"),
     lyricsLineActive("lyrics-line-active"),
+    lyricsLinePage("lyrics-line-page"),
     commandPalette("command-palette"),
     commandPaletteBackdrop("command-palette-backdrop");
 

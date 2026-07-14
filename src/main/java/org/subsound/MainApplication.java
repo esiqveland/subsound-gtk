@@ -21,6 +21,7 @@ import org.subsound.ui.views.AlbumInfoLoader;
 import org.subsound.ui.views.ArtistInfoLoader;
 import org.subsound.ui.views.ArtistListLoader;
 import org.subsound.ui.views.FrontpagePage;
+import org.subsound.ui.views.LyricsPage;
 import org.subsound.ui.views.PlaylistsViewLoader;
 import org.subsound.ui.views.TestPlayerPage;
 import org.gnome.adw.Application;
@@ -311,6 +312,24 @@ public class MainApplication {
 
 //                albumInfoContainer.setAlbumId(route.albumId());
 //                viewStack.setVisibleChildName("albumInfoPage");
+                yield true;
+            }
+            case AppNavigation.AppRoute.RouteLyrics route -> {
+                // NavigationView rejects duplicate tags, and the lyrics button in the
+                // PlayerBar stays reachable while the page is open:
+                if ("lyrics".equals(navigationView.getVisiblePageTag())) {
+                    yield true;
+                }
+                if (navigationView.findPage("lyrics") != null) {
+                    navigationView.popToTag("lyrics");
+                    yield true;
+                }
+                var lyricsPage = NavigationPage.builder()
+                        .setChild(new LyricsPage(this.appManager))
+                        .setTitle(tr("Lyrics"))
+                        .setTag("lyrics")
+                        .build();
+                navigationView.push(lyricsPage);
                 yield true;
             }
         });

@@ -226,3 +226,18 @@ scale slider {
     opacity: 1.0;
     color: #ffffff;
 }
+
+/* Fullscreen lyrics page: same rules as .lyrics-line but much larger type.
+ * Same reflow constraint applies: only opacity/color may differ between the
+ * inactive and active states. */
+.lyrics-line-page {
+    font-size: 22pt;
+    font-weight: 700;
+    opacity: 0.55;
+    transition: opacity 150ms ease-out, color 150ms ease-out;
+}
+
+.lyrics-line-page.lyrics-line-active {
+    opacity: 1.0;
+    color: #ffffff;
+}
