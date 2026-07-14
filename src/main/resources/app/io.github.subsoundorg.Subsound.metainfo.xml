@@ -58,7 +58,15 @@
   </branding>
 
   <releases>
-    <release version="@version@" date="2026-07-12">
+    <release version="@version@" date="2026-07-14">
+      <description>
+        <ul>
+          <li>New: lyrics can now be opened in a fullscreen view</li>
+          <li>Improved: broken or unplayable tracks are handled more gracefully and no longer stall playback</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.7.6" date="2026-07-12">
       <description>
         <ul>
           <li>New: download starred list for offline play</li>
