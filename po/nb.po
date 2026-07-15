@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Subsound\n"
 "Report-Msgid-Bugs-To: https://github.com/subsoundorg/subsound-gtk/issues\n"
-"POT-Creation-Date: 2026-07-14 00:27+0200\n"
+"POT-Creation-Date: 2026-07-15 19:55+0200\n"
 "PO-Revision-Date: 2026-07-11 00:16+0200\n"
 "Last-Translator: Eivind Siqveland Larsen <to.eivind@gmail.com>\n"
 "Language-Team: none\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: src/main/java/org/subsound/MainApplication.java:169
-#: src/main/java/org/subsound/MainApplication.java:301
+#: src/main/java/org/subsound/MainApplication.java:302
 #, java-printf-format
 msgid "Settings"
 msgstr "Innstillinger"
@@ -34,7 +34,7 @@ msgstr "Tilbake"
 msgid "Search"
 msgstr "Søk"
 
-#: src/main/java/org/subsound/MainApplication.java:309
+#: src/main/java/org/subsound/MainApplication.java:310
 #: src/main/java/org/subsound/ui/components/CommandPalette.java:297
 #: src/main/java/org/subsound/ui/components/CommandPalette.java:328
 #: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:456
@@ -42,97 +42,97 @@ msgstr "Søk"
 msgid "Album"
 msgstr "Album"
 
-#: src/main/java/org/subsound/MainApplication.java:329
+#: src/main/java/org/subsound/MainApplication.java:330
 #: src/main/java/org/subsound/ui/components/LyricsPopover.java:46
 #: src/main/java/org/subsound/ui/components/PlayerBar.java:280
 #, java-printf-format
 msgid "Lyrics"
 msgstr ""
 
-#: src/main/java/org/subsound/MainApplication.java:356
+#: src/main/java/org/subsound/MainApplication.java:357
 #: src/main/java/org/subsound/ui/views/FrontpagePage.java:142
 #, java-printf-format
 msgid "Home"
 msgstr "Hjem"
 
-#: src/main/java/org/subsound/MainApplication.java:362
+#: src/main/java/org/subsound/MainApplication.java:363
 #: src/main/java/org/subsound/ui/components/PlaylistsListView.java:275
 #: src/main/java/org/subsound/ui/views/FrontpagePage.java:244
 #, java-printf-format
 msgid "Playlists"
 msgstr "Spillelister"
 
-#: src/main/java/org/subsound/MainApplication.java:372
+#: src/main/java/org/subsound/MainApplication.java:373
 #: src/main/java/org/subsound/ui/views/ArtistsListView.java:151
 #, java-printf-format
 msgid "Artists"
 msgstr "Artister"
 
-#: src/main/java/org/subsound/app/state/AppManager.java:661
+#: src/main/java/org/subsound/app/state/AppManager.java:663
 #, java-printf-format
 msgid "Failed to load song"
 msgstr "Kunne ikke laste sangen"
 
-#: src/main/java/org/subsound/app/state/AppManager.java:702
+#: src/main/java/org/subsound/app/state/AppManager.java:704
 #, java-printf-format
 msgid "Song not available offline"
 msgstr "Sangen er ikke tilgjengelig frakoblet"
 
-#: src/main/java/org/subsound/app/state/AppManager.java:908
+#: src/main/java/org/subsound/app/state/AppManager.java:910
 #, java-printf-format
 msgid "Added to %s"
 msgstr "Lagt til i %s"
 
-#: src/main/java/org/subsound/app/state/AppManager.java:916
+#: src/main/java/org/subsound/app/state/AppManager.java:918
 #, java-printf-format
 msgid "Adding %1$d item to %2$s"
 msgid_plural "Adding %1$d items to %2$s"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/main/java/org/subsound/app/state/AppManager.java:933
+#: src/main/java/org/subsound/app/state/AppManager.java:935
 #, java-printf-format
 msgid "Added to download queue"
 msgstr "Lagt til i nedlastingskøen"
 
-#: src/main/java/org/subsound/app/state/AppManager.java:942
+#: src/main/java/org/subsound/app/state/AppManager.java:944
 #, java-printf-format
 msgid "Created playlist %s"
 msgstr "Opprettet spillelisten %s"
 
-#: src/main/java/org/subsound/app/state/AppManager.java:958
+#: src/main/java/org/subsound/app/state/AppManager.java:960
 #, java-printf-format
 msgid "Added %d item to download queue"
 msgid_plural "Added %d items to download queue"
 msgstr[0] "La til %d element i nedlastingskøen"
 msgstr[1] "La til %d elementer i nedlastingskøen"
 
-#: src/main/java/org/subsound/app/state/AppManager.java:970
+#: src/main/java/org/subsound/app/state/AppManager.java:972
 #, java-printf-format
 msgid "Synced %1$d artists, %2$d albums, %3$d songs"
 msgstr "Synkroniserte %1$d artister, %2$d album, %3$d sanger"
 
-#: src/main/java/org/subsound/app/state/AppManager.java:978
+#: src/main/java/org/subsound/app/state/AppManager.java:980
 #, java-printf-format
 msgid "Song cache cleared"
 msgstr "Lagrede sanger er slettet"
 
-#: src/main/java/org/subsound/app/state/AppManager.java:982
+#: src/main/java/org/subsound/app/state/AppManager.java:984
 #, java-printf-format
 msgid "Thumbnail cache cleared"
 msgstr "Hurtiglager er tømt"
 
-#: src/main/java/org/subsound/app/state/AppManager.java:986
+#: src/main/java/org/subsound/app/state/AppManager.java:988
 #, fuzzy, java-printf-format
 msgid "Lyrics cache cleared"
 msgstr "Lagrede sanger er slettet"
 
-#: src/main/java/org/subsound/app/state/AppManager.java:991
+#: src/main/java/org/subsound/app/state/AppManager.java:993
 #, java-printf-format
 msgid "Started server scan"
 msgstr "Startet serverskanning"
 
-#: src/main/java/org/subsound/app/state/AppManager.java:996
+#: src/main/java/org/subsound/app/state/AppManager.java:998
 #, java-printf-format
 msgid "Failed to start server: %s"
 msgstr ""
@@ -398,68 +398,88 @@ msgstr "Frakoblet"
 msgid "Not connected"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:89
+#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:96
+#, fuzzy, java-printf-format
+msgid "Header name"
+msgstr "Brukernavn"
+
+#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:101
+#, java-printf-format
+msgid "Value"
+msgstr ""
+
+#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:134
 #, java-printf-format
 msgid "New Server"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:90
+#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:135
 #, java-printf-format
 msgid "Server URL"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:91
+#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:136
 #, java-printf-format
 msgid "Accept self-signed certificates"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:91
+#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:136
 #, java-printf-format
 msgid "Skip TLS verification"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:92
+#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:137
 #, java-printf-format
 msgid "Username"
 msgstr "Brukernavn"
 
-#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:93
+#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:138
 #, java-printf-format
 msgid "Password"
 msgstr "Passord"
 
-#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:95
+#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:140
 #, java-printf-format
 msgid "Test"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:97
+#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:142
 #, java-printf-format
 msgid "Save"
 msgstr "Lagre"
 
-#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:142
+#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:158
 #, java-printf-format
-msgid "Connection OK!"
-msgstr ""
-
-#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:148
-#, java-printf-format
-msgid "Connection failed!"
+msgid "Custom headers"
 msgstr ""
 
 #: src/main/java/org/subsound/ui/components/ServerConfigForm.java:166
 #, java-printf-format
+msgid "+ Add custom header"
+msgstr ""
+
+#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:241
+#, java-printf-format
+msgid "Connection OK!"
+msgstr ""
+
+#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:247
+#, java-printf-format
+msgid "Connection failed!"
+msgstr ""
+
+#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:265
+#, java-printf-format
 msgid "%s server"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:182
-#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:194
+#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:287
+#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:299
 #, java-printf-format
 msgid "Error saving configuration!"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:201
+#: src/main/java/org/subsound/ui/components/ServerConfigForm.java:306
 #, java-printf-format
 msgid "Configuration saved!"
 msgstr ""

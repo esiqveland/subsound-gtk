@@ -3,6 +3,7 @@ package org.subsound.configuration;
 import org.jspecify.annotations.Nullable;
 import org.subsound.configuration.Config.ConfigurationDTO.OnboardingState;
 import org.subsound.configuration.constants.Constants;
+import org.subsound.integration.ServerClient.HttpHeader;
 import org.subsound.integration.ServerClient.ServerType;
 import org.subsound.integration.ServerClient.TranscodeBitrate;
 import org.subsound.integration.ServerClient.TranscodeFormat;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 
 public class Config {
@@ -95,7 +97,8 @@ public class Config {
             String password,
             TranscodeFormat audioFormat,   // nullable means use mp3
             @Nullable TranscodeBitrate audioBitrate,   // null = SourceQuality
-            boolean tlsSkipVerify
+            boolean tlsSkipVerify,
+            List<HttpHeader> customHeaders
     ) {}
 
     // Holds legacy server fields read from old JSON format for migration

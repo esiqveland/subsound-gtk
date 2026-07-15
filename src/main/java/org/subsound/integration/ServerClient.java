@@ -424,6 +424,11 @@ public interface ServerClient {
             TranscodeFormat format,
             TranscodeBitrate bitrate
     ) {}
+    /** A custom HTTP header attached to every request to the server (e.g. Cloudflare Access headers). */
+    record HttpHeader(
+            String name,
+            String value
+    ) {}
     sealed interface TranscodeBitrate {
         record SourceQuality() implements TranscodeBitrate {}
         record MaximumBitrate(int maxBitrate) implements TranscodeBitrate {

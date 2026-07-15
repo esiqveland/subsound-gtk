@@ -1,5 +1,6 @@
 package org.subsound.persistence.database;
 
+import org.subsound.integration.ServerClient.HttpHeader;
 import org.subsound.integration.ServerClient.ServerType;
 import org.assertj.core.api.Assertions;
 import org.junit.Rule;
@@ -35,7 +36,11 @@ public class DatabaseServiceTest {
                 now,
                 false,
                 null,
-                null
+                null,
+                List.of(
+                        new HttpHeader("CF-Access-Client-Id", "abc123"),
+                        new HttpHeader("CF-Access-Client-Secret", "s3cr3t")
+                )
         );
 
         Server server2 = new Server(
@@ -47,7 +52,8 @@ public class DatabaseServiceTest {
                 now,
                 false,
                 null,
-                null
+                null,
+                List.of()
         );
 
         // Test insert
@@ -72,5 +78,26 @@ public class DatabaseServiceTest {
         // Test getServerById with non-existent id
         Optional<Server> notFoundServer = service.getServerById("non-existent");
         Assertions.assertThat(notFoundServer).isEmpty();
+
+        // Custom headers round-trip: stored JSON is parsed back to the same list,
+        // and an empty list survives as an empty list (never null).
+        Optional<Server> server1Reloaded = service.getServerById(server1.id().toString());
+        Assertions.assertThat(server1Reloaded).isPresent();
+        Assertions.assertThat(server1Reloaded.get().customHeaders())
+                .containsExactly(
+                        new HttpHeader("CF-Access-Client-Id", "abc123"),
+                        new HttpHeader("CF-Access-Client-Secret", "s3cr3t")
+                );
+        Assertions.assertThat(foundServer.get().customHeaders()).isEmpty();
+
+        // upsert must preserve/replace custom headers
+        Server server1Updated = new Server(
+                server1.id(), true, ServerType.SUBSONIC, "http://server1.com", "user1",
+                now, false, null, null, List.of(new HttpHeader("X-Custom", "v"))
+        );
+        service.upsert(server1Updated);
+        Assertions.assertThat(service.getServerById(server1.id().toString()))
+                .get()
+                .isEqualTo(server1Updated);
     }
 }

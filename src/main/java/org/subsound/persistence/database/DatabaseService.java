@@ -1,9 +1,13 @@
 package org.subsound.persistence.database;
 
+import com.google.gson.reflect.TypeToken;
+import org.subsound.integration.ServerClient.HttpHeader;
 import org.subsound.integration.ServerClient.ServerType;
+import org.subsound.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -19,14 +23,14 @@ public class DatabaseService {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseService.class);
     private final Database database;
 
-    private static final String ALL_COLUMNS = "id, is_primary, server_type, server_url, username, created_at, tls_skip_verify, audio_format, audio_bitrate";
+    private static final String ALL_COLUMNS = "id, is_primary, server_type, server_url, username, created_at, tls_skip_verify, audio_format, audio_bitrate, custom_headers";
 
     public DatabaseService(Database database) {
         this.database = database;
     }
 
     public void insert(Server server) {
-        String sql = "INSERT INTO servers (" + ALL_COLUMNS + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO servers (" + ALL_COLUMNS + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setServerParams(pstmt, server);
@@ -39,7 +43,7 @@ public class DatabaseService {
 
     public void upsert(Server server) {
         String sql = """
-            INSERT INTO servers (%s) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO servers (%s) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 is_primary = excluded.is_primary,
                 server_type = excluded.server_type,
@@ -47,7 +51,8 @@ public class DatabaseService {
                 username = excluded.username,
                 tls_skip_verify = excluded.tls_skip_verify,
                 audio_format = excluded.audio_format,
-                audio_bitrate = excluded.audio_bitrate
+                audio_bitrate = excluded.audio_bitrate,
+                custom_headers = excluded.custom_headers
             """.formatted(ALL_COLUMNS);
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -125,6 +130,8 @@ public class DatabaseService {
         } else {
             pstmt.setNull(9, Types.INTEGER);
         }
+        var customHeaders = server.customHeaders() == null ? List.of() : server.customHeaders();
+        pstmt.setString(10, Utils.toJson(customHeaders));
     }
 
     private Server mapResultSetToServer(ResultSet rs) throws SQLException {
@@ -139,7 +146,17 @@ public class DatabaseService {
                 Instant.ofEpochMilli(rs.getLong("created_at")),
                 rs.getBoolean("tls_skip_verify"),
                 rs.getString("audio_format"),
-                audioBitrate
+                audioBitrate,
+                parseHttpHeaders(rs.getString("custom_headers"))
         );
+    }
+
+    private static final Type HTTP_HEADER_LIST_TYPE = new TypeToken<List<HttpHeader>>() {}.getType();
+    private static List<HttpHeader> parseHttpHeaders(String json) {
+        if (json == null || json.isBlank()) {
+            return List.of();
+        }
+        List<HttpHeader> list = Utils.fromJson(json, HTTP_HEADER_LIST_TYPE);
+        return list == null ? List.of() : list;
     }
 }

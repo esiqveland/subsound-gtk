@@ -62,6 +62,7 @@ import static org.subsound.integration.servers.subsonic.SubsonicClientV2.OpenSub
 import static org.subsound.integration.servers.subsonic.SubsonicClientV2.OpenSubsonicExtensions.OpenSubsonicFeature.PlaybackReport;
 import static org.subsound.integration.servers.subsonic.SubsonicClientV2.OpenSubsonicExtensions.OpenSubsonicFeature.SongLyrics;
 import static org.subsound.persistence.ThumbnailCache.toCachePath;
+import static org.subsound.utils.LogUtils.customHeadersInterceptor;
 import static org.subsound.utils.LogUtils.loggingInterceptor;
 import static org.subsound.utils.LogUtils.userAgentInterceptor;
 
@@ -108,6 +109,7 @@ public class SubsonicClientV2 implements ServerClient {
                 .readTimeout(30, TimeUnit.SECONDS)
                 .callTimeout(30, TimeUnit.SECONDS)
                 .addInterceptor(userAgentInterceptor(Constants.USER_AGENT))
+                .addInterceptor(customHeadersInterceptor(cfg.customHeaders()))
                 .addInterceptor(loggingInterceptor(log));
 
         if (cfg.tlsSkipVerify()) {

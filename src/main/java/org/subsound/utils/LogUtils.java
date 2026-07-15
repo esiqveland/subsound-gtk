@@ -2,9 +2,12 @@ package org.subsound.utils;
 
 import okhttp3.Interceptor;
 import org.slf4j.LoggerFactory;
+import org.subsound.integration.ServerClient.HttpHeader;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
+
+import java.util.List;
 
 public class LogUtils {
     public static void setRootLogLevel(String level) {
@@ -37,6 +40,25 @@ public class LogUtils {
                     .header("User-Agent", agentString)
                     .build();
             return chain.proceed(request);
+        };
+    }
+
+    /**
+     * Attaches user-configured custom headers (e.g. Cloudflare Access) to every request.
+     * Uses addHeader so multiple values for the same header name are preserved.
+     */
+    public static Interceptor customHeadersInterceptor(List<HttpHeader> headers) {
+        return chain -> {
+            if (headers == null || headers.isEmpty()) {
+                return chain.proceed(chain.request());
+            }
+            var builder = chain.request().newBuilder();
+            for (var header : headers) {
+                if (header.name() != null && !header.name().isBlank()) {
+                    builder.addHeader(header.name(), header.value() != null ? header.value() : "");
+                }
+            }
+            return chain.proceed(builder.build());
         };
     }
 

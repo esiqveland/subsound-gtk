@@ -1,9 +1,11 @@
 package org.subsound.persistence.database;
 
 import org.jspecify.annotations.Nullable;
+import org.subsound.integration.ServerClient.HttpHeader;
 import org.subsound.integration.ServerClient.ServerType;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public record Server(
@@ -15,6 +17,7 @@ public record Server(
         Instant createdAt,
         boolean tlsSkipVerify,
         @Nullable String audioFormat,
-        @Nullable Integer audioBitrate
+        @Nullable Integer audioBitrate,
+        List<HttpHeader> customHeaders
 ) {
 }

@@ -7,8 +7,11 @@ import org.gnome.adw.SwitchRow;
 import org.gnome.adw.Toast;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
+import org.gnome.gtk.Button;
+import org.gnome.gtk.Entry;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListBox;
+import org.gnome.gtk.ListBoxRow;
 import org.gnome.gtk.SelectionMode;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -18,16 +21,20 @@ import org.subsound.app.state.AppManager;
 import org.subsound.app.state.PlayerAction;
 import org.subsound.configuration.Config.ServerConfig;
 import org.subsound.integration.ServerClient;
+import org.subsound.integration.ServerClient.HttpHeader;
 import org.subsound.integration.ServerClient.ServerType;
 import org.subsound.integration.ServerClient.TranscodeFormat;
 import org.subsound.utils.Utils;
 
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
 import static org.subsound.i18n.I18n.tr;
 import static org.subsound.ui.components.Classes.boxedList;
@@ -53,6 +60,9 @@ public class ServerConfigForm extends Box {
     private final SwitchRow tlsSwitchEntry;
     private final EntryRow usernameEntry;
     private final PasswordEntryRow passwordEntry;
+    private final ListBox headersListBox;
+    private final ButtonRow addHeaderButton;
+    private final List<HeaderRow> headerRows = new ArrayList<>();
     private final ButtonRow testButton;
     private final ButtonRow saveButton;
 
@@ -61,16 +71,59 @@ public class ServerConfigForm extends Box {
             String serverUrl,
             String username,
             String password,
-            boolean tlsSkipVerify
+            boolean tlsSkipVerify,
+            List<HttpHeader> customHeaders
     ) {
         @Override
         public @NonNull String toString() {
-            return "SettingsInfo[type=%s, serverUrl=%s, username=%s, password=[REDACTED], tlsSkipVerify=%s]".formatted(
+            return "SettingsInfo[type=%s, serverUrl=%s, username=%s, password=[REDACTED], tlsSkipVerify=%s, customHeaders=%d]".formatted(
                     type,
                     serverUrl,
                     username,
-                    tlsSkipVerify
+                    tlsSkipVerify,
+                    customHeaders != null ? customHeaders.size() : 0
             );
+        }
+    }
+
+    /** A single editable name/value header row appended to {@link #headersListBox}. */
+    private final class HeaderRow {
+        final ListBoxRow row;
+        final Entry nameEntry;
+        final Entry valueEntry;
+
+        HeaderRow(String name, String value) {
+            this.nameEntry = Entry.builder()
+                    .setPlaceholderText(tr("Header name"))
+                    .setText(name != null ? name : "")
+                    .setHexpand(true)
+                    .build();
+            this.valueEntry = Entry.builder()
+                    .setPlaceholderText(tr("Value"))
+                    .setText(value != null ? value : "")
+                    .setHexpand(true)
+                    .build();
+            var removeButton = Button.builder()
+                    .setIconName("list-remove-symbolic")
+                    .setValign(Align.CENTER)
+                    .setCssClasses(new String[]{Classes.flat.className(), Classes.destructiveAction.className()})
+                    .build();
+            removeButton.onClicked(() -> removeHeaderRow(this));
+            var box = Box.builder().setOrientation(HORIZONTAL).setSpacing(6).build();
+            box.setMarginTop(6);
+            box.setMarginBottom(6);
+            box.setMarginStart(6);
+            box.setMarginEnd(6);
+            box.append(this.nameEntry);
+            box.append(this.valueEntry);
+            box.append(removeButton);
+            // Wrap in an explicit, non-activatable ListBoxRow so removal targets a
+            // direct child of the ListBox (removing the auto-wrapped box is unreliable).
+            this.row = ListBoxRow.builder()
+                    .setChild(box)
+                    .setActivatable(false)
+                    .setSelectable(false)
+                    .build();
         }
     }
 
@@ -107,14 +160,67 @@ public class ServerConfigForm extends Box {
         this.listBox.append(tlsSwitchEntry);
         this.listBox.append(usernameEntry);
         this.listBox.append(passwordEntry);
-        this.listBox.append(testButton);
-        this.listBox.append(saveButton);
+
+        // Custom headers section: a dynamic list of name/value rows plus an "+ Add more" row.
+        var headersLabel = Label.builder()
+                .setLabel(tr("Custom headers"))
+                .setHalign(Align.START)
+                .setCssClasses(title1.add())
+                .build();
+        this.headersListBox = new ListBox();
+        this.headersListBox.setHexpand(true);
+        this.headersListBox.addCssClass(boxedList.className());
+        this.headersListBox.setSelectionMode(SelectionMode.NONE);
+        this.addHeaderButton = ButtonRow.builder().setTitle(tr("+ Add custom header")).build();
+        this.addHeaderButton.onActivated(() -> this.addHeaderRow("", ""));
+        this.headersListBox.append(this.addHeaderButton);
+
+        var actionsListBox = new ListBox();
+        actionsListBox.setHexpand(true);
+        actionsListBox.addCssClass(boxedList.className());
+        actionsListBox.setSelectionMode(SelectionMode.NONE);
+        actionsListBox.append(testButton);
+        actionsListBox.append(saveButton);
 
         this.centerBox = borderBox(VERTICAL, 0).setSpacing(8).build();
         this.centerBox.append(serverTypeInfoLabel);
         this.centerBox.append(this.listBox);
+        this.centerBox.append(headersLabel);
+        this.centerBox.append(this.headersListBox);
+        this.centerBox.append(actionsListBox);
         this.append(this.centerBox);
         this.setSettingsInfo(settingsInfo);
+    }
+
+    private void addHeaderRow(String name, String value) {
+        var row = new HeaderRow(name, value);
+        // Insert before the trailing "+ Add custom header" button (kept last).
+        this.headersListBox.insert(row.row, this.headerRows.size());
+        this.headerRows.add(row);
+    }
+
+    private void removeHeaderRow(HeaderRow row) {
+        this.headersListBox.remove(row.row);
+        this.headerRows.remove(row);
+    }
+
+    private void clearHeaderRows() {
+        for (var row : this.headerRows) {
+            this.headersListBox.remove(row.row);
+        }
+        this.headerRows.clear();
+    }
+
+    private List<HttpHeader> collectHeaders() {
+        var headers = new ArrayList<HttpHeader>();
+        for (var row : this.headerRows) {
+            var name = row.nameEntry.getText().trim();
+            var value = row.valueEntry.getText().trim();
+            if (!name.isBlank()) {
+                headers.add(new HttpHeader(name, value));
+            }
+        }
+        return headers;
     }
 
     private void testConnection() {
@@ -133,7 +239,8 @@ public class ServerConfigForm extends Box {
                     data.password,
                     TranscodeFormat.source,
                     null,
-                    data.tlsSkipVerify
+                    data.tlsSkipVerify,
+                    data.customHeaders
             ));
             boolean success = serverClient.testConnection();
             if (success) {
@@ -168,6 +275,12 @@ public class ServerConfigForm extends Box {
             this.tlsSwitchEntry.setActive(s.tlsSkipVerify);
             this.usernameEntry.setText(s.username);
             this.passwordEntry.setText(s.password);
+            this.clearHeaderRows();
+            if (s.customHeaders != null) {
+                for (var header : s.customHeaders) {
+                    this.addHeaderRow(header.name(), header.value());
+                }
+            }
             this.testButton.setSensitive(true);
             this.saveButton.setSensitive(false);
         });
@@ -220,7 +333,8 @@ public class ServerConfigForm extends Box {
                     parsed.toString(),
                     this.usernameEntry.getText(),
                     this.passwordEntry.getText(),
-                    this.tlsSwitchEntry.getActive()
+                    this.tlsSwitchEntry.getActive(),
+                    collectHeaders()
             ));
         } catch (IllegalArgumentException e) {
             this.serverUrlEntry.setText(url);

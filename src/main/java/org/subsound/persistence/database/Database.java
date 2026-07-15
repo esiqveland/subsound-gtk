@@ -139,6 +139,7 @@ public class Database {
         migrations.add(new MigrationV17());
         migrations.add(new MigrationV18());
         migrations.add(new MigrationV19());
+        migrations.add(new MigrationV20());
         return migrations;
     }
 
@@ -628,6 +629,20 @@ public class Database {
                     }
                 }
                 upd.executeBatch();
+            }
+        }
+    }
+
+    static class MigrationV20 implements Migration {
+        @Override
+        public int version() { return 20; }
+
+        @Override
+        public void apply(Connection conn) throws SQLException {
+            // Custom HTTP headers attached to all requests (e.g. Cloudflare Access).
+            // Stored as a JSON array of {name, value}; null means no custom headers.
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("ALTER TABLE servers ADD COLUMN custom_headers TEXT DEFAULT NULL");
             }
         }
     }

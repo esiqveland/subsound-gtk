@@ -75,7 +75,8 @@ public class OnboardingOverlay extends Overlay {
                 cfg.serverConfig.url(),
                 cfg.serverConfig.username(),
                 cfg.serverConfig.password(),
-                cfg.serverConfig.tlsSkipVerify()
+                cfg.serverConfig.tlsSkipVerify(),
+                cfg.serverConfig.customHeaders()
         );
         return new ServerConfigForm(
                 info,

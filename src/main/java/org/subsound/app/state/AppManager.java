@@ -279,7 +279,8 @@ public class AppManager {
                     Instant.now(),
                     false,
                     legacy.audioFormat(),
-                    legacy.transcodeBitrate()
+                    legacy.transcodeBitrate(),
+                    List.of()
             );
             this.databaseService.insert(server);
             config.legacyServerConfig = null;
@@ -334,7 +335,8 @@ public class AppManager {
                 password != null ? password : "",
                 audioFormat,
                 audioBitrate,
-                server.tlsSkipVerify()
+                server.tlsSkipVerify(),
+                server.customHeaders()
         );
     }
 
@@ -1081,7 +1083,8 @@ public class AppManager {
                 existingServer.map(Server::createdAt).orElse(Instant.now()),
                 settings.next().tlsSkipVerify(),
                 existingAudioFormat,
-                existingAudioBitrate
+                existingAudioBitrate,
+                settings.next().customHeaders()
         );
         this.databaseService.upsert(server);
 
@@ -1134,7 +1137,8 @@ public class AppManager {
         var updatedServer = new Server(
                 server.id(), server.isPrimary(), server.serverType(),
                 server.serverUrl(), server.username(), server.createdAt(),
-                server.tlsSkipVerify(), audioFormatStr, audioBitrateInt
+                server.tlsSkipVerify(), audioFormatStr, audioBitrateInt,
+                server.customHeaders()
         );
         this.databaseService.upsert(updatedServer);
 
