@@ -58,7 +58,14 @@
   </branding>
 
   <releases>
-    <release version="@version@" date="2026-07-14">
+    <release version="@version@" date="2026-07-16">
+      <description>
+        <ul>
+          <li>New: add custom HTTP headers to send with every request to your server</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.7.7" date="2026-07-14">
       <description>
         <ul>
           <li>New: lyrics can now be opened in a fullscreen view</li>
