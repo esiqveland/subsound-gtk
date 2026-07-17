@@ -58,7 +58,18 @@
   </branding>
 
   <releases>
-    <release version="@version@" date="2026-07-16">
+    <release version="@version@" date="2026-07-17">
+      <description>
+        <ul>
+          <li>New: add custom HTTP headers to send with every request to your server</li>
+          <li>New: lyrics can now be opened in a fullscreen view</li>
+          <li>Improved: broken or unplayable tracks are handled more gracefully and no longer stall playback</li>
+          <li>New: download starred list for offline play</li>
+          <li>New: search now uses local database in offline mode</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.7.8" date="2026-07-16">
       <description>
         <ul>
           <li>New: add custom HTTP headers to send with every request to your server</li>
