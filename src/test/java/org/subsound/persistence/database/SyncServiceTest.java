@@ -8,6 +8,8 @@ import org.subsound.integration.ServerClient.ArtistEntry;
 import org.subsound.integration.ServerClient.ArtistInfo;
 import org.subsound.integration.ServerClient.Biography;
 import org.subsound.integration.ServerClient.ListArtists;
+import org.subsound.integration.ServerClient.SearchPage;
+import org.subsound.integration.ServerClient.SearchResult;
 import org.subsound.integration.ServerClient.SongInfo;
 import org.junit.Before;
 import org.junit.Rule;
@@ -21,7 +23,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SyncServiceTest {
@@ -83,5 +88,51 @@ public class SyncServiceTest {
         assertThat(databaseServerService.getAlbumById("album-1")).isPresent();
         assertThat(databaseServerService.listSongsByAlbumId("album-1")).hasSize(1);
         assertThat(databaseServerService.getSongById("song-1")).isPresent();
+    }
+
+    @Test
+    public void testSyncAllViaSearch3() {
+        ArtistEntry artistEntry = new ArtistEntry("artist-1", "Artist One", 1, Optional.empty(), Optional.empty());
+        when(serverClient.getArtists()).thenReturn(new ListArtists(List.of(artistEntry)));
+        when(serverClient.getPlaylists()).thenReturn(new ServerClient.ListPlaylists(List.of()));
+
+        ArtistAlbumInfo albumSimple = new ArtistAlbumInfo("album-1", "Album One", 1, "artist-1", "Artist One", Duration.ofMinutes(3), Optional.of("Rock"), Optional.of(2023), Optional.empty(), Optional.empty());
+
+        SongInfo songInfo = mock(SongInfo.class);
+        when(songInfo.id()).thenReturn("song-1");
+        when(songInfo.title()).thenReturn("Song One");
+        when(songInfo.albumId()).thenReturn("album-1");
+        when(songInfo.artistId()).thenReturn("artist-1");
+        when(songInfo.artistName()).thenReturn("Artist One");
+        when(songInfo.duration()).thenReturn(Duration.ofMinutes(3));
+        when(songInfo.year()).thenReturn(Optional.of(2023));
+        when(songInfo.starred()).thenReturn(Optional.empty());
+        when(songInfo.coverArt()).thenReturn(Optional.empty());
+
+        // probe page, then one page per type (each smaller than the page size, so single-page paging)
+        when(serverClient.search3("", SearchPage.songs(1, 0)))
+                .thenReturn(new SearchResult(List.of(), List.of(), List.of(songInfo)));
+        when(serverClient.search3("", SearchPage.artists(500, 0)))
+                .thenReturn(new SearchResult(List.of(artistEntry), List.of(), List.of()));
+        when(serverClient.search3("", SearchPage.albums(500, 0)))
+                .thenReturn(new SearchResult(List.of(), List.of(albumSimple), List.of()));
+        when(serverClient.search3("", SearchPage.songs(500, 0)))
+                .thenReturn(new SearchResult(List.of(), List.of(), List.of(songInfo)));
+
+        var stats = syncService.syncAll();
+
+        assertThat(stats.artists()).isEqualTo(1);
+        assertThat(stats.albums()).isEqualTo(1);
+        assertThat(stats.songs()).isEqualTo(1);
+        assertThat(databaseServerService.listArtists()).hasSize(1);
+        assertThat(databaseServerService.getArtistById("artist-1")).isPresent();
+        assertThat(databaseServerService.listAlbumsByArtist("artist-1")).hasSize(1);
+        assertThat(databaseServerService.getSongById("song-1")).isPresent();
+        var album = databaseServerService.getAlbumById("album-1").orElseThrow();
+        assertThat(album.genre()).contains("Rock");
+
+        // the per-artist walk must not run when search3 paging is supported
+        verify(serverClient, never()).getArtistWithAlbums(any());
+        verify(serverClient, never()).getAlbumInfo(any());
     }
 }

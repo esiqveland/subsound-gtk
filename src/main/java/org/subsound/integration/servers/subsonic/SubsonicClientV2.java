@@ -678,7 +678,7 @@ public class SubsonicClientV2 implements ServerClient {
                 ofNullable(song.bitRate()),
                 song.size() != null ? song.size() : 0,
                 ofNullable(song.year()),
-                ofNullable(song.genre()).orElse(""),
+                genres.stream().findFirst().orElse(null),
                 song.playCount() != null ? song.playCount() : 0L,
                 ofNullable(song.userRating()),
                 new ArtistId(song.artistId(), song.artist()),
@@ -1028,7 +1028,24 @@ public class SubsonicClientV2 implements ServerClient {
 
     @Override
     public SearchResult search(String query) {
-        var res = fetchAndCheck("/rest/search3", Map.of("query", query), SearchResult3ResponseJson.class);
+        return doSearch3(Map.of("query", query));
+    }
+
+    @Override
+    public SearchResult search3(String query, SearchPage page) {
+        return doSearch3(Map.of(
+                "query", query,
+                "artistCount", String.valueOf(page.artistCount()),
+                "artistOffset", String.valueOf(page.artistOffset()),
+                "albumCount", String.valueOf(page.albumCount()),
+                "albumOffset", String.valueOf(page.albumOffset()),
+                "songCount", String.valueOf(page.songCount()),
+                "songOffset", String.valueOf(page.songOffset())
+        ));
+    }
+
+    private SearchResult doSearch3(Map<String, String> params) {
+        var res = fetchAndCheck("/rest/search3", params, SearchResult3ResponseJson.class);
         var sr = res.subsonicResponse.searchResult3;
         var artists = sr != null && sr.artist() != null
                 ? sr.artist().stream().map(this::toArtistEntry).toList()

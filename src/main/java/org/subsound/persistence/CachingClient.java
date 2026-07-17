@@ -498,6 +498,12 @@ public class CachingClient implements ServerClient {
         }
     }
 
+    @Override
+    public SearchResult search3(String query, SearchPage page) {
+        // Only used by SyncService which requires the server to be reachable; no offline fallback.
+        return delegate.search3(query, page);
+    }
+
     private SearchResult searchDatabase(String query) {
         var artists = dbService.searchArtists(query, SEARCH_ARTIST_LIMIT);
         var albums = dbService.searchAlbums(query, SEARCH_ALBUM_LIMIT);

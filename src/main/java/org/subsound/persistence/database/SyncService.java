@@ -8,6 +8,7 @@ import org.subsound.integration.ServerClient.ArtistAlbumInfo;
 import org.subsound.integration.ServerClient.ArtistEntry;
 import org.subsound.integration.ServerClient.ArtistInfo;
 import org.subsound.integration.ServerClient.CoverArt;
+import org.subsound.integration.ServerClient.SearchPage;
 import org.subsound.integration.ServerClient.SongInfo;
 import org.subsound.persistence.SongCache;
 import org.subsound.persistence.SongCacheChecker;
@@ -16,7 +17,10 @@ import org.subsound.persistence.ThumbnailCache.ThumbLoaded;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -27,6 +31,7 @@ import java.util.concurrent.Future;
 
 public class SyncService {
     private static final Logger logger = LoggerFactory.getLogger(SyncService.class);
+    private static final int SEARCH3_PAGE_SIZE = 500;
 
     private final ServerClient serverClient;
     private final DatabaseServerService databaseServerService;
@@ -54,6 +59,9 @@ public class SyncService {
             var artists = serverClient.getArtists().list();
             logger.info("Fetched {} artists from server", artists.size());
 
+            // Probe search3 empty-query support before truncating anything
+            boolean useSearch3 = probeSearch3EmptyQuery(artists.size());
+
             // Step 2: Truncate existing data (server confirmed online)
             logger.info("Truncating existing data for server: {}", serverId);
             databaseServerService.deleteAllPlaylistSongs();
@@ -62,23 +70,11 @@ public class SyncService {
             databaseServerService.deleteAllAlbums();
             databaseServerService.deleteAllArtists();
 
-            // Step 3: Sync all data from server in parallel
+            // Step 3: Sync all data from server
             collectedCoverArts.clear();
-            List<Future<SyncStats>> futures = new ArrayList<>();
-            for (ArtistEntry artistEntry : artists) {
-                futures.add(executor.submit(() -> syncArtist(artistEntry.id())));
-            }
-            // Wait for all and aggregate stats
-            var stats = new SyncStats(0, 0, 0, 0);
-            for (Future<SyncStats> future : futures) {
-                var s = future.get();
-                stats = new SyncStats(
-                        stats.artists + s.artists,
-                        stats.albums + s.albums,
-                        stats.songs + s.songs,
-                        stats.playlists
-                );
-            }
+            SyncStats stats = useSearch3
+                    ? syncViaSearch3()
+                    : syncViaArtistWalk(artists);
             int playlistCount = syncPlaylists();
             stats = new SyncStats(stats.artists, stats.albums, stats.songs, playlistCount);
 
@@ -146,6 +142,153 @@ public class SyncService {
         }
     }
 
+    /**
+     * OpenSubsonic servers must support search3 with an empty query returning the whole
+     * library. Probe with a single-song page so we can fall back to the per-artist walk
+     * on servers that reject the empty query (Subsonic error 10) or silently return nothing.
+     */
+    private boolean probeSearch3EmptyQuery(int artistCount) {
+        try {
+            var probe = serverClient.search3("", SearchPage.songs(1, 0));
+            if (probe.songs().isEmpty() && artistCount > 0) {
+                logger.info("search3 empty-query probe returned no songs; using artist walk");
+                return false;
+            }
+            logger.info("search3 empty-query supported; using paged search3 sync");
+            return true;
+        } catch (Exception e) {
+            logger.info("search3 empty-query not supported ({}); using artist walk", e.getMessage());
+            return false;
+        }
+    }
+
+    private SyncStats syncViaArtistWalk(List<ArtistEntry> artists) throws Exception {
+        List<Future<SyncStats>> futures = new ArrayList<>();
+        for (ArtistEntry artistEntry : artists) {
+            futures.add(executor.submit(() -> syncArtist(artistEntry.id())));
+        }
+        // Wait for all and aggregate stats
+        var stats = new SyncStats(0, 0, 0, 0);
+        for (Future<SyncStats> future : futures) {
+            var s = future.get();
+            stats = new SyncStats(
+                    stats.artists + s.artists,
+                    stats.albums + s.albums,
+                    stats.songs + s.songs,
+                    stats.playlists
+            );
+        }
+        return stats;
+    }
+
+    private SyncStats syncViaSearch3() throws Exception {
+        var artistsTask = executor.submit(this::syncArtistsViaSearch3);
+        var albumsTask = executor.submit(this::fetchAlbumsViaSearch3);
+        var songsByAlbum = fetchSongsViaSearch3();
+        int artistCount = artistsTask.get();
+        Map<String, Album> albums = albumsTask.get();
+
+        int songCount = 0;
+        for (Album album : albums.values()) {
+            List<DBSong> songs = songsByAlbum.remove(album.id());
+            if (songs == null) {
+                songs = List.of();
+            }
+            databaseServerService.syncAlbumBatch(album, songs);
+            songCount += songs.size();
+        }
+        if (!songsByAlbum.isEmpty()) {
+            int orphans = songsByAlbum.values().stream().mapToInt(List::size).sum();
+            logger.warn("search3 sync: skipped {} songs across {} albumIds missing from album list", orphans, songsByAlbum.size());
+        }
+        return new SyncStats(artistCount, albums.size(), songCount, 0);
+    }
+
+    private int syncArtistsViaSearch3() {
+        int offset = 0;
+        int count = 0;
+        int skipped = 0;
+        while (true) {
+            var page = serverClient.search3("", SearchPage.artists(SEARCH3_PAGE_SIZE, offset)).artists();
+            for (ArtistEntry entry : page) {
+                // search3 returns every artist incl. participant-only ones (composers,
+                // performers); getArtists only lists album artists. Skip album-less
+                // artists so the offline artists list matches the online one.
+                if (entry.albumCount() <= 0) {
+                    skipped++;
+                    continue;
+                }
+                Artist artist = new Artist(
+                        entry.id(),
+                        serverId,
+                        entry.name(),
+                        entry.albumCount(),
+                        entry.starredAt(),
+                        entry.coverArt().map(CoverArt::coverArtId),
+                        Optional.empty()
+                );
+                databaseServerService.insert(artist);
+                entry.coverArt().ifPresent(ca -> collectedCoverArts.put(ca.coverArtId(), ca));
+                count++;
+            }
+            if (page.size() < SEARCH3_PAGE_SIZE) {
+                if (skipped > 0) {
+                    logger.info("search3 sync: skipped {} artists without albums", skipped);
+                }
+                return count;
+            }
+            offset += SEARCH3_PAGE_SIZE;
+        }
+    }
+
+    private Map<String, Album> fetchAlbumsViaSearch3() {
+        var addedAt = java.time.Instant.now();
+        var albums = new LinkedHashMap<String, Album>();
+        int offset = 0;
+        while (true) {
+            var page = serverClient.search3("", SearchPage.albums(SEARCH3_PAGE_SIZE, offset)).albums();
+            for (ArtistAlbumInfo info : page) {
+                albums.put(info.id(), new Album(
+                        info.id(),
+                        serverId,
+                        info.artistId(),
+                        info.name(),
+                        info.songCount(),
+                        info.year(),
+                        info.artistName(),
+                        info.duration(),
+                        info.starredAt(),
+                        info.coverArt().map(CoverArt::coverArtId),
+                        addedAt,
+                        info.genre()
+                ));
+                info.coverArt().ifPresent(ca -> collectedCoverArts.put(ca.coverArtId(), ca));
+            }
+            if (page.size() < SEARCH3_PAGE_SIZE) {
+                return albums;
+            }
+            offset += SEARCH3_PAGE_SIZE;
+        }
+    }
+
+    private Map<String, List<DBSong>> fetchSongsViaSearch3() {
+        var songsByAlbum = new HashMap<String, List<DBSong>>();
+        int offset = 0;
+        while (true) {
+            var page = serverClient.search3("", SearchPage.songs(SEARCH3_PAGE_SIZE, offset)).songs();
+            for (SongInfo songInfo : page) {
+                songsByAlbum
+                        .computeIfAbsent(songInfo.albumId(), _ -> new ArrayList<>())
+                        .add(DBSong.from(songInfo, serverId));
+                songInfo.coverArt().ifPresent(ca -> collectedCoverArts.put(ca.coverArtId(), ca));
+            }
+            if (page.size() < SEARCH3_PAGE_SIZE) {
+                return songsByAlbum;
+            }
+            offset += SEARCH3_PAGE_SIZE;
+        }
+    }
+
     private SyncStats syncArtist(String artistId) {
         ArtistInfo artistInfo = serverClient.getArtistWithAlbums(artistId);
         Artist artist = new Artist(
@@ -171,9 +314,6 @@ public class SyncService {
 
     private int syncAlbum(String albumId, java.util.Optional<String> genre) {
         AlbumInfo albumInfo = serverClient.getAlbumInfo(albumId);
-        if (albumId.contains("al-5CcViuxlnidLI1TGKZcjjN")) {
-            System.out.println("Album: %s %s %s".formatted(albumInfo.id(), albumInfo.name(), albumInfo.artistName()));
-        }
         Album album = new Album(
                 albumInfo.id(),
                 serverId,

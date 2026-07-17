@@ -39,6 +39,12 @@ public interface ServerClient {
     boolean testConnection();
     ServerInfo getServerInfo();
     SearchResult search(String query);
+    /**
+     * search3 with explicit per-type paging. OpenSubsonic servers must support an empty
+     * query and return the whole library, which is how {@code SyncService} walks the
+     * entire collection in a few paged requests instead of per-artist/per-album calls.
+     */
+    SearchResult search3(String query, SearchPage page);
     void scrobble(ScrobbleRequest req);
     void nowPlaying(ReportNowPlaying req);
     URI getStreamUri(String songId);
@@ -102,6 +108,24 @@ public interface ServerClient {
             List<ArtistAlbumInfo> albums,
             List<SongInfo> songs
     ) {}
+    record SearchPage(
+            int artistCount,
+            int artistOffset,
+            int albumCount,
+            int albumOffset,
+            int songCount,
+            int songOffset
+    ) {
+        public static SearchPage artists(int count, int offset) {
+            return new SearchPage(count, offset, 0, 0, 0, 0);
+        }
+        public static SearchPage albums(int count, int offset) {
+            return new SearchPage(0, 0, count, offset, 0, 0);
+        }
+        public static SearchPage songs(int count, int offset) {
+            return new SearchPage(0, 0, 0, 0, count, offset);
+        }
+    }
 
     record ServerInfo(
             Optional<String> serverType,
