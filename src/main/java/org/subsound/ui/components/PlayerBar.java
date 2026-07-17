@@ -444,11 +444,18 @@ public class PlayerBar extends Box implements AppManager.StateListener {
             // locally from positionAnchorAt, so we avoid pushing every position update through
             // the scrubber here. For non-PLAYING states (LOADING/PAUSED/READY/EOS) the tick is
             // inactive and we snap the scrubber to the authoritative position once.
+            boolean isLoading = nowPlayingState == LOADING;
             this.scrubberDuration = effectiveDuration;
             this.scrubberPosition = position;
-            this.positionAnchorAt = state.player().positionAnchorAt();
+            // During LOADING the player state (and its positionAnchorAt) still belongs to the
+            // previous song; clear the anchor so onTick cannot extrapolate the old position.
+            this.positionAnchorAt = isLoading ? Optional.empty() : state.player().positionAnchorAt();
             boolean wasPlaying = this.scrubberPlaying;
-            boolean isPlayingNow = nextPlayingState == PlayingState.PLAYING;
+            // Treat LOADING as not-playing for the scrubber even though the player may still
+            // report PLAYING for the previous track: this makes the snap branch below reset
+            // the scrubber to the new song's position (ZERO) immediately on a song switch,
+            // instead of after setSource lands (download + preroll, 500ms+ on a cache miss).
+            boolean isPlayingNow = nextPlayingState == PlayingState.PLAYING && !isLoading;
             this.scrubberPlaying = isPlayingNow;
             // onStateChanged runs on an AppManager listener virtual thread, so GTK writes via
             // updatePosition must be marshalled onto the main thread here. (onTick runs on the
