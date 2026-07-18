@@ -11,6 +11,7 @@ import org.subsound.configuration.Config.ServerConfig;
 import org.subsound.integration.ServerClient;
 import org.subsound.integration.ServerClient.ServerType;
 import org.subsound.integration.ServerClient.TranscodeBitrate;
+import org.subsound.integration.ServerClient.TranscodeBitrate.MaximumBitrate;
 import org.subsound.integration.ServerClient.TranscodeFormat;
 import org.subsound.integration.platform.secret.SecretService;
 import org.subsound.integration.servers.subsonic.SubsonicClientV2;
@@ -112,8 +113,8 @@ public class SyncBenchmarkTest {
                     benchUrl,
                     System.getenv("SUBSOUND_BENCH_USERNAME"),
                     System.getenv("SUBSOUND_BENCH_PASSWORD"),
-                    null,
-                    null,
+                    TranscodeFormat.opus,
+                    new MaximumBitrate(192),
                     false,
                     List.of()
             );
@@ -138,7 +139,7 @@ public class SyncBenchmarkTest {
         }
         TranscodeBitrate audioBitrate = null;
         if (server.audioBitrate() != null && server.audioBitrate() > 0) {
-            audioBitrate = TranscodeBitrate.MaximumBitrate.of(server.audioBitrate());
+            audioBitrate = MaximumBitrate.of(server.audioBitrate());
         }
         return new ServerConfig(
                 folder.newFolder("data").toPath(),
