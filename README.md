@@ -86,7 +86,7 @@ Features:
   - [X] Playlists
   - [X] Scrobble offline, send later
   - [X] Browse from offline storage only
-  - [ ] Search from offline storage only or disable search box
+  - [X] Search from offline storage only or disable search box
   - [X] Download manager for offline available content
     - This kind of already works, but there is no UI that shows status for each item
 
