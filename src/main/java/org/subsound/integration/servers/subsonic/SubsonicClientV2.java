@@ -347,6 +347,7 @@ public class SubsonicClientV2 implements ServerClient {
             double albumPeak,
             double baseGain
     ){}
+    record OSGenreJson(String name){}
     record OSArtistJson(
             String id,
             String name
@@ -380,6 +381,7 @@ public class SubsonicClientV2 implements ServerClient {
             @OpenSubsonicV1 @Nullable String displayAlbumArtist,
             @OpenSubsonicV1 @Nullable List<String> moods,
             @OpenSubsonicV1 @Nullable String explicitStatus,
+            @OpenSubsonicV1 @Nullable List<OSGenreJson> genres,
             @OpenSubsonicV1 @Nullable OSReplayGain replayGain
     ) {}
 
@@ -669,6 +671,11 @@ public class SubsonicClientV2 implements ServerClient {
         var artists = Utils.ofMaybeList(song.artists)
                 .map(this::toArtistId);
                 //.orElseGet(() -> List.of(new ArtistId(song.artistId(), song.artist())));
+
+        // genres: prefer opensubsonic list if present, fallback to old single genre field
+        var genres = Utils.ofMaybeList(song.genres)
+                .map(g -> g.stream().map(OSGenreJson::name).toList())
+                .orElseGet(() -> Optional.ofNullable(song.genre()).filter(s -> !s.isBlank()).map(List::of).orElseGet(List::of));
 
         return new SongInfo(
                 song.id(),
