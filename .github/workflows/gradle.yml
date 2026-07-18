@@ -14,8 +14,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Install GTK4
-      run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev
+    - name: Install GTK4 and gettext
+      run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev gettext
     - uses: actions/setup-java@v4
       with:
         java-version: '25'
