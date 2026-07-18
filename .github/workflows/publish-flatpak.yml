@@ -2,7 +2,14 @@ name: publish-flatpak
 
 on:
   push:
+    branches: [ main ]
     tags: ['v*']
+  workflow_dispatch:
+
+# Serialize runs so two publishes can't race the git push to the pages repo.
+concurrency:
+  group: publish-flatpak
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -13,13 +20,22 @@ jobs:
       options: --privileged
     steps:
       - uses: actions/checkout@v4
-      - name: Set source tag in manifest
+      # Pin the git source to exactly the ref that triggered this build, and drop
+      # the commit pin so the manifest can never go stale against a new release.
+      - name: Pin manifest source to build ref
         run: |
-          TAG="${GITHUB_REF_NAME}"
-          VERSION="${TAG#v}"
-          sed -i "s/tag: v[0-9][0-9.]*$/tag: ${TAG}/" io.github.subsoundorg.Subsound.yml
-          echo "=== tag and version in manifest ==="
-          grep "tag:" io.github.subsoundorg.Subsound.yml
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            SRC="tag: ${GITHUB_REF_NAME}"
+          else
+            # a raw commit sha is valid in the branch field; race-free even if main moves
+            SRC="branch: ${GITHUB_SHA}"
+          fi
+          sed -i \
+            -e "/^ *commit: /d" \
+            -e "s|^\( *\)tag: v[0-9][0-9.]*$|\1${SRC}|" \
+            io.github.subsoundorg.Subsound.yml
+          echo "=== source ref in manifest ==="
+          grep -E "tag:|branch:" io.github.subsoundorg.Subsound.yml
       - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: io.github.subsoundorg.Subsound.flatpak
