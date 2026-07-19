@@ -58,7 +58,17 @@
   </branding>
 
   <releases>
-    <release version="@version@" date="2026-07-17">
+    <release version="@version@" date="2026-07-19">
+      <description>
+        <ul>
+          <li>New: add custom HTTP headers to send with every request to your server</li>
+          <li>Improved: full library sync is much faster and makes far fewer server requests</li>
+          <li>Improved: smoother playlist switching</li>
+          <li>Improved: the scrubber updates faster when switching songs</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.7.12" date="2026-07-17">
       <description>
         <ul>
           <li>New: add custom HTTP headers to send with every request to your server</li>
