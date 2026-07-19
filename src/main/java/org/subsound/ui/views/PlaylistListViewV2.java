@@ -876,6 +876,24 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         }
     }
 
+    /** The playlist currently displayed (the last one handed to {@link #setSongs}), if any. */
+    public Optional<ServerClient.PlaylistSimple> getCurrentPlaylist() {
+        return Optional.ofNullable(this.currentPlaylist.get());
+    }
+
+    /**
+     * Ids of the songs currently in the backing model, in original (unsorted) order.
+     * Main-thread only — reads the backing GListStore.
+     */
+    public List<String> getDisplayedSongIds() {
+        int n = this.listModel.getNItems();
+        var ids = new ArrayList<String>(n);
+        for (int i = 0; i < n; i++) {
+            ids.add(this.listModel.getItem(i).song().id());
+        }
+        return ids;
+    }
+
     /**
      * Bind this view to a foreign {@link ListModel} of {@link GSongInfo}, so that adds/removes
      * in the source store are reflected here without rebuilding the list. The initial contents
