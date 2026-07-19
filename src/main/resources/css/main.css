@@ -200,15 +200,10 @@ scale slider {
 
 /* Fade to the chrome's own view background, not black. Same-color fade reads as a
  * subtle "content is being prepared" curtain; jank in the timing is far less obvious
- * than a black flash. */
+ * than a black flash. Opacity is driven from Java by an AdwTimedAnimation
+ * (PlaylistsListView), which gives a real done-signal — no CSS transition here. */
 .playlist-loading-overlay {
     background-color: @view_bg_color;
-    opacity: 0;
-    transition: opacity 250ms ease-in-out;
-}
-
-.playlist-loading-overlay.visible {
-    opacity: 1;
 }
 
 /* Synced lyrics popover: inactive lines are dimmed, the active line pops.

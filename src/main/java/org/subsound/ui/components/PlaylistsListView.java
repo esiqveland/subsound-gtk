@@ -1,12 +1,14 @@
 package org.subsound.ui.components;
 
 import org.gnome.adw.AlertDialog;
+import org.gnome.adw.CallbackAnimationTarget;
+import org.gnome.adw.Easing;
 import org.gnome.adw.NavigationPage;
 import org.gnome.adw.NavigationSplitView;
 import org.gnome.adw.ResponseAppearance;
 import org.gnome.adw.StatusPage;
+import org.gnome.adw.TimedAnimation;
 import org.gnome.gio.ListStore;
-import org.gnome.glib.GLib;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
@@ -72,10 +74,11 @@ public class PlaylistsListView extends Box {
     private final GSongStore songStore;
     private int currentIndex = 0;
     private String currentPlaylistId = null;
-    // Keep in sync with the transition duration of .playlist-loading-overlay in main.css.
-    private static final int FADE_IN_MS = 250;
+    private static final int FADE_MS = 250;
     private static final String PLAYLIST_PAGE_TAG = "page-2";
     private final AtomicLong loadGeneration = new AtomicLong();
+    // Currently running overlay fade, if any. Main-thread only.
+    private TimedAnimation overlayAnim = null;
 
     public PlaylistsListView(AppManager appManager) {
         super(Orientation.VERTICAL, 0);
@@ -88,12 +91,13 @@ public class PlaylistsListView extends Box {
         this.playlistListView.setValign(Align.FILL);
 
         // Overlay (not Stack) keeps the V2 mapped throughout. The loading affordance is a
-        // plain Box with a CSS opacity transition; we toggle the "visible" class to fade
-        // it in/out. The dim stays alive on top so clicks pass through (setCanTarget=false)
-        // and the fade is GTK-driven, not Java-tweened.
+        // plain Box whose opacity is driven by an AdwTimedAnimation (see animateOverlayTo)
+        // so we get a real done-signal for sequencing. It stays alive on top so clicks
+        // pass through (setCanTarget=false).
         this.loadingOverlay = Box.builder().setHexpand(true).setVexpand(true).build();
         this.loadingOverlay.addCssClass("playlist-loading-overlay");
         this.loadingOverlay.setCanTarget(false);
+        this.loadingOverlay.setOpacity(0);
 
         this.contentOverlay = Overlay.builder()
                 .setChild(this.playlistListView)
@@ -337,42 +341,33 @@ public class PlaylistsListView extends Box {
         }
 
         long gen = this.loadGeneration.incrementAndGet();
+
+        // Re-selecting the playlist that is already displayed: dimming out a frame of the
+        // exact content we'd fade back in looks broken. Change-detect on the sidebar's
+        // metadata (songCount + changedAt, kept live by PlaylistsStore) instead of fetching
+        // and diffing 15k song ids — if it matches what we last loaded, swap instantly and
+        // skip the fetch entirely. A server-side change the sidebar hasn't seen yet is
+        // missed, but then the content is exactly as stale as the sidebar itself.
+        boolean unchanged = this.playlistListView.getCurrentPlaylist()
+                .map(p -> p.id().equals(playlist.id())
+                        && p.songCount() == playlist.songCount()
+                        && p.changedAt().equals(playlist.changedAt()))
+                .orElse(false);
+        if (unchanged) {
+            Utils.runOnMainThread(() -> {
+                stopOverlayAnim();
+                this.loadingOverlay.setOpacity(0);
+                this.playlistPage.setTitle(playlist.name());
+                this.view.setContent(this.playlistPage);
+            });
+            return;
+        }
+
         var dataFuture = doAsync(() -> switch (playlist.kind()) {
             case NORMAL -> this.appManager.useClient(cl -> cl.getPlaylist(playlist.id())).songs();
             case DOWNLOADED -> this.appManager.listDownloadedSongInfos();
             case STARRED -> throw new IllegalStateException("handled above");
         });
-
-        boolean sameAsDisplayed = this.playlistListView.getCurrentPlaylist()
-                .map(p -> p.id().equals(playlist.id()))
-                .orElse(false);
-        if (sameAsDisplayed) {
-            // The shared view already shows this playlist (e.g. Starred → back to the
-            // same playlist): dimming out a frame of the exact content we'd fade back
-            // in looks broken. Swap instantly with no cover, refresh silently, and only
-            // run the covered update cycle if the songs actually changed.
-            var displayedIds = new CompletableFuture<List<String>>();
-            Utils.runOnMainThread(() -> {
-                this.loadingOverlay.removeCssClass("visible");
-                this.playlistPage.setTitle(playlist.name());
-                this.view.setContent(this.playlistPage);
-                displayedIds.complete(this.playlistListView.getDisplayedSongIds());
-            });
-            displayedIds.thenCombine(dataFuture, (ids, data) ->
-                            data.stream().map(SongInfo::id).toList().equals(ids) ? null : data)
-                    .whenComplete((changedData, ex) -> {
-                        if (ex != null) {
-                            log.warn("silent refresh failed for {} ({})", playlist.id(), playlist.kind(), ex);
-                            return;
-                        }
-                        if (changedData == null || this.loadGeneration.get() != gen) {
-                            return;
-                        }
-                        loadCovered(gen, playlist, CompletableFuture.completedFuture(changedData));
-                    });
-            return;
-        }
-
         loadCovered(gen, playlist, dataFuture);
     }
 
@@ -392,31 +387,20 @@ public class PlaylistsListView extends Box {
             boolean pageAlreadyVisible = content != null && PLAYLIST_PAGE_TAG.equals(content.getTag());
             if (!pageAlreadyVisible) {
                 // Coming from another page: the shared view still shows some other
-                // playlist's rows. Adding .visible in the same idle as the page swap
-                // makes GTK skip the tween and snap straight to opacity:1 — normally a
-                // bug, here exactly what we want: the stale rows are never shown.
-                this.loadingOverlay.addCssClass("visible");
+                // playlist's rows. Cover instantly — no tween — so the stale rows are
+                // never shown.
+                stopOverlayAnim();
+                this.loadingOverlay.setOpacity(1);
                 this.view.setContent(this.playlistPage);
                 // One idle so the covered swap gets painted before splice work starts
                 // blocking the main loop.
                 Utils.runOnMainThread(() -> overlayOpaque.complete(null));
             } else {
-                // Two-step show: first clear any leftover .visible class, then schedule
-                // the addCssClass("visible") on the NEXT idle. GTK4 needs at least one
-                // paint with opacity:0 before it will animate the transition to
-                // opacity:1; adding the class in the same idle makes GTK skip the tween
-                // and snap to the end state.
-                this.loadingOverlay.removeCssClass("visible");
+                // Fade in over the still-visible old content. The fetch runs off-thread,
+                // so the main loop is idle and the tween gets every frame; the done
+                // signal (immediate if system animations are off) gates the splice work.
                 this.view.setContent(this.playlistPage);
-                Utils.runOnMainThread(() -> {
-                    this.loadingOverlay.addCssClass("visible");
-                    // Small slack past the CSS duration so the tween has truly finished
-                    // before any splice work is allowed to steal frames.
-                    GLib.timeoutAdd(GLib.PRIORITY_DEFAULT, FADE_IN_MS + 30, () -> {
-                        overlayOpaque.complete(null);
-                        return GLib.SOURCE_REMOVE;
-                    });
-                });
+                animateOverlayTo(1).thenRun(() -> overlayOpaque.complete(null));
             }
         });
 
@@ -444,8 +428,34 @@ public class PlaylistsListView extends Box {
                     // runOnMainThread uses PRIORITY_DEFAULT_IDLE, which runs after GTK's
                     // redraw: the freshly filled ColumnView is laid out and painted under
                     // the opaque overlay before the fade-out's first frame.
-                    Utils.runOnMainThread(() -> this.loadingOverlay.removeCssClass("visible"));
+                    Utils.runOnMainThread(() -> animateOverlayTo(0));
                 });
+    }
+
+    /**
+     * Drive the loading overlay's opacity to {@code to} with an AdwTimedAnimation,
+     * replacing any fade already running. The returned future completes on the
+     * animation's done signal — which fires immediately when system animations are
+     * disabled, so callers never wait out a fade that isn't happening. Main-thread only.
+     */
+    private CompletableFuture<Void> animateOverlayTo(double to) {
+        stopOverlayAnim();
+        var done = new CompletableFuture<Void>();
+        var target = new CallbackAnimationTarget(this.loadingOverlay::setOpacity);
+        var anim = new TimedAnimation(this.loadingOverlay, this.loadingOverlay.getOpacity(), to, FADE_MS, target);
+        anim.setEasing(Easing.EASE_IN_OUT_CUBIC);
+        anim.onDone(() -> done.complete(null));
+        this.overlayAnim = anim;
+        anim.play();
+        return done;
+    }
+
+    private void stopOverlayAnim() {
+        var anim = this.overlayAnim;
+        if (anim != null) {
+            anim.pause();
+            this.overlayAnim = null;
+        }
     }
 
     private void showNewPlaylistDialog() {
