@@ -1,6 +1,5 @@
 package org.subsound.ui.components;
 
-import org.subsound.integration.ServerClient;
 import org.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier;
 
 import java.util.List;
@@ -23,12 +22,12 @@ public class AppNavigation {
         record RouteHome() implements AppRoute {}
         record RouteStarred() implements AppRoute {}
         record RoutePlaylistsOverview(Optional<PlaylistIdentifier> preselect) implements AppRoute {}
-        record SettingsPage() implements AppRoute {}
+        record RouteSettingsPage() implements AppRoute {}
         record RouteArtistsOverview() implements AppRoute {}
         record RouteAlbumsOverview() implements AppRoute {}
         record RouteArtistInfo(String artistId) implements AppRoute {}
         record RouteAlbumInfo(String albumId) implements AppRoute {}
-        record RouteLyrics() implements AppRoute {}
+        record RouteLyricsPage() implements AppRoute {}
     }
 
     public void navigateTo(AppRoute route) {

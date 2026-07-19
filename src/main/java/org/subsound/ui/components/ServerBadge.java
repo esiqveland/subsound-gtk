@@ -141,7 +141,7 @@ public class ServerBadge extends Box implements AppManager.StateListener {
         configureServerButton.addPrefix(configIcon);
         this.configureServerButton.onActivated(() -> {
             onClose.run();
-            appManager.navigateTo(new AppNavigation.AppRoute.SettingsPage());
+            appManager.navigateTo(new AppNavigation.AppRoute.RouteSettingsPage());
         });
 
         this.logoutButton = ActionRow.builder()

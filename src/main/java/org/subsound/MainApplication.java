@@ -280,7 +280,7 @@ public class MainApplication {
                 viewStack.setVisibleChildName("starredPage");
                 yield false;
             }
-            case AppNavigation.AppRoute.SettingsPage s -> {
+            case AppNavigation.AppRoute.RouteSettingsPage s -> {
                 var cfg = this.appManager.getConfig();
                 var info = cfg.serverConfig == null ? null : new ServerConfigForm.SettingsInfo(
                         cfg.serverConfig.type(),
@@ -315,7 +315,7 @@ public class MainApplication {
 //                viewStack.setVisibleChildName("albumInfoPage");
                 yield true;
             }
-            case AppNavigation.AppRoute.RouteLyrics route -> {
+            case AppNavigation.AppRoute.RouteLyricsPage route -> {
                 // NavigationView rejects duplicate tags, and the lyrics button in the
                 // PlayerBar stays reachable while the page is open:
                 if ("lyrics".equals(navigationView.getVisiblePageTag())) {
