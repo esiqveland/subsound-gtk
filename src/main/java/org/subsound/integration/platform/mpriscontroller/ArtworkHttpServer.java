@@ -56,6 +56,13 @@ public class ArtworkHttpServer {
             }
             var cachePath = cached.get();
             var contentType = Optional.ofNullable(Files.probeContentType(cachePath)).orElse("image/jpeg");
+            if ("HEAD".equals(exchange.getRequestMethod())) {
+                exchange.getResponseHeaders().set("Content-Type", contentType);
+                exchange.getResponseHeaders().set("Content-Length", Long.toString(Files.size(cachePath)));
+                exchange.sendResponseHeaders(200, -1);
+                exchange.close();
+                return;
+            }
             var bytes = Files.readAllBytes(cachePath);
             exchange.getResponseHeaders().set("Content-Type", contentType);
             exchange.sendResponseHeaders(200, bytes.length);
