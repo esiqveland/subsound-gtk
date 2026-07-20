@@ -8,12 +8,15 @@ import org.gnome.adw.NavigationSplitView;
 import org.gnome.adw.ResponseAppearance;
 import org.gnome.adw.StatusPage;
 import org.gnome.adw.TimedAnimation;
+import org.gnome.gdk.Gdk;
 import org.gnome.gio.ListStore;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
 import org.gnome.gtk.Entry;
+import org.gnome.gtk.EventControllerFocus;
 import org.gnome.gtk.EventControllerMotion;
+import org.gnome.gtk.GestureClick;
 import org.gnome.gtk.Image;
 import org.gnome.gtk.Label;
 import org.gnome.gtk.ListItem;
@@ -143,6 +146,18 @@ public class PlaylistsListView extends Box {
             ListItem listitem = (ListItem) object;
             listitem.setActivatable(true);
             var row = new PlaylistRowWidget(appManager);
+            // Single-click open: opens whichever playlist the (recycled) row currently shows.
+            // Attached to the row itself rather than the ListView so it doesn't compete with
+            // the ListView's own selection gesture; openPlaylistAt sets the selection too.
+            var rowClick = new GestureClick();
+            rowClick.setButton(Gdk.BUTTON_PRIMARY);
+            rowClick.onReleased((nPress, x, y) -> {
+                if (nPress != 1) {
+                    return;
+                }
+                openPlaylist(row.getPlaylist());
+            });
+            row.addController(rowClick);
             listitem.setChild(row);
         });
 
@@ -183,30 +198,31 @@ public class PlaylistsListView extends Box {
                 .setHalign(FILL)
                 .setValign(FILL)
                 .setFocusOnClick(false)
-                .setSingleClickActivate(true)
+                // false so hovering a row shows the theme's neutral prelight instead of the
+                // accent selected-row colour (single-click-activate == select-on-hover). We
+                // re-add single-click "open" via the click gesture + selection listener below.
+                .setSingleClickActivate(false)
                 .setFactory(factory)
                 .setModel(selectionModel)
                 .setTabBehavior(ListTabBehavior.ITEM)
                 .build();
 
-        var activateSignal = this.listView.onActivate(index -> {
-            var gPlaylist = this.listModel.getItem(index);
-            if (gPlaylist == null) {
-                return;
-            }
-            this.currentIndex = index;
-            this.currentPlaylistId = gPlaylist.getId();
-            this.selectionModel.setSelected(index);
-            var playlist = gPlaylist.getPlaylist();
-            log.info("listView.onActivate: {} {}", index, playlist.name());
-            this.setSelectedPlaylist(playlist);
-        });
+        // Fires on Enter / double-click now that single-click-activate is off. Single-click
+        // open is handled by a per-row GestureClick in the factory (see onSetup below): an
+        // ancestor-level gesture on the ListView competes with the row's own selection
+        // gesture, so we open from the row itself and set the selection there.
+        var activateSignal = this.listView.onActivate(this::openPlaylistAt);
 
+        // Keyboard navigation (or any transient selection) moves the highlight off the
+        // actively-open playlist. Snap it back to the open one when the pointer or focus
+        // leaves the list, so the selected row always reflects what's actually open.
         var motionController = new EventControllerMotion();
-        motionController.onLeave(() -> {
-            this.selectionModel.setSelected(this.currentIndex);
-        });
+        motionController.onLeave(() -> this.selectionModel.setSelected(this.currentIndex));
         this.listView.addController(motionController);
+
+        var focusController = new EventControllerFocus();
+        focusController.onLeave(() -> this.selectionModel.setSelected(this.currentIndex));
+        this.listView.addController(focusController);
 
         this.listModel.onItemsChanged((position, nRemoved, nAdded) -> {
             // Only act when the net item count decreases (real deletion).
@@ -297,6 +313,42 @@ public class PlaylistsListView extends Box {
         this.setHexpand(true);
         this.setVexpand(true);
         this.append(view);
+    }
+
+    // Open the given playlist (single-click path from a row's gesture). Resolves its current
+    // model index so selection follows, then delegates to the id-guarded openPlaylistAt.
+    private void openPlaylist(GPlaylist gPlaylist) {
+        if (gPlaylist == null) {
+            return;
+        }
+        var id = gPlaylist.getId();
+        for (int i = 0; i < this.listModel.getNItems(); i++) {
+            var item = this.listModel.getItem(i);
+            if (item != null && id.equals(item.getId())) {
+                openPlaylistAt(i);
+                return;
+            }
+        }
+    }
+
+    // Open the playlist at the given model index, unless it is already the open one
+    // (keeps index in sync but avoids reloading — a double-click triggers both the
+    // single-click open and onActivate, and this makes the second a no-op).
+    private void openPlaylistAt(int index) {
+        var gPlaylist = this.listModel.getItem(index);
+        if (gPlaylist == null) {
+            return;
+        }
+        if (gPlaylist.getId().equals(this.currentPlaylistId)) {
+            this.currentIndex = index;
+            return;
+        }
+        this.currentIndex = index;
+        this.currentPlaylistId = gPlaylist.getId();
+        this.selectionModel.setSelected(index);
+        var playlist = gPlaylist.getPlaylist();
+        log.info("openPlaylistAt: {} {}", index, playlist.name());
+        this.setSelectedPlaylist(playlist);
     }
 
     private static PlaylistSimple buildStarredPlaceholder() {
@@ -589,6 +641,10 @@ public class PlaylistsListView extends Box {
 
             this.append(prefixBox);
             this.append(contentBox);
+        }
+
+        public GPlaylist getPlaylist() {
+            return this.gPlaylist;
         }
 
         public void bind(GPlaylist gPlaylist) {
