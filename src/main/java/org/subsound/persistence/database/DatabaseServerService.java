@@ -548,6 +548,20 @@ public class DatabaseServerService {
         return songs;
     }
 
+    /** Clear the starred state of a single song (offline unstar), keeping the rest of the row. */
+    public void clearSongStarred(String songId) {
+        String sql = "UPDATE songs SET starred_at_ms = NULL WHERE server_id = ? AND id = ?";
+        try (Connection conn = database.openConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, this.serverId.toString());
+            pstmt.setString(2, songId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Failed to clear starred state for song: {}", songId, e);
+            throw new RuntimeException("Failed to clear starred state for song", e);
+        }
+    }
+
     public void clearStarredExcept(Set<String> starredSongIds) {
         if (starredSongIds.isEmpty()) {
             String sql = "UPDATE songs SET starred_at_ms = NULL WHERE server_id = ? AND starred_at_ms IS NOT NULL";

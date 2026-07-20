@@ -29,6 +29,11 @@ public class DatabaseService {
         this.database = database;
     }
 
+    /** Data access for the persistent queue of server operations (star/unstar) replayed on reconnect. */
+    public ServerOperationsDao serverOperations() {
+        return new ServerOperationsDao(database);
+    }
+
     public void insert(Server server) {
         String sql = "INSERT INTO servers (" + ALL_COLUMNS + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = database.openConnection();

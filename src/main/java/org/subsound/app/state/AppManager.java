@@ -25,10 +25,12 @@ import org.subsound.integration.playbackreport.PlaybackReporter;
 import org.subsound.persistence.CachingClient;
 import org.subsound.persistence.DownloadManager;
 import org.subsound.persistence.ScrobbleService;
+import org.subsound.persistence.ServerOperationsService;
 import org.subsound.persistence.SongCache;
 import org.subsound.persistence.SongCache.LoadSongResult;
 import org.subsound.persistence.ThumbnailCache;
 import org.subsound.persistence.database.Database;
+import org.subsound.persistence.database.DBSong;
 import org.subsound.persistence.database.DatabaseServerService;
 import org.subsound.persistence.database.DatabaseService;
 import org.subsound.persistence.database.DownloadQueueItem;
@@ -105,6 +107,7 @@ public class AppManager {
     private final PlayerConfigService playerConfigService;
     private final DownloadManager downloadManager;
     private final ScrobbleService scrobbleService;
+    private final ServerOperationsService serverOperationsService;
     private final NetworkMonitoring networkMonitor;
     private final Runnable onQuit;
     private final AtomicBoolean isShutdown = new AtomicBoolean(false);
@@ -236,6 +239,12 @@ public class AppManager {
                 () -> this.client.get(),
                 () -> this.getState().networkState()
         );
+        this.serverOperationsService = new ServerOperationsService(
+                this.databaseService.serverOperations(),
+                UUID.fromString(savedServerId),
+                () -> this.client.get(),
+                () -> this.getState().networkState()
+        );
         this.playbackReporter = new PlaybackReporter(this.client::get);
         this.addOnStateChanged(this.playbackReporter);
     }
@@ -348,6 +357,11 @@ public class AppManager {
         var client = this.client.get();
         if (client != null) {
             client.setNetworkStatus(next.status());
+        }
+
+        // Back online: flush any operations (star/unstar) queued while offline.
+        if (next.status() == NetworkMonitoring.NetworkStatus.ONLINE) {
+            this.serverOperationsService.triggerFlush();
         }
     }
 
@@ -497,6 +511,10 @@ public class AppManager {
         timeIt(
                 duration -> log.info("shutdown: scrobbleService: {}ms", duration.toMillis()),
                 this.scrobbleService::stop
+        );
+        timeIt(
+                duration -> log.info("shutdown: serverOperationsService: {}ms", duration.toMillis()),
+                this.serverOperationsService::stop
         );
         var elapsed = System.currentTimeMillis() - start;
         log.info("AppManager shutdown completed in %dms".formatted(elapsed));
@@ -1410,14 +1428,28 @@ public class AppManager {
     }
 
     private void unstarSong(PlayerAction.Unstar a) {
-        this.starredList.removeStarred(a.song());
-        this.client.get().unStarId(a.song().id());
+        var song = a.song();
+        // Apply locally first (memory + DB) so the change is visible and survives restart / an
+        // offline refresh, then confirm with the server or queue it for replay if we can't.
+        this.starredList.removeStarred(song);
+        this.dbService.clearSongStarred(song.id());
+        if (isOffline()) {
+            this.serverOperationsService.enqueueUnstar(song.id());
+        } else {
+            try {
+                this.client.get().unStarId(song.id());
+            } catch (Exception e) {
+                // Came offline / transient failure: keep the local change and queue for replay.
+                log.warn("unstar failed for songId={}, queuing for replay", song.id(), e);
+                this.serverOperationsService.enqueueUnstar(song.id());
+            }
+        }
         this.playlistsStore.updateStarredCount(this.starredList.getStore().getNItems());
         setState(appState -> appState.nowPlaying()
                 .map(nowPlaying -> {
-                    var song = nowPlaying.song();
-                    if (song.id().equals(a.song().id())) {
-                        var updated = nowPlaying.withSong(song.withStarred(Optional.empty()));
+                    var nowSong = nowPlaying.song();
+                    if (nowSong.id().equals(song.id())) {
+                        var updated = nowPlaying.withSong(nowSong.withStarred(Optional.empty()));
                         return appState.withNowPlaying(Optional.of(updated));
                     } else {
                         return appState;
@@ -1434,24 +1466,37 @@ public class AppManager {
 
     }
     private void starSong(SongInfo song) {
-        try {
-            this.starredList.addStarred(song);
-            this.client.get().starId(song.id());
-        } catch (Exception e) {
-            this.starredList.removeStarred(song);
-            throw e;
+        var now = Instant.now();
+        // Apply locally first (memory + DB) so the change is visible and survives restart / an
+        // offline refresh, then confirm with the server or queue it for replay if we can't.
+        this.starredList.addStarred(song);
+        this.dbService.insertSongs(List.of(DBSong.from(song.withStarred(Optional.of(now)), UUID.fromString(SERVER_ID))));
+        if (isOffline()) {
+            this.serverOperationsService.enqueueStar(song.id());
+        } else {
+            try {
+                this.client.get().starId(song.id());
+            } catch (Exception e) {
+                // Came offline / transient failure: keep the local change and queue for replay.
+                log.warn("star failed for songId={}, queuing for replay", song.id(), e);
+                this.serverOperationsService.enqueueStar(song.id());
+            }
         }
         this.playlistsStore.updateStarredCount(this.starredList.getStore().getNItems());
         setState(appState -> appState.nowPlaying()
                 .map(nowPlaying -> {
                     var currentSong = nowPlaying.song();
                     if (currentSong.id().equals(song.id())) {
-                        var updated = nowPlaying.withSong(currentSong.withStarred(Optional.ofNullable(Instant.now())));
+                        var updated = nowPlaying.withSong(currentSong.withStarred(Optional.of(now)));
                         return appState.withNowPlaying(Optional.of(updated));
                     } else {
                         return appState;
                     }
                 }).orElse(appState));
+    }
+
+    private boolean isOffline() {
+        return this.getState().networkState().status() == NetworkMonitoring.NetworkStatus.OFFLINE;
     }
 
     public ListStore<GSongInfo> getStarredList() {

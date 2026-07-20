@@ -140,6 +140,7 @@ public class Database {
         migrations.add(new MigrationV18());
         migrations.add(new MigrationV19());
         migrations.add(new MigrationV20());
+        migrations.add(new MigrationV21());
         return migrations;
     }
 
@@ -643,6 +644,39 @@ public class Database {
             // Stored as a JSON array of {name, value}; null means no custom headers.
             try (Statement stmt = conn.createStatement()) {
                 stmt.execute("ALTER TABLE servers ADD COLUMN custom_headers TEXT DEFAULT NULL");
+            }
+        }
+    }
+
+    static class MigrationV21 implements Migration {
+        @Override
+        public int version() { return 21; }
+
+        @Override
+        public void apply(Connection conn) throws SQLException {
+            // General, ordered, persistent queue of server-side operations (e.g. star/unstar)
+            // recorded while offline and replayed once connectivity returns. The auto-increment
+            // id defines replay order. executed_at_ms is the last time we ran the op against the
+            // server (any attempt); completed_at_ms is when it succeeded. Invariant: completed_at_ms
+            // is non-null iff status is COMPLETED.
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("""
+                        CREATE TABLE IF NOT EXISTS server_operations_queue (
+                            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                            server_id       TEXT    NOT NULL,
+                            operation_type  TEXT    NOT NULL,
+                            payload         TEXT    NOT NULL,
+                            status          TEXT    NOT NULL DEFAULT 'PENDING',
+                            created_at_ms   INTEGER NOT NULL,
+                            executed_at_ms  INTEGER DEFAULT NULL,
+                            completed_at_ms INTEGER DEFAULT NULL,
+                            CHECK ((completed_at_ms IS NULL) = (status != 'COMPLETED'))
+                        )
+                        """);
+                stmt.execute("""
+                        CREATE INDEX IF NOT EXISTS idx_server_operations_queue_pending
+                            ON server_operations_queue (server_id, status, id)
+                        """);
             }
         }
     }
