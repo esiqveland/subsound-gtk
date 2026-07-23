@@ -34,6 +34,11 @@ public class DatabaseService {
         return new ServerOperationsDao(database);
     }
 
+    /** Data access for the "available offline" flags on playlists (and the synthetic Starred playlist). */
+    public OfflinePlaylistDao offlinePlaylists() {
+        return new OfflinePlaylistDao(database);
+    }
+
     public void insert(Server server) {
         String sql = "INSERT INTO servers (" + ALL_COLUMNS + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = database.openConnection();

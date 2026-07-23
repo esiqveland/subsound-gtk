@@ -1136,11 +1136,17 @@ public class DatabaseServerService {
     }
 
     public void addToDownloadQueue(SongInfo songInfo) {
+        addToDownloadQueue(songInfo, DownloadSource.ADDED_BY_USER);
+    }
+
+    public void addToDownloadQueue(SongInfo songInfo, DownloadSource source) {
         String sql = """
-                INSERT INTO download_queue (song_id, server_id, status, stream_uri, stream_format, original_size, original_bitrate, estimated_bitrate, duration_seconds)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO download_queue (song_id, server_id, status, source, stream_uri, stream_format, original_size, original_bitrate, estimated_bitrate, duration_seconds)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(song_id, server_id) DO UPDATE SET
                     status = ?,
+                    source = CASE WHEN download_queue.source = 'ADDED_BY_USER' OR ? = 'ADDED_BY_USER'
+                                  THEN 'ADDED_BY_USER' ELSE 'PLAYLIST_SYNC' END,
                     progress = 0.0,
                     error_message = NULL,
                     stream_uri = excluded.stream_uri,
@@ -1155,22 +1161,42 @@ public class DatabaseServerService {
             pstmt.setString(1, songInfo.id());
             pstmt.setString(2, this.serverId.toString());
             pstmt.setString(3, DownloadQueueItem.DownloadStatus.PENDING.name());
-            pstmt.setNull(4, Types.VARCHAR); // songUri must be resolved by server client anyway
-            pstmt.setString(5, songInfo.transcodeInfo().streamFormat());
-            pstmt.setLong(6, songInfo.size());
+            pstmt.setString(4, source.name());
+            pstmt.setNull(5, Types.VARCHAR); // songUri must be resolved by server client anyway
+            pstmt.setString(6, songInfo.transcodeInfo().streamFormat());
+            pstmt.setLong(7, songInfo.size());
             if (songInfo.transcodeInfo().originalBitRate().isPresent()) {
-                pstmt.setInt(7, songInfo.transcodeInfo().originalBitRate().get());
+                pstmt.setInt(8, songInfo.transcodeInfo().originalBitRate().get());
             } else {
-                pstmt.setNull(7, Types.INTEGER);
+                pstmt.setNull(8, Types.INTEGER);
             }
-            pstmt.setInt(8, songInfo.transcodeInfo().estimatedBitRate());
-            pstmt.setLong(9, songInfo.transcodeInfo().duration().toSeconds());
+            pstmt.setInt(9, songInfo.transcodeInfo().estimatedBitRate());
+            pstmt.setLong(10, songInfo.transcodeInfo().duration().toSeconds());
             // ON CONFLICT DO UPDATE SET status = ?
-            pstmt.setString(10, DownloadQueueItem.DownloadStatus.PENDING.name());
+            pstmt.setString(11, DownloadQueueItem.DownloadStatus.PENDING.name());
+            // ... and the source escalation CASE reads the incoming source
+            pstmt.setString(12, source.name());
             pstmt.executeUpdate();
         } catch (SQLException e) {
             logger.error("Failed to add song to download queue: {}", songInfo.id(), e);
             throw new RuntimeException("Failed to add song to download queue", e);
+        }
+    }
+
+    /**
+     * Escalate an existing row's {@code source} to {@code ADDED_BY_USER} (sticky user intent).
+     * Used when the user manually downloads a song that is already downloaded (so
+     * {@link #addToDownloadQueue} short-circuits) but was originally pulled in by playlist sync.
+     */
+    public void escalateSourceToUser(String songId) {
+        String sql = "UPDATE download_queue SET source = 'ADDED_BY_USER' WHERE song_id = ? AND server_id = ?";
+        try (Connection conn = database.openConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, songId);
+            pstmt.setString(2, this.serverId.toString());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Failed to escalate download source: {}", songId, e);
+            throw new RuntimeException("Failed to escalate download source", e);
         }
     }
 

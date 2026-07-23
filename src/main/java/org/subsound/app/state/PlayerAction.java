@@ -54,6 +54,7 @@ public sealed interface PlayerAction {
     record CreatePlaylist(String playlistName, List<GSongInfo> songs) implements PlayerAction {}
     record DeletePlaylist(String playlistId) implements PlayerAction {}
     record RenamePlaylist(String playlistId, String newName) implements PlayerAction {}
+    record SetPlaylistOffline(String playlistId, ServerClient.PlaylistKind kind, boolean enabled) implements PlayerAction {}
     record RefreshPlaylists() implements PlayerAction {}
     record TriggerServerScan(boolean quickScan) implements PlayerAction {}
 

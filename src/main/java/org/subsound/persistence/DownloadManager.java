@@ -8,6 +8,7 @@ import org.subsound.integration.ServerClient.TranscodeInfo;
 import org.subsound.persistence.database.DatabaseServerService;
 import org.subsound.persistence.database.DownloadQueueItem;
 import org.subsound.persistence.database.DownloadQueueItem.DownloadStatus;
+import org.subsound.persistence.database.DownloadSource;
 import org.subsound.utils.Utils;
 
 import java.io.InterruptedIOException;
@@ -128,11 +129,22 @@ public class DownloadManager implements DownloadNotifier {
     }
 
     public void enqueue(SongInfo songInfo) {
+        enqueue(songInfo, DownloadSource.ADDED_BY_USER);
+    }
+
+    public void enqueue(SongInfo songInfo, DownloadSource source) {
         var current = getSongStatus(songInfo.id());
         if (current.isPresent() && current.get().status() == DownloadStatus.COMPLETED) {
+            // Already downloaded. A manual (ADDED_BY_USER) enqueue still escalates the sticky
+            // source so a previously playlist-synced song isn't later demoted; a PLAYLIST_SYNC
+            // enqueue is a no-op (never downgrades).
+            if (source == DownloadSource.ADDED_BY_USER) {
+                dbService.escalateSourceToUser(songInfo.id());
+                this.getDownloadItemFromDb(songInfo.id()).ifPresent(s -> downloadQueue.put(songInfo.id(), s));
+            }
             return;
         }
-        dbService.addToDownloadQueue(songInfo);
+        dbService.addToDownloadQueue(songInfo, source);
         // update cached data:
         this.getDownloadItemFromDb(songInfo.id()).ifPresent(s -> downloadQueue.put(songInfo.id(), s));
         this.publishEvent(songInfo.id());

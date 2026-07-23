@@ -18,6 +18,7 @@ import org.gnome.gtk.EventControllerKey;
 import org.gnome.gtk.FilterChange;
 import org.gnome.gtk.FilterListModel;
 import org.gnome.gtk.Label;
+import org.gnome.gtk.Switch;
 import org.gnome.gtk.ListItem;
 import org.gnome.gtk.ListScrollFlags;
 import org.gnome.gtk.ListTabBehavior;
@@ -653,7 +654,8 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         this.playlistMenu = new PlaylistMenu(
                 this::showRenameDialog,
                 this::downloadAll,
-                this::showDeleteDialog
+                this::showDeleteDialog,
+                this::toggleOffline
         );
 
         this.menuButton = MenuButton.builder()
@@ -774,6 +776,13 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
                 this.titleLabel.setLabel(playlist.name());
 
                 this.playlistMenu.updatePlaylist(playlist);
+                // Reflect the persisted offline state on the switch (fetch off the main thread).
+                Utils.doAsync(() -> this.appManager.isPlaylistOffline(playlist.id(), playlist.kind()))
+                        .thenAccept(offline -> Utils.runOnMainThread(() -> {
+                            if (this.setSongsGeneration.get() == generation) {
+                                this.playlistMenu.setOfflineState(offline);
+                            }
+                        }));
                 this.menuButton.setVisible(switch (playlist.kind()) {
                     case PlaylistKind.NORMAL, PlaylistKind.STARRED -> true;
                     case PlaylistKind.DOWNLOADED -> false;
@@ -1079,10 +1088,16 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         private final Button downloadAllItem = menuItem(tr("Download all"));
         private final Button deleteItem = menuItem(tr("Delete Playlist\u2026"));
 
+        private final Box offlineRow;
+        private final Switch offlineSwitch = new Switch();
+        // Guards programmatic setActive() so we don't dispatch a toggle back to the handler.
+        private boolean suppressOfflineToggle = false;
+
         public PlaylistMenu(
                 Runnable onRename,
                 Runnable onDownloadAll,
-                Runnable onDelete
+                Runnable onDelete,
+                Consumer<Boolean> onToggleOffline
         ) {
             super();
             deleteItem.addCssClass("destructive-action");
@@ -1102,6 +1117,26 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
                 onDelete.run();
             });
 
+            // "Available offline" row: a label + switch, styled to sit among the menu buttons.
+            var offlineLabel = new Label(tr("Available offline"));
+            offlineLabel.setHalign(START);
+            offlineLabel.setHexpand(true);
+            this.offlineSwitch.setValign(CENTER);
+            this.offlineRow = new Box(HORIZONTAL, 8);
+            this.offlineRow.setMarginTop(4);
+            this.offlineRow.setMarginBottom(4);
+            this.offlineRow.setMarginStart(8);
+            this.offlineRow.setMarginEnd(8);
+            this.offlineRow.append(offlineLabel);
+            this.offlineRow.append(offlineSwitch);
+            this.offlineSwitch.onStateSet(state -> {
+                if (!suppressOfflineToggle) {
+                    onToggleOffline.accept(state);
+                }
+                // Return false so the switch updates its visual state normally.
+                return false;
+            });
+
             var popoverBox = new Box(VERTICAL, 0);
             popoverBox.setMarginTop(4);
             popoverBox.setMarginBottom(4);
@@ -1110,9 +1145,18 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
 
             popoverBox.append(renameItem);
             popoverBox.append(downloadAllItem);
+            popoverBox.append(offlineRow);
             popoverBox.append(deleteItem);
 
             this.setChild(popoverBox);
+        }
+
+        /** Reflect the current offline state without dispatching a toggle. */
+        public void setOfflineState(boolean offline) {
+            this.suppressOfflineToggle = true;
+            this.offlineSwitch.setActive(offline);
+            this.offlineSwitch.setState(offline);
+            this.suppressOfflineToggle = false;
         }
 
         // Note: never call setVisible on the Popover itself — for popovers the
@@ -1123,16 +1167,19 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
                 case PlaylistKind.NORMAL -> {
                     renameItem.setVisible(true);
                     downloadAllItem.setVisible(true);
+                    offlineRow.setVisible(true);
                     deleteItem.setVisible(true);
                 }
                 case PlaylistKind.DOWNLOADED -> {
                     renameItem.setVisible(false);
                     downloadAllItem.setVisible(false);
+                    offlineRow.setVisible(false);
                     deleteItem.setVisible(false);
                 }
                 case PlaylistKind.STARRED -> {
                     renameItem.setVisible(false);
                     downloadAllItem.setVisible(true);
+                    offlineRow.setVisible(true);
                     deleteItem.setVisible(false);
                 }
             }
@@ -1148,6 +1195,14 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         if (!songs.isEmpty()) {
             onAction.apply(new PlayerAction.AddManyToDownloadQueue(songs));
         }
+    }
+
+    private void toggleOffline(boolean enabled) {
+        var playlist = currentPlaylist.get();
+        if (playlist == null) {
+            return;
+        }
+        onAction.apply(new PlayerAction.SetPlaylistOffline(playlist.id(), playlist.kind(), enabled));
     }
 
     private void showRenameDialog() {

@@ -79,6 +79,10 @@ public class PlaylistsStore {
                         playlistById.put(p.id(), p);
                     }
 
+                    // Offline overlay per playlist (Starred sentinel already mapped back to
+                    // STARRED_ID), so rows can render the offline badge and carry sync metadata.
+                    var offlineById = this.appManager.getPlaylistOfflineSyncById();
+
                     // Apply mutations on main thread
                     Utils.runOnMainThreadFuture(() -> {
                         // Update existing items with fresh data before removals
@@ -98,6 +102,12 @@ public class PlaylistsStore {
                         // Insert forwards — positions account for previous insertions
                         for (var ins : insertions) {
                             metaStore.insert(ins.position(), ins.item());
+                        }
+
+                        // Apply the offline overlay to all rows now that the list is settled
+                        for (int i = 0; i < metaStore.getNItems(); i++) {
+                            var gPlaylist = metaStore.getItem(i);
+                            gPlaylist.setOfflineSync(Optional.ofNullable(offlineById.get(gPlaylist.getId())));
                         }
                     }).join();
 
@@ -278,6 +288,20 @@ public class PlaylistsStore {
         });
     }
 
+    /** Update the offline overlay on a single playlist row immediately after a toggle. */
+    public void setPlaylistOffline(String playlistId, Optional<PlaylistOfflineSync> offlineSync) {
+        Utils.runOnMainThread(() -> {
+            for (int i = 0; i < metaStore.getNItems(); i++) {
+                var gPlaylist = metaStore.getItem(i);
+                if (playlistId.equals(gPlaylist.getId())) {
+                    gPlaylist.setOfflineSync(offlineSync);
+                    metaStore.emitItemsChanged(i, 1, 1);
+                    break;
+                }
+            }
+        });
+    }
+
     public void updateStarredCount(int count) {
         var sp = this.starredPlaylist;
         if (sp == null) {
@@ -309,6 +333,7 @@ public class PlaylistsStore {
         private PlaylistSimple value;
         private List<GSongInfo> songs;
         private volatile DownloadManager.DownloadCounts downloadCounts;
+        private volatile Optional<PlaylistOfflineSync> offlineSync = Optional.empty();
 
         public GPlaylist(MemorySegment address) {
             super(address);
@@ -336,6 +361,25 @@ public class PlaylistsStore {
 
         public void setDownloadCounts(DownloadManager.DownloadCounts counts) {
             this.downloadCounts = counts;
+            this.notify("name");
+        }
+
+        /** Simple boolean for the UI (badge/switch): is this playlist kept available offline. */
+        public boolean isKeepOffline() {
+            return offlineSync.isPresent();
+        }
+
+        public Optional<PlaylistOfflineSync> getOfflineSync() {
+            return offlineSync;
+        }
+
+        /** The server metadata plus our local offline overlay, as one enriched value. */
+        public PlaylistWithOffline getPlaylistWithOffline() {
+            return new PlaylistWithOffline(value, offlineSync);
+        }
+
+        public void setOfflineSync(Optional<PlaylistOfflineSync> offlineSync) {
+            this.offlineSync = offlineSync;
             this.notify("name");
         }
 

@@ -24,6 +24,7 @@ import org.subsound.integration.ServerClient.TranscodeFormat;
 import org.subsound.integration.playbackreport.PlaybackReporter;
 import org.subsound.persistence.CachingClient;
 import org.subsound.persistence.DownloadManager;
+import org.subsound.persistence.OfflinePlaylistSyncService;
 import org.subsound.persistence.ScrobbleService;
 import org.subsound.persistence.ServerOperationsService;
 import org.subsound.persistence.SongCache;
@@ -35,6 +36,7 @@ import org.subsound.persistence.database.DatabaseServerService;
 import org.subsound.persistence.database.DatabaseService;
 import org.subsound.persistence.database.DownloadQueueItem;
 import org.subsound.persistence.database.DownloadQueueItem.DownloadStatus;
+import org.subsound.persistence.database.OfflinePlaylistDao;
 import org.subsound.persistence.database.PlayQueueItemRow;
 import org.subsound.persistence.database.PlayQueueStateJson;
 import org.subsound.persistence.database.PlayerConfig;
@@ -108,6 +110,7 @@ public class AppManager {
     private final DownloadManager downloadManager;
     private final ScrobbleService scrobbleService;
     private final ServerOperationsService serverOperationsService;
+    private final OfflinePlaylistSyncService offlinePlaylistSyncService;
     private final NetworkMonitoring networkMonitor;
     private final Runnable onQuit;
     private final AtomicBoolean isShutdown = new AtomicBoolean(false);
@@ -245,6 +248,18 @@ public class AppManager {
                 () -> this.client.get(),
                 () -> this.getState().networkState()
         );
+        this.offlinePlaylistSyncService = new OfflinePlaylistSyncService(
+                this.databaseService.offlinePlaylists(),
+                UUID.fromString(savedServerId),
+                () -> this.client.get(),
+                () -> this.getState().networkState(),
+                this.downloadManager
+        );
+        // Initial sync at startup (the app starts online, so no reconnect edge fires). No-op when
+        // offline or when nothing is marked offline.
+        if (this.client.get() != null) {
+            this.offlinePlaylistSyncService.triggerFlush();
+        }
         this.playbackReporter = new PlaybackReporter(this.client::get);
         this.addOnStateChanged(this.playbackReporter);
     }
@@ -359,9 +374,12 @@ public class AppManager {
             client.setNetworkStatus(next.status());
         }
 
-        // Back online: flush any operations (star/unstar) queued while offline.
+        // Back online: flush any operations (star/unstar) queued while offline, and re-sync
+        // offline-marked playlists (fetches happen after setNetworkStatus above, so they hit
+        // the live server).
         if (next.status() == NetworkMonitoring.NetworkStatus.ONLINE) {
             this.serverOperationsService.triggerFlush();
+            this.offlinePlaylistSyncService.triggerFlush();
         }
     }
 
@@ -435,6 +453,35 @@ public class AppManager {
 
     public DownloadManager.DownloadCounts getDownloadCounts() {
         return this.downloadManager.getDownloadCounts();
+    }
+
+    /** Whether the playlist (or the synthetic Starred playlist) is marked "available offline". */
+    public boolean isPlaylistOffline(String playlistId, ServerClient.PlaylistKind kind) {
+        var pid = kind == ServerClient.PlaylistKind.STARRED
+                ? OfflinePlaylistDao.STARRED_SENTINEL
+                : playlistId;
+        return this.databaseService.offlinePlaylists().isEnabled(this.dbService.getServerId(), pid);
+    }
+
+    /**
+     * The offline-sync overlay for every playlist currently marked "available offline", keyed by
+     * playlist id with the Starred sentinel mapped back to {@link PlaylistsStore#STARRED_ID} so it
+     * matches the synthetic playlist's id.
+     */
+    public java.util.Map<String, PlaylistOfflineSync> getPlaylistOfflineSyncById() {
+        var rows = this.databaseService.offlinePlaylists().listEnabled(this.dbService.getServerId());
+        var map = new java.util.HashMap<String, PlaylistOfflineSync>(rows.size());
+        for (var r : rows) {
+            var id = OfflinePlaylistDao.STARRED_SENTINEL.equals(r.playlistId())
+                    ? PlaylistsStore.STARRED_ID
+                    : r.playlistId();
+            map.put(id, toOfflineSync(r));
+        }
+        return map;
+    }
+
+    private static PlaylistOfflineSync toOfflineSync(OfflinePlaylistDao.OfflinePlaylist row) {
+        return new PlaylistOfflineSync(row.watermark(), row.createdAt(), row.updatedAt());
     }
 
     public long getLocalSongCount() {
@@ -515,6 +562,10 @@ public class AppManager {
         timeIt(
                 duration -> log.info("shutdown: serverOperationsService: {}ms", duration.toMillis()),
                 this.serverOperationsService::stop
+        );
+        timeIt(
+                duration -> log.info("shutdown: offlinePlaylistSyncService: {}ms", duration.toMillis()),
+                this.offlinePlaylistSyncService::stop
         );
         var elapsed = System.currentTimeMillis() - start;
         log.info("AppManager shutdown completed in %dms".formatted(elapsed));
@@ -921,7 +972,30 @@ public class AppManager {
                 case PlayerAction.StarRefresh a -> this.starredList.handleRefresh(a);
                 case PlayerAction.Unstar a -> this.unstarSong(a);
                 case PlayerAction.PlaySong playSong -> this.loadSourceAsync(playSong);
-                case PlayerAction.RefreshPlaylists _ -> this.playlistsStore.refreshListAsync();
+                case PlayerAction.RefreshPlaylists _ -> {
+                    this.playlistsStore.refreshListAsync();
+                    // Re-check offline-marked playlists' watermarks against the fresh listing.
+                    this.offlinePlaylistSyncService.triggerFlush();
+                }
+                case PlayerAction.SetPlaylistOffline a -> {
+                    var offlineServerId = this.dbService.getServerId();
+                    var dao = this.databaseService.offlinePlaylists();
+                    var pid = a.kind() == ServerClient.PlaylistKind.STARRED
+                            ? OfflinePlaylistDao.STARRED_SENTINEL
+                            : a.playlistId();
+                    Optional<PlaylistOfflineSync> syncForRow;
+                    if (a.enabled()) {
+                        dao.enable(offlineServerId, pid, a.kind(), Instant.now()); // resets watermark → full (re)sync
+                        this.offlinePlaylistSyncService.triggerFlush();
+                        this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(tr("Playlist will be available offline"))));
+                        syncForRow = dao.find(offlineServerId, pid).map(AppManager::toOfflineSync);
+                    } else {
+                        dao.disable(offlineServerId, pid);
+                        this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(tr("Offline sync off; downloads kept"))));
+                        syncForRow = Optional.empty();
+                    }
+                    this.playlistsStore.setPlaylistOffline(a.playlistId(), syncForRow);
+                }
                 case PlayerAction.AddToPlaylist a -> {
                     this.useClient(c -> c.addToPlaylist(new ServerClient.AddSongToPlaylist(a.playlistId(), List.of(a.song().id()))));
                     this.playlistsStore.refreshPlaylistAsync(a.playlistId());

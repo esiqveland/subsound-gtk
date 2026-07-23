@@ -141,6 +141,7 @@ public class Database {
         migrations.add(new MigrationV19());
         migrations.add(new MigrationV20());
         migrations.add(new MigrationV21());
+        migrations.add(new MigrationV22());
         return migrations;
     }
 
@@ -676,6 +677,40 @@ public class Database {
                 stmt.execute("""
                         CREATE INDEX IF NOT EXISTS idx_server_operations_queue_pending
                             ON server_operations_queue (server_id, status, id)
+                        """);
+            }
+        }
+    }
+
+    static class MigrationV22 implements Migration {
+        @Override
+        public int version() { return 22; }
+
+        @Override
+        public void apply(Connection conn) throws SQLException {
+            try (Statement stmt = conn.createStatement()) {
+                // (1) Why a song is in the download set: 'ADDED_BY_USER' (explicit user download)
+                // vs 'PLAYLIST_SYNC' (pulled in by an offline-marked playlist). NULL for rows that
+                // predate this migration. A PLAYLIST_SYNC enqueue never downgrades an ADDED_BY_USER
+                // row; a manual add escalates to ADDED_BY_USER. Groundwork for a future reverse-sync
+                // that demotes playlist-only songs back to CACHED when they leave the playlist.
+                stmt.execute("ALTER TABLE download_queue ADD COLUMN source TEXT");
+
+                // (2) Playlists (and the synthetic Starred playlist, under the sentinel id
+                // '__starred__') the user has marked "available offline". Presence of a row means
+                // enabled; toggling off deletes the row (downloads are left intact). watermark_ms is
+                // the last-synced high-water mark (a NORMAL playlist's changedAt, or the max starred
+                // timestamp for Starred); NULL forces a full resync on the next sync pass.
+                stmt.execute("""
+                        CREATE TABLE IF NOT EXISTS offline_playlists (
+                            playlist_id   TEXT    NOT NULL,
+                            server_id     TEXT    NOT NULL,
+                            kind          TEXT    NOT NULL,
+                            watermark_ms  INTEGER,
+                            created_at_ms INTEGER NOT NULL,
+                            updated_at_ms INTEGER NOT NULL,
+                            PRIMARY KEY (playlist_id, server_id)
+                        )
                         """);
             }
         }
