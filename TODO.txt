@@ -166,6 +166,8 @@ worklog:
 - [X] Implement star/unstar
   - [X] Optimistically update the local copy of Starred list based on star / unstar actions
 - [ ] Playlist support
+  - [ ] add multi-select
+    - [ ] when multi-selecting, make new actions visible in the top bar (download | remove | add to playlist)
   - [X] move Starred as a fake playlist under the playlists view
   - [X] browsing playlists
   - [X] keep a cache of available playlists in AppState for quick access
