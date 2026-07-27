@@ -9,13 +9,19 @@ links=$(pkg-config --cflags gstreamer-1.0 gtk4)
 #    jvmArgs += "-XstartOnFirstThread"
 #    jvmArgs += "--enable-native-access=ALL-UNNAMED"
 
+LINK_PATHS="/usr/lib64:/lib64:/lib:/usr/lib:/lib/x86_64-linux-gnu:/opt/homebrew/lib:/opt/homebrew/lib/gstreamer-1.0:${links}"
+
 ./gradlew build -x test
+
+
+
+#  -Djava.library.path=/usr/lib64:/lib64:/lib:/usr/lib:/lib/x86_64-linux-gnu:/opt/homebrew/lib:/opt/homebrew/lib/gstreamer-1.0 \
 
 java \
   -XstartOnFirstThread \
   -Djava.awt.headless=true \
   --enable-native-access=ALL-UNNAMED \
-  -Djava.library.path=/usr/lib64:/lib64:/lib:/usr/lib:/lib/x86_64-linux-gnu:/opt/homebrew/lib:/opt/homebrew/lib/gstreamer-1.0 \
+  -Djava.library.path="$LINK_PATHS" \
   -jar build/libs/*final.jar
 
 
