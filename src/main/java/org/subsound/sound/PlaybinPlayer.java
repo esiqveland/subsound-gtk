@@ -1,17 +1,31 @@
 package org.subsound.sound;
 
-import org.javagi.base.Out;
-import org.subsound.utils.OsUtil;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
-import org.freedesktop.gstreamer.gst.*;
+import org.freedesktop.gstreamer.gst.Bus;
+import org.freedesktop.gstreamer.gst.ClockTime;
+import org.freedesktop.gstreamer.gst.Device;
+import org.freedesktop.gstreamer.gst.DeviceMonitor;
+import org.freedesktop.gstreamer.gst.Element;
+import org.freedesktop.gstreamer.gst.ElementFactory;
+import org.freedesktop.gstreamer.gst.Format;
+import org.freedesktop.gstreamer.gst.Gst;
+import org.freedesktop.gstreamer.gst.Message;
+import org.freedesktop.gstreamer.gst.MessageType;
+import org.freedesktop.gstreamer.gst.SeekFlags;
+import org.freedesktop.gstreamer.gst.State;
+import org.freedesktop.gstreamer.gst.Structure;
 import org.gnome.glib.GError;
 import org.gnome.glib.GLib;
 import org.gnome.glib.MainContext;
 import org.gnome.glib.MainLoop;
+import org.javagi.base.Out;
 import org.mpris.MediaPlayer2.MediaPlayer2Player.PlaybackStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.subsound.utils.OsUtil;
 
+import java.lang.foreign.MemoryLayout;
+import java.lang.invoke.VarHandle;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
@@ -20,10 +34,17 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
-import static org.subsound.sound.PlaybinPlayer.PlayerStates.*;
+import static org.subsound.sound.PlaybinPlayer.PlayerStates.BUFFERING;
+import static org.subsound.sound.PlaybinPlayer.PlayerStates.END_OF_STREAM;
+import static org.subsound.sound.PlaybinPlayer.PlayerStates.INIT;
+import static org.subsound.sound.PlaybinPlayer.PlayerStates.PAUSED;
+import static org.subsound.sound.PlaybinPlayer.PlayerStates.PLAYING;
+import static org.subsound.sound.PlaybinPlayer.PlayerStates.READY;
 import static org.subsound.utils.OsUtil.OS.MACOS;
 
 // TODO: Try to make it work closer to a audio-only playbin:
@@ -148,6 +169,21 @@ public class PlaybinPlayer implements Player {
     Element playbinEl;
     Bus bus;
     int busWatchId;
+    // macOS-only: the osxaudiosink we install as playbin's audio-sink, and the DeviceMonitor
+    // whose bus we watch (on the default context / main thread) for Audio/Sink hotplug and
+    // default-device changes. Both null on non-macOS.
+    private Element osxAudioSink;
+    private DeviceMonitor deviceMonitor;
+    // Serializes (and debounces) re-anchoring off the GTK main thread; setState() blocks.
+    private final ExecutorService deviceSwitchExecutor = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "audio-device-switch");
+        t.setDaemon(true);
+        return t;
+    });
+    private final AtomicBoolean deviceSwitchPending = new AtomicBoolean(false);
+    // Delay after an output device event before re-opening the sink: coalesces the remove+add
+    // burst, lets macOS settle the new default, and paces the switch to feel natural.
+    private static final Duration DEVICE_SWITCH_SETTLE = Duration.ofSeconds(1);
     // PlayerState should be the public view of the state of the player/player Pipeline
     PlayerStates playerStates = INIT;
     private URI currentUri;
@@ -484,7 +520,11 @@ public class PlaybinPlayer implements Player {
         }
         Out<State> stateOut = new Out<>();
         Out<State> stateOutPending = new Out<>();
-        player.getState(stateOut, stateOutPending, Gst.CLOCK_TIME_NONE);
+        // Non-blocking (timeout 0). This runs on the GLib main-loop thread (via busCall); a
+        // blocking CLOCK_TIME_NONE here deadlocks whenever the pipeline is mid-async transition
+        // (e.g. osxaudiosink reopening on a device switch), because the ASYNC_DONE that would
+        // complete the transition is delivered by this very loop. We just read the current state.
+        player.getState(stateOut, stateOutPending, new ClockTime(0L));
         onPipelineStateChanged(new StateChanged(this.pipelineState, stateOut.get()));
     }
 
@@ -539,11 +579,6 @@ public class PlaybinPlayer implements Player {
     }
 
     public PlaybinPlayer(URI initialFile) {
-        // Initialisation
-        // Init should be done from Main function
-        //Gst.init(new Out<>(new String[]{}));
-        //Gst.initCheck(new Out<>(args));
-
         playerContext = new MainContext();
         loop = new MainLoop(playerContext, false);
 
@@ -566,6 +601,60 @@ public class PlaybinPlayer implements Player {
         bus = playbinEl.getBus();
         busWatchId = bus.addWatch(0, this::busCall);
 
+        // manually set "osxaudiosink" as the audio-sink for macos:
+        // https://gstreamer.freedesktop.org/documentation/osxaudio/osxaudiosink.html?gi-language=c#osxaudiosink
+        // this sink should have better handling when macos switches audio output than the default sink for playbin
+        if (OsUtil.getOSPlatform() == MACOS) {
+            try {
+                //Element audioSink = ElementFactory.make("autoaudiosink", "audio-output");
+                Element osxaudiosink = ElementFactory.make("osxaudiosink", "audio-output");
+                if (osxaudiosink != null) {
+                    osxaudiosink.set("device", 0, null); // 0 = default device
+                    playbinEl.set("audio-sink", osxaudiosink, null);
+                    this.osxAudioSink = osxaudiosink;
+                    log.info("set audio-sink: osxaudiosink");
+                } else {
+                    log.info("unable to set audio-sink: osxaudiosink on macos");
+                }
+                // Detect audio-output hotplug / default-device changes, the same way
+                // `gst-device-monitor-1.0 -f Audio/Sink` does: watch the monitor's bus with
+                // gst_bus_add_watch on the DEFAULT GMainContext (this constructor runs on the
+                // main thread), and start() the monitor. This is the identical mechanism used
+                // for the playbin bus above (line ~588) — the GTK application main loop iterates
+                // the default context on the main thread and dispatches these messages. A custom
+                // context on a background thread does NOT work, because GTK never iterates it.
+                //
+                // Gated on GStreamer >= 1.28: only then did osxaudiodeviceprovider gain start/stop
+                // monitoring (dynamic add/remove/change events). On older versions the monitor
+                // never posts events, so wiring it up is pointless.
+                if (isGstAtLeast(1, 28)) {
+                    var deviceMonitor = new DeviceMonitor();
+                    this.deviceMonitor = deviceMonitor;
+                    deviceMonitor.addFilter("Audio/Sink", null);
+                    var monitorBus = deviceMonitor.getBus();
+                    monitorBus.addWatch(0, (b, msg) -> {
+                        try {
+                            handleDeviceMessage(msg);
+                        } catch (Throwable t) {
+                            log.error("deviceMonitor: error handling bus message", t);
+                        }
+                        return true; // keep the watch installed
+                    });
+                    if (!deviceMonitor.start()) {
+                        log.warn("Gst.DeviceMonitor: failed to start");
+                    }
+                } else {
+                    log.info(
+                            "Gst.DeviceMonitor: audio-output monitoring requires GStreamer >= 1.28, have '{}'; skipping",
+                            Gst.versionString()
+                    );
+                }
+            } catch (Throwable t) {
+                log.error("error in setting up macos support: ", t);
+                throw t;
+            }
+        }
+
         playbinEl.onNotify("volume", params -> this.onVolumeChanged());
         playbinEl.onNotify("mute", params -> this.onMuteChanged());
         // make sure we update the values on construction:
@@ -573,8 +662,13 @@ public class PlaybinPlayer implements Player {
         this.onMuteChanged();
 
         playerLoopThread = new Thread(() -> {
-            loop.run();
-            log.info("playerLoopThread: run finished");
+            try {
+                loop.run();
+            } catch (Throwable t) {
+                log.info("playerLoopThread: crashed", t);
+            } finally {
+                log.info("playerLoopThread: run finished");
+            }
             // Out of the main loop, clean up nicely
 //            GLib.print("Returned, stopping playback\n");
 //            pipeline.setState(State.NULL);
@@ -591,6 +685,183 @@ public class PlaybinPlayer implements Player {
             this.setSource(initialFile, false);
         }
         //GLib.print("Running...\n");
+    }
+
+    /**
+     * Handle a message from the macOS audio-output {@link DeviceMonitor} bus. Runs on the GTK
+     * main thread (the default-context watch installed in the constructor), so it must stay
+     * non-blocking — any sink re-anchor via setState() must be dispatched to a separate thread.
+     * For now it only logs; note that is-default in an add/change event is racy (macOS flips the
+     * system default just after the device appears), so the follow-default logic must re-read the
+     * current default rather than trust the flag on the event.
+     */
+    // VarHandle onto GstMessage.type (a plain int). See messageTypeRaw().
+    private static final VarHandle MESSAGE_TYPE_FIELD =
+            Message.getMemoryLayout().varHandle(MemoryLayout.PathElement.groupElement("type"));
+
+    /**
+     * Read GstMessage.type as a raw int. We must NOT use {@link Message#readType()} here:
+     * GStreamer's DEVICE_* (and other "extended") message types set bit 31
+     * ({@code GST_MESSAGE_EXTENDED = 1<<31}), and java-gi 0.15's {@code Interop.intToEnumSet}
+     * infinite-loops decoding that bitfield — it pins the calling thread (here the GTK main
+     * thread) at 100% CPU and freezes the UI. Reading the field directly and comparing to the
+     * known enum int values via {@link MessageType#getValue()} sidesteps the broken decode.
+     */
+    private static int messageTypeRaw(Message msg) {
+        return (int) MESSAGE_TYPE_FIELD.get(msg.handle(), 0L);
+    }
+
+    /** True if the linked/loaded GStreamer runtime is at least major.minor. */
+    private static boolean isGstAtLeast(int major, int minor) {
+        Out<Integer> maj = new Out<>();
+        Out<Integer> min = new Out<>();
+        Out<Integer> micro = new Out<>();
+        Out<Integer> nano = new Out<>();
+        Gst.version(maj, min, micro, nano);
+        return maj.get() > major || (maj.get() == major && min.get() >= minor);
+    }
+
+    /**
+     * unique-id of a device. On GstOsxAudioDevice this exists both as a GObject property and in
+     * the properties Structure; we read the Structure so it works for any provider.
+     */
+    private static String uniqueId(Device d) {
+        Structure props = d.getProperties();
+        return props != null ? props.getString("unique-id") : null;
+    }
+
+    /**
+     * Whether the device is the current system default. This is NOT a GObject property on
+     * GstOsxAudioDevice (getProperty("is-default") throws); it lives only in the device's
+     * properties Structure. Returns null if absent. Note the flag is racy at add/change time —
+     * macOS flips the default just after a device appears — so follow-default logic must re-read.
+     */
+    private static Boolean isDefault(Device d) {
+        Structure props = d.getProperties();
+        if (props == null || !props.hasField("is-default")) {
+            return null;
+        }
+        Out<Boolean> out = new Out<>();
+        return props.getBoolean("is-default", out) ? out.get() : null;
+    }
+
+    private void handleDeviceMessage(Message msg) {
+        int type = messageTypeRaw(msg);
+        if (type == MessageType.DEVICE_ADDED.getValue()) {
+            Out<Device> devOut = new Out<>();
+            msg.parseDeviceAdded(devOut);
+            var d = devOut.get();
+            log.info("🎵 Audio output connected: {} unique-id={} is-default={}", d.getDisplayName(), uniqueId(d), isDefault(d));
+            onDeviceEvent();
+        } else if (type == MessageType.DEVICE_REMOVED.getValue()) {
+            Out<Device> devOut = new Out<>();
+            msg.parseDeviceRemoved(devOut);
+            var d = devOut.get();
+            log.info("🎵 Audio output disconnected: {} unique-id={}", d.getDisplayName(), uniqueId(d));
+            onDeviceEvent();
+        } else if (type == MessageType.DEVICE_CHANGED.getValue()) {
+            Out<Device> devOut = new Out<>();
+            Out<Device> changedOut = new Out<>();
+            msg.parseDeviceChanged(devOut, changedOut);
+            var d = devOut.get();
+            log.info("🎵 Audio output changed: {} unique-id={} is-default={}",
+                    d.getDisplayName(), uniqueId(d), isDefault(d));
+            onDeviceEvent();
+        } else {
+            // e.g. GST_MESSAGE_DEVICE_MONITOR_STARTED (new in 1.28) — confirms async start done.
+            log.debug("deviceMonitor: message type={}", type);
+        }
+    }
+
+    /** unique-id of the current system default Audio/Sink, or null if none/undeterminable. */
+    private String resolveDefaultOutputId() {
+        var devices = deviceMonitor.getDevices();
+        if (devices == null) {
+            return null;
+        }
+        for (Device d : devices) {
+            if (Boolean.TRUE.equals(isDefault(d))) {
+                return uniqueId(d);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * React to a device add/remove/change on the GTK main thread by scheduling a (debounced)
+     * re-resolve of the current default output off-thread. We do NOT trust is-default on the event
+     * itself — it is racy (macOS flips the default a moment after the device appears) — so we sleep
+     * briefly to let CoreAudio settle, then read the authoritative default and re-anchor if needed.
+     */
+    private void onDeviceEvent() {
+        if (this.osxAudioSink == null) {
+            return;
+        }
+        if (!deviceSwitchPending.compareAndSet(false, true)) {
+            return; // a re-resolve is already scheduled; it will observe the latest state
+        }
+        deviceSwitchExecutor.submit(() -> {
+            try {
+                // Coalesce event bursts and let macOS settle the new default. Also paces the
+                // switch so it doesn't feel jarringly faster than native output switching.
+                Thread.sleep(DEVICE_SWITCH_SETTLE.toMillis());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                deviceSwitchPending.set(false);
+                return;
+            }
+            // Clear before doing the work so events arriving during the switch schedule a fresh run.
+            deviceSwitchPending.set(false);
+            try {
+                cycleAudioOutput();
+            } catch (Throwable t) {
+                log.error("audio-device-switch: failed", t);
+            }
+        });
+    }
+
+    /**
+     * Re-open the pipeline so osxaudiosink (device=0) reconnects to the current system default
+     * output, preserving playback position. osxaudiosink only re-resolves the default when it
+     * reopens its device, which requires passing through READY. Bouncing just the sink element
+     * leaves it without a running clock/segment and playback stalls, so we bounce the whole
+     * playbin (PLAYING→READY→PAUSED to preroll on the new default, seek back, then PLAYING). This
+     * is the same re-init a track skip does, minus the track change.
+     *
+     * Runs on the audio-device-switch thread (never the main/loop thread), so blocking on
+     * getState() for preroll here is safe — the main loop stays free to deliver ASYNC_DONE.
+     *
+     * For now we cycle unconditionally on any output device change rather than trying to tell
+     * whether the default actually moved (is-default is racy at event time). device=0 makes this
+     * safe: worst case it reconnects to the same default with a brief gap.
+     */
+    private void cycleAudioOutput() {
+        if (this.osxAudioSink == null) {
+            return;
+        }
+        // Nothing loaded (e.g. the startup device-enumeration burst before any track): nothing to
+        // follow, and reopening during pipeline bring-up is pointless.
+        if (this.currentUri == null) {
+            log.debug("audio-device-switch: no source loaded, skipping output switch");
+            return;
+        }
+        boolean wasPlaying = this.pipelineState == State.PLAYING;
+        Duration pos = getCurrentPosition().orElse(Duration.ZERO);
+
+        // Bounce the pipeline through READY so the sink closes and reopens on the new default.
+        this.playbinEl.setState(State.READY);
+        this.playbinEl.setState(State.PAUSED);
+        // Block until PAUSED preroll completes so the seek below lands accurately. Safe here: this
+        // is the switch thread, not the main loop.
+        Out<State> stateOut = new Out<>();
+        Out<State> pendingOut = new Out<>();
+        this.playbinEl.getState(stateOut, pendingOut, Gst.CLOCK_TIME_NONE);
+        this.playbinEl.seekSimple(Format.TIME, Set.of(SeekFlags.ACCURATE, SeekFlags.FLUSH), pos.toNanos());
+        if (wasPlaying) {
+            this.playbinEl.setState(State.PLAYING);
+        }
+        log.info("🎵 Switched audio output; resumed at {}s (wasPlaying={}) default-now={}",
+                pos.getSeconds(), wasPlaying, resolveDefaultOutputId());
     }
 
     public Optional<Duration> getCurrentPosition() {
@@ -648,6 +919,13 @@ public class PlaybinPlayer implements Player {
             return;
         }
         this.playbinEl.setState(State.NULL);
+        // Stop the macOS audio-device monitor (if any). Its bus watch lives on the default
+        // context serviced by the GTK application main loop, so removing the source here (via
+        // stop()) is enough; there is no dedicated thread/loop of ours to tear down.
+        if (deviceMonitor != null) {
+            deviceMonitor.stop();
+        }
+        deviceSwitchExecutor.shutdownNow();
         if (loop.isRunning()) {
             loop.quit();
         }
