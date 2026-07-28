@@ -560,7 +560,6 @@ public class PlaylistsListView extends Box {
         private final Label titleLabel;
         private final Label subtitleLabel;
         private final Image subtitleCheckmark;
-        private final Image offlineBadge;
         private GPlaylist gPlaylist;
         private SignalConnection<NotifyCallback> notifySignal;
 
@@ -640,17 +639,8 @@ public class PlaylistsListView extends Box {
             contentBox.append(titleLabel);
             contentBox.append(subtitleRow);
 
-            // Trailing "available offline" badge; contentBox is hexpand so this sits at the edge.
-            this.offlineBadge = Image.fromIconName(Icons.FolderDownload.getIconName());
-            this.offlineBadge.setPixelSize(16);
-            this.offlineBadge.setValign(CENTER);
-            this.offlineBadge.addCssClass(Classes.labelDim.className());
-            this.offlineBadge.setTooltipText(tr("Available offline"));
-            this.offlineBadge.setVisible(false);
-
             this.append(prefixBox);
             this.append(contentBox);
-            this.append(offlineBadge);
         }
 
         public GPlaylist getPlaylist() {
@@ -677,12 +667,13 @@ public class PlaylistsListView extends Box {
             boolean showOffline = playlist.kind() != PlaylistKind.DOWNLOADED
                     && this.gPlaylist != null
                     && this.gPlaylist.isKeepOffline();
-            this.offlineBadge.setVisible(showOffline);
+            this.subtitleCheckmark.setVisible(showOffline);
 
             if (playlist.kind() == PlaylistKind.DOWNLOADED) {
                 this.prefixArt.setVisible(false);
                 this.prefixIconStar.setVisible(false);
                 this.prefixIconDownload.setVisible(true);
+                this.subtitleCheckmark.setVisible(false);
 
                 var counts = this.gPlaylist != null ? this.gPlaylist.getDownloadCounts() : null;
                 if (counts != null && !counts.isEmpty() && !counts.allDone()) {
