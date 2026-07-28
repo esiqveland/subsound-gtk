@@ -1134,6 +1134,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             offlineContent.append(this.offlineSwitch);
             this.offlineRow = Button.builder().setChild(offlineContent).build();
             this.offlineRow.addCssClass("flat");
+            this.offlineRow.addCssClass("text-button");
             this.offlineRow.onClicked(() -> this.offlineSwitch.setActive(!this.offlineSwitch.getActive()));
             this.offlineSwitch.onStateSet(state -> {
                 if (!suppressOfflineToggle) {
