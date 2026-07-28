@@ -1088,7 +1088,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         private final Button downloadAllItem = menuItem(tr("Download all"));
         private final Button deleteItem = menuItem(tr("Delete Playlist\u2026"));
 
-        private final Box offlineRow;
+        private final Button offlineRow;
         private final Switch offlineSwitch = new Switch();
         // Guards programmatic setActive() so we don't dispatch a toggle back to the handler.
         private boolean suppressOfflineToggle = false;
@@ -1117,18 +1117,24 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
                 onDelete.run();
             });
 
-            // "Available offline" row: a label + switch, styled to sit among the menu buttons.
+            // "Available offline" row: a flat button (matching the other menu entries) with a
+            // label on the left and a switch on the right. Building it as a flat Button — rather
+            // than a bare Box — makes the label share the exact left inset of the sibling menu
+            // items and makes the whole row clickable, AdwSwitchRow-style.
             var offlineLabel = new Label(tr("Available offline"));
             offlineLabel.setHalign(START);
             offlineLabel.setHexpand(true);
+            offlineLabel.addCssClass("body");
             this.offlineSwitch.setValign(CENTER);
-            this.offlineRow = new Box(HORIZONTAL, 8);
-            this.offlineRow.setMarginTop(4);
-            this.offlineRow.setMarginBottom(4);
-            this.offlineRow.setMarginStart(8);
-            this.offlineRow.setMarginEnd(8);
-            this.offlineRow.append(offlineLabel);
-            this.offlineRow.append(offlineSwitch);
+            // The switch is a visual indicator only; let pointer events fall through to the
+            // button so a click anywhere on the row toggles it.
+            this.offlineSwitch.setCanTarget(false);
+            var offlineContent = new Box(HORIZONTAL, 8);
+            offlineContent.append(offlineLabel);
+            offlineContent.append(this.offlineSwitch);
+            this.offlineRow = Button.builder().setChild(offlineContent).build();
+            this.offlineRow.addCssClass("flat");
+            this.offlineRow.onClicked(() -> this.offlineSwitch.setActive(!this.offlineSwitch.getActive()));
             this.offlineSwitch.onStateSet(state -> {
                 if (!suppressOfflineToggle) {
                     onToggleOffline.accept(state);
