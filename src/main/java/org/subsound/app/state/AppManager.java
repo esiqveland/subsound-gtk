@@ -30,8 +30,8 @@ import org.subsound.persistence.ServerOperationsService;
 import org.subsound.persistence.SongCache;
 import org.subsound.persistence.SongCache.LoadSongResult;
 import org.subsound.persistence.ThumbnailCache;
-import org.subsound.persistence.database.Database;
 import org.subsound.persistence.database.DBSong;
+import org.subsound.persistence.database.Database;
 import org.subsound.persistence.database.DatabaseServerService;
 import org.subsound.persistence.database.DatabaseService;
 import org.subsound.persistence.database.DownloadQueueItem;
@@ -62,6 +62,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -468,7 +469,7 @@ public class AppManager {
      * playlist id with the Starred sentinel mapped back to {@link PlaylistsStore#STARRED_ID} so it
      * matches the synthetic playlist's id.
      */
-    public java.util.Map<String, PlaylistOfflineSync> getPlaylistOfflineSyncById() {
+    public Map<String, PlaylistOfflineSync> getPlaylistOfflineSyncById() {
         var rows = this.databaseService.offlinePlaylists().listEnabled(this.dbService.getServerId());
         var map = new java.util.HashMap<String, PlaylistOfflineSync>(rows.size());
         for (var r : rows) {
