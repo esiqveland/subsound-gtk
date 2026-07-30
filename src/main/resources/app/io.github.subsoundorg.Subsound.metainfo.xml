@@ -58,7 +58,18 @@
   </branding>
 
   <releases>
-    <release version="@version@" date="2026-07-19">
+    <release version="@version@" date="2026-07-30">
+      <description>
+        <ul>
+          <li>New: select multiple songs in a playlist to play, queue, download, star, or remove them all at once</li>
+          <li>New: mark any playlist, including Starred, as available offline and we will keep re-syncing its songs</li>
+          <li>New: star and unstar songs while offline and have the changes sync back when you reconnect</li>
+          <li>Improved: the playlists list behaves more like a standard list</li>
+          <li>Bugfix: playlist menu buttons are laid out correctly</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.7.13" date="2026-07-19">
       <description>
         <ul>
           <li>New: add custom HTTP headers to send with every request to your server</li>
