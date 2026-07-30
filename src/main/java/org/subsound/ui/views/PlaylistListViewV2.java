@@ -7,6 +7,7 @@ import org.gnome.gio.ListModel;
 import org.gnome.gio.ListStore;
 import org.gnome.glib.Type;
 import org.gnome.gobject.GObject;
+import org.gnome.gtk.ActionBar;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
 import org.gnome.gtk.ColumnView;
@@ -30,8 +31,8 @@ import org.gnome.gtk.ScrolledWindow;
 import org.gnome.gtk.SearchBar;
 import org.gnome.gtk.SearchEntry;
 import org.gnome.gtk.Separator;
+import org.gnome.gtk.MultiSelection;
 import org.gnome.gtk.SignalListItemFactory;
-import org.gnome.gtk.SingleSelection;
 import org.gnome.gtk.SortListModel;
 import org.gnome.gtk.SortType;
 import org.gnome.gtk.Stack;
@@ -75,6 +76,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.twelvemonkeys.lang.StringUtil.containsIgnoreCase;
 import static org.gnome.adw.ResponseAppearance.DEFAULT;
@@ -87,6 +89,7 @@ import static org.gnome.gtk.Align.START;
 import static org.gnome.gtk.Orientation.HORIZONTAL;
 import static org.gnome.gtk.Orientation.VERTICAL;
 import static org.subsound.i18n.I18n.tr;
+import static org.subsound.i18n.I18n.trn;
 import static org.subsound.ui.components.AdwDialogHelper.CANCEL_LABEL_ID;
 import static org.subsound.ui.views.AlbumInfoPage.infoLabel;
 
@@ -111,9 +114,12 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
     private volatile TitleArtistColumnSorter.States targetSort;
     private volatile String searchQuery = "";
     private final SortListModel<GPlaylistEntry> sortModel;
-    private final SingleSelection<GPlaylistEntry> selectionModel;
+    private final MultiSelection<GPlaylistEntry> selectionModel;
     private final SearchBar searchBar;
     private final SearchEntry searchEntry;
+    // Selection action bar shown above the list while 2+ rows are selected.
+    private final SelectionActionBar selectionBar;
+    @Nullable private SignalConnection<?> selectionChangedSignal = null;
     // Bound cells indexed by stable server songId. Each entry's qid lives on the cell's
     // boundEntry, so disambiguation between duplicate occurrences is a linear scan over
     // the per-songId list. Typical lists are size 1 (constant time); the pathological case
@@ -244,6 +250,13 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         // 3. Wire sorting over the filtered model: ColumnView aggregates per-column sorters.
         this.sortModel = new SortListModel<>(this.filterModel, this.columnView.getSorter());
 
+        // 4. Selection wraps sort model. MultiSelection enables ctrl/shift-click and Ctrl+A
+        // range selection natively (rubber-band drag-select is intentionally left disabled).
+        // Created before the search bar so the search handler can clear the selection.
+        this.selectionModel = new MultiSelection<>(this.sortModel);
+        this.columnView.setModel(this.selectionModel);
+        this.selectionChangedSignal = this.selectionModel.onSelectionChanged((position, nItems) -> updateSelectionBar());
+
         // Search bar — revealer that slides down above the list. Must be constructed
         // before the key controller since the Ctrl+F handler references these fields.
         this.searchEntry = SearchEntry.builder()
@@ -262,17 +275,14 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             var text = this.searchEntry.getText();
             this.searchQuery = text == null ? "" : text.trim();
             this.searchFilter.changed(FilterChange.DIFFERENT);
+            // Rows filtered out of view must not stay selected — acting on hidden rows is surprising.
+            this.selectionModel.unselectAll();
         });
         this.searchEntry.onStopSearch(() -> {
             // Escape pressed inside the entry — close and clear the filter.
             this.searchBar.setSearchMode(false);
             this.searchEntry.setText("");
         });
-
-        // 4. Selection wraps sort model
-        this.selectionModel = new SingleSelection<>(this.sortModel);
-        this.columnView.setModel(this.selectionModel);
-
 
         // 5. Build columns with per-column factories and sorters, then append them
 
@@ -579,16 +589,12 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             if (playlist == null) {
                 return false;
             }
-            var entry = selectionModel.getSelectedItem();
-            if (entry == null) {
+            var entries = selectedEntries();
+            if (entries.isEmpty()) {
                 return false;
             }
-            if (playlist.kind() == PlaylistKind.NORMAL) {
-                removeFromPlaylist(entry);
-                return true;
-            }
-            if (playlist.kind() == PlaylistKind.DOWNLOADED) {
-                removeFromDownloads(entry);
+            if (playlist.kind() == PlaylistKind.NORMAL || playlist.kind() == PlaylistKind.DOWNLOADED) {
+                removeEntries(entries, playlist);
                 return true;
             }
             return false;
@@ -625,6 +631,10 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             if (playlistNotifySignal != null) {
                 playlistNotifySignal.disconnect();
                 playlistNotifySignal = null;
+            }
+            if (selectionChangedSignal != null) {
+                selectionChangedSignal.disconnect();
+                selectionChangedSignal = null;
             }
             unbindSource();
             mapSignal.disconnect();
@@ -687,9 +697,212 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         headerBox.append(this.reloadButton);
         headerBox.append(this.menuButton);
 
+        // Selection action bar. The bar only reports which button was clicked; this view owns
+        // the action logic and controls the bar's visibility (see updateSelectionBar).
+        this.selectionBar = new SelectionActionBar(this::onBulkAction);
+
         this.append(headerBox);
         this.append(this.searchBar);
+        this.append(this.selectionBar);
         this.append(this.scroll);
+    }
+
+    /**
+     * Entries currently selected, in the view's sort order. Walks only the selected positions
+     * via the selection {@link org.gnome.gtk.Bitset} — O(selected), not O(list) — so a sparse
+     * selection in a large playlist (e.g. the first and last of 2000 songs) stays cheap.
+     * {@code getItem} reads from the backing model, so entries whose rows were recycled out of
+     * view are still returned. Must be called on the GTK main thread.
+     */
+    private List<GPlaylistEntry> selectedEntries() {
+        var selection = this.selectionModel.getSelection();
+        int count = (int) selection.getSize();
+        var out = new ArrayList<GPlaylistEntry>(count);
+        for (int i = 0; i < count; i++) {
+            // getNth(i) is the i-th smallest selected position, i.e. ascending view order.
+            var e = this.selectionModel.getItem(selection.getNth(i));
+            if (e != null) {
+                out.add(e);
+            }
+        }
+        return out;
+    }
+
+    private List<GSongInfo> selectedGSongs() {
+        var entries = selectedEntries();
+        var out = new ArrayList<GSongInfo>(entries.size());
+        for (var e : entries) {
+            out.add(e.gSong());
+        }
+        return out;
+    }
+
+    /**
+     * Visibility policy for the selection bar: only a multi-row selection (2+) surfaces it, so a
+     * single selected row stays the normal "pick a song to play" case. Main thread only.
+     */
+    private void updateSelectionBar() {
+        int count = (int) this.selectionModel.getSelection().getSize();
+        boolean show = count >= 2;
+        if (show) {
+            var playlist = this.currentPlaylist.get();
+            this.selectionBar.setContent(count, playlist == null ? null : playlist.kind());
+        }
+        this.selectionBar.setRevealed(show);
+    }
+
+    /** Dispatch a bar button click to the matching bulk action. Main thread only. */
+    private void onBulkAction(SelectionActionBar.BulkAction action) {
+        switch (action) {
+            case CLEAR -> this.selectionModel.unselectAll();
+            case PLAY -> bulkPlay();
+            case ADD_TO_QUEUE -> bulkAddToQueue();
+            case ADD_TO_PLAYLIST -> openBulkAddToPlaylist();
+            case DOWNLOAD -> bulkDownload();
+            case STAR -> bulkStar();
+            case UNSTAR -> bulkUnstar();
+            case REMOVE -> bulkRemove();
+        }
+    }
+
+    /** Pop up the playlist picker anchored to the selection bar, adding the selection on pick. */
+    private void openBulkAddToPlaylist() {
+        var popover = buildBulkAddToPlaylistPopover();
+        popover.setParent(this.selectionBar);
+        popover.onClosed(() -> popover.unparent());
+        popover.popup();
+    }
+
+    private void bulkPlay() {
+        var playlist = this.currentPlaylist.get();
+        if (playlist == null) {
+            return;
+        }
+        var entries = selectedEntries();
+        if (entries.isEmpty()) {
+            return;
+        }
+        var slots = new ArrayList<PlayerAction.QueueSlot>(entries.size());
+        for (var e : entries) {
+            slots.add(new PlayerAction.QueueSlot(e.getQueueItemId(), e.song()));
+        }
+        this.onAction.apply(new PlayerAction.PlayAndReplaceQueue(new PlaylistIdentifier(playlist.id()), slots, 0));
+    }
+
+    private void bulkAddToQueue() {
+        for (var e : selectedEntries()) {
+            this.onAction.apply(new PlayerAction.EnqueueLast(e.song()));
+        }
+    }
+
+    private void bulkDownload() {
+        var songs = selectedGSongs();
+        if (!songs.isEmpty()) {
+            this.onAction.apply(new PlayerAction.AddManyToDownloadQueue(songs));
+        }
+    }
+
+    private void bulkStar() {
+        for (var e : selectedEntries()) {
+            this.onAction.apply(new PlayerAction.Star2(e.gSong()));
+        }
+    }
+
+    private void bulkUnstar() {
+        for (var e : selectedEntries()) {
+            this.onAction.apply(new PlayerAction.Unstar(e.song()));
+        }
+    }
+
+    private void bulkRemove() {
+        var playlist = this.currentPlaylist.get();
+        if (playlist == null) {
+            return;
+        }
+        if (playlist.kind() != PlaylistKind.NORMAL && playlist.kind() != PlaylistKind.DOWNLOADED) {
+            return;
+        }
+        var entries = selectedEntries();
+        if (!entries.isEmpty()) {
+            removeEntries(entries, playlist);
+        }
+    }
+
+    /**
+     * Remove a set of entries from the current playlist (normal or downloaded) in one atomic
+     * request, then reconcile the local model: drop the removed rows and renumber the tail's
+     * position/queueItemId so highlighting keeps matching. Main thread only.
+     */
+    private void removeEntries(List<GPlaylistEntry> entries, ServerClient.PlaylistSimple playlist) {
+        var songs = new ArrayList<GSongInfo>(entries.size());
+        var positions = new ArrayList<Integer>(entries.size());
+        for (var e : entries) {
+            songs.add(e.gSong());
+            positions.add(e.position());
+        }
+        this.onAction.apply(new PlayerAction.RemoveManyFromPlaylist(songs, positions, playlist.id(), playlist.name()));
+
+        var toRemove = new java.util.HashSet<>(entries);
+        var playlistId = playlist.id();
+        for (int i = this.listModel.getNItems() - 1; i >= 0; i--) {
+            var e = this.listModel.getItem(i);
+            if (e != null && toRemove.contains(e)) {
+                this.listModel.remove(i);
+            }
+        }
+        for (int i = 0; i < this.listModel.getNItems(); i++) {
+            var e = this.listModel.getItem(i);
+            if (e != null) {
+                e.setPosition(i);
+                e.setQueueItemId(GPlaylistEntry.makeQueueItemId(playlistId, e.song().id(), i));
+            }
+        }
+        this.selectionModel.unselectAll();
+    }
+
+    /** Append a menu-item button per NORMAL playlist, invoking {@code onPick} on click. */
+    private void appendPlaylistTargets(Box container, Consumer<GPlaylist> onPick) {
+        var playlists = appManager.getPlaylistsListStore();
+        for (int i = 0; i < playlists.getNItems(); i++) {
+            GPlaylist gPlaylist = playlists.getItem(i);
+            if (gPlaylist.getPlaylist().kind() != PlaylistKind.NORMAL) {
+                continue;
+            }
+            var gp = gPlaylist;
+            var btn = menuItem(gp.getName());
+            btn.onClicked(() -> onPick.accept(gp));
+            container.append(btn);
+        }
+    }
+
+    private Popover buildBulkAddToPlaylistPopover() {
+        var box = Box.builder()
+                .setOrientation(VERTICAL)
+                .setSpacing(2)
+                .setMarginTop(4)
+                .setMarginBottom(4)
+                .setMarginStart(4)
+                .setMarginEnd(4)
+                .build();
+        var popover = new Popover();
+        var scrollList = ScrolledWindow.builder()
+                .setPropagateNaturalWidth(true)
+                .setPropagateNaturalHeight(true)
+                .setMaxContentHeight(300)
+                .build();
+        scrollList.setChild(box);
+        var clamp = new Clamp();
+        clamp.setMaximumSize(220);
+        clamp.setChild(scrollList);
+        popover.setChild(clamp);
+        appendPlaylistTargets(box, gp -> {
+            popover.popdown();
+            var songs = selectedGSongs();
+            if (!songs.isEmpty()) {
+                this.onAction.apply(new PlayerAction.AddManyToPlaylist(songs, gp.getId(), gp.getName()));
+            }
+        });
+        return popover;
     }
 
     private void resetColumnSorting() {
@@ -802,6 +1015,8 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
                 if (oldN > 0 && n > 0) {
                     this.columnView.scrollTo(0, this.titleCol, ListScrollFlags.NONE, null);
                 }
+                // Replacing the list invalidates any prior selection; drop it (and hide the bar).
+                this.selectionModel.unselectAll();
                 this.listModel.splice(0, oldN, new GPlaylistEntry[0]);
                 this.resetColumnSorting();
                 long tAfterClear = System.nanoTime();
@@ -1080,6 +1295,90 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             case PLAYING -> NowPlayingState.PLAYING;
             case END_OF_STREAM -> NowPlayingState.NONE;
         };
+    }
+
+    // ---- Selection action bar ----
+
+    /**
+     * Bulk-action bar shown above the list while multiple rows are selected. Purely
+     * presentational: it emits which button was pressed via {@link BulkAction} and exposes only
+     * {@link #setContent} for the count/kind-dependent labels. It knows nothing about the
+     * selection or list models, and the parent view decides when it is revealed. Mirrors
+     * {@link PlaylistMenu}'s callback-in-constructor style.
+     */
+    private static class SelectionActionBar extends ActionBar {
+        enum BulkAction { CLEAR, PLAY, ADD_TO_QUEUE, ADD_TO_PLAYLIST, DOWNLOAD, STAR, UNSTAR, REMOVE }
+
+        private final Label countLabel;
+        private final Button removeButton;
+
+        SelectionActionBar(Consumer<BulkAction> onAction) {
+            super();
+
+            var clearButton = Button.builder()
+                    .setIconName("window-close-symbolic")
+                    .setTooltipText(tr("Clear selection"))
+                    .build();
+            clearButton.addCssClass("flat");
+            clearButton.addCssClass("circular");
+            clearButton.onClicked(() -> onAction.accept(BulkAction.CLEAR));
+
+            this.countLabel = new Label("");
+            this.countLabel.addCssClass(Classes.labelDim.className());
+            this.countLabel.setValign(CENTER);
+
+            var start = new Box(HORIZONTAL, 8);
+            start.append(clearButton);
+            start.append(this.countLabel);
+
+            var playButton = barButton(tr("Play"));
+            playButton.onClicked(() -> onAction.accept(BulkAction.PLAY));
+            var queueButton = barButton(tr("Add to queue"));
+            queueButton.onClicked(() -> onAction.accept(BulkAction.ADD_TO_QUEUE));
+            var addPlaylistButton = barButton(tr("Add to Playlist…"));
+            addPlaylistButton.onClicked(() -> onAction.accept(BulkAction.ADD_TO_PLAYLIST));
+            var downloadButton = barButton(tr("Download"));
+            downloadButton.onClicked(() -> onAction.accept(BulkAction.DOWNLOAD));
+            var starButton = barButton(tr("Star"));
+            starButton.onClicked(() -> onAction.accept(BulkAction.STAR));
+            var unstarButton = barButton(tr("Unstar"));
+            unstarButton.onClicked(() -> onAction.accept(BulkAction.UNSTAR));
+            this.removeButton = barButton(tr("Remove from Playlist"));
+            this.removeButton.addCssClass("destructive-action");
+            this.removeButton.onClicked(() -> onAction.accept(BulkAction.REMOVE));
+
+            var end = new Box(HORIZONTAL, 6);
+            end.append(playButton);
+            end.append(queueButton);
+            end.append(addPlaylistButton);
+            end.append(downloadButton);
+            end.append(starButton);
+            end.append(unstarButton);
+            end.append(this.removeButton);
+
+            this.packStart(start);
+            this.packEnd(end);
+            this.setRevealed(false);
+        }
+
+        /**
+         * Update the count label and tailor the Remove button to the playlist kind. Presentation
+         * only — the parent decides whether the bar is revealed via {@link #setRevealed}.
+         */
+        void setContent(int count, @Nullable PlaylistKind kind) {
+            this.countLabel.setLabel(trn("%d selected", "%d selected", count).formatted(count));
+            boolean canRemove = kind == PlaylistKind.NORMAL || kind == PlaylistKind.DOWNLOADED;
+            this.removeButton.setVisible(canRemove);
+            this.removeButton.setLabel(kind == PlaylistKind.DOWNLOADED
+                    ? tr("Remove from Downloads")
+                    : tr("Remove from Playlist"));
+        }
+
+        private static Button barButton(String label) {
+            var button = Button.builder().setLabel(label).setValign(CENTER).build();
+            button.addCssClass("flat");
+            return button;
+        }
     }
 
     // ---- Playlist menu ----
@@ -1439,21 +1738,10 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         playlistsView.append(backButton);
         playlistsView.append(new Separator(HORIZONTAL));
 
-        var playlists = appManager.getPlaylistsListStore();
-        for (int i = 0; i < playlists.getNItems(); i++) {
-            GPlaylist gPlaylist = playlists.getItem(i);
-            if (gPlaylist.getPlaylist().kind() != PlaylistKind.NORMAL) {
-                continue;
-            }
-            String pid = gPlaylist.getId();
-            String pname = gPlaylist.getName();
-            var btn = menuItem(pname);
-            btn.onClicked(() -> {
-                menuPopover.popdown();
-                onAction.apply(new PlayerAction.AddToPlaylist(entry.song(), pid, pname));
-            });
-            playlistsView.append(btn);
-        }
+        appendPlaylistTargets(playlistsView, gp -> {
+            menuPopover.popdown();
+            onAction.apply(new PlayerAction.AddToPlaylist(entry.song(), gp.getId(), gp.getName()));
+        });
 
         var playlistsScroll = ScrolledWindow.builder()
                 .setPropagateNaturalWidth(true)
@@ -1780,7 +2068,6 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
                 if (entry == null) {
                     return;
                 }
-                selectionModel.setSelected(item.getPosition());
                 var popover = buildRowContextMenu(entry);
                 popover.setParent(this.menuButton);
                 popover.onClosed(() -> popover.unparent());
