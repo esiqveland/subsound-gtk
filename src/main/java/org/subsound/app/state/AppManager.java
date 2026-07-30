@@ -1023,6 +1023,21 @@ public class AppManager {
                     )));
                     //this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast("Removed from " + a.playlistName())));
                 }
+                case PlayerAction.RemoveManyFromPlaylist a -> {
+                    if (PlaylistsStore.DOWNLOADED_ID.equals(a.playlistId())) {
+                        for (var song : a.songs()) {
+                            this.downloadManager.removeFromQueue(song.getId());
+                        }
+                        break;
+                    }
+                    // Send the whole selection as one atomic request so server-side positions
+                    // don't drift between individual removals.
+                    var removals = new ArrayList<ServerClient.SongRemoval>(a.songs().size());
+                    for (int i = 0; i < a.songs().size(); i++) {
+                        removals.add(new ServerClient.SongRemoval(a.originalPositions().get(i), a.songs().get(i).getId()));
+                    }
+                    this.useClient1(c -> c.playlistRemove(new PlaylistRemoveSongRequest(a.playlistId(), removals)));
+                }
                 case PlayerAction.AddToDownloadQueue a -> {
                     this.downloadManager.enqueue(a.song());
                     this.toast(new PlayerAction.Toast(new org.gnome.adw.Toast(tr("Added to download queue"))));
