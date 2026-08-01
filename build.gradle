@@ -17,7 +17,7 @@ repositories {
 }
 
 def javagiVersion = "0.15.0"
-def recordBuilderVersion = "52"
+def recordBuilderVersion = "53"
 def moshiVersion = "1.15.2"
 
 dependencies {
