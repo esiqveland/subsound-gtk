@@ -426,7 +426,7 @@ public class FrontpagePage extends Box implements AppManager.StateListener {
                     child.setAlbumInfo(album);
 
                 });
-                this.listModel = ListIndexModel.newInstance(albums.size());
+                this.listModel = new ListIndexModel(albums.size());
                 this.listView = ListView.builder()
                         .setModel(new SingleSelection(this.listModel))
                         .setOrientation(HORIZONTAL)

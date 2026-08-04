@@ -504,7 +504,7 @@ public class Utils {
         var result = new CompletableFuture<FileDialogResult>();
 
         FileDialog fileDialog = new FileDialog();
-        fileDialog.selectFolder(parentWindow, null, (dialog, asyncResult, _) -> {
+        fileDialog.selectFolder(parentWindow, null, asyncResult -> {
             try {
                 File file = fileDialog.selectFolderFinish(asyncResult);
                 var path = file.getPath();
