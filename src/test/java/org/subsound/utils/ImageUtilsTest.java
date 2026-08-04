@@ -25,7 +25,7 @@ public class ImageUtilsTest {
 
     public static Pixbuf readPixbufImageBuffer(byte[] bytes, int maxSize) {
         // Load pixbuf from in-memory bytes
-        try (var imageStream = MemoryInputStream.fromData(bytes)) {
+        try (var imageStream = MemoryInputStream.fromData(bytes, null)) {
             return Pixbuf.fromStreamAtScale(imageStream, maxSize, maxSize, true, null);
         } catch (IOException closeEx) {
             throw new RuntimeException("Unexpected error closing image stream", closeEx);

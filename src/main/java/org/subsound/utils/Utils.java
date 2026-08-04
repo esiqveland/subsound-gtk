@@ -53,6 +53,7 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.javagi.base.Filename;
 import static org.subsound.i18n.I18n.trn;
 
 
@@ -92,7 +93,14 @@ public class Utils {
         // GLib.idleAdd calls g_idle_add_full which has proper memory management with a DestroyNotify callback.
         // Java-GI uses that to free the upcall allocation.
         GLib.idleAdd(GLib.PRIORITY_DEFAULT_IDLE, () -> {
-            fn.run();
+            try {
+                fn.run();
+            } catch (Throwable t) {
+                // Never let exceptions escape into java-gi's upcall handler: it stores them
+                // and only rethrows when the outer native call returns (app shutdown),
+                // which hides the failure and poisons subsequent callbacks.
+                log.error("runOnMainThread: callback failed", t);
+            }
             return GLib.SOURCE_REMOVE;
         });
     }
@@ -490,13 +498,13 @@ public class Utils {
         return (long) estimatedBytes;
     }
 
-    public record FileDialogResult(String path) {}
+    public record FileDialogResult(Filename path) {}
 
     public static CompletableFuture<FileDialogResult> selectFolder(Window parentWindow) {
         var result = new CompletableFuture<FileDialogResult>();
 
         FileDialog fileDialog = new FileDialog();
-        fileDialog.selectFolder(parentWindow, null, (dialog, asyncResult, _) -> {
+        fileDialog.selectFolder(parentWindow, null, asyncResult -> {
             try {
                 File file = fileDialog.selectFolderFinish(asyncResult);
                 var path = file.getPath();
