@@ -157,7 +157,8 @@ public class TestPlayerPage extends Box {
                             Duration.ofSeconds(121),
                             suffix
                     ),
-                    uri
+                    uri,
+                    Optional.empty()
             );
         }
     }

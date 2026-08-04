@@ -3,6 +3,7 @@ package org.subsound.persistence.database;
 import com.google.gson.reflect.TypeToken;
 import org.subsound.integration.ServerClient;
 import org.subsound.integration.ServerClient.ArtistId;
+import org.subsound.integration.ServerClient.ReplayGain;
 import org.subsound.persistence.database.Artist.Biography;
 import org.subsound.integration.ServerClient.SongInfo;
 import org.subsound.persistence.database.DownloadQueueItem.DownloadStatus;
@@ -334,8 +335,8 @@ public class DatabaseServerService {
     }
 
     private static final String SONG_INSERT_SQL = """
-            INSERT OR REPLACE INTO songs (id, server_id, album_id, album_name, name, year, artist_id, artist_name, duration_ms, starred_at_ms, cover_art_id, created_at_ms, track_number, disc_number, bit_rate, size, genre, suffix, artists_json, album_artists_json, moods_json, search_text)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO songs (id, server_id, album_id, album_name, name, year, artist_id, artist_name, duration_ms, starred_at_ms, cover_art_id, created_at_ms, track_number, disc_number, bit_rate, size, genre, suffix, artists_json, album_artists_json, moods_json, rg_track_gain, rg_album_gain, rg_track_peak, rg_album_peak, search_text)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
     private static void bindSong(PreparedStatement pstmt, DBSong song) throws SQLException {
@@ -396,7 +397,19 @@ public class DatabaseServerService {
         } else {
             pstmt.setNull(21, Types.VARCHAR);
         }
-        pstmt.setString(22, SearchNormalizer.normalizeIndexText(song.name(), song.artistName(), song.albumName()));
+        if (song.replayGain().isPresent()) {
+            var rg = song.replayGain().get();
+            pstmt.setDouble(22, rg.trackGain());
+            pstmt.setDouble(23, rg.albumGain());
+            pstmt.setDouble(24, rg.trackPeak());
+            pstmt.setDouble(25, rg.albumPeak());
+        } else {
+            pstmt.setNull(22, Types.REAL);
+            pstmt.setNull(23, Types.REAL);
+            pstmt.setNull(24, Types.REAL);
+            pstmt.setNull(25, Types.REAL);
+        }
+        pstmt.setString(26, SearchNormalizer.normalizeIndexText(song.name(), song.artistName(), song.albumName()));
     }
 
     public void insert(DBSong song) {
@@ -702,6 +715,7 @@ public class DatabaseServerService {
         Optional<List<ArtistId>> artists = parseArtistList(rs.getString("artists_json"));
         Optional<List<ArtistId>> albumArtists = parseArtistList(rs.getString("album_artists_json"));
         List<String> moods = parseMoodList(rs.getString("moods_json"));
+        Optional<ReplayGain> replayGain = parseReplayGain(rs);
 
         return new DBSong(
                 rs.getString("id"),
@@ -724,8 +738,24 @@ public class DatabaseServerService {
                 rs.getString("suffix") != null ? rs.getString("suffix") : "",
                 artists,
                 albumArtists,
-                moods
+                moods,
+                replayGain
         );
+    }
+
+    /**
+     * Reconstruct ReplayGain from the four nullable REAL columns. Absent (empty) when the
+     * gains were never synced (rows predating MigrationV23) — the gain columns are NULL.
+     */
+    private static Optional<ReplayGain> parseReplayGain(ResultSet rs) throws SQLException {
+        double trackGain = rs.getDouble("rg_track_gain");
+        if (rs.wasNull()) {
+            return Optional.empty();
+        }
+        double albumGain = rs.getDouble("rg_album_gain");
+        double trackPeak = rs.getDouble("rg_track_peak");
+        double albumPeak = rs.getDouble("rg_album_peak");
+        return Optional.of(new ReplayGain(trackGain, albumGain, trackPeak, albumPeak));
     }
 
     private static Optional<List<ArtistId>> parseArtistList(String json) {

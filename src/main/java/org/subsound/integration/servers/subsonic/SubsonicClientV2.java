@@ -700,7 +700,13 @@ public class SubsonicClientV2 implements ServerClient {
                 toCoverArt(song.albumId(), new AlbumIdentifier(song.albumId())),
                 song.suffix() != null ? song.suffix() : "",
                 transcodeInfo,
-                downloadUri
+                downloadUri,
+                ofNullable(song.replayGain()).map(rg -> new ReplayGain(
+                        rg.trackGain(),
+                        rg.albumGain(),
+                        rg.trackPeak(),
+                        rg.albumPeak()
+                ))
         );
     }
 

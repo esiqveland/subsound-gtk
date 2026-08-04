@@ -5,6 +5,8 @@ import org.gnome.adw.ButtonRow;
 import org.gnome.adw.Clamp;
 import org.gnome.adw.ComboRow;
 import org.gnome.adw.PreferencesGroup;
+import org.gnome.adw.SpinRow;
+import org.gnome.adw.SwitchRow;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Image;
@@ -16,6 +18,7 @@ import org.subsound.app.state.AppManager;
 import org.subsound.app.state.NetworkMonitoring.NetworkStatus;
 import org.subsound.app.state.PlayerAction;
 import org.subsound.integration.ServerClient;
+import org.subsound.integration.ServerClient.ReplayGainConfig;
 import org.subsound.integration.ServerClient.TranscodeBitrate.MaximumBitrate;
 import org.subsound.integration.ServerClient.TranscodeBitrate.SourceQuality;
 import org.subsound.integration.ServerClient.TranscodeSettings;
@@ -51,6 +54,11 @@ public class SettingsPage extends Box {
     private final PreferencesGroup transcodeSettings;
     private final ComboRow audioFormatCombo;
     private final ComboRow audioBitrateCombo;
+    private final PreferencesGroup replayGainSettings;
+    private final SwitchRow rgEnabledSwitch;
+    private final ComboRow rgModeCombo;
+    private final SpinRow rgPreAmpSpin;
+    private final SpinRow rgFallbackSpin;
     private final PreferencesGroup serverLibrary;
     private final ButtonRow librarySyncRow;
     private final ButtonRow libraryQuickScanRow;
@@ -67,7 +75,8 @@ public class SettingsPage extends Box {
             AppManager appManager,
             @Nullable SettingsInfo settingsInfo,
             Path dataDir,
-            @Nullable TranscodeSettings transcodeSettings
+            @Nullable TranscodeSettings transcodeSettings,
+            ReplayGainConfig replayGainConfig
     ) {
         super(VERTICAL, 0);
         this.appManager = appManager;
@@ -170,6 +179,54 @@ public class SettingsPage extends Box {
         this.transcodeSettings.add(audioFormatCombo);
         this.transcodeSettings.add(audioBitrateCombo);
 
+        // ReplayGain (loudness normalization) settings, stored per server. Seeded from the
+        // caller (mirroring transcodeSettings); AppManager remains the owner and pushes changes
+        // to the player.
+        var rgConfig = replayGainConfig != null ? replayGainConfig : ReplayGainConfig.defaultConfig();
+        this.rgEnabledSwitch = SwitchRow.builder()
+                .setTitle(tr("Enable ReplayGain"))
+                .setSubtitle(tr("Normalize playback loudness across tracks"))
+                .build();
+        this.rgEnabledSwitch.setActive(rgConfig.enabled());
+
+        var rgModeModel = new StringList();
+        rgModeModel.append(tr("Track"));
+        rgModeModel.append(tr("Album"));
+        this.rgModeCombo = new ComboRow();
+        this.rgModeCombo.setTitle(tr("Normalization mode"));
+        this.rgModeCombo.setSubtitle(tr("Album mode preserves an album's internal dynamics"));
+        this.rgModeCombo.setModel(rgModeModel);
+        this.rgModeCombo.setSelected(rgConfig.mode() == ReplayGainConfig.Mode.ALBUM ? 1 : 0);
+
+        this.rgPreAmpSpin = SpinRow.withRange(-15.0, 15.0, 0.5);
+        this.rgPreAmpSpin.setTitle(tr("Pre-amp (dB)"));
+        this.rgPreAmpSpin.setDigits(1);
+        this.rgPreAmpSpin.setValue(rgConfig.preAmpDb());
+
+        this.rgFallbackSpin = SpinRow.withRange(-15.0, 15.0, 0.5);
+        this.rgFallbackSpin.setTitle(tr("Fallback gain (dB)"));
+        this.rgFallbackSpin.setSubtitle(tr("Applied to tracks without ReplayGain data"));
+        this.rgFallbackSpin.setDigits(1);
+        this.rgFallbackSpin.setValue(rgConfig.fallbackGainDb());
+
+        this.replayGainSettings = new PreferencesGroup();
+        this.replayGainSettings.setTitle(tr("ReplayGain"));
+        this.replayGainSettings.setSeparateRows(false);
+        this.replayGainSettings.add(rgEnabledSwitch);
+        this.replayGainSettings.add(rgModeCombo);
+        this.replayGainSettings.add(rgPreAmpSpin);
+        this.replayGainSettings.add(rgFallbackSpin);
+
+        // Wire change handlers AFTER setting initial values to avoid a spurious save on load.
+        this.rgEnabledSwitch.onNotify("active", _ -> {
+            applyReplayGainSensitivity();
+            saveReplayGain();
+        });
+        this.rgModeCombo.onNotify("selected", _ -> saveReplayGain());
+        this.rgPreAmpSpin.getAdjustment().onValueChanged(this::saveReplayGain);
+        this.rgFallbackSpin.getAdjustment().onValueChanged(this::saveReplayGain);
+        applyReplayGainSensitivity();
+
         this.librarySyncRow = ButtonRow.builder()
                 .setTitle(tr("Full scan"))
                 .setActivatable(true)
@@ -249,6 +306,7 @@ public class SettingsPage extends Box {
         this.centerBox.append(this.serverLibrary);
         this.centerBox.append(this.syncGroup);
         this.centerBox.append(this.transcodeSettings);
+        this.centerBox.append(this.replayGainSettings);
         this.centerBox.append(this.localSettings);
 
         var clamp = new Clamp();
@@ -265,6 +323,26 @@ public class SettingsPage extends Box {
         this.append(scroll);
         this.refresh();
         this.refreshLocalCount();
+    }
+
+    private void applyReplayGainSensitivity() {
+        boolean enabled = this.rgEnabledSwitch.getActive();
+        this.rgModeCombo.setSensitive(enabled);
+        this.rgPreAmpSpin.setSensitive(enabled);
+        this.rgFallbackSpin.setSensitive(enabled);
+    }
+
+    private void saveReplayGain() {
+        var mode = this.rgModeCombo.getSelected() == 1
+                ? ReplayGainConfig.Mode.ALBUM
+                : ReplayGainConfig.Mode.TRACK;
+        var config = new ReplayGainConfig(
+                this.rgEnabledSwitch.getActive(),
+                mode,
+                this.rgPreAmpSpin.getValue(),
+                this.rgFallbackSpin.getValue()
+        );
+        this.appManager.handleAction(new PlayerAction.SaveReplayGainConfig(config));
     }
 
     private void refresh() {

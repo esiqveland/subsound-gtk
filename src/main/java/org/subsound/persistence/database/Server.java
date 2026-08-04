@@ -2,6 +2,7 @@ package org.subsound.persistence.database;
 
 import org.jspecify.annotations.Nullable;
 import org.subsound.integration.ServerClient.HttpHeader;
+import org.subsound.integration.ServerClient.ReplayGainConfig;
 import org.subsound.integration.ServerClient.ServerType;
 
 import java.time.Instant;
@@ -18,6 +19,7 @@ public record Server(
         boolean tlsSkipVerify,
         @Nullable String audioFormat,
         @Nullable Integer audioBitrate,
-        List<HttpHeader> customHeaders
+        List<HttpHeader> customHeaders,
+        ReplayGainConfig replayGainConfig
 ) {
 }

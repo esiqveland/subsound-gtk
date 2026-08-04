@@ -127,6 +127,9 @@ public class AppManager {
     // because setSource/seek reset the live value before the transition's listener fire lands.
     private final AtomicReference<Observation> lastObservation = new AtomicReference<>();
     private final AtomicInteger loadGeneration = new java.util.concurrent.atomic.AtomicInteger(0);
+    // Cached per-server ReplayGain settings, used to compute the playback gain for each song
+    // without a DB hit per track. Refreshed on startup and whenever the settings are saved.
+    private volatile ServerClient.ReplayGainConfig replayGainConfig = ServerClient.ReplayGainConfig.defaultConfig();
 
     private Optional<ApplicationWindow> window = Optional.empty();
     private ToastOverlay toastOverlay;
@@ -157,6 +160,9 @@ public class AppManager {
                 UUID.fromString(savedServerId),
                 this.database
         );
+        this.replayGainConfig = this.databaseService.getServerById(savedServerId)
+                .map(Server::replayGainConfig)
+                .orElseGet(ServerClient.ReplayGainConfig::defaultConfig);
         // Load server configuration from DB (or migrate from legacy JSON)
         this.client = new AtomicReference<>();
         this.songCache = new SongCache(
@@ -305,7 +311,8 @@ public class AppManager {
                     false,
                     legacy.audioFormat(),
                     legacy.transcodeBitrate(),
-                    List.of()
+                    List.of(),
+                    ServerClient.ReplayGainConfig.defaultConfig()
             );
             this.databaseService.insert(server);
             config.legacyServerConfig = null;
@@ -834,7 +841,11 @@ public class AppManager {
         }
         boolean startPlaying = !startPaused;
         this.player.setSource(
-                new AudioSource(cachedSong.uri(), songInfo.duration()),
+                new AudioSource(
+                        cachedSong.uri(),
+                        songInfo.duration(),
+                        computeReplayGainScale(songInfo, this.replayGainConfig)
+                ),
                 startPlaying
         );
         // Commit the scrobble session for this song. setSource has already reset
@@ -944,6 +955,7 @@ public class AppManager {
                 // config actions:
                 case PlayerAction.SaveConfig settings -> this.saveConfig(settings);
                 case PlayerAction.SaveTranscodeFormat a -> this.saveTranscodeFormat(a);
+                case PlayerAction.SaveReplayGainConfig a -> this.saveReplayGainConfig(a);
                 case PlayerAction.Toast t -> this.toast(t);
 
                 // player actions:
@@ -1176,6 +1188,9 @@ public class AppManager {
         String existingAudioFormat = null;
         Integer existingAudioBitrate = null;
         var existingServer = this.databaseService.getServerById(SERVER_ID);
+        ServerClient.ReplayGainConfig existingReplayGain = existingServer
+                .map(Server::replayGainConfig)
+                .orElseGet(ServerClient.ReplayGainConfig::defaultConfig);
         if (existingServer.isPresent()) {
             existingAudioFormat = existingServer.get().audioFormat();
             existingAudioBitrate = existingServer.get().audioBitrate();
@@ -1192,7 +1207,8 @@ public class AppManager {
                 settings.next().tlsSkipVerify(),
                 existingAudioFormat,
                 existingAudioBitrate,
-                settings.next().customHeaders()
+                settings.next().customHeaders(),
+                existingReplayGain
         );
         this.databaseService.upsert(server);
 
@@ -1246,7 +1262,7 @@ public class AppManager {
                 server.id(), server.isPrimary(), server.serverType(),
                 server.serverUrl(), server.username(), server.createdAt(),
                 server.tlsSkipVerify(), audioFormatStr, audioBitrateInt,
-                server.customHeaders()
+                server.customHeaders(), server.replayGainConfig()
         );
         this.databaseService.upsert(updatedServer);
 
@@ -1262,6 +1278,63 @@ public class AppManager {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /** Current per-server ReplayGain settings (cached; reflects the latest save). */
+    public ServerClient.ReplayGainConfig getReplayGainConfig() {
+        return this.replayGainConfig;
+    }
+
+    private void saveReplayGainConfig(PlayerAction.SaveReplayGainConfig action) {
+        // Persist per-server; ReplayGain only affects local playback, so unlike transcode
+        // settings there is no need to rebuild the runtime config or recreate the client.
+        var serverOpt = this.databaseService.getServerById(this.dbService.getServerId().toString());
+        if (serverOpt.isPresent()) {
+            var server = serverOpt.get();
+            var updatedServer = new Server(
+                    server.id(), server.isPrimary(), server.serverType(),
+                    server.serverUrl(), server.username(), server.createdAt(),
+                    server.tlsSkipVerify(), server.audioFormat(), server.audioBitrate(),
+                    server.customHeaders(), action.config()
+            );
+            this.databaseService.upsert(updatedServer);
+        }
+        this.replayGainConfig = action.config();
+
+        // Apply immediately to whatever is playing so the change is audible without a track skip.
+        this.currentState.getValue().nowPlaying()
+                .map(NowPlaying::song)
+                .ifPresent(song -> this.player.setReplayGainScale(
+                        computeReplayGainScale(song, action.config())
+                ));
+    }
+
+    /**
+     * Effective linear volume multiplier for a song under the given ReplayGain settings.
+     * Returns 1.0 (no change) when disabled. Songs without ReplayGain metadata use the
+     * configured fallback gain. A peak-based clamp prevents a boosted track from clipping.
+     */
+    static double computeReplayGainScale(SongInfo song, ServerClient.ReplayGainConfig config) {
+        if (!config.enabled()) {
+            return 1.0;
+        }
+        boolean albumMode = config.mode() == ServerClient.ReplayGainConfig.Mode.ALBUM;
+        double gainDb = song.replayGain()
+                .map(rg -> albumMode ? rg.albumGain() : rg.trackGain())
+                .orElse(config.fallbackGainDb());
+        gainDb += config.preAmpDb();
+
+        double linear = Math.pow(10.0, gainDb / 20.0);
+
+        // Prevent clipping: if the boosted peak would exceed full scale, cap the gain so the
+        // loudest sample lands exactly at 1.0. Only possible when we actually know the peak.
+        double peak = song.replayGain()
+                .map(rg -> albumMode ? rg.albumPeak() : rg.trackPeak())
+                .orElse(0.0);
+        if (peak > 0.0 && linear * peak > 1.0) {
+            linear = 1.0 / peak;
+        }
+        return linear;
     }
 
     private void setClient(ServerClient newClient) {

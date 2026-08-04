@@ -142,6 +142,7 @@ public class Database {
         migrations.add(new MigrationV20());
         migrations.add(new MigrationV21());
         migrations.add(new MigrationV22());
+        migrations.add(new MigrationV23());
         return migrations;
     }
 
@@ -712,6 +713,28 @@ public class Database {
                             PRIMARY KEY (playlist_id, server_id)
                         )
                         """);
+            }
+        }
+    }
+
+    static class MigrationV23 implements Migration {
+        @Override
+        public int version() { return 23; }
+
+        @Override
+        public void apply(Connection conn) throws SQLException {
+            try (Statement stmt = conn.createStatement()) {
+                // ReplayGain loudness-normalization metadata (OpenSubsonic). Gains in dB, peaks
+                // linear. NULL for rows synced before this migration; such songs simply play with
+                // the configured fallback gain until re-synced.
+                stmt.execute("ALTER TABLE songs ADD COLUMN rg_track_gain REAL");
+                stmt.execute("ALTER TABLE songs ADD COLUMN rg_album_gain REAL");
+                stmt.execute("ALTER TABLE songs ADD COLUMN rg_track_peak REAL");
+                stmt.execute("ALTER TABLE songs ADD COLUMN rg_album_peak REAL");
+
+                // Per-server ReplayGain settings (enabled/mode/pre-amp/fallback), stored as one
+                // JSON blob. NULL for existing servers -> treated as defaults.
+                stmt.execute("ALTER TABLE servers ADD COLUMN replaygain_config_json TEXT");
             }
         }
     }

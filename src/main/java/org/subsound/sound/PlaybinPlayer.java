@@ -163,6 +163,12 @@ public class PlaybinPlayer implements Player {
     private final MainContext playerContext;
     private final MainLoop loop;
     Element playbinEl;
+    // ReplayGain gain stage inserted via playbin's "audio-filter". Its "volume" property carries
+    // the per-track normalization multiplier and multiplies with playbin's own user-volume. Null
+    // if the "volume" element could not be created (playback then proceeds without normalization).
+    private Element replayGainVolumeEl;
+    // Last applied ReplayGain multiplier; re-applied after each READY bounce in setSource.
+    private volatile double replayGainScale = 1.0;
     Bus bus;
     int busWatchId;
     // macOS-only. osxAudioSink is the sink we install as playbin's audio-sink. deviceMonitor is an
@@ -210,11 +216,29 @@ public class PlaybinPlayer implements Player {
 
     public record AudioSource(
             URI uri,
-            Duration estimatedDuration
-    ){}
+            Duration estimatedDuration,
+            // ReplayGain linear volume multiplier for this track (1.0 = no change).
+            double replayGainScale
+    ){
+        public AudioSource(URI uri, Duration estimatedDuration) {
+            this(uri, estimatedDuration, 1.0);
+        }
+    }
     public void setSource(AudioSource src, boolean startPlaying) {
         this.duration = src.estimatedDuration;
+        this.replayGainScale = src.replayGainScale;
         this.setSource(src.uri, startPlaying);
+    }
+
+    /**
+     * Update the ReplayGain multiplier for the currently-playing track without restarting it.
+     * The "volume" element's property is live-controllable, so the change takes effect immediately.
+     */
+    public void setReplayGainScale(double scale) {
+        this.replayGainScale = scale;
+        if (this.replayGainVolumeEl != null) {
+            this.replayGainVolumeEl.set("volume", scale, null);
+        }
     }
 
     public void setSource(URI uri, boolean startPlaying) {
@@ -243,6 +267,10 @@ public class PlaybinPlayer implements Player {
         // Restore volume after state change
         this.playbinEl.set("volume", savedVolume, null);
         this.playbinEl.set("mute", savedMute, null);
+        // Apply this track's ReplayGain multiplier (independent of the user volume above).
+        if (this.replayGainVolumeEl != null) {
+            this.replayGainVolumeEl.set("volume", this.replayGainScale, null);
+        }
         if (startPlaying) {
             var playing = this.playbinEl.setState(State.PLAYING);
             log.debug("Player: Change source to src=" + fileUri + ": PLAYING=" + playing.name());
@@ -590,6 +618,19 @@ public class PlaybinPlayer implements Player {
             flags = flags | GST_PLAY_FLAG_SOFT_VOLUME;
         }
         playbinEl.set("flags", flags, null);
+
+        // ReplayGain: insert a "volume" element as playbin's audio-filter. We compute the
+        // normalization multiplier ourselves (from the server's ReplayGain dB values) and drive
+        // this element's "volume" property; it multiplies with playbin's own user-facing volume,
+        // so the two stay independent. "volume" is a gst-plugins-base core element (always present)
+        // and its "volume" property is live-controllable. The audio-filter is only picked up while
+        // playbin is in NULL/READY, which is where we are here at construction.
+        replayGainVolumeEl = ElementFactory.make("volume", "replaygain-volume");
+        if (replayGainVolumeEl != null) {
+            playbinEl.set("audio-filter", replayGainVolumeEl, null);
+        } else {
+            log.warn("Could not create 'volume' element; ReplayGain normalization disabled");
+        }
 
         // We add a message handler
         bus = playbinEl.getBus();
