@@ -2,6 +2,7 @@ package org.subsound.persistence.database;
 
 import org.subsound.integration.ServerClient.ArtistId;
 import org.subsound.integration.ServerClient.CoverArt;
+import org.subsound.integration.ServerClient.ReplayGain;
 import org.subsound.integration.ServerClient.SongInfo;
 
 import java.time.Duration;
@@ -31,7 +32,8 @@ public record DBSong(
         String suffix,
         Optional<List<ArtistId>> artists,
         Optional<List<ArtistId>> albumArtists,
-        List<String> moods
+        List<String> moods,
+        Optional<ReplayGain> replayGain
 ) {
     public static DBSong from(SongInfo songInfo, UUID serverId) {
         return new DBSong(
@@ -55,7 +57,8 @@ public record DBSong(
                 songInfo.suffix(),
                 songInfo.artists(),
                 songInfo.albumArtists(),
-                songInfo.moods()
+                songInfo.moods(),
+                songInfo.replayGain()
         );
     }
 }

@@ -2,6 +2,7 @@ package org.subsound.persistence.database;
 
 import com.google.gson.reflect.TypeToken;
 import org.subsound.integration.ServerClient.HttpHeader;
+import org.subsound.integration.ServerClient.ReplayGainConfig;
 import org.subsound.integration.ServerClient.ServerType;
 import org.subsound.utils.Utils;
 import org.slf4j.Logger;
@@ -23,7 +24,7 @@ public class DatabaseService {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseService.class);
     private final Database database;
 
-    private static final String ALL_COLUMNS = "id, is_primary, server_type, server_url, username, created_at, tls_skip_verify, audio_format, audio_bitrate, custom_headers";
+    private static final String ALL_COLUMNS = "id, is_primary, server_type, server_url, username, created_at, tls_skip_verify, audio_format, audio_bitrate, custom_headers, replaygain_config_json";
 
     public DatabaseService(Database database) {
         this.database = database;
@@ -40,7 +41,7 @@ public class DatabaseService {
     }
 
     public void insert(Server server) {
-        String sql = "INSERT INTO servers (" + ALL_COLUMNS + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO servers (" + ALL_COLUMNS + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setServerParams(pstmt, server);
@@ -53,7 +54,7 @@ public class DatabaseService {
 
     public void upsert(Server server) {
         String sql = """
-            INSERT INTO servers (%s) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO servers (%s) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 is_primary = excluded.is_primary,
                 server_type = excluded.server_type,
@@ -62,7 +63,8 @@ public class DatabaseService {
                 tls_skip_verify = excluded.tls_skip_verify,
                 audio_format = excluded.audio_format,
                 audio_bitrate = excluded.audio_bitrate,
-                custom_headers = excluded.custom_headers
+                custom_headers = excluded.custom_headers,
+                replaygain_config_json = excluded.replaygain_config_json
             """.formatted(ALL_COLUMNS);
         try (Connection conn = database.openConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -142,6 +144,10 @@ public class DatabaseService {
         }
         var customHeaders = server.customHeaders() == null ? List.of() : server.customHeaders();
         pstmt.setString(10, Utils.toJson(customHeaders));
+        var replayGainConfig = server.replayGainConfig() == null
+                ? ReplayGainConfig.defaultConfig()
+                : server.replayGainConfig();
+        pstmt.setString(11, Utils.toJson(replayGainConfig));
     }
 
     private Server mapResultSetToServer(ResultSet rs) throws SQLException {
@@ -157,8 +163,17 @@ public class DatabaseService {
                 rs.getBoolean("tls_skip_verify"),
                 rs.getString("audio_format"),
                 audioBitrate,
-                parseHttpHeaders(rs.getString("custom_headers"))
+                parseHttpHeaders(rs.getString("custom_headers")),
+                parseReplayGainConfig(rs.getString("replaygain_config_json"))
         );
+    }
+
+    private static ReplayGainConfig parseReplayGainConfig(String json) {
+        if (json == null || json.isBlank()) {
+            return ReplayGainConfig.defaultConfig();
+        }
+        ReplayGainConfig config = Utils.fromJson(json, ReplayGainConfig.class);
+        return config == null ? ReplayGainConfig.defaultConfig() : config;
     }
 
     private static final Type HTTP_HEADER_LIST_TYPE = new TypeToken<List<HttpHeader>>() {}.getType();

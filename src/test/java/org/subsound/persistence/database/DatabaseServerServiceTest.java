@@ -203,7 +203,8 @@ public class DatabaseServerServiceTest {
                 "mp3",
                 Optional.empty(),
                 Optional.empty(),
-                List.of()
+                List.of(),
+                Optional.empty()
         );
 
         DBSong song2 = new DBSong(
@@ -227,7 +228,8 @@ public class DatabaseServerServiceTest {
                 "",
                 Optional.empty(),
                 Optional.empty(),
-                List.of()
+                List.of(),
+                Optional.empty()
         );
 
         DBSong song3 = new DBSong(
@@ -251,7 +253,8 @@ public class DatabaseServerServiceTest {
                 "flac",
                 Optional.empty(),
                 Optional.empty(),
-                List.of()
+                List.of(),
+                Optional.empty()
         );
 
         // Test insert
@@ -298,7 +301,8 @@ public class DatabaseServerServiceTest {
                 Optional.empty(), Optional.empty(), now,
                 Optional.of(1), Optional.of(1), Optional.of(320),
                 5000000L, "Rock", "mp3",
-                Optional.of(artists), Optional.of(albumArtists), moods
+                Optional.of(artists), Optional.of(albumArtists), moods,
+                Optional.empty()
         );
 
         service.insert(song);
@@ -317,7 +321,8 @@ public class DatabaseServerServiceTest {
                 Optional.empty(), Optional.empty(), now,
                 Optional.empty(), Optional.empty(), Optional.empty(),
                 0L, "", "",
-                Optional.empty(), Optional.empty(), List.of()
+                Optional.empty(), Optional.empty(), List.of(),
+                Optional.empty()
         );
         service.insert(bare);
         Optional<DBSong> foundBare = service.getSongById("song-bare");
@@ -671,7 +676,29 @@ public class DatabaseServerServiceTest {
         return new DBSong(id, serverId, albumId, albumName, title, Optional.empty(), artistId, artistName,
                 Duration.ofMinutes(3), Optional.empty(), Optional.empty(), now,
                 Optional.empty(), Optional.empty(), Optional.empty(), 1000L, "", "mp3",
-                Optional.empty(), Optional.empty(), List.of());
+                Optional.empty(), Optional.empty(), List.of(), Optional.empty());
+    }
+
+    @Test
+    public void testReplayGainPersistenceRoundTrip() throws Exception {
+        File dbFile = folder.newFile("test_replaygain.db");
+        Database db = new Database("jdbc:sqlite:" + dbFile.getAbsolutePath());
+        UUID serverId = UUID.randomUUID();
+        DatabaseServerService service = new DatabaseServerService(serverId, db);
+
+        // A song WITH ReplayGain metadata round-trips exactly.
+        var rg = new ServerClient.ReplayGain(-6.5, -4.0, 0.98, 1.02);
+        SongInfo withRg = downloadableSong("song-rg").withReplayGain(Optional.of(rg));
+        service.insert(DBSong.from(withRg, serverId));
+        DBSong loaded = service.getSongById("song-rg").orElseThrow();
+        Assertions.assertThat(loaded.replayGain()).contains(rg);
+
+        // A song WITHOUT ReplayGain metadata reads back as empty (also covers rows that
+        // predate the migration, whose gain columns are NULL).
+        SongInfo withoutRg = downloadableSong("song-plain");
+        Assertions.assertThat(withoutRg.replayGain()).isEmpty();
+        service.insert(DBSong.from(withoutRg, serverId));
+        Assertions.assertThat(service.getSongById("song-plain").orElseThrow().replayGain()).isEmpty();
     }
 
     private static SongInfo downloadableSong(String songId) {

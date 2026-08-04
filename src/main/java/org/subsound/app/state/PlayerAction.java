@@ -62,6 +62,7 @@ public sealed interface PlayerAction {
     // not strictly player actions:
     record SaveConfig(SettingsInfo next) implements PlayerAction {}
     record SaveTranscodeFormat(ServerClient.TranscodeSettings audioFormat) implements PlayerAction {}
+    record SaveReplayGainConfig(ServerClient.ReplayGainConfig config) implements PlayerAction {}
     record Toast(org.gnome.adw.Toast toast, Duration timeout) implements PlayerAction {
         public Toast(org.gnome.adw.Toast toast) {
             this(toast, Duration.ofMillis(2000));

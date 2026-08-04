@@ -1,6 +1,7 @@
 package org.subsound.persistence.database;
 
 import org.subsound.integration.ServerClient.HttpHeader;
+import org.subsound.integration.ServerClient.ReplayGainConfig;
 import org.subsound.integration.ServerClient.ServerType;
 import org.assertj.core.api.Assertions;
 import org.junit.Rule;
@@ -40,7 +41,8 @@ public class DatabaseServiceTest {
                 List.of(
                         new HttpHeader("CF-Access-Client-Id", "abc123"),
                         new HttpHeader("CF-Access-Client-Secret", "s3cr3t")
-                )
+                ),
+                ReplayGainConfig.defaultConfig()
         );
 
         Server server2 = new Server(
@@ -53,7 +55,8 @@ public class DatabaseServiceTest {
                 false,
                 null,
                 null,
-                List.of()
+                List.of(),
+                ReplayGainConfig.defaultConfig()
         );
 
         // Test insert
@@ -93,7 +96,8 @@ public class DatabaseServiceTest {
         // upsert must preserve/replace custom headers
         Server server1Updated = new Server(
                 server1.id(), true, ServerType.SUBSONIC, "http://server1.com", "user1",
-                now, false, null, null, List.of(new HttpHeader("X-Custom", "v"))
+                now, false, null, null, List.of(new HttpHeader("X-Custom", "v")),
+                ReplayGainConfig.defaultConfig()
         );
         service.upsert(server1Updated);
         Assertions.assertThat(service.getServerById(server1.id().toString()))

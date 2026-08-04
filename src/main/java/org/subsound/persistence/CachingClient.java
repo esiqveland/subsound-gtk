@@ -621,7 +621,8 @@ public class CachingClient implements ServerClient {
                 song.coverArtId().flatMap(id -> toCoverArt(song.albumId(), new ObjectIdentifier.AlbumIdentifier(song.albumId()))),
                 streamFormat,
                 transcodeInfo,
-                URI.create("offline://unavailable/" + song.id())
+                URI.create("offline://unavailable/" + song.id()),
+                song.replayGain()
         );
     }
 
