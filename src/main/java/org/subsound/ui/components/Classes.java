@@ -56,7 +56,11 @@ public enum Classes {
     lyricsLineActive("lyrics-line-active"),
     lyricsLinePage("lyrics-line-page"),
     commandPalette("command-palette"),
-    commandPaletteBackdrop("command-palette-backdrop");
+    commandPaletteBackdrop("command-palette-backdrop"),
+    dropTargetActive("drop-target-active"),
+    dropTargetSlot("drop-target-slot"),
+    playlistDropRow("playlist-drop-row"),
+    dragSongBadge("drag-song-badge");
 
     private final String className;
     Classes(String className) {

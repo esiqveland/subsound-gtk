@@ -2,7 +2,10 @@ package org.subsound.ui.views;
 
 import org.gnome.adw.AlertDialog;
 import org.gnome.adw.Clamp;
+import org.gnome.gdk.ContentProvider;
+import org.gnome.gdk.DragAction;
 import org.gnome.gdk.ModifierType;
+import org.gnome.gobject.Value;
 import org.gnome.gio.ListModel;
 import org.gnome.gio.ListStore;
 import org.gnome.glib.Type;
@@ -14,6 +17,8 @@ import org.gnome.gtk.ColumnView;
 import org.gnome.gtk.ColumnViewColumn;
 import org.gnome.gtk.ColumnViewSorter;
 import org.gnome.gtk.CustomFilter;
+import org.gnome.gtk.DragIcon;
+import org.gnome.gtk.DragSource;
 import org.gnome.gtk.Entry;
 import org.gnome.gtk.EventControllerKey;
 import org.gnome.gtk.FilterChange;
@@ -95,6 +100,13 @@ import static org.subsound.ui.views.AlbumInfoPage.infoLabel;
 
 public class PlaylistListViewV2 extends Box implements AppManager.StateListener {
     private static final Logger log = LoggerFactory.getLogger(PlaylistListViewV2.class);
+
+    /**
+     * Prefix for the {@code G_TYPE_STRING} drag payload produced when dragging song rows out
+     * of this view. The remainder is a comma-separated list of song ids. Drop targets (e.g.
+     * the playlists overview) match on this prefix to reject foreign/plain-text drags.
+     */
+    public static final String SONGS_DRAG_PREFIX = "subsound-songs:";
 
     private final AppManager appManager;
     private final ColumnView columnView;
@@ -347,6 +359,52 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         titleFactory.onSetup(obj -> {
             var listItem = (ListItem) obj;
             var cell = new TitleArtistCell(appManager, this.onNavigate);
+            // Drag source: the title cell is the drag handle for its song row. Dragging a row
+            // that is part of the current multi-selection drags the whole selection; otherwise
+            // just that one song. The payload is a G_TYPE_STRING of song ids (see songsForDrag).
+            var dragSource = new DragSource();
+            dragSource.setActions(DragAction.COPY);
+            dragSource.onPrepare((x, y) -> {
+                var entry = cell.boundEntry;
+                if (entry == null) {
+                    return null;
+                }
+                var songs = songsForDrag(entry);
+                if (songs.isEmpty()) {
+                    return null;
+                }
+                var ids = songs.stream().map(GSongInfo::getId).toList();
+                var value = new Value();
+                value.init(Types.STRING);
+                value.setString(SONGS_DRAG_PREFIX + String.join(",", ids));
+                return ContentProvider.forValue(value);
+            });
+            // Replace the default drag cursor with a small "N items" badge. The badge sits in a
+            // transparent box offset from the hotspot (pinned to 0,0) so the cursor stays clear
+            // of the pill's text instead of covering it.
+            dragSource.onDragBegin(drag -> {
+                var entry = cell.boundEntry;
+                if (entry == null) {
+                    return;
+                }
+                int count = songsForDrag(entry).size();
+                if (count == 0) {
+                    return;
+                }
+                var badge = Label.builder()
+                        .setLabel(trn("%d item", "%d items", count).formatted(count))
+                        .setCssClasses(new String[]{Classes.dragSongBadge.className()})
+                        .build();
+                var iconBox = Box.builder()
+                        .setOrientation(HORIZONTAL)
+                        .setMarginTop(10)
+                        .setMarginStart(14)
+                        .build();
+                iconBox.append(badge);
+                drag.setHotspot(0, 0);
+                DragIcon.getForDrag(drag).setChild(iconBox);
+            });
+            cell.addController(dragSource);
             listItem.setChild(cell);
         });
         titleFactory.onBind(obj -> {
@@ -735,6 +793,24 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
             out.add(e.gSong());
         }
         return out;
+    }
+
+    /**
+     * The songs to carry when {@code entry}'s row is dragged: the whole multi-selection when
+     * {@code entry} is part of a 2+ selection, otherwise just {@code entry} itself. Model items
+     * are stable instances, so identity ({@code ==}) membership is correct. Main thread only.
+     */
+    private List<GSongInfo> songsForDrag(GPlaylistEntry entry) {
+        var selected = selectedEntries();
+        boolean entryInSelection = selected.stream().anyMatch(e -> e == entry);
+        if (entryInSelection && selected.size() >= 2) {
+            var out = new ArrayList<GSongInfo>(selected.size());
+            for (var e : selected) {
+                out.add(e.gSong());
+            }
+            return out;
+        }
+        return List.of(entry.gSong());
     }
 
     /**
