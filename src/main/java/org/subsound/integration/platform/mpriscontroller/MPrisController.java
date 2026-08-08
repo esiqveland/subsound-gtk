@@ -277,7 +277,10 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
 
     @Override
     public <A> A Get(String _interfaceName, String _propertyName) {
-        log.info("MprisController.Get {} {}", _interfaceName, _propertyName);
+        // too noisy to log every time the position is queried
+        if (!"Position".equals(_propertyName)) {
+            log.info("MprisController.Get {} {}", _interfaceName, _propertyName);
+        }
         return switch (_interfaceName) {
             case MprisApplicationProperties.dbusInterfaceName ->
                     this.mprisApplicationProperties.Get(_interfaceName, _propertyName);
