@@ -100,6 +100,8 @@ public class Utils {
                 // and only rethrows when the outer native call returns (app shutdown),
                 // which hides the failure and poisons subsequent callbacks.
                 log.error("runOnMainThread: callback failed", t);
+                // rethrow to make sure we dont swallow something javagi needs to know about
+                throw t;
             }
             return GLib.SOURCE_REMOVE;
         });
