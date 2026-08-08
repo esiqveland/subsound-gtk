@@ -890,38 +890,38 @@
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder-core/52/record-builder-core-52.jar",
-    "sha512": "27a88b7a9a1d5df604ac43817895f92c1efa4c87fbc47394583bcecee8ccccb281b16b570d7155b267f9a13befe59903a5d53e6a245fbaf00a1cb14a279b4ea3",
-    "dest": "./offline-repository/io/soabase/record-builder/record-builder-core/52",
-    "dest-filename": "record-builder-core-52.jar"
+    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder-core/53/record-builder-core-53.jar",
+    "sha512": "a8f5d1511538d1f610265b0d7a11ad909984b15fe6c6fa5ec7af2f86689ef5ef173912ff809018d77312a223f9bf9dcf4876bb40589720e62bdb582c77dce515",
+    "dest": "./offline-repository/io/soabase/record-builder/record-builder-core/53",
+    "dest-filename": "record-builder-core-53.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder-core/52/record-builder-core-52.pom",
-    "sha512": "886dd7fbf99f6f8eebb6ab982c2d6c2c4ad6efeb0830d4ec916a94de78387ef5cf0b962377640802bbc0dcffe5ea450bbb1ff1cc16037a2d6b4f35b41289342b",
-    "dest": "./offline-repository/io/soabase/record-builder/record-builder-core/52",
-    "dest-filename": "record-builder-core-52.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder-core/53/record-builder-core-53.pom",
+    "sha512": "d437a363e2cfa0a3912631be3a698f8e7389ec1e99190e858b719e6237aec7cac24f2aa7ba5be94061ace146e82150497a766d6b8968107f609206e1e85ce288",
+    "dest": "./offline-repository/io/soabase/record-builder/record-builder-core/53",
+    "dest-filename": "record-builder-core-53.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder-processor/52/record-builder-processor-52.jar",
-    "sha512": "4716e5203ce05c1b8f4eb65337b444b94cdc1323e0a032f472a3acd4b0ac2f7161c5d2fc312c26675a30f46610f080c2e78ee235dfe9559f51ee0134c388f56d",
-    "dest": "./offline-repository/io/soabase/record-builder/record-builder-processor/52",
-    "dest-filename": "record-builder-processor-52.jar"
+    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder-processor/53/record-builder-processor-53.jar",
+    "sha512": "acc6b7fd87e2a42739276921addbf2bed695ab67443eb57e4127980479092448eced931ac5def90d2ed6bfd05891990b7d3c0b8bd30a41142a6c135302488988",
+    "dest": "./offline-repository/io/soabase/record-builder/record-builder-processor/53",
+    "dest-filename": "record-builder-processor-53.jar"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder-processor/52/record-builder-processor-52.pom",
-    "sha512": "661bcdb61a5ed5d3020e346ce1381705c12cbaf68e677dc8308032bc03f16667f62d5a71d97a9b81a7527ae5e95aa0b79d9b9f8d9a8e7acb8b29af87aa959a89",
-    "dest": "./offline-repository/io/soabase/record-builder/record-builder-processor/52",
-    "dest-filename": "record-builder-processor-52.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder-processor/53/record-builder-processor-53.pom",
+    "sha512": "45130cb4134958a86120007bf692bce75103e5cbd3c57d6d21aba6a3c3c9bb656228829a425f40a12071a8b18e6032f92d89ec06d00a3569fc25f9647e589f7a",
+    "dest": "./offline-repository/io/soabase/record-builder/record-builder-processor/53",
+    "dest-filename": "record-builder-processor-53.pom"
   },
   {
     "type": "file",
-    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder/52/record-builder-52.pom",
-    "sha512": "f27f40151aff3ce2a1e5dd4b12e310861a1c2f4bfc283beb9575c8131fe50082374e4a7fc5cf23831c5e5cc7b33ab01b8fcb144b4a553ef4967207353e6f419b",
-    "dest": "./offline-repository/io/soabase/record-builder/record-builder/52",
-    "dest-filename": "record-builder-52.pom"
+    "url": "https://repo.maven.apache.org/maven2/io/soabase/record-builder/record-builder/53/record-builder-53.pom",
+    "sha512": "827ebe46538ab8991428f13262bbaca1937f3423a2385fa350c194be6d0925eaec20b72d7894747e031da885a746eec10c12cdada04ad0d3ba0f3f41289511a6",
+    "dest": "./offline-repository/io/soabase/record-builder/record-builder/53",
+    "dest-filename": "record-builder-53.pom"
   },
   {
     "type": "file",
