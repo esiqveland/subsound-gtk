@@ -376,6 +376,10 @@ public class PlaylistsListView extends Box {
             return false;
         }
         appManager.handleAction(new PlayerAction.AddManyToPlaylist(songs, gPlaylist.getId(), gPlaylist.getName()));
+        // If the drop target is the playlist currently shown in the shared detail view, append
+        // the new rows there immediately (optimistic — Subsonic appends at the end) so the open
+        // list reflects the add without waiting for a reselect. No-op for any other playlist.
+        this.playlistListView.appendSongsIfCurrent(gPlaylist.getId(), songs);
         return true;
     }
 

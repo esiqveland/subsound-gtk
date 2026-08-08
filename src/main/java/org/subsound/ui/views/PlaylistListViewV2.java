@@ -1182,6 +1182,43 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
     }
 
     /**
+     * Append {@code songs} to the mounted list if they were just added to the playlist this
+     * view currently displays. Splices onto the base {@link #listModel} (the ColumnView reacts
+     * in place; scroll position and selection are preserved) instead of rebuilding via
+     * {@link #setSongs}. No-op when a different playlist is shown. Callable from any thread.
+     *
+     * <p>Subsonic {@code addToPlaylist} appends at the end, so the new entries take the trailing
+     * positions and no tail renumber is needed. Splicing the base model is correct even under an
+     * active search filter or column sort — the downstream Filter/Sort models react to it.
+     */
+    public void appendSongsIfCurrent(String playlistId, List<GSongInfo> songs) {
+        var current = this.currentPlaylist.get();
+        if (current == null
+                || current.kind() != PlaylistKind.NORMAL
+                || !current.id().equals(playlistId)
+                || songs.isEmpty()) {
+            return;
+        }
+        Utils.runOnMainThread(() -> {
+            // Re-check on the main thread: the displayed playlist may have changed while queued.
+            var now = this.currentPlaylist.get();
+            if (now == null || !now.id().equals(playlistId)) {
+                return;
+            }
+            int base = this.listModel.getNItems();
+            var added = new GPlaylistEntry[songs.size()];
+            for (int i = 0; i < songs.size(); i++) {
+                added[i] = GPlaylistEntry.of(playlistId, songs.get(i), base + i);
+            }
+            this.listModel.splice(base, 0, added);
+            // Keep our count in sync so the follow-up refreshPlaylistAsync notify("name") — which
+            // sets reloadNeeded when songCount != lastKnownSongCount — does not also queue a
+            // redundant deferred reload for this same change.
+            this.lastKnownSongCount = base + songs.size();
+        });
+    }
+
+    /**
      * Bind this view to a foreign {@link ListModel} of {@link GSongInfo}, so that adds/removes
      * in the source store are reflected here without rebuilding the list. The initial contents
      * are pushed through {@link #setSongs}; subsequent itemsChanged notifications from the
