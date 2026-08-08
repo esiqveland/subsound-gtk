@@ -58,7 +58,16 @@
   </branding>
 
   <releases>
-    <release version="@version@" date="2026-07-30">
+    <release version="@version@" date="2026-08-09">
+      <description>
+        <ul>
+          <li>New: normalize playback loudness with ReplayGain so tracks and albums play at an even volume</li>
+          <li>New: drag songs onto a playlist in the playlists overview to add them</li>
+          <li>New: update bindings to be based on gnome 50</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.7.14" date="2026-07-30">
       <description>
         <ul>
           <li>New: select multiple songs in a playlist to play, queue, download, star, or remove them all at once</li>
