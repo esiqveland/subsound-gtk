@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Subsound\n"
 "Report-Msgid-Bugs-To: https://github.com/subsoundorg/subsound-gtk/issues\n"
-"POT-Creation-Date: 2026-07-31 17:54+0200\n"
+"POT-Creation-Date: 2026-08-07 01:06+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
 #: src/main/java/org/subsound/MainApplication.java:169
-#: src/main/java/org/subsound/MainApplication.java:302
+#: src/main/java/org/subsound/MainApplication.java:303
 #, java-printf-format
 msgid "Settings"
 msgstr ""
@@ -35,36 +35,36 @@ msgstr ""
 msgid "Search"
 msgstr ""
 
-#: src/main/java/org/subsound/MainApplication.java:310
+#: src/main/java/org/subsound/MainApplication.java:311
 #: src/main/java/org/subsound/ui/components/CommandPalette.java:297
 #: src/main/java/org/subsound/ui/components/CommandPalette.java:328
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:191
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:467
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:194
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:516
 #, java-printf-format
 msgid "Album"
 msgstr ""
 
-#: src/main/java/org/subsound/MainApplication.java:330
+#: src/main/java/org/subsound/MainApplication.java:331
 #: src/main/java/org/subsound/ui/components/LyricsPopover.java:46
 #: src/main/java/org/subsound/ui/components/PlayerBar.java:280
 #, java-printf-format
 msgid "Lyrics"
 msgstr ""
 
-#: src/main/java/org/subsound/MainApplication.java:357
+#: src/main/java/org/subsound/MainApplication.java:358
 #: src/main/java/org/subsound/ui/views/FrontpagePage.java:142
 #, java-printf-format
 msgid "Home"
 msgstr ""
 
-#: src/main/java/org/subsound/MainApplication.java:363
-#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:303
+#: src/main/java/org/subsound/MainApplication.java:364
+#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:329
 #: src/main/java/org/subsound/ui/views/FrontpagePage.java:244
 #, java-printf-format
 msgid "Playlists"
 msgstr ""
 
-#: src/main/java/org/subsound/MainApplication.java:373
+#: src/main/java/org/subsound/MainApplication.java:374
 #: src/main/java/org/subsound/ui/views/ArtistsListView.java:151
 #, java-printf-format
 msgid "Artists"
@@ -150,8 +150,8 @@ msgid "Failed to start server: %s"
 msgstr ""
 
 #: src/main/java/org/subsound/app/state/PlaylistsStore.java:150
-#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:127
-#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:361
+#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:134
+#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:425
 #, java-printf-format
 msgid "Starred"
 msgstr ""
@@ -261,56 +261,57 @@ msgstr ""
 msgid "Add all to playlist:"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:133
+#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:140
 #, java-printf-format
 msgid "Select a playlist to view"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:271
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:252
+#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:297
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:255
 #, java-printf-format
 msgid "Library"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:279
+#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:305
 #, java-printf-format
 msgid "New playlist"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:515
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1521
+#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:579
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1588
 #, java-printf-format
 msgid "Playlist name"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:520
+#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:584
 #, java-printf-format
 msgid "Create Playlist"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:521
+#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:585
 #, java-printf-format
 msgid "Enter a name for the new playlist"
 msgstr ""
 
 #. TRANSLATORS: "_" marks the mnemonic key
-#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:524
+#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:588
 #: src/main/java/org/subsound/ui/components/ServerBadge.java:168
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1531
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1575
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1598
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1642
 #, java-printf-format
 msgid "_Cancel"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:525
+#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:589
 #, java-printf-format
 msgid "_Create"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:684
-#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:688
-#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:691
-#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:696
+#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:748
+#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:752
+#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:755
+#: src/main/java/org/subsound/ui/components/PlaylistsListView.java:760
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:393
 #, java-printf-format
 msgid "%d item"
 msgid_plural "%d items"
@@ -496,211 +497,211 @@ msgstr ""
 msgid "Configuration saved!"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:84
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:85
 #, java-printf-format
 msgid "Clear song cache"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:88
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:89
 #, java-printf-format
 msgid "Clear thumbnail cache"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:92
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:93
 #, java-printf-format
 msgid "Clear lyrics cache"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:97
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:98
 #, java-printf-format
 msgid "Local Settings"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:107
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:131
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:108
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:132
 #, java-printf-format
 msgid "Source"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:124
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:125
 #, java-printf-format
 msgid "Audio format"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:135
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:136
 #, java-printf-format
 msgid "Max bitrate"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:161
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:162
 #, java-printf-format
 msgid "Server information"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:163
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:164
 #, java-printf-format
 msgid "Type"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:164
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:165
 #, java-printf-format
 msgid "Version"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:165
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:166
 #, java-printf-format
 msgid "API Version"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:166
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:167
 #, java-printf-format
 msgid "OpenSubsonic support"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:171
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:172
 #, java-printf-format
 msgid "OpenSubsonic extensions"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:176
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:177
 #, java-printf-format
 msgid "Transcode Settings"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:184
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:187
 #, java-printf-format
 msgid "Enable ReplayGain"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:185
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:188
 #, java-printf-format
 msgid "Normalize playback loudness across tracks"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:190
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:193
 #, java-printf-format
 msgid "Track"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:193
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:196
 #, java-printf-format
 msgid "Normalization mode"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:194
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:197
 #, java-printf-format
 msgid "Album mode preserves an album's internal dynamics"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:199
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:202
 #, java-printf-format
 msgid "Pre-amp (dB)"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:204
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:207
 #, java-printf-format
 msgid "Fallback gain (dB)"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:205
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:208
 #, java-printf-format
 msgid "Applied to tracks without ReplayGain data"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:210
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:213
 #, java-printf-format
 msgid "ReplayGain"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:228
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:231
 #, java-printf-format
 msgid "Full scan"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:230
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:233
 #, java-printf-format
 msgid "Start server scan for new songs and folders"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:238
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:241
 #, java-printf-format
 msgid "Quick scan"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:240
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:243
 #, java-printf-format
 msgid "Start server quick scan for new songs and folders"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:247
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:250
 #, java-printf-format
 msgid "Last Scanned at"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:248
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:251
 #, java-printf-format
 msgid "Status"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:249
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:252
 #, java-printf-format
 msgid "Server songs"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:259
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:262
 #, java-printf-format
 msgid "Local songs"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:263
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:266
 #, java-printf-format
 msgid "Sync library"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:265
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:268
 #, java-printf-format
 msgid "Syncs metadata for offline use"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:280
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:283
 #, java-printf-format
 msgid "Local Library"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:359
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:360
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:362
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:363
 #, java-printf-format
 msgid "Unknown"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:362
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:365
 #, java-printf-format
 msgid "No"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/components/SettingsPage.java:362
+#: src/main/java/org/subsound/ui/components/SettingsPage.java:365
 #, java-printf-format
 msgid "Yes"
 msgstr ""
 
 #: src/main/java/org/subsound/ui/components/SongContextMenu.java:68
 #: src/main/java/org/subsound/ui/views/AlbumInfoPage.java:417
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1334
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1657
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1401
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1724
 #, java-printf-format
 msgid "Play"
 msgstr ""
 
 #: src/main/java/org/subsound/ui/components/SongContextMenu.java:74
 #: src/main/java/org/subsound/ui/views/AlbumInfoPage.java:438
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1680
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1747
 #, java-printf-format
 msgid "Play Next"
 msgstr ""
 
 #: src/main/java/org/subsound/ui/components/SongContextMenu.java:80
 #: src/main/java/org/subsound/ui/views/AlbumInfoPage.java:444
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1686
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1753
 #, java-printf-format
 msgid "Add to Queue"
 msgstr ""
@@ -713,22 +714,22 @@ msgstr ""
 #: src/main/java/org/subsound/ui/components/SongContextMenu.java:101
 #: src/main/java/org/subsound/ui/views/AlbumInfoPage.java:459
 #: src/main/java/org/subsound/ui/views/AlbumInfoPage.java:673
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1338
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1692
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1405
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1759
 #, java-printf-format
 msgid "Add to Playlist…"
 msgstr ""
 
 #: src/main/java/org/subsound/ui/components/SongContextMenu.java:112
 #: src/main/java/org/subsound/ui/views/AlbumInfoPage.java:464
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1340
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1695
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1407
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1762
 #, java-printf-format
 msgid "Download"
 msgstr ""
 
 #: src/main/java/org/subsound/ui/components/SongDownloadStatusIcon.java:44
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1423
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1490
 #, java-printf-format
 msgid "Available offline"
 msgstr ""
@@ -765,13 +766,13 @@ msgid "Add to Starred"
 msgstr ""
 
 #: src/main/java/org/subsound/ui/views/AlbumInfoPage.java:450
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1344
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1411
 #, java-printf-format
 msgid "Unstar"
 msgstr ""
 
 #: src/main/java/org/subsound/ui/views/AlbumInfoPage.java:490
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1736
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1803
 #, java-printf-format
 msgid "← Back"
 msgstr ""
@@ -784,7 +785,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: src/main/java/org/subsound/ui/views/AlbumInfoPage.java:658
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1387
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1454
 #, java-printf-format
 msgid "Download all"
 msgstr ""
@@ -858,146 +859,146 @@ msgstr[1] ""
 msgid "Scanned %s ago"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:263
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:275
 #, java-printf-format
 msgid "Filter by title, artist, or album"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:389
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:911
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:438
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:978
 #, java-printf-format
 msgid "Title"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:498
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:547
 #, java-printf-format
 msgid "Duration"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:680
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:729
 #, java-printf-format
 msgid "Refresh playlist"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1320
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1387
 #, java-printf-format
 msgid "Clear selection"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1336
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1403
 #, java-printf-format
 msgid "Add to queue"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1342
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1409
 #, java-printf-format
 msgid "Star"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1346
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1374
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1708
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1413
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1441
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1775
 #, java-printf-format
 msgid "Remove from Playlist"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1369
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1436
 #, java-printf-format
 msgid "%d selected"
 msgid_plural "%d selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1373
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1717
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1440
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1784
 #, java-printf-format
 msgid "Remove from Downloads"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1386
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1453
 #, java-printf-format
 msgid "Rename…"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1388
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1455
 #, java-printf-format
 msgid "Delete Playlist…"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1527
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1594
 #, java-printf-format
 msgid "Rename Playlist"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1528
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1595
 #, java-printf-format
 msgid "Enter a new name for \"%s\""
 msgstr ""
 
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1532
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1599
 #, java-printf-format
 msgid "_Rename"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1571
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1638
 #, java-printf-format
 msgid "Delete Playlist"
 msgstr ""
 
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1572
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1639
 #, java-printf-format
 msgid "Delete \"%s\"? This cannot be undone."
 msgstr ""
 
-#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1576
+#: src/main/java/org/subsound/ui/views/PlaylistListViewV2.java:1643
 #, java-printf-format
 msgid "_Delete"
 msgstr ""
 
-#: src/main/java/org/subsound/utils/Utils.java:182
-#: src/main/java/org/subsound/utils/Utils.java:206
+#: src/main/java/org/subsound/utils/Utils.java:190
+#: src/main/java/org/subsound/utils/Utils.java:214
 #, java-printf-format
 msgid "%d day"
 msgid_plural "%d days"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/main/java/org/subsound/utils/Utils.java:185
+#: src/main/java/org/subsound/utils/Utils.java:193
 #, java-printf-format
 msgid "%d hour"
 msgid_plural "%d hours"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/main/java/org/subsound/utils/Utils.java:188
+#: src/main/java/org/subsound/utils/Utils.java:196
 #, java-printf-format
 msgid "%d minute"
 msgid_plural "%d minutes"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/main/java/org/subsound/utils/Utils.java:191
+#: src/main/java/org/subsound/utils/Utils.java:199
 #, java-printf-format
 msgid "%d second"
 msgid_plural "%d seconds"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/main/java/org/subsound/utils/Utils.java:211
+#: src/main/java/org/subsound/utils/Utils.java:219
 #, java-printf-format
 msgid "%d hr"
 msgid_plural "%d hr"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/main/java/org/subsound/utils/Utils.java:214
+#: src/main/java/org/subsound/utils/Utils.java:222
 #, java-printf-format
 msgid "%d min"
 msgid_plural "%d min"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/main/java/org/subsound/utils/Utils.java:217
+#: src/main/java/org/subsound/utils/Utils.java:225
 #, java-printf-format
 msgid "%d sec"
 msgid_plural "%d sec"

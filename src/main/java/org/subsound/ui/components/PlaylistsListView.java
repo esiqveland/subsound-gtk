@@ -8,11 +8,14 @@ import org.gnome.adw.NavigationSplitView;
 import org.gnome.adw.ResponseAppearance;
 import org.gnome.adw.StatusPage;
 import org.gnome.adw.TimedAnimation;
+import org.gnome.gdk.DragAction;
 import org.gnome.gdk.Gdk;
 import org.gnome.gio.ListStore;
+import org.gnome.gobject.Value;
 import org.gnome.gtk.Align;
 import org.gnome.gtk.Box;
 import org.gnome.gtk.Button;
+import org.gnome.gtk.DropTarget;
 import org.gnome.gtk.Entry;
 import org.gnome.gtk.EventControllerFocus;
 import org.gnome.gtk.EventControllerMotion;
@@ -38,13 +41,17 @@ import org.subsound.app.state.PlaylistsStore.GPlaylist;
 import org.subsound.integration.ServerClient.PlaylistKind;
 import org.subsound.integration.ServerClient.PlaylistSimple;
 import org.subsound.integration.ServerClient.SongInfo;
+import org.subsound.ui.models.GSongInfo;
 import org.subsound.ui.models.GSongStore;
 import org.subsound.ui.views.PlaylistListViewV2;
 import org.subsound.utils.Utils;
+import org.javagi.gobject.types.Types;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -60,6 +67,7 @@ import static org.subsound.utils.Utils.doAsync;
 
 public class PlaylistsListView extends Box {
     private static final Logger log = LoggerFactory.getLogger(PlaylistsListView.class);
+    private static final Set<DragAction> DRAG_ACTION_COPY = Set.of(DragAction.COPY);
 
     private final AppManager appManager;
     private final ListStore<GPlaylist> listModel;
@@ -158,6 +166,25 @@ public class PlaylistsListView extends Box {
                 openPlaylist(row.getPlaylist());
             });
             row.addController(rowClick);
+            // Drop target: dropping songs dragged from a playlist's song list adds them to the
+            // playlist this (recycled) row shows. Only NORMAL playlists accept — the synthetic
+            // Starred/Downloaded rows reject the drop (no highlight, no-op), mirroring the
+            // "Add to Playlist" menu which also only lists NORMAL playlists.
+            var dropTarget = new DropTarget(Types.STRING, DragAction.COPY);
+            dropTarget.onAccept(_ -> isDropTarget(row.getPlaylist()));
+            dropTarget.onEnter((x, y) -> {
+                if (!isDropTarget(row.getPlaylist())) {
+                    return Set.of();
+                }
+                row.setDropHighlight(true);
+                return DRAG_ACTION_COPY;
+            });
+            dropTarget.onLeave(() -> row.setDropHighlight(false));
+            dropTarget.onDrop((value, x, y) -> {
+                row.setDropHighlight(false);
+                return handleSongDrop(row.getPlaylist(), value);
+            });
+            row.addController(dropTarget);
             listitem.setChild(row);
         });
 
@@ -313,6 +340,47 @@ public class PlaylistsListView extends Box {
         this.setHexpand(true);
         this.setVexpand(true);
         this.append(view);
+    }
+
+    // A drop is only accepted on real (NORMAL) playlists. The synthetic Starred/Downloaded
+    // rows are not user-editable song containers, so they never accept a song drop.
+    private static boolean isDropTarget(GPlaylist gPlaylist) {
+        return gPlaylist != null && gPlaylist.getPlaylist().kind() == PlaylistKind.NORMAL;
+    }
+
+    // Handle songs dropped onto a playlist row: parse the drag payload (a G_TYPE_STRING of
+    // song ids produced by PlaylistListViewV2), resolve them to GSongInfo via the shared song
+    // store, and dispatch AddManyToPlaylist (which refreshes the playlist and toasts). Returns
+    // whether the drop was consumed.
+    private boolean handleSongDrop(GPlaylist gPlaylist, Value value) {
+        if (!isDropTarget(gPlaylist)) {
+            return false;
+        }
+        String data = value.getString();
+        if (data == null || !data.startsWith(PlaylistListViewV2.SONGS_DRAG_PREFIX)) {
+            return false;
+        }
+        var idsPart = data.substring(PlaylistListViewV2.SONGS_DRAG_PREFIX.length());
+        if (idsPart.isBlank()) {
+            return false;
+        }
+        var songs = new ArrayList<GSongInfo>();
+        for (var id : idsPart.split(",")) {
+            if (!id.isBlank()) {
+                // Ids come from rows the source view just displayed, so they are already in the
+                // store; getExisting avoids a blocking server load if one is somehow missing.
+                this.songStore.getExisting(id).ifPresent(songs::add);
+            }
+        }
+        if (songs.isEmpty()) {
+            return false;
+        }
+        appManager.handleAction(new PlayerAction.AddManyToPlaylist(songs, gPlaylist.getId(), gPlaylist.getName()));
+        // If the drop target is the playlist currently shown in the shared detail view, append
+        // the new rows there immediately (optimistic — Subsonic appends at the end) so the open
+        // list reflects the add without waiting for a reselect. No-op for any other playlist.
+        this.playlistListView.appendSongsIfCurrent(gPlaylist.getId(), songs);
+        return true;
     }
 
     // Open the given playlist (single-click path from a row's gesture). Resolves its current
@@ -560,12 +628,17 @@ public class PlaylistsListView extends Box {
         private final Label titleLabel;
         private final Label subtitleLabel;
         private final Image subtitleCheckmark;
+        private final Box contentBox;
         private GPlaylist gPlaylist;
         private SignalConnection<NotifyCallback> notifySignal;
 
         public PlaylistRowWidget(AppManager appManager) {
             super(HORIZONTAL, 12);
             this.appManager = appManager;
+
+            // Suppress the theme's default whole-row :drop(active) outline; we draw our own
+            // marker on the content box instead (see setDropHighlight / .drop-target-active).
+            this.addCssClass(Classes.playlistDropRow.className());
 
             this.setMarginTop(8);
             this.setMarginBottom(8);
@@ -603,11 +676,14 @@ public class PlaylistsListView extends Box {
             this.prefixBox.append(prefixIconDownload);
             this.prefixBox.append(prefixIconStar);
 
-            // Content box for title and subtitle
-            var contentBox = new Box(VERTICAL, 2);
-            contentBox.setHalign(START);
-            contentBox.setValign(CENTER);
-            contentBox.setHexpand(true);
+            // Content box for title and subtitle. This (not the whole row) carries the
+            // drop-target highlight, so the marker outlines only the title/subtitle area and
+            // does not draw behind the album art on the left.
+            this.contentBox = new Box(VERTICAL, 2);
+            this.contentBox.setHalign(FILL);
+            this.contentBox.setValign(CENTER);
+            this.contentBox.setHexpand(true);
+            this.contentBox.addCssClass(Classes.dropTargetSlot.className());
 
             this.titleLabel = Label.builder()
                     .setLabel("")
@@ -636,11 +712,21 @@ public class PlaylistsListView extends Box {
             subtitleRow.append(subtitleCheckmark);
             subtitleRow.append(subtitleLabel);
 
-            contentBox.append(titleLabel);
-            contentBox.append(subtitleRow);
+            this.contentBox.append(titleLabel);
+            this.contentBox.append(subtitleRow);
 
             this.append(prefixBox);
-            this.append(contentBox);
+            this.append(this.contentBox);
+        }
+
+        // Toggle the drop-target highlight, drawn on the content box so it outlines only the
+        // title/subtitle area (never behind the album art).
+        public void setDropHighlight(boolean on) {
+            if (on) {
+                this.contentBox.addCssClass(Classes.dropTargetActive.className());
+            } else {
+                this.contentBox.removeCssClass(Classes.dropTargetActive.className());
+            }
         }
 
         public GPlaylist getPlaylist() {
