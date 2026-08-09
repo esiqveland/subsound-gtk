@@ -380,8 +380,11 @@ public class PlaybinPlayer implements Player {
         // Resync the position anchor to the authoritative pipeline position. Corrects any drift
         // between wall-clock extrapolation (UI) and actual stream progress.
         this.positionAnchorAtMillis = System.currentTimeMillis() - pos.toMillis();
-        if (prev.toMillis() != position.toMillis()) {
-            log.debug("Player.setPosition: {}", position.getSeconds());
+        // Compare against the local `pos`, never a re-read of the volatile field: setSource()
+        // and unloadSource() null `this.position` from other threads, so a re-read here can
+        // observe null between the write above and this check.
+        if (prev.toMillis() != pos.toMillis()) {
+            log.debug("Player.setPosition: {}", pos.getSeconds());
             this.notifyState();
         }
     }
