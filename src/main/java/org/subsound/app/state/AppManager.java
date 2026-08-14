@@ -545,7 +545,7 @@ public class AppManager {
         }
         this.removeOnStateChanged(this.playbackReporter);
         this.playbackReporter.close();
-        var start = System.currentTimeMillis();
+        var start = System.nanoTime();
         timeIt(
                 duration -> log.info("shutdown: saveCurrentPlayerPreferencesImmediately: {}ms", duration.toMillis()),
                 this::saveCurrentPlayerPreferencesImmediately
@@ -575,7 +575,7 @@ public class AppManager {
                 duration -> log.info("shutdown: offlinePlaylistSyncService: {}ms", duration.toMillis()),
                 this.offlinePlaylistSyncService::stop
         );
-        var elapsed = System.currentTimeMillis() - start;
+        var elapsed = (System.nanoTime() - start) / 1_000_000;
         log.info("AppManager shutdown completed in %dms".formatted(elapsed));
     }
 
@@ -1497,7 +1497,7 @@ public class AppManager {
     }
 
     private void restorePlayQueue() {
-        var start = System.currentTimeMillis();
+        var start = System.nanoTime();
         int count = 0;
         try {
             var queueMeta = this.playerConfigService.loadQueueState()
@@ -1564,7 +1564,7 @@ public class AppManager {
         } catch (Exception e) {
             log.warn("Failed to restore play queue", e);
         } finally {
-            log.info("restorePlayQueue: {} items took {}ms", count, System.currentTimeMillis() - start);
+            log.info("restorePlayQueue: {} items took {}ms", count, (System.nanoTime() - start) / 1_000_000);
         }
     }
 

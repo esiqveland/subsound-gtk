@@ -3,8 +3,6 @@ package org.subsound.sound;
 import io.soabase.recordbuilder.core.RecordBuilderFull;
 import org.freedesktop.gstreamer.gst.Bus;
 import org.freedesktop.gstreamer.gst.ClockTime;
-import org.freedesktop.gstreamer.gst.Device;
-import org.freedesktop.gstreamer.gst.DeviceMonitor;
 import org.freedesktop.gstreamer.gst.Element;
 import org.freedesktop.gstreamer.gst.ElementFactory;
 import org.freedesktop.gstreamer.gst.Format;
@@ -13,11 +11,8 @@ import org.freedesktop.gstreamer.gst.Message;
 import org.freedesktop.gstreamer.gst.MessageType;
 import org.freedesktop.gstreamer.gst.SeekFlags;
 import org.freedesktop.gstreamer.gst.State;
-import org.freedesktop.gstreamer.gst.Structure;
 import org.gnome.glib.GError;
 import org.gnome.glib.GLib;
-import org.gnome.glib.MainContext;
-import org.gnome.glib.MainLoop;
 import org.javagi.base.Out;
 import org.mpris.MediaPlayer2.MediaPlayer2Player.PlaybackStatus;
 import org.slf4j.Logger;
@@ -28,12 +23,10 @@ import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Stream;
 
 import static org.subsound.sound.PlaybinPlayer.PlayerStates.BUFFERING;
 import static org.subsound.sound.PlaybinPlayer.PlayerStates.END_OF_STREAM;
@@ -98,19 +91,44 @@ public class PlaybinPlayer implements Player {
     public PlayerState getState() {
         var source = Optional.ofNullable(currentUri).map(uri -> new Source(
                 uri,
-                Optional.ofNullable(this.position),
-                Optional.ofNullable(this.duration)
+                toDuration(this.positionMillis),
+                toDuration(this.durationMillis)
         ));
         long startedAtMillis = this.playbackStartedAtMillis;
         long anchorAtMillis = this.positionAnchorAtMillis;
         return new PlayerState(
                 this.playerStates,
                 this.currentVolume,
-                this.muteState.get(),
+                this.muted,
                 startedAtMillis > 0 ? Optional.of(Instant.ofEpochMilli(startedAtMillis)) : Optional.empty(),
                 anchorAtMillis > 0 ? Optional.of(Instant.ofEpochMilli(anchorAtMillis)) : Optional.empty(),
                 source
         );
+    }
+
+    private static Optional<Duration> toDuration(long millis) {
+        return millis < 0 ? Optional.empty() : Optional.of(Duration.ofMillis(millis));
+    }
+
+    /** Forget all timing for the current stream: no position, no anchor, no scrobble session. */
+    private void resetTiming() {
+        this.positionMillis = NO_TIME;
+        this.positionAnchorAtMillis = 0;
+        this.playbackStartedAtMillis = 0;
+    }
+
+    /**
+     * Re-anchor UI extrapolation so the stream reads as being at {@code posMillis} right now.
+     *
+     * <p>{@code restartScrobble} controls the scrobble session: a seek or a fresh start restarts it
+     * at "now" (so seeking to the end can't falsely cross the threshold), while resuming from pause
+     * back-dates it by the already-played portion (so an AFK pause doesn't count as listening).
+     */
+    private void anchorAt(long posMillis, boolean restartScrobble) {
+        long now = System.currentTimeMillis();
+        this.positionMillis = posMillis;
+        this.positionAnchorAtMillis = now - posMillis;
+        this.playbackStartedAtMillis = restartScrobble ? now : now - posMillis;
     }
 
     // a public read-only view of the player state
@@ -159,9 +177,6 @@ public class PlaybinPlayer implements Player {
         }
     }
 
-    private final Thread playerLoopThread;
-    private final MainContext playerContext;
-    private final MainLoop loop;
     Element playbinEl;
     // ReplayGain gain stage inserted via playbin's "audio-filter". Its "volume" property carries
     // the per-track normalization multiplier and multiplies with playbin's own user-volume. Null
@@ -171,37 +186,32 @@ public class PlaybinPlayer implements Player {
     private volatile double replayGainScale = 1.0;
     Bus bus;
     int busWatchId;
-    // macOS-only. osxAudioSink is the sink we install as playbin's audio-sink. deviceMonitor is an
-    // *unstarted* DeviceMonitor used purely as a synchronous probe of the current Audio/Sink list.
-    // We poll it rather than watching its bus: GStreamer's osxaudiodeviceprovider only posts events
-    // on device-list changes (add/remove), so switching the default between already-connected
-    // devices in System Settings is invisible to the bus. An unstarted monitor re-probes CoreAudio
-    // on each getDevices(), so it reflects the live default including such a switch. Both null on
-    // non-macOS. The poll runs on deviceMonitorThread.
-    private Element osxAudioSink;
-    private DeviceMonitor deviceMonitor;
-    private Thread deviceMonitorThread;
-    // unique-id of the default output we last followed; polling compares against this.
-    private volatile String lastDefaultId;
-    private static final Duration DEVICE_POLL_INTERVAL = Duration.ofSeconds(2);
+    // macOS-only: keeps osxaudiosink pointed at the system default output. Null on every other
+    // platform, and on macOS when the sink or a new-enough GStreamer isn't available.
+    private MacosOutputFollower outputFollower;
     // PlayerState should be the public view of the state of the player/player Pipeline
     PlayerStates playerStates = INIT;
     private URI currentUri;
     private double currentVolume = 1.0;
-    private Duration duration;
-    private volatile Duration position;
+    // Position and duration are held as primitive millis rather than Duration: they are written
+    // from the bus watch (GTK main thread) and from setSource on virtual threads, and a primitive
+    // cannot be observed half-updated or null the way a nullable Duration field could.
+    private static final long NO_TIME = -1L;
+    private volatile long durationMillis = NO_TIME;
+    private volatile long positionMillis = NO_TIME;
     private volatile long playbackStartedAtMillis;
     // wall-clock epoch (ms) at which the current stream was (or would have been) at position=0.
     // While PLAYING: position ≈ currentTimeMillis() - positionAnchorAtMillis.
     // 0 means "no anchor yet" (set on first PLAYING transition / first position read).
     private volatile long positionAnchorAtMillis;
-    private AtomicBoolean muteState = new AtomicBoolean(false);
+    // Mirrors playbin's "mute" property; updated from the property notify callback.
+    private volatile boolean muted;
     // pipeline state tracks the current state of the GstPipeline
     State pipelineState = State.NULL;
 
     private final AtomicBoolean quitState = new AtomicBoolean(false);
     public void setMute(boolean muted) {
-        boolean isMuted = muteState.get();
+        boolean isMuted = this.muted;
         log.debug("Playbin: set muted={} isMuted={}", muted, isMuted);
         if (isMuted == muted) {
             return;
@@ -211,7 +221,7 @@ public class PlaybinPlayer implements Player {
     }
 
     public boolean getMute() {
-        return muteState.get();
+        return this.muted;
     }
 
     public record AudioSource(
@@ -225,7 +235,7 @@ public class PlaybinPlayer implements Player {
         }
     }
     public void setSource(AudioSource src, boolean startPlaying) {
-        this.duration = src.estimatedDuration;
+        this.durationMillis = src.estimatedDuration.toMillis();
         this.replayGainScale = src.replayGainScale;
         this.setSource(src.uri, startPlaying);
     }
@@ -241,11 +251,9 @@ public class PlaybinPlayer implements Player {
         }
     }
 
-    public void setSource(URI uri, boolean startPlaying) {
+    private void setSource(URI uri, boolean startPlaying) {
         this.currentUri = uri;
-        this.playbackStartedAtMillis = 0;
-        this.positionAnchorAtMillis = 0;
-        this.position = null;
+        this.resetTiming();
         var fileUri = uri.toString();
         // File.toURI() produces the single-slash "file:/path" form; GStreamer wants
         // "file:///path". Only rewrite that form — a blind replace would corrupt an
@@ -260,7 +268,7 @@ public class PlaybinPlayer implements Player {
         log.debug("Player: Change source to src={}", fileUri);
         // Save volume before state change (GStreamer may reset it)
         double savedVolume = this.currentVolume;
-        boolean savedMute = this.muteState.get();
+        boolean savedMute = this.muted;
         var ready = this.playbinEl.setState(State.READY);
         log.debug("Player: Change source to src={} READY={}", fileUri, ready.name());
         this.playbinEl.set("uri", fileUri, null);
@@ -340,77 +348,44 @@ public class PlaybinPlayer implements Player {
         return true;
     }
 
-    private record StateChanged(
-            State oldState,
-            State newState
-    ) {
-    }
-
-    private static StateChanged getStateChanged(Message msg) {
-        var oldState = new Out<State>();
-        var newState = new Out<State>();
-        var pendingState = new Out<State>();
-        msg.parseStateChanged(oldState, newState, pendingState);
-        return new StateChanged(
-                oldState.get(),
-                newState.get()
-        );
-    }
-
     private void onPositionChanged() {
-        var dur = new Out<Long>();
-        var success = playbinEl.queryPosition(Format.TIME, dur);
-        if (success) {
-            Long nanos = dur.get();
-            if (nanos == null) {
-                return;
-            }
-            // normalize to millis:
-            var pos = Duration.ofMillis(Duration.ofNanos(nanos).toMillis());
-            this.setPosition(pos);
+        var nanos = queryTime(true);
+        if (nanos == null) {
+            return;
         }
-    }
-
-    private void setPosition(Duration pos) {
-        var prev = this.position;
-        if (prev == null) {
-            prev = Duration.ZERO;
-        }
-        this.position = pos;
+        long posMillis = nanos / 1_000_000L;
+        long prev = this.positionMillis;
+        this.positionMillis = posMillis;
         // Resync the position anchor to the authoritative pipeline position. Corrects any drift
         // between wall-clock extrapolation (UI) and actual stream progress.
-        this.positionAnchorAtMillis = System.currentTimeMillis() - pos.toMillis();
-        // Compare against the local `pos`, never a re-read of the volatile field: setSource()
-        // and unloadSource() null `this.position` from other threads, so a re-read here can
-        // observe null between the write above and this check.
-        if (prev.toMillis() != pos.toMillis()) {
-            log.debug("Player.setPosition: {}", pos.getSeconds());
+        this.positionAnchorAtMillis = System.currentTimeMillis() - posMillis;
+        if (prev != posMillis) {
+            log.debug("Player.setPosition: {}", posMillis / 1000);
             this.notifyState();
         }
     }
 
     private void onDurationChanged() {
-        var dur = new Out<Long>();
-        var success = playbinEl.queryDuration(Format.TIME, dur);
-        if (success) {
-            Long nanos = dur.get();
-            if (nanos == null) {
-                return;
-            }
-            this.setDuration(Duration.ofNanos(nanos));
+        var nanos = queryTime(false);
+        if (nanos == null) {
+            return;
+        }
+        long durMillis = nanos / 1_000_000L;
+        long prev = this.durationMillis;
+        this.durationMillis = durMillis;
+        if (prev != durMillis) {
+            log.debug("Player.setDuration: {}", durMillis / 1000);
+            this.notifyState();
         }
     }
 
-    private void setDuration(Duration duration) {
-        var prev = this.duration;
-        if (prev == null) {
-            prev = Duration.ZERO;
-        }
-        this.duration = duration;
-        if (prev.toMillis() != duration.toMillis()) {
-            log.debug("Player.setDuration: {}", duration.getSeconds());
-            this.notifyState();
-        }
+    /** Queries the pipeline's position or duration in nanoseconds; null if unavailable. */
+    private Long queryTime(boolean wantPosition) {
+        var out = new Out<Long>();
+        boolean success = wantPosition
+                ? playbinEl.queryPosition(Format.TIME, out)
+                : playbinEl.queryDuration(Format.TIME, out);
+        return success ? out.get() : null;
     }
 
 
@@ -448,15 +423,11 @@ public class PlaybinPlayer implements Player {
             this.seekToStart();
         }
         if (isPaused()) {
-            var pos = this.position;
-            if (pos != null) {
-                long now = System.currentTimeMillis();
-                // play/pause transition: allow resetting the playbackStartedAtMillis
-                // a user can start a song, go AFK for 10 minutes, resume, and the threshold is already "met" without them actually listening
-                this.playbackStartedAtMillis = now - pos.toMillis();
-                // Reanchor for UI extrapolation: wall-clock time grew during pause but stream
-                // position didn't, so the anchor needs to jump forward by the pause duration.
-                this.positionAnchorAtMillis = now - pos.toMillis();
+            long pos = this.positionMillis;
+            if (pos >= 0) {
+                // Wall-clock time grew during the pause but the stream position didn't, so both the
+                // UI anchor and the scrobble session shift forward by the length of the pause.
+                anchorAt(pos, false);
             }
         }
         playbinEl.setState(State.PLAYING);
@@ -478,10 +449,8 @@ public class PlaybinPlayer implements Player {
     public void unloadSource() {
         log.info("Player: unloadSource");
         this.currentUri = null;
-        this.position = null;
-        this.duration = null;
-        this.playbackStartedAtMillis = 0;
-        this.positionAnchorAtMillis = 0;
+        this.durationMillis = NO_TIME;
+        this.resetTiming();
         var ret = this.playbinEl.setState(State.NULL);
         log.debug("Player: unloadSource: NULL={}", ret.name());
         // The bus does not deliver state-changed messages once the pipeline is NULL,
@@ -509,91 +478,60 @@ public class PlaybinPlayer implements Player {
     }
 
     public void seekTo(Duration position) {
-        //playbin.seek(1.0, Format.TIME, SeekFlags.FLUSH, SeekType.SET, 0, SeekType.NONE, 0);
-        long now = System.currentTimeMillis();
-        // Scrobble semantics: reset session-start so a seek-to-end can't falsely cross threshold.
-        this.playbackStartedAtMillis = now;
-        // UI anchor: seeking DOES move stream position, so anchor shifts accordingly.
-        this.positionAnchorAtMillis = now - position.toMillis();
-        this.position = position;
-        playbinEl.seekSimple(Format.TIME, Set.of(SeekFlags.ACCURATE, SeekFlags.FLUSH), position.toNanos());
-        this.notifyState();
+        this.doSeek(position.toMillis());
     }
 
     public void seekRelative(Duration offset) {
-        //playbin.seek(1.0, Format.TIME, SeekFlags.FLUSH, SeekType.SET, 0, SeekType.NONE, 0);
         var p = this.getCurrentPosition();
         if (p.isEmpty()) {
             return;
         }
-        var nextPos = p.get().plus(offset);
-        if (nextPos.getSeconds() < 0) {
-            nextPos = Duration.ZERO;
-        }
-        long now = System.currentTimeMillis();
-        this.playbackStartedAtMillis = now;
-        this.positionAnchorAtMillis = now - nextPos.toMillis();
-        this.position = nextPos;
-        playbinEl.seekSimple(Format.TIME, Set.of(SeekFlags.ACCURATE, SeekFlags.FLUSH), nextPos.toNanos());
+        this.doSeek(Math.max(0L, p.get().plus(offset).toMillis()));
+    }
+
+    private void doSeek(long posMillis) {
+        //playbin.seek(1.0, Format.TIME, SeekFlags.FLUSH, SeekType.SET, 0, SeekType.NONE, 0);
+        // Seeking moves the stream position, so the UI anchor shifts with it, and the scrobble
+        // session restarts so a seek-to-end can't falsely cross the threshold.
+        anchorAt(posMillis, true);
+        playbinEl.seekSimple(
+                Format.TIME,
+                Set.of(SeekFlags.ACCURATE, SeekFlags.FLUSH),
+                posMillis * 1_000_000L
+        );
         this.notifyState();
     }
 
     private void onPipelineStateChanged() {
-        var player = playbinEl;
-        if (player == null) {
-            return;
-        }
         Out<State> stateOut = new Out<>();
-        Out<State> stateOutPending = new Out<>();
+        Out<State> pendingOut = new Out<>();
         // Non-blocking (timeout 0). This runs on the GLib main-loop thread (via busCall); a
         // blocking CLOCK_TIME_NONE here deadlocks whenever the pipeline is mid-async transition
         // (e.g. osxaudiosink reopening on a device switch), because the ASYNC_DONE that would
         // complete the transition is delivered by this very loop. We just read the current state.
-        player.getState(stateOut, stateOutPending, new ClockTime(0L));
-        onPipelineStateChanged(new StateChanged(this.pipelineState, stateOut.get()));
-    }
-
-    private void onPipelineStateChanged(StateChanged stateChanged) {
-        var player = playbinEl;
-        if (player == null) {
+        playbinEl.getState(stateOut, pendingOut, new ClockTime(0L));
+        var nextState = stateOut.get();
+        var prevState = this.pipelineState;
+        if (prevState == nextState) {
             return;
         }
-        var oldState = stateChanged.oldState;
-        var nextState = stateChanged.newState;
-        if (oldState != nextState) {
-            this.onChangedPipelineState(nextState);
-            log.debug("Player: state changed: {} --> {}", oldState.name(), nextState.name());
-        }
-    }
-
-    private void onChangedPipelineState(State nextState) {
+        log.debug("Player: state changed: {} --> {}", prevState.name(), nextState.name());
         this.pipelineState = nextState;
 
-        record PlayState(
-                State pipelineState,
-                PlayerStates playerState
-        ) {
-        }
-        var p = new PlayState(this.pipelineState, this.playerStates);
-        var nextPlayerState = switch (p.pipelineState) {
+        var prevPlayerState = this.playerStates;
+        this.playerStates = switch (nextState) {
             case NULL, VOID_PENDING -> INIT;
             case READY -> READY;
             case PAUSED -> PAUSED;
             case PLAYING -> PLAYING;
         };
-        var prevPlayerState = this.playerStates;
-        this.playerStates = nextPlayerState;
-        if (nextPlayerState == PLAYING && this.playbackStartedAtMillis == 0) {
-            long now = System.currentTimeMillis();
-            this.playbackStartedAtMillis = now;
-            var pos = this.position;
-            long posMs = pos != null ? pos.toMillis() : 0L;
-            this.positionAnchorAtMillis = now - posMs;
+        if (this.playerStates == PLAYING && this.playbackStartedAtMillis == 0) {
+            anchorAt(Math.max(this.positionMillis, 0L), true);
         }
-        // Snap `this.position` forward to GStreamer's authoritative clock at the transition out
-        // of PLAYING. Without this, listeners would see a stale position (UI was extrapolating
-        // locally past `this.position`) and the scrubber would jump backward on pause.
-        if (prevPlayerState == PLAYING && nextPlayerState != PLAYING) {
+        // Snap the position forward to GStreamer's authoritative clock at the transition out of
+        // PLAYING. Without this, listeners would see a stale position (the UI was extrapolating
+        // locally past it) and the scrubber would jump backward on pause.
+        if (prevPlayerState == PLAYING && this.playerStates != PLAYING) {
             this.onPositionChanged();
         }
         this.notifyState();
@@ -604,12 +542,9 @@ public class PlaybinPlayer implements Player {
     }
 
     public PlaybinPlayer(URI initialFile) {
-        playerContext = new MainContext();
-        loop = new MainLoop(playerContext, false);
-
         // Create gstreamer elements
         playbinEl = ElementFactory.make("playbin", "Subsound");
-        if (Stream.of(playbinEl).anyMatch(Objects::isNull)) {
+        if (playbinEl == null) {
             GLib.printerr("playbin element could not be created. Exiting.\n");
             throw new RuntimeException("playbin element could not be created. Exiting.");
         }
@@ -644,40 +579,27 @@ public class PlaybinPlayer implements Player {
         // this sink should have better handling when macos switches audio output than the default sink for playbin
         if (OsUtil.getOSPlatform() == MACOS) {
             try {
-                //Element audioSink = ElementFactory.make("autoaudiosink", "audio-output");
-                Element osxaudiosink = ElementFactory.make("osxaudiosink", "audio-output");
-                if (osxaudiosink != null) {
-                    osxaudiosink.set("device", 0, null); // 0 = default device
-                    playbinEl.set("audio-sink", osxaudiosink, null);
-                    this.osxAudioSink = osxaudiosink;
-                    log.info("set audio-sink: osxaudiosink");
-                } else {
-                    log.info("unable to set audio-sink: osxaudiosink on macos");
-                }
-                // Follow the system default output by polling. We do NOT watch the monitor's bus:
-                // the osxaudiodeviceprovider only posts events when the device *list* changes
-                // (add/remove), so switching the default between already-connected devices in
-                // System Settings is invisible to the bus. Instead we keep an unstarted
-                // DeviceMonitor (which re-probes CoreAudio synchronously on each getDevices(), with
-                // no CFRunLoop dependency) and poll its default on a background thread.
-                //
-                // Gated on GStreamer >= 1.28, which is where the provider reports is-default; on
-                // older versions we can't tell which output is the default.
-                if (isGstAtLeast(1, 28)) {
-                    var deviceMonitor = new DeviceMonitor();
-                    this.deviceMonitor = deviceMonitor;
-                    deviceMonitor.addFilter("Audio/Sink", null);
-                    this.lastDefaultId = resolveDefaultOutputId();
-                    log.info("Gst.DeviceMonitor: initial default output unique-id={}", lastDefaultId);
-                    this.deviceMonitorThread = new Thread(this::pollDefaultOutput, "audio-device-poller");
-                    this.deviceMonitorThread.setDaemon(true);
-                    this.deviceMonitorThread.start();
-                } else {
-                    log.info(
-                            "Gst.DeviceMonitor: audio-output monitoring requires GStreamer >= 1.28, have '{}'; skipping",
-                            Gst.versionString()
-                    );
-                }
+                this.outputFollower = MacosOutputFollower.install(playbinEl, new MacosOutputFollower.PlayerHooks() {
+                    @Override
+                    public boolean hasSource() {
+                        return currentUri != null;
+                    }
+
+                    @Override
+                    public boolean isPlaying() {
+                        return pipelineState == State.PLAYING;
+                    }
+
+                    @Override
+                    public Duration currentPosition() {
+                        return getCurrentPosition().orElse(Duration.ZERO);
+                    }
+
+                    @Override
+                    public void pause() {
+                        PlaybinPlayer.this.pause();
+                    }
+                });
             } catch (Throwable t) {
                 log.error("error in setting up macos support: ", t);
                 throw t;
@@ -690,23 +612,6 @@ public class PlaybinPlayer implements Player {
         this.onVolumeChanged();
         this.onMuteChanged();
 
-        playerLoopThread = new Thread(() -> {
-            try {
-                loop.run();
-            } catch (Throwable t) {
-                log.info("playerLoopThread: crashed", t);
-            } finally {
-                log.info("playerLoopThread: run finished");
-            }
-            // Out of the main loop, clean up nicely
-//            GLib.print("Returned, stopping playback\n");
-//            pipeline.setState(State.NULL);
-//
-//            GLib.print("Deleting pipeline\n");
-//            Source.remove(busWatchId);
-        }, "player-main-loop");
-        playerLoopThread.start();
-
         // We set the input filename to the source element
         if (initialFile != null) {
             //var fileUri = initialFile.toString();
@@ -716,174 +621,22 @@ public class PlaybinPlayer implements Player {
         //GLib.print("Running...\n");
     }
 
-    /** True if the linked/loaded GStreamer runtime is at least major.minor. */
-    private static boolean isGstAtLeast(int major, int minor) {
-        Out<Integer> maj = new Out<>();
-        Out<Integer> min = new Out<>();
-        Out<Integer> micro = new Out<>();
-        Out<Integer> nano = new Out<>();
-        Gst.version(maj, min, micro, nano);
-        return maj.get() > major || (maj.get() == major && min.get() >= minor);
-    }
-
-    /**
-     * unique-id of a device. On GstOsxAudioDevice this exists both as a GObject property and in
-     * the properties Structure; we read the Structure so it works for any provider.
-     */
-    private static String uniqueId(Device d) {
-        Structure props = d.getProperties();
-        return props != null ? props.getString("unique-id") : null;
-    }
-
-    /**
-     * Whether the device is the current system default. This is NOT a GObject property on
-     * GstOsxAudioDevice (getProperty("is-default") throws); it lives only in the device's
-     * properties Structure. Returns null if absent. Note the flag is racy at add/change time —
-     * macOS flips the default just after a device appears — so follow-default logic must re-read.
-     */
-    private static Boolean isDefault(Device d) {
-        Structure props = d.getProperties();
-        if (props == null || !props.hasField("is-default")) {
-            return null;
-        }
-        Out<Boolean> out = new Out<>();
-        return props.getBoolean("is-default", out) ? out.get() : null;
-    }
-
-    /** unique-id of the current system default Audio/Sink, or null if none/undeterminable. */
-    private String resolveDefaultOutputId() {
-        var devices = deviceMonitor.getDevices();
-        if (devices == null) {
-            return null;
-        }
-        for (Device d : devices) {
-            if (Boolean.TRUE.equals(isDefault(d))) {
-                return uniqueId(d);
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Poll loop (daemon thread "audio-device-poller"): every {@link #DEVICE_POLL_INTERVAL}, probe
-     * the current default output and re-open the pipeline onto it if it changed. Polling is the only
-     * way to notice a default switch between already-connected devices (no bus event fires for that).
-     * Runs off the main/loop thread, so the blocking pipeline re-open in cycleAudioOutput() is safe.
-     */
-    private void pollDefaultOutput() {
-        while (!Thread.currentThread().isInterrupted()) {
-            try {
-                Thread.sleep(DEVICE_POLL_INTERVAL.toMillis());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
-            try {
-                followDefaultIfChanged();
-            } catch (Throwable t) {
-                log.error("audio-device-poller: failed", t);
-            }
-        }
-        log.info("audio-device-poller: stopped");
-    }
-
-    /**
-     * If the system default output changed since we last followed it, either follow it or pause:
-     * <ul>
-     *   <li>If the previously-active output device is <b>gone</b> from the list, it disconnected
-     *       (e.g. AirPods). macOS falls back to the built-in speakers; rather than suddenly blasting
-     *       them, we pause — matching native behaviour.</li>
-     *   <li>Otherwise the default just moved (Settings switch, or a newly-connected device became
-     *       default) while the old device is still present, so we re-open onto the new default.</li>
-     * </ul>
-     */
-    private void followDefaultIfChanged() {
-        if (this.osxAudioSink == null || this.currentUri == null) {
-            return;
-        }
-        var devices = deviceMonitor.getDevices(); // fresh probe (unstarted monitor)
-        if (devices == null) {
-            return;
-        }
-        String current = null;
-        boolean lastStillPresent = false;
-        for (Device d : devices) {
-            String id = uniqueId(d);
-            if (id == null) {
-                continue;
-            }
-            if (id.equals(lastDefaultId)) {
-                lastStillPresent = true;
-            }
-            if (Boolean.TRUE.equals(isDefault(d))) {
-                current = id;
-            }
-        }
-        if (current == null || current.equals(lastDefaultId)) {
-            return;
-        }
-        String previous = lastDefaultId;
-        lastDefaultId = current;
-        if (previous != null && !lastStillPresent) {
-            log.info("🎵 Active audio output {} disconnected; pausing instead of switching to {}",
-                    previous, current);
-            pause();
-        } else {
-            log.info("🎵 Default output changed: {} -> {}; following", previous, current);
-            cycleAudioOutput();
-        }
-    }
-
-    /**
-     * Re-open the pipeline so osxaudiosink (device=0) reconnects to the current system default
-     * output, preserving playback position. osxaudiosink only re-resolves the default when it
-     * reopens its device, which requires passing through READY. Bouncing just the sink element
-     * leaves it without a running clock/segment and playback stalls, so we bounce the whole
-     * playbin (PLAYING→READY→PAUSED to preroll on the new default, seek back, then PLAYING). This
-     * is the same re-init a track skip does, minus the track change.
-     *
-     * Called from the poll thread (never the main/loop thread), so blocking on getState() for
-     * preroll here is safe — the main loop stays free to deliver ASYNC_DONE.
-     */
-    private void cycleAudioOutput() {
-        if (this.osxAudioSink == null || this.currentUri == null) {
-            return;
-        }
-        boolean wasPlaying = this.pipelineState == State.PLAYING;
-        Duration pos = getCurrentPosition().orElse(Duration.ZERO);
-
-        // Bounce the pipeline through READY so the sink closes and reopens on the new default.
-        this.playbinEl.setState(State.READY);
-        this.playbinEl.setState(State.PAUSED);
-        // Block until PAUSED preroll completes so the seek below lands accurately. Safe here: this
-        // is the switch thread, not the main loop.
-        Out<State> stateOut = new Out<>();
-        Out<State> pendingOut = new Out<>();
-        this.playbinEl.getState(stateOut, pendingOut, Gst.CLOCK_TIME_NONE);
-        this.playbinEl.seekSimple(Format.TIME, Set.of(SeekFlags.ACCURATE, SeekFlags.FLUSH), pos.toNanos());
-        if (wasPlaying) {
-            this.playbinEl.setState(State.PLAYING);
-        }
-        log.info("🎵 Switched audio output; resumed at {}s (wasPlaying={}) default-now={}",
-                pos.getSeconds(), wasPlaying, resolveDefaultOutputId());
-    }
-
     public Optional<Duration> getCurrentPosition() {
-        // While PLAYING, `this.position` is only refreshed on discrete events (seek, pause, EOS)
+        // While PLAYING, `positionMillis` is only refreshed on discrete events (seek, pause, EOS)
         // since the positionPublisher was removed. Extrapolate from the wall-clock anchor so
         // on-demand consumers (e.g. MPRIS Position queries) get a live value.
         if (this.playerStates == PLAYING) {
             long anchor = this.positionAnchorAtMillis;
             if (anchor > 0) {
                 long posMs = Math.max(0L, System.currentTimeMillis() - anchor);
-                var dur = this.duration;
-                if (dur != null && posMs > dur.toMillis()) {
-                    posMs = dur.toMillis();
+                long dur = this.durationMillis;
+                if (dur >= 0 && posMs > dur) {
+                    posMs = dur;
                 }
                 return Optional.of(Duration.ofMillis(posMs));
             }
         }
-        return Optional.ofNullable(this.position);
+        return toDuration(this.positionMillis);
     }
 
     public double getVolume() {
@@ -913,7 +666,7 @@ public class PlaybinPlayer implements Player {
     private void onMuteChanged() {
         boolean isMuted = (Boolean) playbinEl.getProperty("mute");
         log.debug("Playbin: onMuteChanged: muted={}", isMuted);
-        this.muteState.set(isMuted);
+        this.muted = isMuted;
         this.notifyState();
     }
 
@@ -923,19 +676,13 @@ public class PlaybinPlayer implements Player {
             return;
         }
         this.playbinEl.setState(State.NULL);
-        // Stop the macOS audio-output poller. The DeviceMonitor is never started (we only use it to
-        // probe), so there is nothing to stop on it.
-        if (deviceMonitorThread != null) {
-            deviceMonitorThread.interrupt();
+        if (outputFollower != null) {
+            outputFollower.stop();
         }
-        if (loop.isRunning()) {
-            loop.quit();
-        }
-        try {
-            playerLoopThread.join(10_000L);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        // The bus watch is attached to the default main context; drop it so no further messages
+        // are dispatched into a torn-down pipeline. Fully qualified: the simple name `Source`
+        // is taken by this class's own record.
+        org.gnome.glib.Source.remove(busWatchId);
     }
 
     // https://github.com/GStreamer/gst-plugins-base/blob/master/gst-libs/gst/audio/streamvolume.c#L169
