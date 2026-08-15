@@ -55,7 +55,7 @@ import org.subsound.integration.ServerClient.ObjectIdentifier;
 import org.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier;
 import org.subsound.integration.ServerClient.PlaylistKind;
 import org.subsound.integration.ServerClient.SongInfo;
-import org.subsound.sound.PlaybinPlayer;
+import org.subsound.sound.PlayerStates;
 import org.subsound.ui.components.AdwDialogHelper;
 import org.subsound.ui.components.AppNavigation.AppRoute;
 import org.subsound.ui.components.ArtistsLinkLabelV3;
@@ -81,7 +81,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static com.twelvemonkeys.lang.StringUtil.containsIgnoreCase;
 import static org.gnome.adw.ResponseAppearance.DEFAULT;
@@ -1399,7 +1398,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         return new MiniState(npSong, nowPlayingState, playContext, pos, playingItem);
     }
 
-    private NowPlayingState getNowPlayingState(PlaybinPlayer.PlayerStates state) {
+    private NowPlayingState getNowPlayingState(PlayerStates state) {
         return switch (state) {
             case INIT -> NowPlayingState.NONE;
             case BUFFERING -> NowPlayingState.LOADING;

@@ -4,10 +4,10 @@ import java.time.Duration;
 import java.util.Optional;
 
 public interface Player {
-    PlaybinPlayer.PlayerState getState();
+    PlayerState getState();
     void seekTo(Duration duration);
-    void onStateChanged(PlaybinPlayer.OnStateChanged listener);
-    void removeOnStateChanged(PlaybinPlayer.OnStateChanged listener);
+    void onStateChanged(GstPlaybinPlayer.OnStateChanged listener);
+    void removeOnStateChanged(GstPlaybinPlayer.OnStateChanged listener);
 
     /**
      * Registers a listener fired exactly once per ended stream, with the cause
@@ -16,15 +16,15 @@ public interface Player {
      * {@link #onStateChanged}, it cannot re-fire on unrelated state notifications
      * (volume changes etc.) while the player still lingers in that state.
      */
-    void onStreamEnded(PlaybinPlayer.OnStreamEnded listener);
-    void removeOnStreamEnded(PlaybinPlayer.OnStreamEnded listener);
+    void onStreamEnded(GstPlaybinPlayer.OnStreamEnded listener);
+    void removeOnStreamEnded(GstPlaybinPlayer.OnStreamEnded listener);
 
     /**
-     * Live playback position. Unlike {@link PlaybinPlayer.PlayerState#source()}'s position,
+     * Live playback position. Unlike {@link PlayerState#source()}'s position,
      * which is only refreshed on discrete events (seek/pause/EOS), implementations extrapolate
      * this while playing.
      */
     default Optional<Duration> getCurrentPosition() {
-        return getState().source().flatMap(PlaybinPlayer.Source::position);
+        return getState().source().flatMap(Source::position);
     }
 }

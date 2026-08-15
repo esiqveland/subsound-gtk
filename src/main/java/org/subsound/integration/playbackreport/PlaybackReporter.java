@@ -6,7 +6,7 @@ import org.subsound.app.state.AppManager;
 import org.subsound.integration.ServerClient;
 import org.subsound.integration.ServerClient.ReportNowPlaying;
 import org.subsound.integration.ServerClient.ReportNowPlaying.PlayerState;
-import org.subsound.sound.PlaybinPlayer;
+import org.subsound.sound.PlayerStates;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -85,7 +85,7 @@ public class PlaybackReporter implements AppManager.StateListener, AutoCloseable
         );
     }
 
-    private static PlayerState toPlaybackState(PlaybinPlayer.PlayerStates state) {
+    private static PlayerState toPlaybackState(PlayerStates state) {
         return switch (state) {
             case PLAYING, BUFFERING -> PlayerState.PLAYING;
             case READY, INIT, END_OF_STREAM -> PlayerState.STOPPED;

@@ -1,6 +1,5 @@
 package org.subsound.sound;
 
-import io.soabase.recordbuilder.core.RecordBuilderFull;
 import org.freedesktop.gstreamer.gst.Bus;
 import org.freedesktop.gstreamer.gst.ClockTime;
 import org.freedesktop.gstreamer.gst.Element;
@@ -14,7 +13,6 @@ import org.freedesktop.gstreamer.gst.State;
 import org.gnome.glib.GError;
 import org.gnome.glib.GLib;
 import org.javagi.base.Out;
-import org.mpris.MediaPlayer2.MediaPlayer2Player.PlaybackStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.subsound.utils.OsUtil;
@@ -28,12 +26,12 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.subsound.sound.PlaybinPlayer.PlayerStates.BUFFERING;
-import static org.subsound.sound.PlaybinPlayer.PlayerStates.END_OF_STREAM;
-import static org.subsound.sound.PlaybinPlayer.PlayerStates.INIT;
-import static org.subsound.sound.PlaybinPlayer.PlayerStates.PAUSED;
-import static org.subsound.sound.PlaybinPlayer.PlayerStates.PLAYING;
-import static org.subsound.sound.PlaybinPlayer.PlayerStates.READY;
+import static org.subsound.sound.PlayerStates.BUFFERING;
+import static org.subsound.sound.PlayerStates.END_OF_STREAM;
+import static org.subsound.sound.PlayerStates.INIT;
+import static org.subsound.sound.PlayerStates.PAUSED;
+import static org.subsound.sound.PlayerStates.PLAYING;
+import static org.subsound.sound.PlayerStates.READY;
 import static org.subsound.utils.OsUtil.OS.MACOS;
 
 // TODO: Try to make it work closer to a audio-only playbin:
@@ -41,8 +39,8 @@ import static org.subsound.utils.OsUtil.OS.MACOS;
 //
 // GstSink:
 // gconfaudiosink vs autoaudiosink
-public class PlaybinPlayer implements Player {
-    private static final Logger log = LoggerFactory.getLogger(PlaybinPlayer.class);
+public class GstPlaybinPlayer implements Player {
+    private static final Logger log = LoggerFactory.getLogger(GstPlaybinPlayer.class);
 
     private static final int GST_PLAY_FLAG_AUDIO = 2;
     private static final int GST_PLAY_FLAG_SOFT_VOLUME = 0x00000010;
@@ -129,52 +127,6 @@ public class PlaybinPlayer implements Player {
         this.positionMillis = posMillis;
         this.positionAnchorAtMillis = now - posMillis;
         this.playbackStartedAtMillis = restartScrobble ? now : now - posMillis;
-    }
-
-    // a public read-only view of the player state
-    @RecordBuilderFull
-    public record PlayerState(
-            PlayerStates state,
-            double volume,
-            boolean muted,
-            Optional<Instant> playbackStartedAt,
-            // Wall-clock instant corresponding to stream position = 0 for the current segment.
-            // While PLAYING, current position ≈ now - positionAnchorAt. Moves on seek so UI can
-            // extrapolate locally without waiting for position-notifications.
-            Optional<Instant> positionAnchorAt,
-            Optional<Source> source
-    ) implements PlaybinPlayerPlayerStateBuilder.With {
-    }
-
-    @RecordBuilderFull
-    public record Source(
-            URI current,
-            Optional<Duration> position,
-            Optional<Duration> duration
-    ) implements PlaybinPlayerSourceBuilder.With {
-    }
-
-    public enum PlayerStates {
-        // The initial state of the player
-        INIT,
-        BUFFERING,
-        READY,
-        PAUSED,
-        PLAYING,
-        END_OF_STREAM,
-        ;
-
-        public boolean isPlaying() {
-            return this == PLAYING;
-        }
-
-        public PlaybackStatus toMpris() {
-            return switch (this) {
-                case PAUSED -> PlaybackStatus.Paused;
-                case PLAYING, BUFFERING -> PlaybackStatus.Playing;
-                case READY, INIT, END_OF_STREAM -> PlaybackStatus.Stopped;
-            };
-        }
     }
 
     Element playbinEl;
@@ -537,11 +489,11 @@ public class PlaybinPlayer implements Player {
         this.notifyState();
     }
 
-    public PlaybinPlayer() {
+    public GstPlaybinPlayer() {
         this(null);
     }
 
-    public PlaybinPlayer(URI initialFile) {
+    public GstPlaybinPlayer(URI initialFile) {
         // Create gstreamer elements
         playbinEl = ElementFactory.make("playbin", "Subsound");
         if (playbinEl == null) {
@@ -597,7 +549,7 @@ public class PlaybinPlayer implements Player {
 
                     @Override
                     public void pause() {
-                        PlaybinPlayer.this.pause();
+                        GstPlaybinPlayer.this.pause();
                     }
                 });
             } catch (Throwable t) {

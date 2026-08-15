@@ -44,9 +44,11 @@ import org.subsound.persistence.database.PlayerConfigService;
 import org.subsound.persistence.database.PlayerStateJson;
 import org.subsound.persistence.database.Server;
 import org.subsound.persistence.database.SyncService;
-import org.subsound.sound.PlaybinPlayer;
-import org.subsound.sound.PlaybinPlayer.AudioSource;
-import org.subsound.sound.PlaybinPlayer.Source;
+import org.subsound.sound.GstPlaybinPlayer;
+import org.subsound.sound.GstPlaybinPlayer.AudioSource;
+import org.subsound.sound.PlayerStates;
+import org.subsound.sound.Source;
+import org.subsound.sound.PlayerState;
 import org.subsound.ui.components.AppNavigation;
 import org.subsound.ui.models.GQueueItem;
 import org.subsound.ui.models.GSongInfo;
@@ -93,7 +95,7 @@ public class AppManager {
     public static final String SERVER_ID = "8034888b-5544-4dbe-b9ec-be5ad02831cd";
 
     private final Config config;
-    private final PlaybinPlayer player;
+    private final GstPlaybinPlayer player;
     private final PlayQueue playQueue;
     private final SongCache songCache;
     private final ThumbnailCache thumbnailCache;
@@ -137,7 +139,7 @@ public class AppManager {
 
     public AppManager(
             Config config,
-            PlaybinPlayer player,
+            GstPlaybinPlayer player,
             ThumbnailCache thumbnailCache,
             Runnable onQuit
     ) {
@@ -213,7 +215,7 @@ public class AppManager {
             // would count the entire pause as listening time (pause 10s in, wait 5 min,
             // skip => false scrobble). Anything listened up to a non-PLAYING observation
             // was already scored when that observation replaced its PLAYING predecessor.
-            if (prev != null && !prev.equals(obs) && prev.state() == PlaybinPlayer.PlayerStates.PLAYING) {
+            if (prev != null && !prev.equals(obs) && prev.state() == PlayerStates.PLAYING) {
                 this.evaluateScrobble(prev.session(), prev.playbackStartedAtMs());
             }
         });
@@ -537,7 +539,7 @@ public class AppManager {
         // at the transition out of PLAYING, and the wall-clock measurement in
         // evaluateScrobble would count the pause as listening time.
         var playerStateAtShutdown = this.player.getState();
-        if (playerStateAtShutdown.state() == PlaybinPlayer.PlayerStates.PLAYING) {
+        if (playerStateAtShutdown.state() == PlayerStates.PLAYING) {
             this.evaluateScrobble(
                     this.scrobbleSession.get(),
                     playerStateAtShutdown.playbackStartedAt().map(Instant::toEpochMilli).orElse(0L)
@@ -658,7 +660,7 @@ public class AppManager {
     @RecordBuilderFull
     public record AppState(
             Optional<NowPlaying> nowPlaying,
-            PlaybinPlayer.PlayerState player,
+            PlayerState player,
             PlayQueue.PlayQueueState queue,
             NetworkState networkState,
             ServerState serverState
@@ -1414,7 +1416,7 @@ public class AppManager {
         }
         var state = this.player.getState();
         // Convert linear volume to cubic for storage (setVolume expects cubic)
-        double cubicVolume = PlaybinPlayer.toVolumeCubic(state.volume());
+        double cubicVolume = GstPlaybinPlayer.toVolumeCubic(state.volume());
         var playerState = this.currentState.getValue();
         var currentSongId = playerState.nowPlaying()
                 .map(NowPlaying::song)
@@ -1706,7 +1708,7 @@ public class AppManager {
     private record Observation(
             @org.jspecify.annotations.Nullable ScrobbleSession session,
             long playbackStartedAtMs,
-            PlaybinPlayer.PlayerStates state
+            PlayerStates state
     ) {}
 
     /**
