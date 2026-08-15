@@ -17,5 +17,5 @@ public record PlayerState(
         // extrapolate locally without waiting for position-notifications.
         Optional<Instant> positionAnchorAt,
         Optional<Source> source
-) implements PlaybinPlayerPlayerStateBuilder.With {
+) implements PlayerStateBuilder.With {
 }

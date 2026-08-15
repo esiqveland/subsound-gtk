@@ -11,5 +11,5 @@ public record Source(
         URI current,
         Optional<Duration> position,
         Optional<Duration> duration
-) implements PlaybinPlayerSourceBuilder.With {
+) implements SourceBuilder.With {
 }
