@@ -26,7 +26,8 @@ public class PlayQueuePersistenceTest {
                 Instant.now().truncatedTo(ChronoUnit.MILLIS),
                 Optional.of(1), Optional.of(1), Optional.of(320),
                 5000000L, "Rock", "mp3",
-                Optional.empty(), Optional.empty(), List.of()
+                Optional.empty(), Optional.empty(), List.of(),
+                Optional.empty()
         );
     }
 

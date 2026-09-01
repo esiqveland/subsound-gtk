@@ -2,7 +2,10 @@ package org.subsound.ui.views;
 
 import org.gnome.adw.AlertDialog;
 import org.gnome.adw.Clamp;
+import org.gnome.gdk.ContentProvider;
+import org.gnome.gdk.DragAction;
 import org.gnome.gdk.ModifierType;
+import org.gnome.gobject.Value;
 import org.gnome.gio.ListModel;
 import org.gnome.gio.ListStore;
 import org.gnome.glib.Type;
@@ -14,6 +17,8 @@ import org.gnome.gtk.ColumnView;
 import org.gnome.gtk.ColumnViewColumn;
 import org.gnome.gtk.ColumnViewSorter;
 import org.gnome.gtk.CustomFilter;
+import org.gnome.gtk.DragIcon;
+import org.gnome.gtk.DragSource;
 import org.gnome.gtk.Entry;
 import org.gnome.gtk.EventControllerKey;
 import org.gnome.gtk.FilterChange;
@@ -50,7 +55,7 @@ import org.subsound.integration.ServerClient.ObjectIdentifier;
 import org.subsound.integration.ServerClient.ObjectIdentifier.PlaylistIdentifier;
 import org.subsound.integration.ServerClient.PlaylistKind;
 import org.subsound.integration.ServerClient.SongInfo;
-import org.subsound.sound.PlaybinPlayer;
+import org.subsound.sound.PlayerStates;
 import org.subsound.ui.components.AdwDialogHelper;
 import org.subsound.ui.components.AppNavigation.AppRoute;
 import org.subsound.ui.components.ArtistsLinkLabelV3;
@@ -76,7 +81,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static com.twelvemonkeys.lang.StringUtil.containsIgnoreCase;
 import static org.gnome.adw.ResponseAppearance.DEFAULT;
@@ -95,6 +99,13 @@ import static org.subsound.ui.views.AlbumInfoPage.infoLabel;
 
 public class PlaylistListViewV2 extends Box implements AppManager.StateListener {
     private static final Logger log = LoggerFactory.getLogger(PlaylistListViewV2.class);
+
+    /**
+     * Prefix for the {@code G_TYPE_STRING} drag payload produced when dragging song rows out
+     * of this view. The remainder is a comma-separated list of song ids. Drop targets (e.g.
+     * the playlists overview) match on this prefix to reject foreign/plain-text drags.
+     */
+    public static final String SONGS_DRAG_PREFIX = "subsound-songs:";
 
     private final AppManager appManager;
     private final ColumnView columnView;
@@ -347,6 +358,52 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         titleFactory.onSetup(obj -> {
             var listItem = (ListItem) obj;
             var cell = new TitleArtistCell(appManager, this.onNavigate);
+            // Drag source: the title cell is the drag handle for its song row. Dragging a row
+            // that is part of the current multi-selection drags the whole selection; otherwise
+            // just that one song. The payload is a G_TYPE_STRING of song ids (see songsForDrag).
+            var dragSource = new DragSource();
+            dragSource.setActions(DragAction.COPY);
+            dragSource.onPrepare((x, y) -> {
+                var entry = cell.boundEntry;
+                if (entry == null) {
+                    return null;
+                }
+                var songs = songsForDrag(entry);
+                if (songs.isEmpty()) {
+                    return null;
+                }
+                var ids = songs.stream().map(GSongInfo::getId).toList();
+                var value = new Value();
+                value.init(Types.STRING);
+                value.setString(SONGS_DRAG_PREFIX + String.join(",", ids));
+                return ContentProvider.forValue(value);
+            });
+            // Replace the default drag cursor with a small "N items" badge. The badge sits in a
+            // transparent box offset from the hotspot (pinned to 0,0) so the cursor stays clear
+            // of the pill's text instead of covering it.
+            dragSource.onDragBegin(drag -> {
+                var entry = cell.boundEntry;
+                if (entry == null) {
+                    return;
+                }
+                int count = songsForDrag(entry).size();
+                if (count == 0) {
+                    return;
+                }
+                var badge = Label.builder()
+                        .setLabel(trn("%d item", "%d items", count).formatted(count))
+                        .setCssClasses(new String[]{Classes.dragSongBadge.className()})
+                        .build();
+                var iconBox = Box.builder()
+                        .setOrientation(HORIZONTAL)
+                        .setMarginTop(10)
+                        .setMarginStart(14)
+                        .build();
+                iconBox.append(badge);
+                drag.setHotspot(0, 0);
+                DragIcon.getForDrag(drag).setChild(iconBox);
+            });
+            cell.addController(dragSource);
             listItem.setChild(cell);
         });
         titleFactory.onBind(obj -> {
@@ -738,6 +795,24 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
     }
 
     /**
+     * The songs to carry when {@code entry}'s row is dragged: the whole multi-selection when
+     * {@code entry} is part of a 2+ selection, otherwise just {@code entry} itself. Model items
+     * are stable instances, so identity ({@code ==}) membership is correct. Main thread only.
+     */
+    private List<GSongInfo> songsForDrag(GPlaylistEntry entry) {
+        var selected = selectedEntries();
+        boolean entryInSelection = selected.stream().anyMatch(e -> e == entry);
+        if (entryInSelection && selected.size() >= 2) {
+            var out = new ArrayList<GSongInfo>(selected.size());
+            for (var e : selected) {
+                out.add(e.gSong());
+            }
+            return out;
+        }
+        return List.of(entry.gSong());
+    }
+
+    /**
      * Visibility policy for the selection bar: only a multi-row selection (2+) surfaces it, so a
      * single selected row stays the normal "pick a song to play" case. Main thread only.
      */
@@ -1106,6 +1181,43 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
     }
 
     /**
+     * Append {@code songs} to the mounted list if they were just added to the playlist this
+     * view currently displays. Splices onto the base {@link #listModel} (the ColumnView reacts
+     * in place; scroll position and selection are preserved) instead of rebuilding via
+     * {@link #setSongs}. No-op when a different playlist is shown. Callable from any thread.
+     *
+     * <p>Subsonic {@code addToPlaylist} appends at the end, so the new entries take the trailing
+     * positions and no tail renumber is needed. Splicing the base model is correct even under an
+     * active search filter or column sort — the downstream Filter/Sort models react to it.
+     */
+    public void appendSongsIfCurrent(String playlistId, List<GSongInfo> songs) {
+        var current = this.currentPlaylist.get();
+        if (current == null
+                || current.kind() != PlaylistKind.NORMAL
+                || !current.id().equals(playlistId)
+                || songs.isEmpty()) {
+            return;
+        }
+        Utils.runOnMainThread(() -> {
+            // Re-check on the main thread: the displayed playlist may have changed while queued.
+            var now = this.currentPlaylist.get();
+            if (now == null || !now.id().equals(playlistId)) {
+                return;
+            }
+            int base = this.listModel.getNItems();
+            var added = new GPlaylistEntry[songs.size()];
+            for (int i = 0; i < songs.size(); i++) {
+                added[i] = GPlaylistEntry.of(playlistId, songs.get(i), base + i);
+            }
+            this.listModel.splice(base, 0, added);
+            // Keep our count in sync so the follow-up refreshPlaylistAsync notify("name") — which
+            // sets reloadNeeded when songCount != lastKnownSongCount — does not also queue a
+            // redundant deferred reload for this same change.
+            this.lastKnownSongCount = base + songs.size();
+        });
+    }
+
+    /**
      * Bind this view to a foreign {@link ListModel} of {@link GSongInfo}, so that adds/removes
      * in the source store are reflected here without rebuilding the list. The initial contents
      * are pushed through {@link #setSongs}; subsequent itemsChanged notifications from the
@@ -1286,7 +1398,7 @@ public class PlaylistListViewV2 extends Box implements AppManager.StateListener 
         return new MiniState(npSong, nowPlayingState, playContext, pos, playingItem);
     }
 
-    private NowPlayingState getNowPlayingState(PlaybinPlayer.PlayerStates state) {
+    private NowPlayingState getNowPlayingState(PlayerStates state) {
         return switch (state) {
             case INIT -> NowPlayingState.NONE;
             case BUFFERING -> NowPlayingState.LOADING;

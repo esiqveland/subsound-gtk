@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.subsound.app.state.AppManager;
 import org.subsound.app.state.PlayerAction;
 import org.subsound.configuration.constants.Constants;
-import org.subsound.sound.PlaybinPlayer;
+import org.subsound.sound.Source;
 import org.subsound.utils.OsUtil;
 import org.subsound.utils.Utils;
 
@@ -241,7 +241,7 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
                 next.player().volume(),
                 // mpris: it should be fine to publish the position here, mpris clients that render a position,
                 // should manage their own updates by calling with Get('playerid', Variant[Position])) for updates.
-                next.player().source().flatMap(PlaybinPlayer.Source::position).orElse(Duration.ZERO),
+                next.player().source().flatMap(Source::position).orElse(Duration.ZERO),
                 1.0,
                 1.0,
                 true,
@@ -277,7 +277,10 @@ public class MPrisController implements MediaPlayer2, MediaPlayer2Player, AppMan
 
     @Override
     public <A> A Get(String _interfaceName, String _propertyName) {
-        log.info("MprisController.Get {} {}", _interfaceName, _propertyName);
+        // too noisy to log every time the position is queried
+        if (!"Position".equals(_propertyName)) {
+            log.info("MprisController.Get {} {}", _interfaceName, _propertyName);
+        }
         return switch (_interfaceName) {
             case MprisApplicationProperties.dbusInterfaceName ->
                     this.mprisApplicationProperties.Get(_interfaceName, _propertyName);

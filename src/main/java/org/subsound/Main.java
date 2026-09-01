@@ -20,7 +20,7 @@ import org.subsound.integration.platform.mpriscontroller.ArtworkHttpServer;
 import org.subsound.integration.platform.mpriscontroller.MPrisController;
 import org.subsound.integration.platform.secret.SecretService;
 import org.subsound.persistence.ThumbnailCache;
-import org.subsound.sound.PlaybinPlayer;
+import org.subsound.sound.GstPlaybinPlayer;
 import org.subsound.utils.LogUtils;
 import org.subsound.utils.Utils;
 
@@ -64,7 +64,7 @@ public class Main {
 
         var secretService = SecretService.create();
         this.config = Config.createDefault(secretService);
-        var player = new PlaybinPlayer();
+        var player = new GstPlaybinPlayer();
         var mainAppRef = new AtomicReference<MainApplication>();
         var app = new Application(Constants.APP_ID, ApplicationFlags.DEFAULT_FLAGS);
         var thumbnailCache = new ThumbnailCache(this.config.dataDir);

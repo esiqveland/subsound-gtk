@@ -172,6 +172,21 @@ public interface ServerClient {
     record CoverArtResponse(byte[] data, String contentType) {}
 
     record ArtistId(String id, String name) {}
+
+    /**
+     * ReplayGain loudness-normalization metadata for a single song, as exposed by
+     * OpenSubsonic servers. Gains are in dB; peaks are linear sample values (0.0-1.0+).
+     * Always carried as an {@link Optional} on {@link SongInfo}: a song may have no
+     * ReplayGain tags, and cached songs synced before this metadata existed read back
+     * as absent until re-synced.
+     */
+    record ReplayGain(
+            double trackGain,
+            double albumGain,
+            double trackPeak,
+            double albumPeak
+    ) {}
+
     @RecordBuilderFull
     record SongInfo(
             String id,
@@ -182,6 +197,7 @@ public interface ServerClient {
             long size,
             Optional<Integer> year,
             String genre,
+            //List<String> genres,
             Long playCount,
             Optional<Integer> userRating,
             ArtistId mainArtist,
@@ -196,7 +212,8 @@ public interface ServerClient {
             Optional<CoverArt> coverArt,
             String suffix,
             TranscodeInfo transcodeInfo,
-            URI downloadUri
+            URI downloadUri,
+            Optional<ReplayGain> replayGain
     ) implements ServerClientSongInfoBuilder.With {
         public String artistName() {
             return mainArtist.name();
@@ -448,6 +465,31 @@ public interface ServerClient {
             TranscodeFormat format,
             TranscodeBitrate bitrate
     ) {}
+
+    /**
+     * Per-server ReplayGain (loudness normalization) preferences.
+     *
+     * @param enabled       master on/off for normalization
+     * @param mode          whether to use per-track gain (even loudness across shuffle) or
+     *                      album gain (preserves an album's internal dynamics)
+     * @param preAmpDb      fixed dB offset applied on top of the chosen gain
+     * @param fallbackGainDb gain in dB applied to songs that have no ReplayGain metadata
+     */
+    record ReplayGainConfig(
+            boolean enabled,
+            Mode mode,
+            double preAmpDb,
+            double fallbackGainDb
+    ) {
+        public enum Mode {
+            TRACK,
+            ALBUM,
+        }
+
+        public static ReplayGainConfig defaultConfig() {
+            return new ReplayGainConfig(false, Mode.TRACK, 0.0, 0.0);
+        }
+    }
     /** A custom HTTP header attached to every request to the server (e.g. Cloudflare Access headers). */
     record HttpHeader(
             String name,

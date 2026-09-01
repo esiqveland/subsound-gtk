@@ -1,12 +1,9 @@
 package org.subsound.integration.platform.secret;
 
-import org.gnome.glib.GLib;
-import org.gnome.glib.HashTable;
 import org.gnome.secret.Schema;
 import org.gnome.secret.SchemaAttributeType;
 import org.gnome.secret.SchemaFlags;
 import org.gnome.secret.Secret;
-import org.javagi.interop.Interop;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,22 +39,24 @@ public final class LibsecretService implements SecretService {
     }
 
     private static Schema buildSchema() {
-        var attributes = new HashTable<String, SchemaAttributeType>(
-                GLib::strHash,
-                GLib::strEqual,
-                Interop::getStringFrom,
-                SchemaAttributeType::of
+        // Schema(name, flags, ...) binds the variadic secret_schema_new(): the varargs must be
+        // (attribute-name, SchemaAttributeType) pairs terminated with null. Passing a GHashTable
+        // here (that overload is Schema.newv) makes libsecret read the table pointer as an
+        // attribute-name char*, yielding a schema without any of our attributes.
+        return new Schema(
+                "io.github.subsoundorg.Subsound.Credentials",
+                SchemaFlags.NONE,
+                "server-id", SchemaAttributeType.STRING,
+                "username", SchemaAttributeType.STRING,
+                null
         );
-        attributes.insert("server-id", SchemaAttributeType.STRING);
-        attributes.insert("username", SchemaAttributeType.STRING);
-        return new Schema("io.github.subsoundorg.Subsound.Credentials", SchemaFlags.NONE, attributes);
     }
 
     @Override
     public boolean storeCredentialsSync(String serverId, String username, String password) {
         try {
             var attributes = Secret.attributesBuild(SCHEMA, "server-id", serverId, "username", username, null);
-            return Secret.passwordStoreSync(
+            return Secret.passwordStorevSync(
                     SCHEMA, attributes, Secret.COLLECTION_DEFAULT,
                     "Subsound: " + username, password, null
             );
@@ -78,7 +77,7 @@ public final class LibsecretService implements SecretService {
     private @Nullable Credentials lookupCredentialsSyncInner(String serverId, String username) {
         try {
             var attributes = Secret.attributesBuild(SCHEMA, "server-id", serverId, "username", username, null);
-            var password = Secret.passwordLookupSync(SCHEMA, attributes, null);
+            var password = Secret.passwordLookupvSync(SCHEMA, attributes, null);
             if (password == null || password.isEmpty()) {
                 return null;
             }
@@ -93,7 +92,7 @@ public final class LibsecretService implements SecretService {
     public boolean deleteCredentials(String serverId) {
         try {
             var attributes = Secret.attributesBuild(SCHEMA, "server-id", serverId, null);
-            return Secret.passwordClearSync(SCHEMA, attributes, null);
+            return Secret.passwordClearvSync(SCHEMA, attributes, null);
         } catch (Exception e) {
             log.warn("Failed to delete credentials in libsecret for server={}: {}", serverId, e.getMessage());
             return false;

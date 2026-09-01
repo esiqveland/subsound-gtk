@@ -297,7 +297,8 @@ public class MainApplication {
                         this.appManager,
                         info,
                         cfg.dataDir,
-                        transcodeSettings
+                        transcodeSettings,
+                        this.appManager.getReplayGainConfig()
                 );
                 NavigationPage navPage = NavigationPage.builder().setChild(settings).setTitle(tr("Settings")).build();
                 navigationView.push(navPage);

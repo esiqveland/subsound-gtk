@@ -3,7 +3,7 @@ package org.subsound.app.state;
 import org.subsound.app.state.PlayerAction.PlayMode;
 import org.subsound.integration.ServerClient.ObjectIdentifier;
 import org.subsound.integration.ServerClient.SongInfo;
-import org.subsound.sound.PlaybinPlayer;
+import org.subsound.sound.GstPlaybinPlayer;
 import org.subsound.sound.Player;
 import org.subsound.ui.models.GQueueItem;
 import org.subsound.ui.models.GSongInfo;
@@ -47,7 +47,7 @@ public class PlayQueue implements AutoCloseable {
     // Advance the queue on the end-of-stream edge event. Reacting to state == END_OF_STREAM
     // in a state listener instead would re-fire on unrelated notifications (volume changes,
     // setSource's own notify) while the player lingers in that state, double-skipping songs.
-    private final PlaybinPlayer.OnStreamEnded streamEndedListener = this::onStreamEnded;
+    private final GstPlaybinPlayer.OnStreamEnded streamEndedListener = this::onStreamEnded;
 
     public PlayQueue(
             Player player,
@@ -177,8 +177,8 @@ public class PlayQueue implements AutoCloseable {
     }
 
 
-    private void onStreamEnded(PlaybinPlayer.StreamEndCause cause) {
-        if (cause == PlaybinPlayer.StreamEndCause.ERROR) {
+    private void onStreamEnded(GstPlaybinPlayer.StreamEndCause cause) {
+        if (cause == GstPlaybinPlayer.StreamEndCause.ERROR) {
             synchronized (lock) {
                 if (playMode == PlayMode.REPEAT_ONE) {
                     // Replaying the same failing source in REPEAT_ONE would just error again

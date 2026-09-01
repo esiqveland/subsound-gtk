@@ -18,7 +18,8 @@ import org.subsound.app.state.AppManager.AppState;
 import org.subsound.app.state.AppManager.NowPlaying;
 import org.subsound.app.state.PlayerAction;
 import org.subsound.integration.ServerClient.SongInfo;
-import org.subsound.sound.PlaybinPlayer;
+import org.subsound.sound.GstPlaybinPlayer;
+import org.subsound.sound.PlayerStates;
 import org.subsound.utils.Utils;
 
 import java.time.Duration;
@@ -226,7 +227,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
                 .build();
         nowPlaying.append(songInfoClamp);
 
-        volumeButton = new VolumeButton(this.currentState.get().player().muted(), PlaybinPlayer.toVolumeCubic(this.currentState.get().player().volume()));
+        volumeButton = new VolumeButton(this.currentState.get().player().muted(), GstPlaybinPlayer.toVolumeCubic(this.currentState.get().player().volume()));
         volumeButton.onClicked(() -> {
             if (this.isStateChanging.get()) {
                 return;
@@ -243,7 +244,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
                 .setWidthRequest(100)
                 .build();
         volumeScale.setRange(0.0, 1.0);
-        volumeScale.setValue(PlaybinPlayer.toVolumeCubic(currentState.get().player().volume()));
+        volumeScale.setValue(GstPlaybinPlayer.toVolumeCubic(currentState.get().player().volume()));
         volumeScale.setShowFillLevel(false);
         volumeScale.onValueChanged(() -> {
             if (this.isStateChanging.get()) {
@@ -487,7 +488,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
 
             Utils.runOnMainThread(() -> {
                 this.volumeButton.setMute(player.muted());
-                var cubicVolume = PlaybinPlayer.toVolumeCubic(linearVolume);
+                var cubicVolume = GstPlaybinPlayer.toVolumeCubic(linearVolume);
                 if (!withinEpsilon(cubicVolume, volumeScale.getValue(), 0.01)) {
                     log.info("volume is outdated: %.2f".formatted(cubicVolume));
                     this.volumeButton.setVolume(cubicVolume);
@@ -572,7 +573,7 @@ public class PlayerBar extends Box implements AppManager.StateListener {
         }
     }
 
-    private static PlayingState toPlayingState(PlaybinPlayer.PlayerStates state) {
+    private static PlayingState toPlayingState(PlayerStates state) {
         return switch (state) {
             case INIT -> PlayingState.IDLE;
             case BUFFERING -> PlayingState.PLAYING;

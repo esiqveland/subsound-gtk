@@ -134,6 +134,41 @@ scale slider {
   margin: 6px;
 }
 
+/* A playlist row in the overview that is a valid drop target while a song drag
+ * hovers over it. Uses the accent colour so it reads as "release here to add". */
+/* Permanent padding on the row's content box so the drop-target outline (added on top via
+ * .drop-target-active) has breathing room around the title/subtitle and toggling the marker
+ * causes no layout shift. Transparent otherwise — invisible in the normal state. */
+.drop-target-slot {
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.drop-target-active {
+  background-color: alpha(@accent_bg_color, 0.25);
+  box-shadow: inset 0 0 0 2px @accent_bg_color;
+}
+
+/* Suppress the theme's built-in whole-row drop highlight (drawn on the widget that owns the
+ * DropTarget when it is the active drop target). We render our own marker on the content box
+ * via .drop-target-active, so the row itself must stay unstyled. */
+.playlist-drop-row:drop(active) {
+  box-shadow: none;
+  outline: none;
+  background-color: transparent;
+}
+
+/* The badge shown under the cursor while dragging songs onto a playlist: a small
+ * rounded "N items" pill on a solid themed surface. */
+.drag-song-badge {
+  padding: 6px 10px;
+  border-radius: 8px;
+  background-color: @popover_bg_color;
+  color: @popover_fg_color;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
 .command-palette-backdrop {
   background-color: rgba(0, 0, 0, 0.5);
 }

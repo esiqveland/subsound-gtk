@@ -62,7 +62,7 @@ public class DebugGtkListViewIssue {
             this.app = app;
             this.data = data;
 
-            this.listModel = ListIndexModel.newInstance(this.data.size());
+            this.listModel = new ListIndexModel(this.data.size());
 
             factory = new SignalListItemFactory();
             factory.onSetup(object -> {

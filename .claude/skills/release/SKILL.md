@@ -52,6 +52,11 @@ git log LAST_TAG..HEAD --pretty=format:'%h %s' --no-merges
    When a commit message is terse, read the diff (`git show <hash>`) before
    classifying it.
 
+   **When in doubt, ask — don't guess.** If, after reading the diff, it's still
+   unclear whether a change belongs in the release notes, ask the user with the
+   AskUserQuestion tool (include / leave out). Batch the uncertain ones into a
+   single round of questions rather than asking one at a time.
+
 3. **Insert a new `<release>` element as the first child of `<releases>`,
    above all existing entries.** Shape:
 
@@ -77,6 +82,11 @@ git log LAST_TAG..HEAD --pretty=format:'%h %s' --no-merges
    - Tone: present tense, one user benefit per line, plain language. Match the
      two most recent existing entries in the file — skim them first to
      calibrate. Don't reference internal class/file names.
+   - If a change is clearly worth including but you're unsure how to describe
+     it to an end user (which prefix, or what the user-facing benefit actually
+     is), ask the user with AskUserQuestion how they'd like it worded — offer
+     two or three concrete candidate `<li>` lines as options. Better to ask
+     than to ship vague or wrong wording.
    - If there are zero user-visible changes since `LAST_TAG`, stop and tell
      the user — don't fabricate notes.
 
